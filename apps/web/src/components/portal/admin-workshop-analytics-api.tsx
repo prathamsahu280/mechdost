@@ -6,7 +6,7 @@ import { workshopRates, type AdminWorkshopAnalytics } from '@mechdost/shared/wor
 import { durationParts, formatCount, localName } from '@/lib/admin-analytics-view';
 import { commonErrorKey, type CommonErrorKey } from '@/lib/api-error-key';
 import { formatPrice } from '@/lib/format';
-import { ScrollRegion } from '../ui/scroll-region';
+
 import {
   ratingText,
   sortWorkshops,
@@ -14,7 +14,8 @@ import {
   type SortDir,
   type SortKey,
 } from '@/lib/workshop-analytics-view';
-import { portalCard, portalPrimary } from './portal-styles';
+import { portalPrimary } from './portal-styles';
+import { adminCard, adminNum, AdminTable, adminTableClass, adminTd } from './admin-ui';
 import { WorkshopStatsView } from './workshop-stats-view';
 
 interface Query {
@@ -57,7 +58,7 @@ export function AdminWorkshopAnalyticsApi({ query }: { query: Query }) {
 
   if (error)
     return (
-      <div role="alert" className={`${portalCard} space-y-3`}>
+      <div role="alert" className={`${adminCard} space-y-3`}>
         <p className="text-sm font-bold text-error">{p(error)}</p>
         <button
           type="button"
@@ -109,7 +110,7 @@ function WorkshopTable({ data, locale }: { data: AdminWorkshopAnalytics; locale:
   };
   if (data.workshops.length === 0)
     return (
-      <section className={portalCard}>
+      <section className={adminCard}>
         <h3 className="font-heading text-base font-extrabold text-ink">{t('table_title')}</h3>
         <p className="mt-2 text-sm text-muted">{t('table_empty')}</p>
       </section>
@@ -119,10 +120,10 @@ function WorkshopTable({ data, locale }: { data: AdminWorkshopAnalytics; locale:
     numeric: key !== 'name',
   }));
   return (
-    <section className={portalCard}>
+    <section className={adminCard}>
       <h3 className="font-heading text-base font-extrabold text-ink">{t('table_title')}</h3>
-      <ScrollRegion label={t('table_title')} className="mt-2">
-        <table className="w-full min-w-max border-collapse text-sm">
+      <AdminTable label={t('table_title')}>
+        <table className={`${adminTableClass} min-w-max`}>
           <caption className="sr-only">{t('table_title')}</caption>
           <thead>
             <tr>
@@ -167,25 +168,23 @@ function WorkshopTable({ data, locale }: { data: AdminWorkshopAnalytics; locale:
                   >
                     {localName(w, locale)}
                   </th>
-                  <td className="px-2 py-2 text-right tabular-nums text-ink">{n(w.requests)}</td>
-                  <td className="px-2 py-2 text-right tabular-nums text-ink">{pct(r.acceptancePercent)}</td>
-                  <td className="px-2 py-2 text-right tabular-nums text-ink">
-                    {minutes(w.medianMinutesToPropose)}
-                  </td>
-                  <td className="px-2 py-2 text-right tabular-nums text-ink">{pct(r.approvalPercent)}</td>
-                  <td className="px-2 py-2 text-right tabular-nums text-ink">
+                  <td className={`${adminTd} ${adminNum}`}>{n(w.requests)}</td>
+                  <td className={`${adminTd} ${adminNum}`}>{pct(r.acceptancePercent)}</td>
+                  <td className={`${adminTd} ${adminNum}`}>{minutes(w.medianMinutesToPropose)}</td>
+                  <td className={`${adminTd} ${adminNum}`}>{pct(r.approvalPercent)}</td>
+                  <td className={`${adminTd} ${adminNum}`}>
                     {r.averageBillPaise === null ? none : formatPrice(r.averageBillPaise)}
                   </td>
-                  <td className="px-2 py-2 text-right tabular-nums text-ink">
+                  <td className={`${adminTd} ${adminNum}`}>
                     {w.ratingTenths === null ? none : ratingText(w.ratingTenths)}
                   </td>
-                  <td className="px-2 py-2 text-right tabular-nums text-ink">{pct(r.returnedPercent)}</td>
+                  <td className={`${adminTd} ${adminNum}`}>{pct(r.returnedPercent)}</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
-      </ScrollRegion>
+      </AdminTable>
     </section>
   );
 }

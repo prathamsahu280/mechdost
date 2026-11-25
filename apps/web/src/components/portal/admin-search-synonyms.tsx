@@ -13,7 +13,8 @@ import { adminApi } from '@/lib/admin-api';
 import { commonErrorKey } from '@/lib/api-error-key';
 import { track } from '@/lib/analytics';
 import { ApiListState } from './api-list-state';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 const BASE = '/admin/catalogue/search-synonyms';
 const OWN_ERROR: Record<string, 'syn_err_exists' | 'syn_err_category'> = {
@@ -102,7 +103,7 @@ export function AdminSearchSynonyms() {
   );
 
   return (
-    <section aria-labelledby="syn-title" className={`${portalCard} space-y-4`}>
+    <section aria-labelledby="syn-title" className={`${adminCard} space-y-4`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 id="syn-title" className="font-heading text-lg font-extrabold text-ink">

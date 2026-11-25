@@ -7,7 +7,9 @@ import { fetchStaff, grantStaff, revokeStaff } from '@/lib/admin-people-api';
 import { formatDateTimeIst, peopleErrorKey } from '@/lib/admin-people-view';
 import { commonErrorKey } from '@/lib/api-error-key';
 import { track } from '@/lib/analytics';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { AdminHeaderActions, ADMIN_PAGE_TITLE_ID } from './admin-page-header';
+import { StatusBadge, adminCard } from './admin-ui';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 /** The staff roles the catalogue defines; their names are translated here (the API sends the English names). */
 const ROLE_KEYS = [
@@ -129,15 +131,9 @@ export function AdminStaffApi() {
   ) : null;
 
   return (
-    <section aria-labelledby="staff-title" className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 id="staff-title" className="font-heading text-xl font-extrabold text-ink">
-            {t('staff_title')}
-          </h2>
-          <p className="mt-1 max-w-2xl text-sm text-muted">{t('staff_lead')}</p>
-        </div>
-        {data && mode !== 'grant' ? (
+    <section aria-labelledby={ADMIN_PAGE_TITLE_ID} className="space-y-4">
+      {data && mode !== 'grant' ? (
+        <AdminHeaderActions>
           <button
             data-disclosure-trigger="staff-grant"
             type="button"
@@ -148,8 +144,8 @@ export function AdminStaffApi() {
           >
             {t('staff_give')}
           </button>
-        ) : null}
-      </div>
+        </AdminHeaderActions>
+      ) : null}
 
       {!data && !loadError ? (
         <p role="status" className="text-sm text-muted">
@@ -157,7 +153,7 @@ export function AdminStaffApi() {
         </p>
       ) : null}
       {loadError ? (
-        <div role="alert" className={`${portalCard} flex flex-wrap items-center gap-3`}>
+        <div role="alert" className={`${adminCard} flex flex-wrap items-center gap-3`}>
           <p className="text-sm font-bold text-error">{errorText(loadError)}</p>
           <button
             type="button"
@@ -179,7 +175,7 @@ export function AdminStaffApi() {
             void onGrant(e);
           }}
           aria-labelledby="staff-give-title"
-          className={`${portalCard} grid gap-3 min-[700px]:grid-cols-2`}
+          className={`${adminCard} grid gap-3 min-[700px]:grid-cols-2`}
         >
           <h3
             id="staff-give-title"
@@ -279,7 +275,7 @@ export function AdminStaffApi() {
       ) : null}
 
       {data?.staff.length === 0 ? (
-        <div className={portalCard}>
+        <div className={adminCard}>
           <p className="text-sm text-muted">{t('staff_empty')}</p>
         </div>
       ) : null}
@@ -331,28 +327,24 @@ function MemberCard({
   const t = useTranslations('adminPeople');
   const locale = useLocale();
   return (
-    <li className={portalCard}>
+    <li className={adminCard}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="font-heading text-base font-extrabold break-words text-ink">
             <span data-user-content>{m.name ?? t('staff_noName')}</span>
             {m.isSelf ? (
-              <span className="ml-2 rounded-pill bg-pill px-2.5 py-0.5 text-xs font-bold text-muted">
+              <StatusBadge tone="muted" className="ml-2">
                 {t('staff_you')}
-              </span>
+              </StatusBadge>
             ) : null}
           </p>
           <p className="mt-0.5 text-xs text-muted" lang="en">
             {m.phoneMasked ?? ''} {m.emailMasked ? `· ${m.emailMasked}` : ''}
           </p>
         </div>
-        <span
-          className={`rounded-pill px-3 py-1 text-xs font-extrabold ${
-            m.twoFactor === 'ready' ? 'bg-success-bg text-success' : 'bg-warning-bg text-warning'
-          }`}
-        >
+        <StatusBadge tone={m.twoFactor === 'ready' ? 'success' : 'warning'}>
           {m.twoFactor === 'ready' ? t('staff_2faReady') : t('staff_2faMissing')}
-        </span>
+        </StatusBadge>
       </div>
       <p className="mt-2 text-xs text-muted">
         {m.lastSignInAt

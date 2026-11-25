@@ -16,7 +16,9 @@ import { AUTH_MODE } from '@/lib/auth/mode';
 import { track } from '@/lib/analytics';
 import { formatDate } from '@/lib/format';
 import { TicketThread, useTicketLabels } from '@/components/support/ticket-thread';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { StatusBadge, adminCard } from './admin-ui';
+import { AdminToolbar } from './admin-page-header';
 
 const ERROR_LABEL = {
   empty: 'err_empty',
@@ -59,14 +61,8 @@ function DemoSupportInbox({ actor }: { actor: string }) {
   const [openCode, setOpenCode] = useState<string | null>(null);
 
   return (
-    <section aria-labelledby="inbox-title" className="space-y-4">
-      <div>
-        <h2 id="inbox-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('inboxTitle')}
-        </h2>
-        <p className="mt-1 max-w-prose text-sm text-muted">{t('inboxIntro')}</p>
-      </div>
-      <div role="group" aria-label={t('filterLabel')} className="flex flex-wrap gap-2">
+    <section aria-labelledby="admin-page-title" className="space-y-4">
+      <AdminToolbar label={t('filterLabel')}>
         {(['active', 'done'] as const).map((f) => (
           <button
             key={f}
@@ -82,7 +78,7 @@ function DemoSupportInbox({ actor }: { actor: string }) {
             {t(f === 'active' ? 'filter_active' : 'filter_done')}
           </button>
         ))}
-      </div>
+      </AdminToolbar>
       {tickets.length === 0 ? (
         <p className="rounded-card border border-line-card bg-surface p-5 text-sm text-muted">
           {t('inboxEmpty')}
@@ -154,7 +150,7 @@ function InboxTicket({
   }
 
   return (
-    <article className={portalCard}>
+    <article className={adminCard}>
       <button
         type="button"
         aria-expanded={open}
@@ -177,18 +173,16 @@ function InboxTicket({
         <span className="flex flex-wrap gap-2">
           {sla === 'ok' ? (
             ticket.acknowledgedAt || !ACTIVE.has(ticket.status) ? null : (
-              <span className="rounded-pill bg-pill px-3 py-1 text-xs font-bold text-ink">
+              <StatusBadge tone="neutral">
                 {t('dueAck', { date: formatDate(ticket.ackDue, locale) })}
-              </span>
+              </StatusBadge>
             )
           ) : (
             <span className="rounded-pill bg-error px-3 py-1 text-xs font-bold text-white">
               {t(sla === 'ack_overdue' ? 'overdueAck' : 'overdueResolve')}
             </span>
           )}
-          <span className="rounded-pill bg-pill px-3 py-1 text-xs font-bold text-ink">
-            {labels.status(ticket.status)}
-          </span>
+          <StatusBadge tone="neutral">{labels.status(ticket.status)}</StatusBadge>
         </span>
       </button>
       {open ? (

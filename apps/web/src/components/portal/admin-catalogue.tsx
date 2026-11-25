@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { AUTH_MODE } from '@/lib/auth/mode';
-import { portalCard } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 /** The editor (API calls, schemas, price board) loads only when the real backend is in use. */
 const CatalogueEditor = dynamic(() => import('./admin-catalogue-editor').then((m) => m.CatalogueEditor), {
@@ -23,20 +23,14 @@ const SearchSynonyms = dynamic(() => import('./admin-search-synonyms').then((m) 
 export function AdminCatalogue() {
   const t = useTranslations('portal');
   return (
-    <section aria-labelledby="catalogue-title" className="space-y-4">
-      <div>
-        <h2 id="catalogue-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('cat_title')}
-        </h2>
-        <p className="mt-1 text-sm text-muted">{t('cat_intro')}</p>
-      </div>
+    <section aria-labelledby="admin-page-title" className="space-y-4">
       {AUTH_MODE === 'firebase' ? (
         <>
           <CatalogueEditor />
           <SearchSynonyms />
         </>
       ) : (
-        <p className={`${portalCard} text-sm font-bold text-ink`}>{t('cat_demoNotice')}</p>
+        <p className={`${adminCard} text-sm font-bold text-ink`}>{t('cat_demoNotice')}</p>
       )}
     </section>
   );

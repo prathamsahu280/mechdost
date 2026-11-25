@@ -65,13 +65,18 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
   }
 
   if (c.code === 'API-ADM-STAFF' && c.state.form && c.state.form !== 'closed') {
-    const section = main.locator('section[aria-labelledby="staff-title"]');
+    const section = main.locator('section[aria-labelledby="admin-page-title"]');
     if (c.state.form === 'remove') {
       const remove = section.locator('li li button').first();
       if ((await remove.count()) === 0) notes.push('no role to remove');
       else await remove.click();
     } else {
-      const opened = await clickIfPresent(section.locator('button'), notes, 'no give-role button');
+      // The screen's primary action lives in the page header (admin round 2), outside the section element.
+      const opened = await clickIfPresent(
+        main.locator('[data-disclosure-trigger="staff-grant"]'),
+        notes,
+        'no give-role button',
+      );
       if (opened && c.state.form === 'give-error')
         await clickIfPresent(
           section.locator('form button[type="submit"]:visible:enabled'),
@@ -83,8 +88,8 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
   }
 
   if (c.code === 'API-ADM-COUPONS' && c.state.form && c.state.form !== 'closed') {
-    const section = main.locator('section[aria-labelledby="coupons-admin-title"]');
-    await section.locator('button').first().click();
+    const section = main.locator('section[aria-labelledby="admin-page-title"]');
+    await main.locator('[data-disclosure-trigger="coupon-new"]').click();
     if (c.state.form === 'errors') await section.locator('form button[type="submit"]').click();
     await settleApi(page);
   }
@@ -189,7 +194,7 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
     await settleApi(page);
   }
   if (c.code === 'API-ADM-SUPPORT' || c.code === 'API-ADM-SUPPORT-TOOLS') {
-    await main.locator('section[aria-labelledby="inbox-title"] ul li button').first().click();
+    await main.locator('section[aria-labelledby="admin-page-title"] ul li button').first().click();
     await settleApi(page);
   }
 

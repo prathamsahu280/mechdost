@@ -26,19 +26,15 @@ import {
 import { track } from '@/lib/analytics';
 import { daysLabel } from '@/lib/service-views';
 import { ApiListState } from './api-list-state';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { ServiceApiError } from './service-api-error';
+import { StatusBadge, adminCard } from './admin-ui';
 
 type Load =
   { kind: 'loading' } | { kind: 'error'; code: string } | { kind: 'ok'; workshops: AdminWorkshop[] };
 type Open = { kind: 'none' } | { kind: 'create' } | { kind: 'edit'; id: string };
 type TextKey = { [K in keyof WorkshopForm]: WorkshopForm[K] extends string ? K : never }[keyof WorkshopForm];
 type RowTextKey = { [K in keyof MenuRow]: MenuRow[K] extends string ? K : never }[keyof MenuRow];
-const PILL: Record<AdminWorkshop['status'], string> = {
-  approved: 'bg-success-bg text-success',
-  paused: 'bg-warning-bg text-warning',
-  suspended: 'bg-pill text-error',
-};
 
 /** The city's workshops for the admin screens (shared by the workshop list and request routing). */
 export function useAdminWorkshops() {
@@ -154,7 +150,7 @@ function WorkshopRow({
   const locale = useLocale();
   const [panel, setPanel] = useState<'none' | 'standing' | 'member'>('none');
   return (
-    <article className={portalCard}>
+    <article className={adminCard}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-heading text-lg font-extrabold text-ink">
@@ -165,27 +161,27 @@ function WorkshopRow({
             {daysLabel(w.hours.days, locale)} {w.hours.open}–{w.hours.close}
           </p>
           <ul className="mt-2 flex flex-wrap gap-2 text-xs font-bold">
-            <li className={`rounded-pill px-3 py-1 ${PILL[w.status]}`}>{t(`ws_api_status_${w.status}`)}</li>
-            <li
-              className={`rounded-pill px-3 py-1 ${w.published ? 'bg-success-bg text-success' : 'bg-pill text-muted'}`}
-            >
+            <StatusBadge as="li" code={w.status}>
+              {t(`ws_api_status_${w.status}`)}
+            </StatusBadge>
+            <StatusBadge as="li" tone={w.published ? 'success' : 'muted'}>
               {w.published ? t('ws_api_published') : t('ws_api_unpublished')}
-            </li>
-            <li
-              className={`rounded-pill px-3 py-1 ${w.locationVerified ? 'bg-success-bg text-success' : 'bg-warning-bg text-warning'}`}
-            >
+            </StatusBadge>
+            <StatusBadge as="li" tone={w.locationVerified ? 'success' : 'warning'}>
               {w.locationVerified ? t('ws_api_locationVerified') : t('ws_api_locationUnverified')}
-            </li>
+            </StatusBadge>
             {w.busy ? (
-              <li className="rounded-pill bg-warning-bg px-3 py-1 text-warning">{t('ws_api_busy')}</li>
+              <StatusBadge as="li" tone="warning">
+                {t('ws_api_busy')}
+              </StatusBadge>
             ) : null}
-            <li className="rounded-pill bg-pill px-3 py-1 text-ink">
+            <StatusBadge as="li" tone="neutral">
               {t('ws_api_menuCount', { count: w.menu.filter((m) => m.active).length })}
-            </li>
+            </StatusBadge>
             {w.missingHindi.length > 0 ? (
-              <li className="rounded-pill bg-warning-bg px-3 py-1 text-warning">
+              <StatusBadge as="li" tone="warning">
                 {t('ws_api_missingHindi', { count: w.missingHindi.length })}
-              </li>
+              </StatusBadge>
             ) : null}
           </ul>
           {w.statusReason && w.status !== 'approved' ? (
@@ -571,7 +567,7 @@ function WorkshopEditor({
       noValidate
       onSubmit={(e) => void onSubmit(e)}
       aria-busy={busy || undefined}
-      className={`${portalCard} space-y-4 border-accent-button/50`}
+      className={`${adminCard} space-y-4 border-accent-button/50`}
     >
       <h4 className="font-heading text-lg font-extrabold text-ink">
         {original ? t('ws_api_editTitle') : t('ws_api_addTitle')}

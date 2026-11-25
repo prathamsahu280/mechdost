@@ -28,7 +28,8 @@ import { builtInPolicy, POLICY_PATH } from '@/lib/policy-view';
 import { companyFacts, site } from '@/lib/site';
 import { PolicySections } from '../ui/policy-sections';
 import { LoadState } from './admin-site-api';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { StatusBadge, adminCard } from './admin-ui';
 
 /**
  * Admin -> Content -> Policy pages (design 2026-11-15 item 5; spec 08). Per policy and language: edit the sections,
@@ -125,7 +126,7 @@ export function PoliciesApi() {
         </h2>
         <p className="mt-1 text-sm text-muted">{t('pol_lead')}</p>
       </div>
-      <div className={`${portalCard} flex flex-wrap items-end gap-4`}>
+      <div className={`${adminCard} flex flex-wrap items-end gap-4`}>
         <div>
           <label htmlFor="policy-pick" className="text-sm font-bold text-ink">
             {t('pol_pick')}
@@ -326,7 +327,7 @@ function PolicyEditor({
 
   if (!form)
     return (
-      <div className={`${portalCard} space-y-3`}>
+      <div className={`${adminCard} space-y-3`}>
         <p className="text-sm text-muted">{t('pol_builtInNow')}</p>
         <button
           type="button"
@@ -355,7 +356,7 @@ function PolicyEditor({
         onSubmit={(e) => {
           void onSave(e);
         }}
-        className={`${portalCard} space-y-4`}
+        className={`${adminCard} space-y-4`}
         noValidate
       >
         <p className="text-sm text-muted" role="note">
@@ -587,7 +588,7 @@ function PolicyEditor({
       </form>
 
       {preview ? (
-        <section aria-labelledby={`${uid}-preview`} className={portalCard}>
+        <section aria-labelledby={`${uid}-preview`} className={adminCard}>
           <h3 id={`${uid}-preview`} className="font-heading text-lg font-extrabold text-ink">
             {t('pol_previewTitle')}
           </h3>
@@ -619,7 +620,7 @@ function PolicyEditor({
         </section>
       ) : null}
 
-      <section aria-labelledby={`${uid}-history`} className={portalCard}>
+      <section aria-labelledby={`${uid}-history`} className={adminCard}>
         <h3 id={`${uid}-history`} className="font-heading text-lg font-extrabold text-ink">
           {t('pol_historyTitle')}
         </h3>
@@ -651,9 +652,7 @@ function PolicyEditor({
                     : ''}
                 </span>
                 {i === 0 ? (
-                  <span className="rounded-pill bg-accent-soft px-2 py-0.5 text-xs font-bold text-accent-soft-text">
-                    {t('pol_current')}
-                  </span>
+                  <StatusBadge tone="accent">{t('pol_current')}</StatusBadge>
                 ) : confirm === v.versionNo ? (
                   <span className="ml-auto flex flex-wrap items-center gap-2">
                     <span className="text-xs text-muted">{t('pol_restoreAsk', { n: v.versionNo })}</span>

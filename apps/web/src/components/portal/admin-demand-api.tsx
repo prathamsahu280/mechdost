@@ -4,8 +4,8 @@ import { WaitlistDemandDto, type WaitlistDemand } from '@mechdost/shared/waitlis
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useId, useState } from 'react';
 import { adminApi } from '@/lib/admin-api';
-import { ScrollRegion } from '../ui/scroll-region';
-import { portalCard } from './portal-styles';
+
+import { adminCard, adminNum, AdminTable, adminTableClass, adminTd, adminTh } from './admin-ui';
 
 type Load = { kind: 'loading' } | { kind: 'error' } | { kind: 'ok'; demand: WaitlistDemand };
 
@@ -32,10 +32,10 @@ export function AdminDemandApi() {
   }, [locale]);
 
   return (
-    <section aria-labelledby={titleId} className={`${portalCard} space-y-3`}>
-      <h2 id={titleId} className="font-heading text-lg font-extrabold text-ink">
+    <section aria-labelledby={titleId} className={`${adminCard} space-y-3`}>
+      <h3 id={titleId} className="font-heading text-lg font-extrabold text-ink">
         {t('title')}
-      </h2>
+      </h3>
       <p className="max-w-prose text-sm text-muted">{t('intro')}</p>
       {load.kind === 'loading' ? <div className="skeleton h-24 rounded-card" aria-hidden="true" /> : null}
       {load.kind === 'error' ? (
@@ -49,26 +49,26 @@ export function AdminDemandApi() {
       {load.kind === 'ok' && load.demand.rows.length > 0 ? (
         <>
           <p className="text-sm font-bold text-ink">{t('total', { count: load.demand.totalWaiting })}</p>
-          <ScrollRegion labelledBy={titleId}>
-            <table className="w-full min-w-[34rem] text-left text-sm">
-              <thead className="text-[13px] text-muted">
+          <AdminTable label={t('title')}>
+            <table className={`${adminTableClass} min-w-[34rem]`}>
+              <thead>
                 <tr>
-                  <th scope="col" className="py-2 pr-3 font-bold">
+                  <th scope="col" className={adminTh}>
                     {t('pincode')}
                   </th>
-                  <th scope="col" className="py-2 pr-3 font-bold">
+                  <th scope="col" className={adminTh}>
                     {t('city')}
                   </th>
-                  <th scope="col" className="py-2 pr-3 font-bold">
+                  <th scope="col" className={adminTh}>
                     {t('area')}
                   </th>
-                  <th scope="col" className="py-2 pr-3 text-right font-bold">
+                  <th scope="col" className={`${adminTh} ${adminNum}`}>
                     {t('waiting')}
                   </th>
-                  <th scope="col" className="py-2 pr-3 text-right font-bold">
+                  <th scope="col" className={`${adminTh} ${adminNum}`}>
                     {t('told')}
                   </th>
-                  <th scope="col" className="py-2 font-bold">
+                  <th scope="col" className={adminTh}>
                     {t('status')}
                   </th>
                 </tr>
@@ -76,19 +76,19 @@ export function AdminDemandApi() {
               <tbody className="divide-y divide-line">
                 {load.demand.rows.map((r) => (
                   <tr key={r.pincode}>
-                    <td className="py-2 pr-3 font-bold text-ink">{r.pincode}</td>
-                    <td className="py-2 pr-3 text-ink">{r.cityCode ?? t('noCity')}</td>
-                    <td data-user-content className="py-2 pr-3 text-ink">
+                    <td className={adminTd}>{r.pincode}</td>
+                    <td className={adminTd}>{r.cityCode ?? t('noCity')}</td>
+                    <td data-user-content className={adminTd}>
                       {(locale === 'hi' ? r.areaHi : r.area) ?? ''}
                     </td>
-                    <td className="py-2 pr-3 text-right font-bold text-ink">{r.waiting}</td>
-                    <td className="py-2 pr-3 text-right text-ink">{r.notified}</td>
-                    <td className="py-2 text-ink">{r.servedNow ? t('served') : t('notServed')}</td>
+                    <td className={`${adminTd} ${adminNum}`}>{r.waiting}</td>
+                    <td className={`${adminTd} ${adminNum}`}>{r.notified}</td>
+                    <td className={adminTd}>{r.servedNow ? t('served') : t('notServed')}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </ScrollRegion>
+          </AdminTable>
         </>
       ) : null}
     </section>

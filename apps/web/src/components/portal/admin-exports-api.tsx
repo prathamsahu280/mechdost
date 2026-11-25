@@ -17,7 +17,8 @@ import {
   localRangeError,
   type ExportErrorKey,
 } from '@/lib/admin-exports-view';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 interface Done {
   rows: number;
@@ -102,7 +103,7 @@ export function AdminExportsApi() {
     return (
       <section aria-labelledby="exports-title" className="space-y-4">
         <Heading id="exports-title" title={t('title')} lead={t('lead', { days: MAX_EXPORT_DAYS })} />
-        <div role="alert" className={`${portalCard} flex flex-wrap items-center gap-3`}>
+        <div role="alert" className={`${adminCard} flex flex-wrap items-center gap-3`}>
           <p className="text-sm font-bold text-error">{tc(commonErrorKey(loadError))}</p>
           <button
             type="button"
@@ -126,7 +127,7 @@ export function AdminExportsApi() {
           {tc('api_common_loading')}
         </p>
       ) : options.datasets.length === 0 ? (
-        <div className={portalCard}>
+        <div className={adminCard}>
           <p className="text-sm text-muted">{t('none')}</p>
         </div>
       ) : (
@@ -136,7 +137,7 @@ export function AdminExportsApi() {
           }}
           noValidate
           aria-busy={busy}
-          className={`${portalCard} grid gap-4 min-[700px]:grid-cols-2`}
+          className={`${adminCard} grid gap-4 min-[700px]:grid-cols-2`}
         >
           <div>
             <label htmlFor="export-dataset" className="text-sm font-bold text-ink">

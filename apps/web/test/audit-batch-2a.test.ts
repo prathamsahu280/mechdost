@@ -22,11 +22,18 @@ describe('refund lines are a valid list (API-ORD-REFUNDLINE)', () => {
 
 describe('scrolling tables are keyboard reachable (API-ADM-ANALYTICS / COMPANY / DEMAND)', () => {
   const region = src('components/ui/scroll-region.tsx');
+  const adminTable = src('components/portal/admin-ui.tsx');
   it('the shared region is focusable, named, and shows the shared focus ring', () => {
     expect(region).toContain('tabIndex={0}');
     expect(region).toContain('role="region"');
     expect(region).toMatch(/aria-label|aria-labelledby/);
     expect(region).toContain('overflow-x-auto');
+  });
+  it('the admin table box is a named, focusable scroll region too', () => {
+    expect(adminTable).toContain('tabIndex={0}');
+    expect(adminTable).toContain('role="region"');
+    expect(adminTable).toMatch(/aria-label/);
+    expect(adminTable).toContain('overflow-x-auto');
   });
   for (const file of [
     'components/portal/analytics-charts.tsx',
@@ -36,7 +43,8 @@ describe('scrolling tables are keyboard reachable (API-ADM-ANALYTICS / COMPANY /
     it(`${file} has no bare overflow-x-auto wrapper`, () => {
       const s = src(file);
       expect(s).not.toMatch(/className="[^"]*overflow-x-auto/);
-      expect(s).toContain('<ScrollRegion');
+      // `AdminTable` (admin round 2, 2026-11-25) is the same named, focusable region for admin tables.
+      expect(s).toMatch(/<ScrollRegion|<AdminTable/);
     });
   }
 });

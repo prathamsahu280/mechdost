@@ -166,12 +166,18 @@ export function baselineMocks(c: AuditCase): Mock[] {
  */
 let sectionCases: AuditCase[] | null = null;
 function navSectionMocks(c: AuditCase): Mock[] {
-  const scroll = c.code === 'API-ADM-SCROLL';
+  const scroll = c.code === 'API-ADM-SCROLL' || c.code === 'API-ADM-HEADER';
   if (!c.code.startsWith('API-NAV-') && !scroll) return [];
   sectionCases ??= (() => {
     const seen = new Set<string>();
     return buildCases().filter((x) => {
-      if (!x.realApi || x.code.startsWith('API-NAV-') || x.code === 'API-ADM-SCROLL' || seen.has(x.code))
+      if (
+        !x.realApi ||
+        x.code.startsWith('API-NAV-') ||
+        x.code === 'API-ADM-SCROLL' ||
+        x.code === 'API-ADM-HEADER' ||
+        seen.has(x.code)
+      )
         return false;
       seen.add(x.code);
       return true;
@@ -180,7 +186,8 @@ function navSectionMocks(c: AuditCase): Mock[] {
   const admin = c.code === 'API-NAV-ADMIN' || scroll;
   const first = sectionCases.filter((x) => x.code.startsWith('API-ADM-') === admin);
   const rest = sectionCases.filter((x) => x.code.startsWith('API-ADM-') !== admin);
-  return [...first, ...rest].flatMap((x) => mocksFor(x)).concat(navQuietMocks());
+  // Each section's mock data speaks the audited case's language (the Hindi gate reads it on /hi).
+  return [...first, ...rest].flatMap((x) => mocksFor({ ...x, locale: c.locale })).concat(navQuietMocks());
 }
 
 /** Everything the mocked API answers for one case: its row's mocks first, then the baseline (first match wins). */

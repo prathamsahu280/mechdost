@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { apiErrorKey } from '@/lib/order-views';
+import { AdminSkeleton, EmptyState } from './admin-ui';
 import { portalQuiet } from './portal-styles';
 
 /** An API error in the screen's words (`portal.api_err_*`). */
@@ -34,7 +35,7 @@ export function ApiListState({
   onRetry: () => void;
 }) {
   const t = useTranslations('portal');
-  if (loading) return <p className="mt-3 text-sm text-muted">{t('api_loading')}</p>;
+  if (loading) return <AdminSkeleton rows={3} label={t('api_loading')} />;
   if (error)
     return (
       <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -47,7 +48,13 @@ export function ApiListState({
       </div>
     );
   if (count === 0)
-    return typeof empty === 'string' ? <p className="mt-3 text-sm text-muted">{empty}</p> : empty;
+    return typeof empty === 'string' ? (
+      <div className="mt-3">
+        <EmptyState title={empty} />
+      </div>
+    ) : (
+      empty
+    );
   return null;
 }
 

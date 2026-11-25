@@ -62,6 +62,7 @@ export type Check =
   | 'hscroll'
   | 'offphoto'
   | 'scroll'
+  | 'adminhead'
   | 'focus'
   | 'console'
   | 'sync'
@@ -85,6 +86,8 @@ export const CHECK_TEXT: Readonly<Record<Check, string>> = {
   offphoto: 'the round buttons (info, save) of a card never sit on the product picture',
   scroll:
     'the page is the only vertical scroller (side bar and text boxes marked data-scroll excepted); the side bar stays in view under the header after scrolling; never two tall columns stuck at once',
+  adminhead:
+    'admin page pattern: one header (title = the current side bar item, one-line description), status badges 12 px or more and never clipped, empty states with at most one action, tables only scroll inside their own box',
   focus: 'a visible, unclipped focus ring on every control reached by Tab',
   console: 'no console error, page error or failed request to our server',
   sync: 'controls agree with the stored state (compare pressed = in list, stepper = in cart, tray count)',
@@ -1322,6 +1325,28 @@ export const COMPONENTS: readonly ComponentDef[] = [
       { name: 'world', values: ['busy'] },
     ],
     checks: ['present', 'scroll', 'hscroll', 'console'],
+  },
+
+  // Admin page pattern (design 2026-11-25, admin round 2): one header, badges, empty states and tables in the same
+  // shape on every section, at every width from 320 to 1920 px, in both themes and languages.
+  {
+    code: 'ADM-HEADER',
+    page: 'Admin console (/admin)',
+    component:
+      'Page pattern: one header per section (title = side bar item, one-line description, primary action on the right), status badges, empty states, table boxes; 320 to 1920 px, both themes, English and Hindi',
+    path: (r) => adminPath(String(r.section)),
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      { name: 'width', values: [320, 390, 768, 1024, 1440, 1920] },
+      { name: 'section', values: [...ADMIN_SECTIONS] },
+      theme,
+      locale,
+      { name: 'auth', values: ['admin'] },
+      { name: 'world', values: ['busy'] },
+    ],
+    checks: ['present', 'adminhead', 'hscroll', 'console'],
+    sweep: 0,
   },
 
   ...NAVIGATION,

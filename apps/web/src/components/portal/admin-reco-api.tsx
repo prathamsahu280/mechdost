@@ -9,7 +9,8 @@ import {
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useId, useState, type SyntheticEvent } from 'react';
 import { adminApi } from '@/lib/admin-api';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 interface Category {
   id: string;
@@ -169,7 +170,7 @@ export function AdminRecoApi() {
   );
 
   return (
-    <section aria-labelledby={field('title')} className={`${portalCard} space-y-4`}>
+    <section aria-labelledby={field('title')} className={`${adminCard} space-y-4`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 id={field('title')} className="font-heading text-lg font-extrabold text-ink">

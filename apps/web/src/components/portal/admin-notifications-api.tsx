@@ -33,7 +33,8 @@ import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import type { NotifyDefaults } from './admin-notifications';
 import { EVENT_LABEL, PROBLEM_LABEL, SAMPLES } from './notify-labels';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 /** The Emails tab (spec 10, design 2026-11-15) is loaded on demand: its template catalogue and preview code stay out of the WhatsApp tab. */
 const NoticesPanel = dynamic(() => import('./admin-notices-api').then((m) => m.NoticesPanel), { ssr: false });
@@ -93,13 +94,7 @@ export function NotificationsApi({ defaults }: { defaults: NotifyDefaults }) {
   const onCount = views.filter(([, v]) => v.enabled).length;
 
   return (
-    <section aria-labelledby="notify-title" className="space-y-5">
-      <div>
-        <h2 id="notify-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('notify_title')}
-        </h2>
-        <p className="mt-1 max-w-prose text-sm text-muted">{t('notify_intro')}</p>
-      </div>
+    <section aria-labelledby="admin-page-title" className="space-y-5">
       <div role="tablist" aria-label={tabs('tabs_label')} className="flex flex-wrap gap-2">
         {(['whatsapp', 'emails', 'notices'] as const).map((id) => (
           <button
@@ -121,7 +116,7 @@ export function NotificationsApi({ defaults }: { defaults: NotifyDefaults }) {
       {tab === 'emails' ? <EmailsPanel /> : null}
       {tab === 'notices' ? <NoticesPanel /> : null}
       {tab !== 'whatsapp' ? null : error ? (
-        <div role="alert" className={`${portalCard} space-y-3`}>
+        <div role="alert" className={`${adminCard} space-y-3`}>
           <p className="text-sm font-bold text-error">{t(error)}</p>
           <button
             type="button"
@@ -136,7 +131,7 @@ export function NotificationsApi({ defaults }: { defaults: NotifyDefaults }) {
         </div>
       ) : null}
       {tab !== 'whatsapp' ? null : !data && !error ? (
-        <p role="status" className={`${portalCard} text-sm text-muted`}>
+        <p role="status" className={`${adminCard} text-sm text-muted`}>
           {t('api_common_loading')}
         </p>
       ) : null}
@@ -233,7 +228,7 @@ function EventCard({
       onSubmit={(e) => {
         void onSubmit(e);
       }}
-      className={portalCard}
+      className={adminCard}
       noValidate
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -373,7 +368,7 @@ function BudgetCard({ usage, onReload }: { usage: WhatsAppUsageDto; onReload: ()
       onSubmit={(e) => {
         void onSubmit(e);
       }}
-      className={portalCard}
+      className={adminCard}
       noValidate
     >
       <h3 className="font-heading text-base font-extrabold text-ink">{t('notify_budget_title')}</h3>

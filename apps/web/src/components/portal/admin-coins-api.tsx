@@ -17,7 +17,8 @@ import { track } from '@/lib/analytics';
 import { adjustDeltaFrom, coinEntryLabel, coinErrorKey, type CoinErrorKey } from '@/lib/coins-view';
 import { customerIdFrom } from '@/lib/customer-blocks-view';
 import { formatDate } from '@/lib/format';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 type ErrorText = CoinErrorKey | CommonErrorKey | 'coins_api_err_reason';
 const errorOf = (code: string): ErrorText => coinErrorKey(code) ?? commonErrorKey(code);
@@ -55,14 +56,8 @@ export function AdminCoinsApi() {
   }
 
   return (
-    <section aria-labelledby="coins-admin-title" className="space-y-4">
-      <div>
-        <h2 id="coins-admin-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('nav_coins')}
-        </h2>
-        <p className="mt-1 text-sm text-muted">{t('coins_api_lead')}</p>
-      </div>
-      <form onSubmit={onFind} className={portalCard} noValidate>
+    <section aria-labelledby="admin-page-title" className="space-y-4">
+      <form onSubmit={onFind} className={adminCard} noValidate>
         <label htmlFor="api-coins-id" className="text-sm font-bold text-ink">
           {t('api_block_id_label')}
         </label>
@@ -211,7 +206,7 @@ function CoinAccount({ userId }: { userId: string }) {
 
   if (!acct)
     return loadError ? (
-      <div role="alert" className={`${portalCard} space-y-3`}>
+      <div role="alert" className={`${adminCard} space-y-3`}>
         <p className="text-sm font-bold text-error">{t(loadError)}</p>
         <button
           type="button"
@@ -225,7 +220,7 @@ function CoinAccount({ userId }: { userId: string }) {
         </button>
       </div>
     ) : (
-      <p role="status" className={`${portalCard} text-sm text-muted`}>
+      <p role="status" className={`${adminCard} text-sm text-muted`}>
         {t('api_common_loading')}
       </p>
     );
@@ -234,7 +229,7 @@ function CoinAccount({ userId }: { userId: string }) {
     error?.field === field ? { 'aria-invalid': true, 'aria-describedby': `${idBase}-error` } : {};
 
   return (
-    <article className={portalCard} aria-labelledby={`${idBase}-title`}>
+    <article className={adminCard} aria-labelledby={`${idBase}-title`}>
       <p
         id={`${idBase}-title`}
         className="font-heading text-base font-extrabold break-all text-ink"
@@ -366,7 +361,7 @@ function Activity({ onOpen }: { onOpen: (userId: string) => void }) {
   }, [load]);
 
   return (
-    <section aria-labelledby="coins-activity-title" className={portalCard}>
+    <section aria-labelledby="coins-activity-title" className={adminCard}>
       <h3 id="coins-activity-title" className="font-heading text-lg font-extrabold text-ink">
         {t('coinsActivity')}
       </h3>

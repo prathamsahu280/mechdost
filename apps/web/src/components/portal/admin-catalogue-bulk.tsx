@@ -13,7 +13,8 @@ import { errorKey } from '@/lib/admin-prices-view';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import { parseRupees } from '@/lib/money-input';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { adminCard } from './admin-ui';
 import { productFullName } from '@/lib/product-name';
 
 /** Most products the MRP panel opens at once (it loads each product's packs). The API accepts up to 500 packs. */
@@ -62,7 +63,7 @@ export function BulkBar({
     <div
       ref={barRef}
       tabIndex={-1}
-      className={`${portalCard} space-y-3`}
+      className={`${adminCard} space-y-3`}
       aria-label={t('cat_bulk_label')}
       role="region"
     >

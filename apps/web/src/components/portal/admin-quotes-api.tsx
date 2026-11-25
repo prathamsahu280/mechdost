@@ -20,7 +20,9 @@ import {
   type QuoteMessageKey,
 } from '@/lib/quote-views';
 import { PhotoPicker, QuoteAttachments, SeenMark } from '@/components/quotes/quote-attachments';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { adminCard } from './admin-ui';
+import { AdminToolbar } from './admin-page-header';
 
 type List =
   | { kind: 'loading' }
@@ -94,11 +96,8 @@ export function QuoteDeskApi() {
 
   return (
     <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)] xl:items-start">
-      <section aria-labelledby="quote-list">
-        <h2 id="quote-list" className="font-heading text-xl font-extrabold text-ink">
-          {t('nav_quotes')}
-        </h2>
-        <div role="group" aria-label={q('api_admin_views')} className="mt-3 flex flex-wrap gap-2">
+      <section aria-labelledby="admin-page-title">
+        <AdminToolbar label={q('api_admin_views')}>
           {ADMIN_QUOTE_VIEWS.map((v) => (
             <button
               key={v}
@@ -117,7 +116,7 @@ export function QuoteDeskApi() {
               {q(`api_admin_view_${v}`)}
             </button>
           ))}
-        </div>
+        </AdminToolbar>
         {list.kind === 'loading' ? (
           <p role="status" className="mt-3 text-sm text-muted">
             {q('api_loading')}
@@ -181,7 +180,7 @@ export function QuoteDeskApi() {
         </p>
       ) : null}
       {detail.kind === 'error' ? (
-        <div className={`${portalCard} flex flex-wrap items-center gap-3`}>
+        <div className={`${adminCard} flex flex-wrap items-center gap-3`}>
           <p role="alert" className="font-bold text-ink">
             {q(quoteErrorKey(detail.code))}
           </p>
@@ -205,7 +204,7 @@ function QuoteWork({ quote, onChanged }: { quote: QuoteDetail; onChanged: () => 
   const offer = quote.currentOffer;
   return (
     <div className="space-y-6">
-      <section aria-labelledby="quote-chat" className={portalCard}>
+      <section aria-labelledby="quote-chat" className={adminCard}>
         <h2 id="quote-chat" className="font-heading text-lg font-extrabold text-ink">
           {quote.code} · <span data-user-content>{quote.address.contactName}</span> ·{' '}
           {q(quoteStatusKey(quote.status))}
@@ -470,7 +469,7 @@ function OfferBuilder({ quote, onChanged }: { quote: QuoteDetail; onChanged: () 
       onSubmit={(e) => void submit(e)}
       noValidate
       aria-labelledby="offer-builder"
-      className={`${portalCard} space-y-4`}
+      className={`${adminCard} space-y-4`}
     >
       <h2 id="offer-builder" className="font-heading text-lg font-extrabold text-ink">
         {t('offerBuilder')}
@@ -661,7 +660,7 @@ function Withdraw({ quote, onChanged }: { quote: QuoteDetail; onChanged: () => P
   }
 
   return (
-    <form onSubmit={(e) => void submit(e)} className={`${portalCard} space-y-3`}>
+    <form onSubmit={(e) => void submit(e)} className={`${adminCard} space-y-3`}>
       <h2 className="font-heading text-lg font-extrabold text-ink">{q('api_admin_withdraw')}</h2>
       <div>
         <label htmlFor="withdraw-reason" className="text-sm font-bold text-ink">

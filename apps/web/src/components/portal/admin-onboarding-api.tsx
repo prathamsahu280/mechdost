@@ -32,7 +32,8 @@ import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
 import { parseCoverage } from '@/lib/partner-onboarding-view';
 import { GenuineClauseButton } from './genuine-clause';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 /**
  * Seller onboarding in the admin console on the API (Stream D, 2026-11-14; spec 07/08): applications (review,
@@ -209,7 +210,7 @@ function ApplicationCard({ row: a, onChanged }: { row: ApplicationRowDto; onChan
   }
 
   return (
-    <li className={portalCard}>
+    <li className={adminCard}>
       <p className="mb-2 inline-flex rounded-pill bg-pill px-3 py-1 text-xs font-extrabold text-ink">
         {a.kind === 'seller' ? t('kind_seller') : a.kind === 'garage' ? t('kind_garage') : t('kind_mechanic')}{' '}
         · {t(`api_on_status_${a.status}`)}
@@ -714,7 +715,7 @@ export function InvitesApi() {
   };
 
   return (
-    <section aria-labelledby="invites-title" className={portalCard}>
+    <section aria-labelledby="invites-title" className={adminCard}>
       <h3 id="invites-title" className="font-heading text-lg font-extrabold text-ink">
         {t('invitesTitle')}
       </h3>
@@ -802,7 +803,7 @@ export function PriceRequestsApi() {
   const t = useTranslations('portal');
   const list = usePaged<PriceRequestRowDto>('/admin/price-requests?status=pending', PriceRequestPage);
   return (
-    <section aria-labelledby="price-requests-title" className={portalCard}>
+    <section aria-labelledby="price-requests-title" className={adminCard}>
       <h3 id="price-requests-title" className="font-heading text-lg font-extrabold text-ink">
         {t('priceRequestsTitle')}
       </h3>
@@ -984,7 +985,7 @@ export function AgreementApi() {
   }
 
   return (
-    <section aria-labelledby="agreement-admin-title" className={portalCard}>
+    <section aria-labelledby="agreement-admin-title" className={adminCard}>
       <h3 id="agreement-admin-title" className="font-heading text-lg font-extrabold text-ink">
         {t('agreementTitle')}
       </h3>

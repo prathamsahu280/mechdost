@@ -1,6 +1,20 @@
 'use client';
 
-import Link from 'next/link';
+import {
+  Handshake,
+  Headset,
+  Hourglass,
+  IndianRupee,
+  RotateCcw,
+  Route,
+  ShieldAlert,
+  ShoppingBag,
+  Star,
+  Tag,
+  Truck,
+  Wrench,
+  type LucideIcon,
+} from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import type { AdminOverview } from '@mechdost/shared/admin-analytics-api';
@@ -10,14 +24,18 @@ import { formatPrice } from '@/lib/format';
 import { startPolling } from '@/lib/storefront-poll';
 import { ADMIN_SECTIONS, type AdminSection } from '@/lib/sections';
 import { PushPromptSlot } from '../notices/push-prompt-slot';
-import { portalCard, portalPrimary } from './portal-styles';
+import { OVERVIEW_TILE_HEIGHT, OverviewTile, type TileTone } from './admin-overview-tile';
+import { portalPrimary } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 interface Tile {
   label: string;
   value: number | null;
   money?: boolean;
   href: AdminSection;
-  alert?: boolean;
+  /** What the number means when it is above zero (a queue with nothing in it is neutral). */
+  tone: TileTone;
+  icon: LucideIcon;
 }
 
 /**
@@ -53,23 +71,79 @@ export function AdminOverviewApi() {
 
   const all: Tile[] = data
     ? [
-        { label: t('kpi_needsRouting'), value: data.ordersNeedRouting, href: 'orders', alert: true },
-        { label: t('kpi_awaitingShop'), value: data.ordersAwaitingShop, href: 'orders' },
-        { label: t('analytics_api_inProgress'), value: data.ordersInProgress, href: 'orders' },
+        {
+          label: t('kpi_needsRouting'),
+          value: data.ordersNeedRouting,
+          href: 'orders',
+          tone: 'warning',
+          icon: Route,
+        },
+        {
+          label: t('kpi_awaitingShop'),
+          value: data.ordersAwaitingShop,
+          href: 'orders',
+          tone: 'warning',
+          icon: Hourglass,
+        },
+        {
+          label: t('analytics_api_inProgress'),
+          value: data.ordersInProgress,
+          href: 'orders',
+          tone: 'info',
+          icon: Truck,
+        },
         {
           label: t('analytics_api_servicesToRoute'),
           value: data.servicesNeedRouting,
           href: 'services',
-          alert: true,
+          tone: 'warning',
+          icon: Wrench,
         },
-        { label: t('kpi_support'), value: data.ticketsOpen, href: 'support', alert: true },
-        { label: t('kpi_reviews'), value: data.reviewsPending, href: 'reviews' },
-        { label: t('kpi_applications'), value: data.applicationsPending, href: 'applications' },
-        { label: t('kpi_priceRequests'), value: data.priceRequestsPending, href: 'partners', alert: true },
-        { label: t('kpi_refundsWaiting'), value: data.refundsWaiting, href: 'refunds' },
-        { label: t('kpi_refundsChecking'), value: data.refundsNeedChecking, href: 'refunds', alert: true },
-        { label: t('analytics_api_today_orders'), value: data.ordersToday, href: 'analytics' },
-        { label: t('analytics_api_today_value'), value: data.gmvTodayPaise, money: true, href: 'analytics' },
+        { label: t('kpi_support'), value: data.ticketsOpen, href: 'support', tone: 'warning', icon: Headset },
+        { label: t('kpi_reviews'), value: data.reviewsPending, href: 'reviews', tone: 'info', icon: Star },
+        {
+          label: t('kpi_applications'),
+          value: data.applicationsPending,
+          href: 'applications',
+          tone: 'info',
+          icon: Handshake,
+        },
+        {
+          label: t('kpi_priceRequests'),
+          value: data.priceRequestsPending,
+          href: 'partners',
+          tone: 'warning',
+          icon: Tag,
+        },
+        {
+          label: t('kpi_refundsWaiting'),
+          value: data.refundsWaiting,
+          href: 'refunds',
+          tone: 'danger',
+          icon: RotateCcw,
+        },
+        {
+          label: t('kpi_refundsChecking'),
+          value: data.refundsNeedChecking,
+          href: 'refunds',
+          tone: 'danger',
+          icon: ShieldAlert,
+        },
+        {
+          label: t('analytics_api_today_orders'),
+          value: data.ordersToday,
+          href: 'analytics',
+          tone: 'info',
+          icon: ShoppingBag,
+        },
+        {
+          label: t('analytics_api_today_value'),
+          value: data.gmvTodayPaise,
+          money: true,
+          href: 'analytics',
+          tone: 'success',
+          icon: IndianRupee,
+        },
       ]
     : [];
   const tiles = all.filter((tile) => tile.value !== null && ADMIN_SECTIONS.includes(tile.href));
@@ -77,12 +151,9 @@ export function AdminOverviewApi() {
   return (
     <>
       <PushPromptSlot />
-      <section aria-labelledby="kpis" className="space-y-3">
-        <h2 id="kpis" className="font-heading text-xl font-extrabold text-ink">
-          {t('nav_overview')}
-        </h2>
+      <section aria-labelledby="admin-page-title" className="space-y-3">
         {error ? (
-          <div role="alert" className={`${portalCard} space-y-3`}>
+          <div role="alert" className={`${adminCard} space-y-3`}>
             <p className="text-sm font-bold text-error">{t(error)}</p>
             <button
               type="button"
@@ -95,27 +166,23 @@ export function AdminOverviewApi() {
             </button>
           </div>
         ) : data === null ? (
-          <div role="status" className="grid grid-cols-2 gap-3 tab:grid-cols-4">
+          <div role="status" className="grid grid-cols-2 gap-3 tab:grid-cols-3 xl:grid-cols-4">
             <span className="sr-only">{t('api_common_loading')}</span>
-            {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="skeleton h-24 rounded-card" aria-hidden="true" />
+            {Array.from({ length: 8 }, (_, i) => (
+              <div key={i} className={`skeleton rounded-card ${OVERVIEW_TILE_HEIGHT}`} aria-hidden="true" />
             ))}
           </div>
         ) : (
-          <ul className="grid grid-cols-2 gap-3 tab:grid-cols-4">
+          <ul className="grid grid-cols-2 gap-3 tab:grid-cols-3 xl:grid-cols-4">
             {tiles.map((tile) => (
               <li key={tile.label}>
-                <Link
+                <OverviewTile
                   href={`${prefix}/admin/${tile.href}`}
-                  className={`${portalCard} press block p-4 hover:shadow-card-hover ${
-                    tile.alert && tile.value ? 'border-accent-button' : ''
-                  }`}
-                >
-                  <span className="block font-heading text-3xl font-extrabold text-ink tabular-nums">
-                    {tile.money ? formatPrice(tile.value ?? 0) : formatCount(tile.value ?? 0, locale)}
-                  </span>
-                  <span className="mt-1 block text-sm text-muted">{tile.label}</span>
-                </Link>
+                  label={tile.label}
+                  value={tile.money ? formatPrice(tile.value ?? 0) : formatCount(tile.value ?? 0, locale)}
+                  tone={tile.value ? tile.tone : 'neutral'}
+                  icon={tile.icon}
+                />
               </li>
             ))}
           </ul>

@@ -5,7 +5,8 @@ import { useState, type SyntheticEvent } from 'react';
 import { CannedReplyDto, type CannedReply } from '@mechdost/shared/support-inbox';
 import { adminApi } from '@/lib/admin-api';
 import { commonErrorKey, type CommonErrorKey } from '@/lib/api-error-key';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 const EMPTY = { key: '', titleEn: '', titleHi: '', bodyEn: '', bodyHi: '', active: true, sortOrder: 100 };
 type Draft = typeof EMPTY;
@@ -95,7 +96,7 @@ export function CannedRepliesEditor({
   );
 
   return (
-    <section className={`${portalCard} space-y-3`} aria-labelledby="canned-title">
+    <section className={`${adminCard} space-y-3`} aria-labelledby="canned-title">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 id="canned-title" className="font-heading text-base font-extrabold text-ink">
           {t('cannedTitle')}

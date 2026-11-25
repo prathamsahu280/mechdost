@@ -27,7 +27,8 @@ import { formatDate } from '@/lib/format';
 import { requestStatusKey, routableWorkshops } from '@/lib/service-views';
 import { useAdminWorkshops } from './admin-workshops-api';
 import { ApiListState, LoadMore } from './api-list-state';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { adminCard } from './admin-ui';
 import { ServiceApiError } from './service-api-error';
 import { useApiList } from './use-api-list';
 
@@ -64,10 +65,7 @@ export function ServiceRoutingApi() {
   const routable = view === 'needs_routing' || view === 'awaiting';
 
   return (
-    <section aria-labelledby="svc-admin-title" className="space-y-4">
-      <h2 id="svc-admin-title" className="font-heading text-xl font-extrabold text-ink">
-        {t('ws_api_servicesTitle')}
-      </h2>
+    <section aria-labelledby="admin-page-title" className="space-y-4">
       <div role="tablist" aria-label={t('ws_api_servicesTitle')} className="flex flex-wrap gap-2">
         {VIEWS.map((v) => (
           <button
@@ -157,7 +155,7 @@ function RequestCard({
   onChanged: () => Promise<void>;
 }) {
   return (
-    <article className={portalCard}>
+    <article className={adminCard}>
       <RequestHead request={request} />
       {canCancel && !FINISHED.includes(request.status) ? (
         <StaffCancel request={request} onDone={onChanged} />
@@ -393,7 +391,7 @@ function RoutingCard({
 
   const showRanked = Array.isArray(ranked) && ranked.length > 0;
   return (
-    <article className={`${portalCard} border-accent-button/60`} aria-busy={busy || undefined}>
+    <article className={`${adminCard} border-accent-button/60`} aria-busy={busy || undefined}>
       <RequestHead request={r} />
       {detail?.customer?.name ? (
         <p className="mt-1 text-sm text-muted" data-user-content>

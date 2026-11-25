@@ -21,7 +21,8 @@ import {
 import { adminApi } from '@/lib/admin-api';
 import { commonErrorKey, type CommonErrorKey } from '@/lib/api-error-key';
 import { track } from '@/lib/analytics';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 type Lang = 'en' | 'hi';
 const LANGS: readonly Lang[] = ['en', 'hi'];
@@ -87,7 +88,7 @@ export function EmailsPanel() {
     <div className="space-y-5">
       <p className="max-w-prose text-sm text-muted">{t('intro')}</p>
       {error ? (
-        <div role="alert" className={`${portalCard} space-y-3`}>
+        <div role="alert" className={`${adminCard} space-y-3`}>
           <p className="text-sm font-bold text-error">{p(error)}</p>
           <button
             type="button"
@@ -102,7 +103,7 @@ export function EmailsPanel() {
         </div>
       ) : null}
       {!rows && !error ? (
-        <p role="status" className={`${portalCard} text-sm text-muted`}>
+        <p role="status" className={`${adminCard} text-sm text-muted`}>
           {p('api_common_loading')}
         </p>
       ) : null}
@@ -192,7 +193,7 @@ function EmailItem({
   }
 
   return (
-    <div className={portalCard}>
+    <div className={adminCard}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h4 className="font-heading text-base font-extrabold text-ink">{name}</h4>

@@ -16,7 +16,8 @@ import { findShop } from '@/demo/shops';
 import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatPrice } from '@/lib/format';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 /**
  * Price approval queue (user 2026-11-13, design § Prices, permission `prices:approve`): every seller price waits
@@ -37,7 +38,7 @@ function DemoAdminPriceRequests() {
   const pending = usePendingPriceRequests();
 
   return (
-    <section aria-labelledby="price-requests-title" className={portalCard}>
+    <section aria-labelledby="price-requests-title" className={adminCard}>
       <h3 id="price-requests-title" className="font-heading text-lg font-extrabold text-ink">
         {t('priceRequestsTitle')}
       </h3>

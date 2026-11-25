@@ -14,7 +14,8 @@ import { HIDE_REASONS, type HideReason } from '@mechdost/shared/catalogue-groups
 import { adminApi } from '@/lib/admin-api';
 import { errorKey } from '@/lib/admin-prices-view';
 import { track } from '@/lib/analytics';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 type Kind = 'brand' | 'range';
 interface Pending {
@@ -43,7 +44,7 @@ function ImportStatusPanel() {
   }, [locale]);
   if (run === undefined) return null;
   return (
-    <details className={portalCard}>
+    <details className={adminCard}>
       <summary className="cursor-pointer text-sm font-bold text-ink">{t('imp_title')}</summary>
       {run === null ? (
         <p className="mt-2 text-sm text-muted">{t('imp_none')}</p>
@@ -290,7 +291,7 @@ export function CatalogueGroups({
       {data?.brands.length === 0 ? <p className="text-sm text-muted">{t('grp_empty')}</p> : null}
       <ul className="space-y-3">
         {data?.brands.map((b) => (
-          <li key={b.slug} className={portalCard}>
+          <li key={b.slug} className={adminCard}>
             {row(b, 'brand')}
             {b.ranges.length > 0 ? (
               <details className="mt-1">

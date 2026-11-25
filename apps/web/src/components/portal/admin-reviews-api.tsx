@@ -11,7 +11,9 @@ import type { AdminReview } from '@mechdost/shared/reviews-api';
 import { useCallback, useEffect, useState, type SyntheticEvent } from 'react';
 import { commonErrorKey, type CommonErrorKey } from '@/lib/api-error-key';
 import { formatDate } from '@/lib/format';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { adminCard } from './admin-ui';
+import { AdminToolbar } from './admin-page-header';
 
 const TABS: readonly ReviewStatus[] = ['pending', 'approved', 'hidden'];
 
@@ -51,14 +53,8 @@ export function AdminReviewsApi() {
   }, [load]);
 
   return (
-    <section aria-labelledby="reviews-admin-title" className="space-y-4">
-      <div>
-        <h2 id="reviews-admin-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('api_admin_title')}
-        </h2>
-        <p className="mt-1 max-w-prose text-sm text-muted">{t('api_admin_intro')}</p>
-      </div>
-      <div role="group" aria-label={t('api_admin_filter')} className="flex flex-wrap gap-2">
+    <section aria-labelledby="admin-page-title" className="space-y-4">
+      <AdminToolbar label={t('api_admin_filter')}>
         {TABS.map((s) => (
           <button
             key={s}
@@ -76,14 +72,14 @@ export function AdminReviewsApi() {
             {t(`api_admin_tab_${s}`)}
           </button>
         ))}
-      </div>
+      </AdminToolbar>
       {notice ? (
         <p role="status" className="rounded-tile bg-success-bg p-3 text-sm font-bold text-success">
           {notice}
         </p>
       ) : null}
       {error ? (
-        <div role="alert" className={`${portalCard} space-y-3`}>
+        <div role="alert" className={`${adminCard} space-y-3`}>
           <p className="text-sm font-bold text-error">{p(error)}</p>
           <button
             type="button"
@@ -187,7 +183,7 @@ function ReviewCard({
   }
 
   return (
-    <article className={portalCard} aria-labelledby={`${id}-target`}>
+    <article className={adminCard} aria-labelledby={`${id}-target`}>
       <p className="text-sm font-bold text-star" aria-hidden="true">
         {'★'.repeat(r.rating)}
         {'☆'.repeat(5 - r.rating)}

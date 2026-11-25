@@ -22,13 +22,8 @@ import { track } from '@/lib/analytics';
 import { formatDate } from '@/lib/format';
 import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
 import { maskPhone } from './admin-support';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
-
-const PILL: Record<CustomerBlockLevel, string> = {
-  cod_only: 'bg-warning-bg text-warning',
-  orders: 'bg-warning-bg text-warning',
-  full: 'bg-pill text-error',
-};
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { StatusBadge, adminCard } from './admin-ui';
 
 /** Blocks on the API (real sign-in builds only): loaded on demand so demo bundles stay the same size. */
 const AdminCustomersApi = dynamic(
@@ -54,15 +49,9 @@ function DemoCustomers({ actor }: { actor: string }) {
   const customers = accounts.filter((a) => a.role === 'customer');
 
   return (
-    <section aria-labelledby="customers-title" className="space-y-4">
-      <div>
-        <h2 id="customers-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('nav_customers')}
-        </h2>
-        <p className="mt-1 text-sm text-muted">{t('customersLead')}</p>
-      </div>
+    <section aria-labelledby="admin-page-title" className="space-y-4">
       {customers.length === 0 ? (
-        <p className={`${portalCard} text-sm text-muted`}>{t('customersEmpty')}</p>
+        <p className={`${adminCard} text-sm text-muted`}>{t('customersEmpty')}</p>
       ) : (
         <ul className="space-y-3">
           {customers.map((c) => (
@@ -148,7 +137,7 @@ function CustomerRow({
   ) : null;
 
   return (
-    <li className={portalCard}>
+    <li className={adminCard}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p data-user-content className="font-heading text-lg font-extrabold break-words text-ink">
@@ -160,17 +149,12 @@ function CustomerRow({
         </div>
         <div className="flex flex-wrap gap-1.5">
           {active.length === 0 ? (
-            <span className="inline-flex rounded-pill bg-success-bg px-3 py-1 text-xs font-extrabold text-success">
-              {t('customersClear')}
-            </span>
+            <StatusBadge tone="success">{t('customersClear')}</StatusBadge>
           ) : (
             active.map((b) => (
-              <span
-                key={b.id}
-                className={`inline-flex rounded-pill px-3 py-1 text-xs font-extrabold ${PILL[b.level]}`}
-              >
+              <StatusBadge key={b.id} code={b.level}>
                 {t(`customersLevel_${b.level}`)}
-              </span>
+              </StatusBadge>
             ))
           )}
         </div>

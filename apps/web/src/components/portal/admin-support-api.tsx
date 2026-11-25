@@ -34,7 +34,9 @@ import {
 import { CannedRepliesEditor } from './admin-canned-replies-api';
 import { StaffRefundApi } from '@/components/support/staff-refund-api';
 import { TicketThread, useTicketLabels } from '@/components/support/ticket-thread';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { StatusBadge, adminCard } from './admin-ui';
+import { AdminToolbar } from './admin-page-header';
 
 type Problem = { ns: 'support'; key: SupportErrorKey } | { ns: 'portal'; key: CommonErrorKey };
 
@@ -93,14 +95,8 @@ export function AdminSupportApi() {
   }, [locale, loadCanned]);
 
   return (
-    <section aria-labelledby="inbox-title" className="space-y-4">
-      <div>
-        <h2 id="inbox-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('inboxTitle')}
-        </h2>
-        <p className="mt-1 max-w-prose text-sm text-muted">{t('inboxIntro')}</p>
-      </div>
-      <div role="group" aria-label={t('filterLabel')} className="flex flex-wrap gap-2">
+    <section aria-labelledby="admin-page-title" className="space-y-4">
+      <AdminToolbar label={t('filterLabel')}>
         {(['active', 'done'] as const).map((f) => (
           <button
             key={f}
@@ -117,7 +113,7 @@ export function AdminSupportApi() {
             {t(f === 'active' ? 'filter_active' : 'filter_done')}
           </button>
         ))}
-      </div>
+      </AdminToolbar>
       <div className="flex flex-wrap items-center gap-2">
         <label htmlFor="inbox-assignee" className="text-xs font-bold text-muted">
           {t('assignFilterLabel')}
@@ -140,7 +136,7 @@ export function AdminSupportApi() {
       </div>
       {canned.canEdit ? <CannedRepliesEditor replies={canned.replies} onChanged={loadCanned} /> : null}
       {error ? (
-        <div role="alert" className={`${portalCard} space-y-3`}>
+        <div role="alert" className={`${adminCard} space-y-3`}>
           <p className="text-sm font-bold text-error">{p(error)}</p>
           <button
             type="button"
@@ -343,7 +339,7 @@ ${text}`
     : null;
 
   return (
-    <article className={portalCard}>
+    <article className={adminCard}>
       <button
         type="button"
         aria-expanded={open}
@@ -380,20 +376,18 @@ ${text}`
         <span className="flex flex-wrap gap-2">
           {sla === 'ok' ? (
             item.sla === 'met' && isActive(item.status) ? (
-              <span className="rounded-pill bg-pill px-3 py-1 text-xs font-bold text-ink">{t('slaMet')}</span>
+              <StatusBadge tone="neutral">{t('slaMet')}</StatusBadge>
             ) : item.acknowledged || !isActive(item.status) ? null : (
-              <span className="rounded-pill bg-pill px-3 py-1 text-xs font-bold text-ink">
+              <StatusBadge tone="neutral">
                 {t('dueAck', { date: formatDate(item.slaAckDue, locale) })}
-              </span>
+              </StatusBadge>
             )
           ) : (
             <span className="rounded-pill bg-error px-3 py-1 text-xs font-bold text-white">
               {t(sla === 'ack_overdue' ? 'overdueAck' : 'overdueResolve')}
             </span>
           )}
-          <span className="rounded-pill bg-pill px-3 py-1 text-xs font-bold text-ink">
-            {labels.status(status)}
-          </span>
+          <StatusBadge tone="neutral">{labels.status(status)}</StatusBadge>
         </span>
       </button>
       {open ? (

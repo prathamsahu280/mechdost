@@ -26,7 +26,8 @@ import { track } from '@/lib/analytics';
 import { CATEGORY_EMOJI } from '@/lib/emoji';
 import { CityPicker } from './admin-city-picker';
 import { LoadState } from './admin-site-api';
-import { portalCard, portalPrimary, portalQuiet } from './portal-styles';
+import { portalPrimary, portalQuiet } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 /**
  * Admin -> Home layout on the API (design 2026-11-15 item 6; spec 08). The same choices as the demo editor: the order
@@ -37,7 +38,6 @@ import { portalCard, portalPrimary, portalQuiet } from './portal-styles';
 type Status = 'idle' | 'busy' | 'saved' | 'reset' | 'invalid' | CommonErrorKey;
 
 export function LayoutApi() {
-  const t = useTranslations('adminTier2');
   const locale = useLocale();
   const [city, setCity] = useState('');
   const [view, setView] = useState<AdminHomeLayoutDto | null>(null);
@@ -59,13 +59,7 @@ export function LayoutApi() {
   }, [load]);
 
   return (
-    <section aria-labelledby="layout-api-title" className="space-y-4">
-      <div>
-        <h2 id="layout-api-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('lay_title')}
-        </h2>
-        <p className="mt-1 text-sm text-muted">{t('lay_lead')}</p>
-      </div>
+    <section aria-labelledby="admin-page-title" className="space-y-4">
       <CityPicker id="layout-city" value={city} onChange={setCity} />
       {view ? (
         <LayoutForm key={`${city}|${String(view.version)}`} city={city} view={view} onChanged={load} />
@@ -179,7 +173,7 @@ function LayoutForm({
       onSubmit={(e) => {
         void onSubmit(e);
       }}
-      className={`${portalCard} space-y-6`}
+      className={`${adminCard} space-y-6`}
       noValidate
     >
       {city && view.inherited ? (

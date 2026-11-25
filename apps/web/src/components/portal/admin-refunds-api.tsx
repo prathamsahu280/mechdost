@@ -12,8 +12,9 @@ import { REFUND_REJECT_REASONS, type RefundRejectReason } from '@mechdost/shared
 import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
 import { isRefundReference, refundErrorKey, refundFailureKey } from '@/lib/refund-views';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { RefundSettleForm } from './refund-settle-form';
+import { StatusBadge, adminCard } from './admin-ui';
 
 type List =
   | { kind: 'loading' }
@@ -79,9 +80,9 @@ export function RefundQueueApi() {
   return (
     <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)] xl:items-start">
       <section aria-labelledby="refund-list">
-        <h2 id="refund-list" className="font-heading text-xl font-extrabold text-ink">
+        <h3 id="refund-list" className="font-heading text-xl font-extrabold text-ink">
           {t('title')}
-        </h2>
+        </h3>
         <p className="mt-1 text-sm text-muted">{t('intro')}</p>
         {counts ? (
           <p className="mt-2 text-sm font-bold text-ink" role="status">
@@ -141,25 +142,25 @@ export function RefundQueueApi() {
                   className={`press w-full rounded-tile border p-3 text-left ${
                     selected === x.id
                       ? 'border-accent-button bg-accent-soft'
-                      : 'border-line-card bg-surface hover:bg-pill'
+                      : x.overdue
+                        ? 'border-line-card bg-error-bg hover:bg-pill'
+                        : 'border-line-card bg-surface hover:bg-pill'
                   }`}
                 >
                   <span className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="font-heading text-base font-extrabold text-ink">
+                    <span className="font-heading text-base font-extrabold text-error tabular-nums">
                       {formatPrice(x.amountPaise)}
                     </span>
-                    <span className="text-xs font-bold text-muted">{t(`status_${x.status}`)}</span>
+                    <StatusBadge code={x.status === 'approved' ? 'in_progress' : x.status}>
+                      {t(`status_${x.status}`)}
+                    </StatusBadge>
                   </span>
                   <span className="mt-1 block text-sm text-ink">
                     {x.orderCode ?? x.groupCode} · {t(`source_${x.source}`)}
                   </span>
                   <span className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
                     {t('asked', { date: formatDate(x.requestedAt, locale) })}
-                    {x.overdue ? (
-                      <span className="rounded-pill bg-pill px-2 py-0.5 font-bold text-ink">
-                        {t('overdueBadge')}
-                      </span>
-                    ) : null}
+                    {x.overdue ? <StatusBadge tone="danger">{t('overdueBadge')}</StatusBadge> : null}
                   </span>
                 </button>
               </li>
@@ -254,7 +255,7 @@ function RefundDetail({
   };
 
   return (
-    <section aria-labelledby="refund-detail" className={portalCard}>
+    <section aria-labelledby="refund-detail" className={adminCard}>
       <h3 id="refund-detail" className="font-heading text-xl font-extrabold text-ink">
         {formatPrice(refund.amountPaise)} · {t(`status_${refund.status}`)}
       </h3>

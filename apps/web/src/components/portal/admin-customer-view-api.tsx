@@ -18,7 +18,8 @@ import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import { ORDER_STATES, SERVICE_REQUEST_STATES } from '@mechdost/shared/state';
 import { CustomerBlocks } from './admin-customers-api';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { StatusBadge, adminCard } from './admin-ui';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 const text = (v: FormDataEntryValue | null) => (typeof v === 'string' ? v : '');
 
@@ -69,7 +70,7 @@ export function AdminCustomersApi() {
           void onSearch(e);
         }}
         role="search"
-        className={portalCard}
+        className={adminCard}
         noValidate
       >
         <label htmlFor="customer-q" className="text-sm font-bold text-ink">
@@ -110,7 +111,7 @@ export function AdminCustomersApi() {
           </p>
           <ul className="space-y-2">
             {result.results.map((r) => (
-              <li key={r.id} className={`${portalCard} flex flex-wrap items-center justify-between gap-3`}>
+              <li key={r.id} className={`${adminCard} flex flex-wrap items-center justify-between gap-3`}>
                 <div className="min-w-0">
                   <p className="font-heading text-base font-extrabold break-words text-ink">
                     <span data-user-content>{r.name ?? t('customer_noName')}</span>
@@ -186,7 +187,7 @@ function CustomerView({ id }: { id: string }) {
 
   if (error)
     return (
-      <div role="alert" className={`${portalCard} flex flex-wrap items-center gap-3`}>
+      <div role="alert" className={`${adminCard} flex flex-wrap items-center gap-3`}>
         <p className="text-sm font-bold text-error">
           {peopleErrorKey(error) ? t('err_noAccount') : tc(commonErrorKey(error))}
         </p>
@@ -204,7 +205,7 @@ function CustomerView({ id }: { id: string }) {
     );
   if (!data)
     return (
-      <p role="status" className={`${portalCard} text-sm text-muted`}>
+      <p role="status" className={`${adminCard} text-sm text-muted`}>
         {tc('api_common_loading')}
       </p>
     );
@@ -231,19 +232,15 @@ function CustomerView({ id }: { id: string }) {
 
   return (
     <div className="space-y-4">
-      <article className={portalCard} aria-labelledby="customer-name">
+      <article className={adminCard} aria-labelledby="customer-name">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h3 id="customer-name" className="font-heading text-lg font-extrabold break-words text-ink">
             <span data-user-content>{p.name ?? t('customer_noName')}</span>
           </h3>
           {userStatus ? (
-            <span
-              className={`rounded-pill px-3 py-1 text-xs font-extrabold ${
-                userStatus === 'active' ? 'bg-success-bg text-success' : 'bg-warning-bg text-warning'
-              }`}
-            >
+            <StatusBadge tone={userStatus === 'active' ? 'success' : 'warning'}>
               {t(`ustatus_${userStatus}`)}
-            </span>
+            </StatusBadge>
           ) : null}
         </div>
         <dl className="mt-3 grid gap-x-6 gap-y-2 text-sm min-[600px]:grid-cols-2">
@@ -349,7 +346,7 @@ function CustomerView({ id }: { id: string }) {
       </div>
 
       <div className="grid gap-4 min-[900px]:grid-cols-2">
-        <section aria-labelledby="customer-coins" className={portalCard}>
+        <section aria-labelledby="customer-coins" className={adminCard}>
           <h3 id="customer-coins" className="font-heading text-base font-extrabold text-ink">
             {t('customer_coins')}
           </h3>
@@ -361,7 +358,7 @@ function CustomerView({ id }: { id: string }) {
             <p className="mt-2 text-sm text-muted">{t('customer_noAccess')}</p>
           )}
         </section>
-        <section aria-labelledby="customer-consents" className={portalCard}>
+        <section aria-labelledby="customer-consents" className={adminCard}>
           <h3 id="customer-consents" className="font-heading text-base font-extrabold text-ink">
             {t('customer_consents')}
           </h3>
@@ -407,7 +404,7 @@ function Section({
 }) {
   const headingId = useId();
   return (
-    <section aria-labelledby={headingId} className={portalCard}>
+    <section aria-labelledby={headingId} className={adminCard}>
       <h3 id={headingId} className="font-heading text-base font-extrabold text-ink">
         {title}
       </h3>

@@ -22,7 +22,8 @@ import {
   type RoadsideSuggestion,
 } from '@/lib/roadside';
 import { CityPicker } from './admin-city-picker';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 const POLL_MS = 15_000;
 /** The browser demo (no real sign-in) uses the sample store; real sign-in reads the API (like the sibling admin sections). */
@@ -96,7 +97,7 @@ function Queue() {
     ? demoQueue(demo).filter((r) => r.status === 'requested' || r.status === 'offered')
     : items;
   return (
-    <section className={portalCard} aria-labelledby="rsa-queue">
+    <section className={adminCard} aria-labelledby="rsa-queue">
       <h2 id="rsa-queue" className="font-heading text-lg font-extrabold text-ink">
         {t('admin_queue')}
       </h2>
@@ -320,7 +321,7 @@ function Settings({ city }: { city: string }) {
       </p>
     );
   return (
-    <form onSubmit={(e) => void save(e)} className={`${portalCard} space-y-4`} aria-labelledby="rsa-settings">
+    <form onSubmit={(e) => void save(e)} className={`${adminCard} space-y-4`} aria-labelledby="rsa-settings">
       <h2 id="rsa-settings" className="font-heading text-lg font-extrabold text-ink">
         {t('admin_settings')}
       </h2>

@@ -18,10 +18,11 @@ import { DEMO_WORKSHOPS } from '@/demo/workshops';
 import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatDate } from '@/lib/format';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { AdminInvites } from './admin-invites';
 import { AdminAgreement } from './agreement-cards';
 import { AdminPriceRequests } from './admin-price-requests';
+import { StatusBadge, adminCard } from './admin-ui';
 
 /** Real sign-in: workshops are added, edited and paused on the API (Stream E, 2026-11-14). */
 const AdminWorkshopsApi = dynamic(() => import('./admin-workshops-api').then((m) => m.AdminWorkshopsApi), {
@@ -48,11 +49,6 @@ const ACTIONS: Record<PartnerStatus, Action[]> = {
   active: ['pause', 'suspend'],
   paused: ['resume', 'suspend'],
   suspended: ['reactivate'],
-};
-const PILL: Record<PartnerStatus, string> = {
-  active: 'bg-success-bg text-success',
-  paused: 'bg-warning-bg text-warning',
-  suspended: 'bg-pill text-error',
 };
 
 interface Partner {
@@ -93,14 +89,7 @@ export function AdminPartners({ actor }: { actor: string }) {
   const nameOf = (kind: PartnerKind, slug: string) => lists[kind].find((p) => p.slug === slug)?.name ?? slug;
 
   return (
-    <section aria-labelledby="partners-title" className="space-y-4">
-      <div>
-        <h2 id="partners-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('nav_partners')}
-        </h2>
-        <p className="mt-1 text-sm text-muted">{t('partnersLead')}</p>
-      </div>
-
+    <section aria-labelledby="admin-page-title" className="space-y-4">
       <AdminInvites />
 
       <AdminPriceRequests />
@@ -136,7 +125,7 @@ export function AdminPartners({ actor }: { actor: string }) {
 
       <div id="partners-panel" role="tabpanel" aria-labelledby={`partners-tab-${tab}`}>
         {lists[tab].length === 0 ? (
-          <p className={`${portalCard} text-sm text-muted`}>{t('mechanicsEmpty')}</p>
+          <p className={`${adminCard} text-sm text-muted`}>{t('mechanicsEmpty')}</p>
         ) : (
           <ul className="space-y-3">
             {lists[tab].map((p) => (
@@ -146,7 +135,7 @@ export function AdminPartners({ actor }: { actor: string }) {
         )}
       </div>
 
-      <section aria-labelledby="partner-history" className={portalCard}>
+      <section aria-labelledby="partner-history" className={adminCard}>
         <h3 id="partner-history" className="font-heading text-lg font-extrabold text-ink">
           {t('partnerHistory')}
         </h3>
@@ -209,7 +198,7 @@ function PartnerRow({ kind, partner, actor }: { kind: PartnerKind; partner: Part
   }
 
   return (
-    <li className={portalCard}>
+    <li className={adminCard}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p
@@ -220,9 +209,7 @@ function PartnerRow({ kind, partner, actor }: { kind: PartnerKind; partner: Part
           </p>
           <p className="text-xs text-muted">{partner.area}</p>
         </div>
-        <span className={`inline-flex rounded-pill px-3 py-1 text-xs font-extrabold ${PILL[status]}`}>
-          {t(`partnerStatus_${status}`)}
-        </span>
+        <StatusBadge code={status}>{t(`partnerStatus_${status}`)}</StatusBadge>
       </div>
       {status !== 'active' ? <p className="mt-2 text-sm text-muted">{t(`partnerEffect_${status}`)}</p> : null}
       {change ? (

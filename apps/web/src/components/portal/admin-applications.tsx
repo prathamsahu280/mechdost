@@ -17,7 +17,8 @@ import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatDate, formatPrice } from '@/lib/format';
 import { parseRupees } from '@/lib/money-input';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 const ONBOARDED = APPLICATION_STAGES.indexOf('onboarded');
 const VERIFICATION = APPLICATION_STAGES.indexOf('verification');
@@ -54,10 +55,7 @@ function DemoApplications() {
   const t = useTranslations('portal');
   const apps = useApplications();
   return (
-    <section aria-labelledby="applications-title">
-      <h2 id="applications-title" className="font-heading text-xl font-extrabold text-ink">
-        {t('nav_applications')}
-      </h2>
+    <section aria-labelledby="admin-page-title">
       {apps.length === 0 ? (
         <p className="mt-3 text-sm text-muted">{t('emptyQueue')}</p>
       ) : (
@@ -83,7 +81,7 @@ function ApplicationCard({ app: a }: { app: DemoApplication }) {
   const readyToApprove = isSeller && a.stage >= VERIFICATION;
 
   return (
-    <li className={portalCard}>
+    <li className={adminCard}>
       <p className="mb-2 inline-flex rounded-pill bg-pill px-3 py-1 text-xs font-extrabold text-ink">
         {t(`kind_${a.kind}`)} · {a.rejected ? ap('stage_rejected') : ap(`stage_${stage}`)}
         {a.source === 'invite' ? ` · ${t('appInvited')}` : ''}

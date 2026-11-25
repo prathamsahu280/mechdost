@@ -27,7 +27,9 @@ import {
 } from '@/lib/admin-analytics-view';
 import { formatPrice } from '@/lib/format';
 import { DailyBars, DataTable } from './analytics-charts';
-import { portalCard, portalField, portalPrimary } from './portal-styles';
+import { portalField, portalPrimary } from './portal-styles';
+import { adminCard } from './admin-ui';
+import { AdminToolbar } from './admin-page-header';
 
 /** The Workshops tab loads its own chunk when first opened (JS budget; the screen is already behind the admin lazy). */
 const WorkshopsTab = lazy(() =>
@@ -113,16 +115,9 @@ export function AdminAnalyticsApi() {
   };
 
   return (
-    <section aria-labelledby="analytics-title" className="space-y-6">
-      <div>
-        <h2 id="analytics-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('analytics_api_title')}
-        </h2>
-        <p className="mt-1 max-w-prose text-sm text-muted">{t('analytics_api_intro')}</p>
-      </div>
-
-      <form onSubmit={onSubmit} aria-label={t('analytics_api_filters')} className={`${portalCard} space-y-4`}>
-        <div role="group" aria-label={t('analytics_api_filters')} className="flex flex-wrap gap-2">
+    <section aria-labelledby="admin-page-title" className="space-y-6">
+      <form onSubmit={onSubmit} aria-label={t('analytics_api_filters')} className={`${adminCard} space-y-4`}>
+        <AdminToolbar label={t('analytics_api_filters')}>
           {PRESETS.map((days) => {
             const preset = rangePreset(days, new Date());
             const on = query.from === preset.from && query.to === preset.to;
@@ -143,7 +138,7 @@ export function AdminAnalyticsApi() {
               </button>
             );
           })}
-        </div>
+        </AdminToolbar>
         <div className="grid gap-3 tab:grid-cols-[1fr_1fr_1fr_auto] tab:items-end">
           <label className="block text-sm font-bold text-ink">
             {t('analytics_api_from')}
@@ -203,7 +198,7 @@ export function AdminAnalyticsApi() {
         ) : null}
       </form>
 
-      <div role="group" aria-label={w('admin_tabs')} className="flex flex-wrap gap-2">
+      <AdminToolbar label={w('admin_tabs')}>
         {(['overview', 'workshops'] as const).map((id) => (
           <button
             key={id}
@@ -221,14 +216,14 @@ export function AdminAnalyticsApi() {
             {w(`admin_tab_${id}`)}
           </button>
         ))}
-      </div>
+      </AdminToolbar>
 
       {tab === 'workshops' ? (
         <Suspense fallback={<div className="skeleton h-64 rounded-card" aria-hidden="true" />}>
           <WorkshopsTab query={query} />
         </Suspense>
       ) : error ? (
-        <div role="alert" className={`${portalCard} space-y-3`}>
+        <div role="alert" className={`${adminCard} space-y-3`}>
           <p className="text-sm font-bold text-error">{t(error)}</p>
           <button
             type="button"
@@ -344,6 +339,7 @@ function Dashboard({
             days={series((d) => d.gmvPaise)}
             format={money}
             locale={locale}
+            tone="success"
           />
         </div>
         <div className="grid gap-4 tab:grid-cols-2">
@@ -363,7 +359,7 @@ function Dashboard({
       </Section>
 
       <Section title={t('analytics_api_funnel_title')}>
-        <div className={portalCard}>
+        <div className={adminCard}>
           <ol className="space-y-3">
             {funnelRows(data.funnel).map((row) => (
               <li key={row.step}>
@@ -382,10 +378,7 @@ function Dashboard({
                   </span>
                 </div>
                 <div aria-hidden="true" className="mt-1 h-2 rounded-pill bg-pill">
-                  <div
-                    className="h-2 rounded-pill bg-accent-button"
-                    style={{ width: `${String(row.width)}%` }}
-                  />
+                  <div className="h-2 rounded-pill bg-info" style={{ width: `${String(row.width)}%` }} />
                 </div>
               </li>
             ))}
@@ -453,6 +446,7 @@ function Dashboard({
               days={series((d) => d.visitors)}
               format={n}
               locale={locale}
+              tone="accent"
             />
             {data.topSearches ? (
               <TableCard title={t('analytics_api_searches')} note={t('analytics_api_searches_note')}>
@@ -604,7 +598,7 @@ function Kpis({ items }: { items: readonly { label: string; value: string; sub?:
   return (
     <dl className="grid grid-cols-2 gap-3 tab:grid-cols-4">
       {items.map((item) => (
-        <div key={item.label} className={`${portalCard} min-w-0 p-3 min-[400px]:p-4`}>
+        <div key={item.label} className={`${adminCard} min-w-0 p-3 min-[400px]:p-4`}>
           <dt className="text-sm text-muted">{item.label}</dt>
           <dd className="mt-1 font-heading text-xl font-extrabold break-words text-ink tabular-nums min-[400px]:text-2xl">
             {item.value}
@@ -618,7 +612,7 @@ function Kpis({ items }: { items: readonly { label: string; value: string; sub?:
 
 function TableCard({ title, note, children }: { title: string; note?: string; children: ReactNode }) {
   return (
-    <div className={`${portalCard} min-w-0`}>
+    <div className={`${adminCard} min-w-0`}>
       <h4 className="font-heading text-base font-extrabold text-ink">{title}</h4>
       {note ? <p className="mt-1 text-xs text-muted">{note}</p> : null}
       {children}

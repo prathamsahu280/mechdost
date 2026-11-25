@@ -26,7 +26,8 @@ import {
 import { adminApi } from '@/lib/admin-api';
 import { errorKey } from '@/lib/admin-prices-view';
 import { track } from '@/lib/analytics';
-import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { portalField, portalPrimary, portalQuiet } from './portal-styles';
+import { adminCard } from './admin-ui';
 
 /**
  * Admin → Catalogue → Add product and Import CSV (plan 2026-11-14 Stream B; spec 08 Catalogue). Real API only
@@ -200,7 +201,7 @@ export function AddProductForm({ onCreated }: { onCreated: (slug: string) => voi
   }
 
   return (
-    <form onSubmit={(e) => void onSubmit(e)} className={`${portalCard} space-y-6`} noValidate>
+    <form onSubmit={(e) => void onSubmit(e)} className={`${adminCard} space-y-6`} noValidate>
       <div>
         <h3 className="font-heading text-lg font-extrabold text-ink">{t('cat_add_title')}</h3>
         <p className="mt-1 text-sm text-muted">{t('cat_add_intro')}</p>
@@ -413,7 +414,7 @@ export function ImportCsv({ onImported }: { onImported: () => void }) {
   const ready = report?.created.length ?? 0;
 
   return (
-    <div className={`${portalCard} space-y-4`}>
+    <div className={`${adminCard} space-y-4`}>
       <div>
         <h3 className="font-heading text-lg font-extrabold text-ink">{t('cat_import_title')}</h3>
         <p className="mt-1 text-sm text-muted">{t('cat_import_intro')}</p>
