@@ -38,6 +38,7 @@ import {
   type TableField,
 } from '../src/lib/admin-ustaad-tables';
 import { pickMessages } from '../src/lib/pick-messages';
+import { latinOffenders } from './hindi-allowlist';
 
 type Messages = Record<string, unknown>;
 const messages = (lang: 'en' | 'hi') =>
@@ -115,6 +116,23 @@ describe('texts in English and Hindi', () => {
       expect(missing).toEqual([]);
     });
   }
+
+  it('Hindi texts pass the /hi gate: no English word outside the allowlist (hindi-coverage rule)', () => {
+    const hi = ns('hi');
+    const bad = Object.entries(hi)
+      // ICU syntax (placeholders, plural keywords) is not visible text.
+      .map(
+        ([k, v]) =>
+          [
+            k,
+            latinOffenders(
+              v.replace(/\{[a-z]+\}/gi, '').replace(/\{count, plural,|\b(one|other)\s*\{/g, '{'),
+            ),
+          ] as const,
+      )
+      .filter(([, words]) => words.length > 0);
+    expect(bad).toEqual([]);
+  });
 
   it('Hindi texts are not copies of the English ones', () => {
     const en = ns('en');
@@ -309,7 +327,7 @@ describe('list forms (levels, badges, hashtags, words, promotions)', () => {
   });
 
   it('every field label and option of the lists exists in both languages', () => {
-    const src = read('components/portal/admin-ustaad/ustaad-tables.tsx');
+    const src = read('lib/admin-ustaad-tables-config.ts');
     const names = new Set<string>();
     for (const m of src.matchAll(/(?:text|num|bool|select)\('([A-Za-z]+)'/g)) names.add(m[1] ?? '');
     for (const m of src.matchAll(/label: '([A-Za-z]+)'/g)) names.add(m[1] ?? '');

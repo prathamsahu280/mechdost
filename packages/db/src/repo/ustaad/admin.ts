@@ -363,7 +363,7 @@ export async function updateUstaadBadge(
 // ── Tags ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
 const uniqueAliases = (aliases: readonly string[], slug: string) =>
-  [...new Set(aliases)].filter((a) => a !== slug).slice(0, 40);
+  [...new Set(aliases)].filter((a) => a !== slug).slice(0, 20);
 
 export async function listUstaadTags(db: Tx) {
   const uses = db

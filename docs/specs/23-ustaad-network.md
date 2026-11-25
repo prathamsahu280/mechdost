@@ -1023,7 +1023,8 @@ correction}`, `ustaad_answer_posted {input}`, `ustaad_answer_helpful`, `ustaad_b
 target}`, `ustaad_moderation_action {action, reason, clock, on_time}`, `ustaad_media_rejected {kind, reason}`,
 `ustaad_media_budget_full`, `ustaad_location_confirmed {source, accuracy_band}`, `ustaad_zone_counts_built {zones}`,
 `ustaad_application_mapped {outcome}`, `ustaad_takedown_executed {clock, seconds}`, `ustaad_restricted_mode {reason}`,
-`admin_ustaad_settings_saved {keys}`, `admin_ustaad_invariant_refused {key}`.
+`admin_ustaad_settings_saved {keys}`, `admin_ustaad_invariant_refused {key}`, `admin_ustaad_access_changed {from, to}`,
+`admin_ustaad_table_saved {table, action}` (G1). Client (admin, G1): `admin_ustaad_change {area, action, fields}`.
 Client: `ustaad_feed_viewed {tab}`, `ustaad_post_liked`, `ustaad_post_saved`, `ustaad_post_shared {channel}`,
 `ustaad_story_viewed`, `ustaad_video_played {seconds_band}`, `ustaad_voice_played`, `ustaad_discover_searched
 {results}`, `ustaad_tag_opened`, `ustaad_promo_impression {promo, slot}`, `ustaad_promo_click`, `ustaad_promo_hidden

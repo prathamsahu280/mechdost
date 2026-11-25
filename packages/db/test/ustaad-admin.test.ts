@@ -130,6 +130,16 @@ describe('batch settings save', () => {
     expect(view.values['ustaad.feed.w_follows']).toBe(20);
   });
 
+  it('a second "first save" of a key (version null) is STALE_SETTING, never a silent overwrite', async () => {
+    const change = [{ key: 'ustaad.qa.best_per_week', value: 4, version: null }];
+    await saveUstaadSettings(t(), { ...staff(), changes: change });
+    await expectCode(
+      saveUstaadSettings(t(), { ...staff(), changes: [{ ...change[0], value: 6 }] as typeof change }),
+      'STALE_SETTING',
+    );
+    expect((await readUstaadSettings(t())).values['ustaad.qa.best_per_week']).toBe(4);
+  });
+
   it('locked items are refused with SETTING_INVARIANT (AT-PROMO-1 label, AT-LEVEL-2 staff approval)', async () => {
     for (const key of [
       'ustaad.promo.label',

@@ -239,3 +239,10 @@ Storefront edit shortcut (2026-11-25): client `admin_storefront_edit_clicked { s
 ## Vehicle segments (2026-11-25)
 
 Client `shop_segment_filtered { segments: VehicleSegment[], count }` (the shop's chips changed; codes and a count, no text) and `home_segment_tile_clicked { segment }` (a "Shop by vehicle" tile). `admin_site_change` gains `area: 'segments'` (the segment panel saved). Registered in `CLIENT_EVENT_SCHEMAS` (strict), tested in `packages/shared/test/vehicle-segments.test.ts`.
+
+## Ustaad Network admin (2026-11-26, spec 23 task G1)
+
+Server `admin_ustaad_settings_saved { keys }`, `admin_ustaad_invariant_refused { key }`, `admin_ustaad_access_changed
+{ from, to }` and `admin_ustaad_table_saved { table, action }` (`levels|badges|tags|words|reasons|reach_cities|
+promotions|tutorial_cards|coachmarks`, `create|update|merge|move`); client `admin_ustaad_change { area, action,
+fields }` from Admin → Network settings. Codes and counts only, never the values or the words of a list.

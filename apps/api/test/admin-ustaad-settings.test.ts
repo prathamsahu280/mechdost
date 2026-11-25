@@ -19,7 +19,7 @@ let shopId = '';
 async function person(
   n: string,
   role: string | null,
-  scope: { shopId?: string; cityId?: string } = {},
+  scope: { shopId?: string; cityId?: string; workshopId?: string } = {},
 ): Promise<Headers> {
   const phone = `+9198666666${n}`;
   const token = ctx.verifier.add(`token-ustaad-admin-0${n}`, {
@@ -100,6 +100,21 @@ beforeAll(async () => {
     .returning();
   if (!shop) throw new Error('no shop');
   shopId = shop.id;
+  const [workshop] = await ctx.db
+    .insert(s.workshops)
+    .values({
+      cityId: city.id,
+      slug: 'leak-garage-ua',
+      name: 'Leak Garage',
+      addressLine: 'Pandri',
+      area: 'Pandri',
+      pincode: '492001',
+      location: { lng: 81.64, lat: 21.23 },
+      vehicleTypes: ['2W'],
+      hours: { open: '09:00', close: '20:00', days: [0, 1, 2, 3, 4, 5, 6] },
+    })
+    .returning();
+  if (!workshop) throw new Error('no workshop');
   who.admin = await person('01', 'super_admin');
   // City scoped (SR-38); the network settings are global, so a Raipur manager still reads them.
   who.cm = await person('02', 'community_manager', { cityId: city.id });
@@ -109,6 +124,9 @@ beforeAll(async () => {
   who.finance = await person('06', 'finance');
   who.customer = await person('07', null);
   if (shopId) who.shop = await person('08', 'seller_owner', { shopId });
+  who.workshop = await person('09', 'workshop_owner', { workshopId: workshop.id });
+  // A network member (the mechanic role that joining grants): member routes, never the admin.
+  who.mechanic = await person('10', 'mechanic');
 });
 
 describe('role-leak matrix', () => {
@@ -118,8 +136,8 @@ describe('role-leak matrix', () => {
     expect((await req('levels', null, 'POST', {})).status).toBe(401);
   });
 
-  it('customer, shop, support and finance get 403 on every list, promotions included', async () => {
-    for (const role of ['customer', 'shop', 'support', 'finance']) {
+  it('customer, shop, workshop, mechanic member, support and finance get 403 on every list, promotions included', async () => {
+    for (const role of ['customer', 'shop', 'workshop', 'mechanic', 'support', 'finance']) {
       const h = who[role];
       if (!h) continue;
       for (const path of [...LISTS, 'promotions'])

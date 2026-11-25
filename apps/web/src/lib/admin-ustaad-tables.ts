@@ -7,7 +7,14 @@ export type TableField =
   | { name: string; kind: 'text'; max: number; optional?: boolean; pattern?: string; label?: string }
   | { name: string; kind: 'number'; min: number; max: number; optional?: boolean; label?: string }
   | { name: string; kind: 'bool'; label?: string }
-  | { name: string; kind: 'select'; options: readonly string[]; group: string; label?: string }
+  | {
+      name: string;
+      kind: 'select';
+      options: readonly string[];
+      group: string;
+      optional?: boolean;
+      label?: string;
+    }
   | { name: string; kind: 'datetime'; label?: string }
   /** Comma-separated words (hashtag aliases). */
   | { name: string; kind: 'list'; max: number; optional?: boolean; label?: string };
@@ -71,11 +78,15 @@ export function formProblems(fields: readonly TableField[], form: TableForm): Re
   return out;
 }
 
-/** The request body for a form (field kinds converted; badges get their typed `rule`; promotions no `label`). */
+/**
+ * The request body for a form (field kinds converted; badges get their typed `rule`; promotions no `label`). On an
+ * edit, `row` carries over what the form does not show (a promotion's cities and segments), so a save never wipes it.
+ */
 export function bodyFromForm(
   table: string,
   fields: readonly TableField[],
   form: TableForm,
+  row?: TableRow,
 ): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const f of fields) {
@@ -95,18 +106,23 @@ export function bodyFromForm(
     else if (v !== '' || ('optional' in f && f.optional === true)) out[f.name] = v;
   }
   if (table === 'badges') {
-    const { ruleKind, ruleTag, ruleCount, ...rest } = out;
+    const { ruleKind, ruleTag, ruleSegment, ruleCount, ...rest } = out;
     return {
       ...rest,
       rule: {
         schema_version: 1,
         kind: ruleKind,
         ...(typeof ruleTag === 'string' && ruleTag !== '' ? { tag: ruleTag } : {}),
+        ...(typeof ruleSegment === 'string' && ruleSegment !== '' ? { segment: ruleSegment } : {}),
         ...(typeof ruleCount === 'number' ? { count: ruleCount } : {}),
       },
     };
   }
-  if (table === 'promotions') return { ...out, cityIds: [], segmentCodes: [] };
+  if (table === 'promotions') {
+    const keep = (v: unknown) =>
+      Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+    return { ...out, cityIds: keep(row?.cityIds), segmentCodes: keep(row?.segmentCodes) };
+  }
   if (table.startsWith('words_') && out.replacement === '') {
     const { replacement: _r, ...rest } = out;
     return rest;
