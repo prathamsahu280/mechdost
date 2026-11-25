@@ -174,6 +174,9 @@ async function installNotices(page: Page, locale: 'en' | 'hi', empty: boolean) {
     headers: { 'access-control-allow-origin': '*' },
     body: JSON.stringify(body),
   });
+  await page.route(`${AUDIT_API_ORIGIN}/v1/me/notification-preferences`, (route) =>
+    route.fulfill(json({ pushTransactional: true, promotions: false, promptSnoozeDays: 14 })),
+  );
   await page.route(`${AUDIT_API_ORIGIN}/v1/me/notifications**`, async (route) => {
     const req = route.request();
     if (req.method() === 'OPTIONS')
