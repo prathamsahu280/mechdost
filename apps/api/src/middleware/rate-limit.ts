@@ -18,8 +18,6 @@ export const RATE_RULES = {
   adminSearch: { name: 'admin_search', limit: 30, windowSeconds: 60 },
   /** CSV exports (request and download each count): a few per hour per staff member is plenty, a script is not. */
   adminExport: { name: 'admin_export', limit: 40, windowSeconds: 3600 },
-  /** Admin → Ustaad settings and tables per staff member (spec 23 § 8 "Admin": staff 300/min). */
-  ustaadAdmin: { name: 'ustaad_admin', limit: 300, windowSeconds: 60 },
 } as const satisfies Record<string, RateRule>;
 
 /**

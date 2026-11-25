@@ -69,7 +69,9 @@ import { USTAAD_SETTINGS, USTAAD_SETTING_KEYS } from '@mechdost/shared/ustaad/se
 import type { SessionCache } from '../auth/session-cache';
 import { ApiError, Forbidden } from '../errors';
 import { authenticate, requireVerified } from '../middleware/auth';
-import { rateLimit, RATE_RULES } from '../middleware/rate-limit';
+import { rateLimit } from '../middleware/rate-limit';
+import type { UstaadAccessCache } from '../middleware/ustaad-member';
+import { USTAAD_RATE_RULES } from '../rate-limit/ustaad-rules';
 import type { AppDeps, AppEnv } from '../types';
 import { validationHook } from '../validation';
 import { errorResponses } from './schemas';
@@ -131,6 +133,33 @@ const action = <P extends string, S extends z.ZodType>(
 
 const R = {
   settings: list('settings', 'every network setting: value, default, version'),
+  /** One key (workstream A's access switch and scripts); the same checks as the batch save. */
+  saveOne: createRoute({
+    ...meta,
+    method: 'put',
+    path: '/admin/ustaad/settings/{key}',
+    summary: 'Save one setting (compare-and-set; version null to create; reasonCode for video above 180 s)',
+    request: {
+      params: z.object({
+        key: z
+          .string()
+          .min(1)
+          .max(80)
+          .openapi({ param: { name: 'key', in: 'path' }, example: 'ustaad.access' }),
+      }),
+      body: body(
+        z
+          .object({
+            value: z.union([z.number().int(), z.boolean(), z.string().max(40)]),
+            version: z.number().int().min(1).nullable(),
+            reasonCode: UstaadSettingsSaveDto.shape.reasonCode,
+          })
+          .strict()
+          .openapi('AdminUstaadSettingSave'),
+      ),
+    },
+    responses,
+  }),
   saveSettings: createRoute({
     ...meta,
     method: 'patch',
@@ -247,11 +276,11 @@ const withoutLabel = <T extends { label?: unknown }>(b: T): Omit<T, 'label'> => 
   return rest;
 };
 
-export function adminUstaadSettingsRoutes(deps: AppDeps, cache: SessionCache) {
+export function adminUstaadSettingsRoutes(deps: AppDeps, cache: SessionCache, access: UstaadAccessCache) {
   const app = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
   const guard = chain([
     authenticate(deps, cache),
-    rateLimit(deps.rateLimiter, RATE_RULES.ustaadAdmin, (c) => c.get('auth').user.id),
+    rateLimit(deps.rateLimiter, USTAAD_RATE_RULES.staff, (c) => c.get('auth').user.id),
     requireVerified,
     permissionGuard,
   ]);
@@ -266,17 +295,37 @@ export function adminUstaadSettingsRoutes(deps: AppDeps, cache: SessionCache) {
       const view = await readUstaadSettings(deps.db);
       return c.json(
         {
-          settings: USTAAD_SETTING_KEYS.map((key) => ({
-            key,
-            value: view.values[key],
-            default: USTAAD_SETTINGS[key].default,
-            version: view.versions[key] ?? null,
-          })),
+          settings: USTAAD_SETTING_KEYS.map((key) => {
+            const spec = USTAAD_SETTINGS[key];
+            return {
+              key,
+              kind: spec.kind,
+              value: view.values[key],
+              default: spec.default,
+              version: view.versions[key] ?? null,
+              ...(spec.kind === 'int' ? { min: spec.min, max: spec.max } : {}),
+              ...(spec.kind === 'enum' ? { values: [...spec.values] } : {}),
+              locked: 'locked' in spec && spec.locked,
+            };
+          }),
           canEdit: can(c.get('auth').grants, 'ustaad:settings'),
           canRaiseVideo: isSuperAdmin(c),
         },
         200,
       );
+    })
+    .openapi(R.saveOne, async (c) => {
+      const b = c.req.valid('json');
+      const key = c.req.valid('param').key;
+      const saved = await saveUstaadSettings(deps.db, {
+        changes: [{ key, value: b.value, version: b.version }],
+        staffUserId: staffId(c),
+        actorRole: isSuperAdmin(c) ? 'super_admin' : 'staff',
+        ...(b.reasonCode === undefined ? {} : { reasonCode: b.reasonCode }),
+      });
+      // The member gate caches the access mode for a few seconds; a switch applies at once.
+      if (key === 'ustaad.access') access.clear();
+      return c.json({ version: saved.versions[key] ?? 0 }, 200);
     })
     .openapi(R.saveSettings, async (c) => {
       const b = c.req.valid('json');
@@ -286,6 +335,7 @@ export function adminUstaadSettingsRoutes(deps: AppDeps, cache: SessionCache) {
         actorRole: isSuperAdmin(c) ? 'super_admin' : 'staff',
         ...(b.reasonCode === undefined ? {} : { reasonCode: b.reasonCode }),
       });
+      if (b.changes.some((x) => x.key === 'ustaad.access')) access.clear();
       return c.json(saved, 200);
     })
     .openapi(R.levels, async (c) =>

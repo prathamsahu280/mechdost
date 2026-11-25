@@ -62,6 +62,11 @@ export const UstaadSettingRowDto = z.object({
   value: SettingValue,
   default: SettingValue,
   version: z.number().int().nullable(),
+  kind: z.enum(['int', 'boolean', 'enum']),
+  min: z.number().int().optional(),
+  max: z.number().int().optional(),
+  values: z.array(z.string()).optional(),
+  locked: z.boolean(),
 });
 export const UstaadSettingsListDto = z.object({
   settings: z.array(UstaadSettingRowDto),
