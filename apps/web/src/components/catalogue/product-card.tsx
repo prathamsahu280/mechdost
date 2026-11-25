@@ -1,4 +1,4 @@
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import type { CardView } from '@/lib/catalogue/view';
 import { discountPercent, formatPrice } from '@/lib/format';
 import { StarRating } from '../reviews/star-rating';
@@ -11,6 +11,9 @@ import { ProductVisual } from './product-visual';
 import { UnitPrice } from './unit-price';
 import { mrpOnly } from '@/lib/catalogue/mrp-only';
 import { WishlistHeartLazy } from './wishlist-lazy';
+import { AdminEditLazy } from './admin-edit-lazy';
+import { adminEditPath } from '@/lib/catalogue/admin-edit';
+import { localePath } from '@/lib/locale-path';
 import { productFullName } from '@/lib/product-name';
 
 /**
@@ -31,6 +34,7 @@ export function ProductCard({
   compare?: boolean;
 }) {
   const t = useTranslations('catalogue');
+  const locale = useLocale();
   const cmp = useTranslations('compare');
   const c = useTranslations('categories');
   const r = useTranslations('reviews');
@@ -55,6 +59,17 @@ export function ProductCard({
             <ProductVisual category={product.category.key} brand={product.brand} sku={product.sku} />
           )}
         </LocalLink>
+        {/* Catalogue staff only, after hydration (nothing staff-only is rendered on the server: shop pages are cached
+            and shared). A sibling of the picture link, never inside it, at the picture's top right; the ⓘ and ♡
+            buttons live on the category line below (user 2026-11-24). */}
+        <AdminEditLazy
+          slug={product.slug}
+          href={localePath(adminEditPath(product.slug), locale)}
+          locale={locale}
+          label={t('adminEdit', { name: productFullName(product.brand, product.name) })}
+          tip={t('adminEditTip')}
+          from="card"
+        />
         {/* Badges under the picture, in normal flow (audit 2026-11-15, item 1: over the picture they covered the SKU
             printed at its foot on narrow cards). They wrap, so no width or language can make them overlap anything. */}
         <div data-slot="card-badges" className="mt-2 flex flex-wrap gap-1.5 px-1">

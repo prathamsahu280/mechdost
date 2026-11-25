@@ -288,3 +288,5 @@ T203 · 2026-11-24 · notifications · the WhatsApp approval gate is per event (
 - T217 · 2026-11-25 · tinted cards · a screenshot of every tone is the only test that catches a tint losing to a helper's background (utility order), the tokens test passes either way
 
 2026-11-25 (auto-submit codes): after a field that submits by itself, tests must not click Submit (the button is gone or the call races); wait for the next screen instead. Wrong code then right code: fill both in turn, the second fill replaces the selected text. Not run in the worktree: Playwright (no browser build); the lead runs the e2e suites that fill codes (roles, real-auth, delivery, seller-onboarding).
+
+- 2026-11-25 · staff-only UI on cached pages · assert in e2e that the server HTML (request fixture, no browser) has no rendered staff control, and that customer, shop, workshop and signed-out sessions never get it after hydration; pair it with an API role-leak matrix on the routes the control links to (401 anonymous, 403 for every role without the permission, 200 for the holders).

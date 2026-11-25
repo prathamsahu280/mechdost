@@ -84,6 +84,8 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | HOME-FAQ              | Home                                                                       | FAQ (details/summary accordion)                                                                                                                                                                                                                                                 | pairwise | 24       | 0       |
 | HOME-PRODUCTS         | Home                                                                       | Browse our product range: product cards in a row (name, rating, price, unit price, stock, button)                                                                                                                                                                               | pairwise | 16       | 4       |
 | SHOP-CARD             | Shop (/shop)                                                               | Product card × compare list × cart (full cross)                                                                                                                                                                                                                                 | cross    | 128      | 14      |
+| SHOP-CARD-ADMIN       | Shop (/shop)                                                               | Product card as catalogue staff (storefront Edit shortcut on the picture): nothing overlaps or covers the ⓘ and ♡ buttons, everything stays inside the card                                                                                                                     | pairwise | 24       | 0       |
+| SHOP-ADMIN-EDIT       | Shop (/shop)                                                               | Storefront Edit shortcut (pencil link) on a card: shows for catalogue staff, at least 24 px, inside its card, no overlap                                                                                                                                                        | cross    | 16       | 0       |
 | SHOP-ACTION           | Shop (/shop)                                                               | Card actions clicked, then every card re-checked (cross-entity sync)                                                                                                                                                                                                            | cross    | 40       | 2       |
 | SHOP-FILTERS          | Shop (/shop)                                                               | Search, category chips, vehicle chips, sort, results count, empty result                                                                                                                                                                                                        | pairwise | 48       | 6       |
 | SHOP-SEARCH           | Shop (/shop)                                                               | Search box with suggestions (combobox): focus loads the list, keyboard and pointer, empty and filled                                                                                                                                                                            | pairwise | 16       | 0       |
@@ -91,6 +93,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | SHOP-TRAY             | Shop (/shop)                                                               | Compare tray (count, open, clear) over the listing                                                                                                                                                                                                                              | cross    | 32       | 2       |
 | STEP                  | Quantity stepper (card, product page, cart)                                | Stepper − / count / + × quantity × hover/focus/active/disabled (full cross)                                                                                                                                                                                                     | cross    | 180      | 6       |
 | PDP-BUYBOX            | Product page (/shop/[slug])                                                | Buy box: price, MRP and saving, stock, add to cart / stepper, compare                                                                                                                                                                                                           | pairwise | 43       | 3       |
+| PDP-ADMIN-EDIT        | Product page (/shop/[slug])                                                | Storefront Edit shortcut beside the title for catalogue staff: at least 24 px, inside the page, no overlap with the title                                                                                                                                                       | cross    | 16       | 0       |
 | PDP-REVIEWS           | Product page (/shop/[slug])                                                | Ratings summary, review list, write-a-review entry                                                                                                                                                                                                                              | pairwise | 16       | 0       |
 | PDP-RELATED           | Product page (/shop/[slug])                                                | Related products row (cards)                                                                                                                                                                                                                                                    | pairwise | 16       | 0       |
 | CMP-TABLE             | Compare (/compare)                                                         | Comparison table × column count × badges × partial in-cart (full cross)                                                                                                                                                                                                         | cross    | 126      | 2       |
@@ -211,7 +214,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ADM-HEADER        | Admin console, real sign-in                                                | Page pattern: one header per section (title = side bar item, one-line description, primary action on the right), status badges, empty states, table boxes; 320 to 1920 px, both themes, English and Hindi                                                                       | pairwise | 138      | 0       |
 | API-NAV-ADMIN         | Navigation, real sign-in                                                   | Admin section bar with every real-mode section (Analytics, Refunds, Errors included): current item, scroll, walk                                                                                                                                                                | cross    | 184      | 0       |
 | API-NAV-ACCOUNT       | Navigation, real sign-in                                                   | Account section bar in a real-sign-in build: current item, scroll, walk                                                                                                                                                                                                         | cross    | 104      | 0       |
-| **Total**             |                                                                            |                                                                                                                                                                                                                                                                                 |          | **5079** | **105** |
+| **Total**             |                                                                            |                                                                                                                                                                                                                                                                                 |          | **5135** | **105** |
 
 ## Chrome
 
@@ -950,6 +953,56 @@ Full cross of the high-risk dimensions, the rest pairwise; 128 states; scope `ma
 - [ ] SHOP-CARD-127 · 1920px · light · en · signed out · world=empty · /shop · compare=bat-2 · cart=mixed · stress=long-price · asserts: present inside overlap covered clipped tap hscroll focus console aligned sync offphoto
 - [ ] SHOP-CARD-128 · 1920px · dark · hi · customer · world=empty · /shop · compare=bat-2 · cart=c99 · stress=mixed-shape · asserts: present inside overlap covered clipped tap hscroll focus console aligned sync offphoto hindi
 
+### SHOP-CARD-ADMIN — Product card as catalogue staff (storefront Edit shortcut on the picture): nothing overlaps or covers the ⓘ and ♡ buttons, everything stays inside the card
+
+Pairwise (all pairs of values); 24 states; scope `main article`.
+
+- [ ] SHOP-CARD-ADMIN-001 · 320px · light · en · admin · world=empty · /shop · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
+- [ ] SHOP-CARD-ADMIN-002 · 320px · dark · hi · admin · world=empty · /shop · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-CARD-ADMIN-003 · 390px · light · hi · admin · world=empty · /shop · stress=mixed-shape · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-CARD-ADMIN-004 · 390px · dark · en · admin · world=empty · /shop · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-CARD-ADMIN-005 · 480px · light · en · admin · world=empty · /shop · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
+- [ ] SHOP-CARD-ADMIN-006 · 480px · dark · hi · admin · world=empty · /shop · stress=mixed-shape · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-CARD-ADMIN-007 · 768px · light · en · admin · world=empty · /shop · stress=mixed-shape · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-CARD-ADMIN-008 · 768px · dark · hi · admin · world=empty · /shop · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-CARD-ADMIN-009 · 1024px · light · en · admin · world=empty · /shop · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
+- [ ] SHOP-CARD-ADMIN-010 · 1024px · dark · hi · admin · world=empty · /shop · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-CARD-ADMIN-011 · 1280px · light · en · admin · world=empty · /shop · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-CARD-ADMIN-012 · 1280px · dark · hi · admin · world=empty · /shop · stress=mixed-shape · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-CARD-ADMIN-013 · 1440px · light · en · admin · world=empty · /shop · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
+- [ ] SHOP-CARD-ADMIN-014 · 1440px · dark · hi · admin · world=empty · /shop · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-CARD-ADMIN-015 · 1920px · light · en · admin · world=empty · /shop · stress=mixed-shape · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-CARD-ADMIN-016 · 1920px · dark · hi · admin · world=empty · /shop · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-CARD-ADMIN-017 · 320px · light · en · admin · world=empty · /shop · stress=mixed-shape · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
+- [ ] SHOP-CARD-ADMIN-018 · 390px · dark · hi · admin · world=empty · /shop · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-CARD-ADMIN-019 · 480px · light · en · admin · world=empty · /shop · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-CARD-ADMIN-020 · 768px · dark · hi · admin · world=empty · /shop · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-CARD-ADMIN-021 · 1024px · light · en · admin · world=empty · /shop · stress=mixed-shape · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto axe
+- [ ] SHOP-CARD-ADMIN-022 · 1280px · dark · hi · admin · world=empty · /shop · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+- [ ] SHOP-CARD-ADMIN-023 · 1440px · light · en · admin · world=empty · /shop · stress=mixed-shape · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto
+- [ ] SHOP-CARD-ADMIN-024 · 1920px · dark · hi · admin · world=empty · /shop · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned offphoto hindi
+
+### SHOP-ADMIN-EDIT — Storefront Edit shortcut (pencil link) on a card: shows for catalogue staff, at least 24 px, inside its card, no overlap
+
+Full cross of the high-risk dimensions, the rest pairwise; 16 states; scope `main article [data-slot="admin-edit"]`.
+
+- [ ] SHOP-ADMIN-EDIT-001 · 320px · light · en · admin · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console axe
+- [ ] SHOP-ADMIN-EDIT-002 · 320px · dark · hi · admin · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] SHOP-ADMIN-EDIT-003 · 390px · light · hi · admin · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] SHOP-ADMIN-EDIT-004 · 390px · dark · en · admin · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console
+- [ ] SHOP-ADMIN-EDIT-005 · 480px · light · en · admin · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console axe
+- [ ] SHOP-ADMIN-EDIT-006 · 480px · dark · hi · admin · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] SHOP-ADMIN-EDIT-007 · 768px · light · en · admin · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console
+- [ ] SHOP-ADMIN-EDIT-008 · 768px · dark · hi · admin · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] SHOP-ADMIN-EDIT-009 · 1024px · light · en · admin · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console axe
+- [ ] SHOP-ADMIN-EDIT-010 · 1024px · dark · hi · admin · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] SHOP-ADMIN-EDIT-011 · 1280px · light · en · admin · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console
+- [ ] SHOP-ADMIN-EDIT-012 · 1280px · dark · hi · admin · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] SHOP-ADMIN-EDIT-013 · 1440px · light · en · admin · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console axe
+- [ ] SHOP-ADMIN-EDIT-014 · 1440px · dark · hi · admin · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] SHOP-ADMIN-EDIT-015 · 1920px · light · en · admin · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console
+- [ ] SHOP-ADMIN-EDIT-016 · 1920px · dark · hi · admin · world=empty · /shop · asserts: present inside overlap covered tap hscroll focus console hindi
+
 ### SHOP-ACTION — Card actions clicked, then every card re-checked (cross-entity sync)
 
 Full cross of the high-risk dimensions, the rest pairwise; 40 states; scope `main article`.
@@ -1363,6 +1416,27 @@ Pairwise (all pairs of values); 43 states; scope `main`.
 - [ ] PDP-BUYBOX-041 · 390px · light · en · signed out · world=empty · /shop/castrol-activ-4t-20w40-900ml?size=TYR-PC-1756514 · size=first · cart=c1 · compare=lub-2 · stress=long-text · trust=override · asserts: present inside overlap covered clipped tap hscroll focus console sync axe · core
 - [ ] PDP-BUYBOX-042 · 320px · dark · hi · signed out · world=empty · /shop/heavy-duty-battery-90ah?size=TYR-PC-1955516 · size=out · cart=c99 · compare=bat-3 · stress=long-price · trust=long · asserts: present inside overlap covered clipped tap hscroll focus console sync hindi
 - [ ] PDP-BUYBOX-043 · 320px · light · en · signed out · world=empty · /shop/car-tyre-185-65-r15 · size=default · cart=none · compare=none · stress=none · trust=hidden · asserts: present inside overlap covered clipped tap hscroll focus console sync
+
+### PDP-ADMIN-EDIT — Storefront Edit shortcut beside the title for catalogue staff: at least 24 px, inside the page, no overlap with the title
+
+Full cross of the high-risk dimensions, the rest pairwise; 16 states; scope `main [data-slot="admin-edit"], main h1`.
+
+- [ ] PDP-ADMIN-EDIT-001 · 320px · light · en · admin · world=empty · /shop/castrol-activ-4t-20w40-900ml · asserts: present inside overlap covered tap hscroll focus console axe
+- [ ] PDP-ADMIN-EDIT-002 · 320px · dark · hi · admin · world=empty · /shop/castrol-activ-4t-20w40-900ml · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] PDP-ADMIN-EDIT-003 · 390px · light · hi · admin · world=empty · /shop/castrol-activ-4t-20w40-900ml · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] PDP-ADMIN-EDIT-004 · 390px · dark · en · admin · world=empty · /shop/castrol-activ-4t-20w40-900ml · asserts: present inside overlap covered tap hscroll focus console
+- [ ] PDP-ADMIN-EDIT-005 · 480px · light · en · admin · world=empty · /shop/castrol-activ-4t-20w40-900ml · asserts: present inside overlap covered tap hscroll focus console axe
+- [ ] PDP-ADMIN-EDIT-006 · 480px · dark · hi · admin · world=empty · /shop/castrol-activ-4t-20w40-900ml · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] PDP-ADMIN-EDIT-007 · 768px · light · en · admin · world=empty · /shop/castrol-activ-4t-20w40-900ml · asserts: present inside overlap covered tap hscroll focus console
+- [ ] PDP-ADMIN-EDIT-008 · 768px · dark · hi · admin · world=empty · /shop/castrol-activ-4t-20w40-900ml · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] PDP-ADMIN-EDIT-009 · 1024px · light · en · admin · world=empty · /shop/castrol-activ-4t-20w40-900ml · asserts: present inside overlap covered tap hscroll focus console axe
+- [ ] PDP-ADMIN-EDIT-010 · 1024px · dark · hi · admin · world=empty · /shop/castrol-activ-4t-20w40-900ml · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] PDP-ADMIN-EDIT-011 · 1280px · light · en · admin · world=empty · /shop/castrol-activ-4t-20w40-900ml · asserts: present inside overlap covered tap hscroll focus console
+- [ ] PDP-ADMIN-EDIT-012 · 1280px · dark · hi · admin · world=empty · /shop/castrol-activ-4t-20w40-900ml · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] PDP-ADMIN-EDIT-013 · 1440px · light · en · admin · world=empty · /shop/castrol-activ-4t-20w40-900ml · asserts: present inside overlap covered tap hscroll focus console axe
+- [ ] PDP-ADMIN-EDIT-014 · 1440px · dark · hi · admin · world=empty · /shop/castrol-activ-4t-20w40-900ml · asserts: present inside overlap covered tap hscroll focus console hindi
+- [ ] PDP-ADMIN-EDIT-015 · 1920px · light · en · admin · world=empty · /shop/castrol-activ-4t-20w40-900ml · asserts: present inside overlap covered tap hscroll focus console
+- [ ] PDP-ADMIN-EDIT-016 · 1920px · dark · hi · admin · world=empty · /shop/castrol-activ-4t-20w40-900ml · asserts: present inside overlap covered tap hscroll focus console hindi
 
 ### PDP-REVIEWS — Ratings summary, review list, write-a-review entry
 

@@ -702,3 +702,5 @@ User-approved prototype `topbar-c-v4.html` built in the real app: floating glass
 ## 2026-11-24 - Two browser bugs: assistant button over forms on phones, stale sign-in alert (branch worktree-agent-a9f1de147555562d1, not merged; no migration)
 
 Done: launcher hides on phones while a field is focused and on `data-launcher-avoid-phone` forms (roadside); state-audit row `RSA-FLOAT`, checklist regenerated (4687 items); `announcer.ts` + `login-announcer.test.ts`; login-flow clears the alert region on error clear and on a new submit. Docs: design-system, decisions, specs 01 and 22 notes, learnings T204/T205. Playwright audit not run locally (CI).
+
+- **2026-11-25: storefront Edit shortcut for catalogue staff** (worktree branch worktree-agent-a4e6b18f4246c887a, not pushed, no migration, no database). Pencil link on cards and the product page (spec 08), deep link `/admin/catalogue?product=<slug>`, visibility from live `/v1/me` permissions, lazy chunk (JS +0.3 KB gz), event `admin_storefront_edit_clicked`, API role-leak tests, audit rows SHOP-CARD-ADMIN / SHOP-ADMIN-EDIT / PDP-ADMIN-EDIT. See decisions 2026-11-25.

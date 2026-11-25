@@ -1962,3 +1962,10 @@ Colour may carry meaning in admin data (rule 2: a new colour needs an entry; thi
 ## 2026-11-25 — Codes submit themselves at full length
 
 User: "during forgot password or anything that requires a code, if the code entered matches you can directly accept it without having them to click the submit button". Decided: every fixed-length code (sign-up, staff and reset SMS codes, partner status code, order delivery code) is sent automatically once per distinct complete value, through one hook (`useAutoSubmitCode`); Submit stays as the fallback; a helper line announces the behaviour (WCAG 3.2.2); event `code_submitted` carries `auto`. Phone reset is split into code and new-password steps so the code can be checked alone. The delivery code auto-submits too (a try counts toward the 5-attempt lock either way). Same day: the staff code step starts its Cloudflare check as it opens and runs it beside the code check (30 s report). Details: spec 01.
+
+## 2026-11-25 - Storefront "Edit" shortcut for catalogue staff (user: "if the login is admin ... a little edit button over the products ... proper security checks"; "both cards and product page")
+
+- A pencil link on product cards and the product page for `products:write` holders only (super_admin, catalogue_manager); it opens the existing admin catalogue editor at `/admin/catalogue?product=<slug>`. No inline editing on the storefront.
+- **Security:** authority is the API (role-leak tests); visibility from the live `/v1/me` permissions (no new API field: `permissions` already exists), one request per account, none for guests; shop pages stay cacheable because nothing staff-only is in the server HTML (client wrapper + lazy chunk).
+- **Performance:** wrapper only in the shop bundles: /shop 174.0 to 174.3 KB gz, product page 175.1 to 175.5 KB gz (limit 180).
+- Placement: on the picture's top right (the ⓘ ♡ buttons stay on the category line, decision 2026-11-24). New event in spec 12. No new colour, font or radius.

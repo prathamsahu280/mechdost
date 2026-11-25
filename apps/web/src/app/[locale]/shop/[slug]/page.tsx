@@ -16,6 +16,8 @@ import { ProductPhoto, productPhotoLoader } from '@/components/catalogue/product
 import { ProductVisual } from '@/components/catalogue/product-visual';
 import { RecommendationsSection } from '@/components/catalogue/recommendations-section';
 import { WishlistHeartLazy } from '@/components/catalogue/wishlist-lazy';
+import { AdminEditLazy } from '@/components/catalogue/admin-edit-lazy';
+import { adminEditPath } from '@/lib/catalogue/admin-edit';
 import { ReviewsApiSection, ReviewsApiSkeleton } from '@/components/reviews/reviews-api-section';
 import { ReviewsSection } from '@/components/reviews/reviews-section';
 import { StarRating } from '@/components/reviews/star-rating';
@@ -311,9 +313,21 @@ export default async function ProductPage({ params }: Props) {
             <span className="font-bold uppercase">{product.brand}</span>
             {categoryName ? ` · ${categoryName}` : null}
           </p>
-          <h1 className="mt-2 font-heading text-[clamp(28px,3vw,40px)] leading-tight font-extrabold tracking-[-0.02em] text-ink">
-            {product.name}
-          </h1>
+          {/* Title row: the staff-only "Edit" shortcut joins it after hydration (nothing staff-only is rendered on the
+              server; the row is a plain block for everyone else). */}
+          <div className="mt-2 flex items-start justify-between gap-3">
+            <h1 className="min-w-0 font-heading text-[clamp(28px,3vw,40px)] leading-tight font-extrabold tracking-[-0.02em] text-ink">
+              {product.name}
+            </h1>
+            <AdminEditLazy
+              slug={product.slug}
+              href={localePath(adminEditPath(product.slug), locale)}
+              locale={locale}
+              label={t('adminEdit', { name: productFullName(product.brand, product.name) })}
+              tip={t('adminEditTip')}
+              from="product"
+            />
+          </div>
           {product.spec ? <p className="mt-2 text-[15px] text-muted">{product.spec}</p> : null}
           {rating ? (
             <a

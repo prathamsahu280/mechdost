@@ -646,6 +646,8 @@ export const CLIENT_EVENT_SCHEMAS = {
   // The tray told the shopper the list is full or the browser refused to save it.
   compare_limit_shown: z.object({ reason: z.enum(['full', 'save_failed']) }).strict(),
   remove_from_cart: z.object({ slug: id }).strict(),
+  // Catalogue staff pressed the storefront "Edit" shortcut (spec 08, 2026-11-25): slug and where it sat; no staff id.
+  admin_storefront_edit_clicked: z.object({ slug: id, from: z.enum(['card', 'product']) }).strict(),
   // Wishlist (design 2026-11-15): the heart on a card, the product page or the account list; slug and direction only.
   wishlist_toggled: z
     .object({ slug: id, on: z.boolean(), source: z.enum(['card', 'page', 'account']) })

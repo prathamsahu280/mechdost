@@ -175,3 +175,7 @@ Roadside override rule (2026-11-24): the arrival-code override needs `roadside:d
 ## Crawlers and visitor logs (2026-11-24)
 
 robots.txt asks AI-training scrapers and SEO-tool crawlers to stay out (`apps/web/src/lib/crawler-blocklist.ts`); nothing blocks by user agent or IP, so no normal visitor, search engine or link-preview fetcher is affected. Caddy keeps a size-capped visitor log (30 days, 96 MiB) with the query string, `Authorization` and `Cookie` redacted (`docs/runbooks/traffic.md`); IPs in it are personal data under DPDP (purpose: security and traffic statistics; not joined to accounts). Never log reset codes or share tokens: `oobCode` and any `?query` is replaced by `?REDACTED`.
+
+## Storefront edit shortcut (2026-11-25)
+
+The pencil link on cards and the product page is convenience only; authority stays in the API. Every `/admin/catalogue/*` route requires sign-in, phone verification and `products:write`; `apps/api/test/admin-catalogue-role-leak.test.ts` pins 401 (signed out) and 403 (customer, shop owner, workshop owner, support_agent, finance, marketing, ops_manager) on the read that opens the editor and on each save route, and 200 for catalogue_manager and super_admin. Visibility comes from the live `GET /v1/me` permissions, never from a stored value; a doctored browser record shows nothing. The link carries only the slug (validated before it reaches an API path); saves keep `version` checks and the audit log.
