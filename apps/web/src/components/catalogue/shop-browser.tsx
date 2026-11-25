@@ -363,6 +363,7 @@ export function ShopBrowser({
 
   function onSearch(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
+    suggestHandle.current?.close();
     const query = draft.trim().slice(0, 120);
     if (query) track('search', { query, source: 'shop' });
     apply({ ...state, query });

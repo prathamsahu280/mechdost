@@ -175,3 +175,7 @@ section is controlled in Admin → Layout (label `portal.section_roadside`); the
 Tests: `packages/shared/test/roadside-intent.test.ts`, `apps/web/test/roadside-promo.test.ts`, API `GET /roadside/city`; state-audit
 rows `CHR-HEADER-ROADSIDE`, `CHR-TABBAR-5`, `CHR-SEARCH-ROADSIDE`, `HOME-ROADSIDE`, `WS-ROADSIDE-CARD` and `/roadside` in the
 `NAV-HEADER` / `NAV-TABBAR` walks.
+
+## Note 2026-11-25: who sees what on `/roadside`
+
+Only a customer account gets the request form (unchanged). A guest sees "Sign in with your phone number to ask for roadside help." and a Sign in button (the line "You do not need a verified email." was removed on the user's request; the rule itself, verified email not required, stands). A signed-in staff, shop or workshop account no longer falls into the guest branch: staff see `roadside.staffNotice` ("... You are signed in as staff.") with a link to Admin → Roadside help (the page itself enforces `roadside:*`), shop and workshop accounts see `roadside.partnerNotice` and no link. No Sign in button for any signed-in account. Tests: `apps/web/e2e/search-suggest-close.spec.ts`.

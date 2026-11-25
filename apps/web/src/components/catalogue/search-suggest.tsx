@@ -7,6 +7,7 @@ import { SUGGEST_MAX, SUGGEST_QUERY_MIN, type SuggestItemDto } from '@mechdost/s
 import type { CategoryKey } from '@/demo/categories';
 import { suggestSearch } from '@/lib/catalogue-public-api';
 import { photoSrc } from '@/lib/photo-src';
+import { isSuggestOpen } from './suggest-open';
 
 /**
  * Search suggestions under the shop search box (spec 02 "Smart search"). WAI-ARIA combobox (list autocomplete,
@@ -62,18 +63,20 @@ export default function SearchSuggest({
   const [items, setItems] = useState<SuggestItemDto[]>([]);
   const [loadedFor, setLoadedFor] = useState('');
   const [active, setActive] = useState(-1);
-  const [dismissed, setDismissed] = useState(false);
+  // The words the list was closed at (null: not closed); see `isSuggestOpen`.
+  const [closedAt, setClosedAt] = useState<string | null>(null);
   const typed = query.trim();
   const long = Array.from(typed).length >= SUGGEST_QUERY_MIN;
-  const open = long && !dismissed && items.length > 0 && loadedFor === typed;
+  const open = isSuggestOpen({ typed, long, itemCount: items.length, loadedFor, closedAt });
   const optionId = (i: number) => `${prefix}-opt-${String(i)}`;
 
-  // A new word reopens the list and starts from the top.
+  // New words start from the top (and open the list: `closedAt` no longer matches them).
   const [seen, setSeen] = useState(typed);
   if (seen !== typed) {
     setSeen(typed);
-    setDismissed(false);
     setActive(-1);
+    // Closed words only hold while they are the words in the box: clear the box and retype, and the list returns.
+    setClosedAt((c) => (c === typed ? c : null));
   }
 
   useEffect(() => {
@@ -119,7 +122,8 @@ export default function SearchSuggest({
   const choose = (i: number) => {
     const item = items[i];
     if (!item) return;
-    setDismissed(true);
+    // The box is about to hold this label (or be emptied), so close the list for those words.
+    setClosedAt(item.label.trim());
     onChoose({
       kind: item.kind,
       slug: item.slug,
@@ -137,10 +141,10 @@ export default function SearchSuggest({
     handle,
     () => ({
       close: () => {
-        setDismissed(true);
+        setClosedAt(typed);
       },
       reopen: () => {
-        setDismissed(false);
+        setClosedAt(null);
       },
       onKeyDown: (e) => {
         const count = items.length;
@@ -148,7 +152,7 @@ export default function SearchSuggest({
           if (open) {
             e.preventDefault();
             e.stopPropagation();
-            setDismissed(true);
+            setClosedAt(typed);
           }
           return;
         }
@@ -156,7 +160,7 @@ export default function SearchSuggest({
           if (count === 0 || !long) return;
           e.preventDefault();
           if (!open) {
-            setDismissed(false);
+            setClosedAt(null);
             return;
           }
           const step = e.key === 'ArrowDown' ? 1 : -1;
@@ -169,7 +173,7 @@ export default function SearchSuggest({
         }
       },
     }),
-    [items.length, open, active, long],
+    [items.length, open, active, long, typed],
   );
 
   const count = open ? items.length : long && loadedFor === typed ? items.length : 0;
