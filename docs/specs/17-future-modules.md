@@ -20,6 +20,10 @@ Request roadside help (tyre, starting, breakdown, towing) with live location and
 
 ## E. Mechanic network (`03-section-15-mechanics`)
 
+> **The mechanic network is specified in `23-ustaad-network.md` (the Ustaad Network, 2026-11-26)**: design
+> `docs/superpowers/specs/2026-11-26-ustaad-network-design.md`, plan `docs/superpowers/plans/2026-11-26-ustaad-network.md`.
+> The sketch below is kept for history; "Apply as a mechanic" now opens the Ustaad join (spec 23 § 4a).
+
 Mechanic registration (4 consents), skills profile, district/PIN, directory, job cards workspace, network operations admin (verification, consent, export). Role `mechanic` portal. Phase 4.
 
 ## F. Referral, loyalty tiers (P1) — no wallet

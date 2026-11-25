@@ -26,6 +26,7 @@ Each feature has one spec. Specs are living documents: **any change to behaviour
 | 20  | [MechDost Coins (loyalty, no wallet)](20-loyalty-coins.md)                                      | 1              | ledger built; earning pending Q24 |
 | 21  | [Product comparison](21-product-comparison.md)                                                  | 1              | built (demo + API)                |
 | 22  | [Roadside assistance](22-roadside-assistance.md)                                                | 1              | phase 1 built (manual dispatch)   |
+| 23  | [Ustaad Network (mechanics-only network)](23-ustaad-network.md)                                 | 1              | decided, not built                |
 
 ## Spec template
 

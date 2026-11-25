@@ -8,6 +8,8 @@ Mobile-first portals where partners accept work fast, manage catalogue/menus and
 
 ## Onboarding
 
+> **2026-11-26:** the Mechanic application is replaced by the Ustaad Network join (spec 23 § 4a): `/partners/apply/mechanic` renders the join flow, `/partners/status` shows a mechanic's verification progress, old mechanic applications are mapped to invites; Seller and Garage applications below are unchanged.
+
 Public forms (concept `launchRequest` kinds Seller / Garage / Mechanic application with the same fields + light KYC uploads: GSTIN or declaration, PAN, bank, photos, location pin) → `partner_applications` → admin review checklist → approve creates `shops`/`workshops` + invites owner phone (OTP login gives `partner_id` claim) → owner completes profile → admin publishes. Rejected with reason; reapply allowed.
 
 ## Shop portal (`/partner/shop`)
