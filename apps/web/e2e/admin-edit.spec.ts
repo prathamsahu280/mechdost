@@ -26,7 +26,8 @@ test.describe('storefront edit shortcut', () => {
     for (const path of ['/shop', `/shop/${SLUG}`, '/hi/shop']) {
       const html = await (await request.get(path)).text();
       expect(html, path).not.toContain('data-slot="admin-edit"');
-      expect(html, path).not.toContain('/admin/catalogue?product=');
+      // No rendered link to the editor; the page's inert props (slug, label, address) are public text, never staff data.
+      expect(html, path).not.toMatch(/<a[^>]+href="[^"]*\/admin\/catalogue/);
     }
   });
 

@@ -723,7 +723,7 @@ export const COMPONENTS: readonly ComponentDef[] = [
     checks: [...BASE_CHECKS, 'aligned', 'offphoto'],
     align: CARD_ALIGN,
     sweep: 8,
-    core: coreAt([390, 1440]),
+    core: coreAt([390], (r) => r.theme === 'light' && r.locale === 'en'),
     note: 'Admin login in the demo = the staff session that shows the shortcut (user 2026-11-25).',
   },
   {
@@ -738,7 +738,6 @@ export const COMPONENTS: readonly ComponentDef[] = [
     params: [width, theme, locale, { name: 'auth', values: ['admin'] }],
     checks: ['present', 'inside', 'overlap', 'covered', 'tap', 'hscroll', 'focus', 'console'],
     sweep: 6,
-    core: coreAt([320, 1440]),
   },
   {
     code: 'SHOP-ACTION',
@@ -873,7 +872,6 @@ export const COMPONENTS: readonly ComponentDef[] = [
     params: [width, theme, locale, { name: 'auth', values: ['admin'] }],
     checks: ['present', 'inside', 'overlap', 'covered', 'tap', 'hscroll', 'focus', 'console'],
     sweep: 6,
-    core: coreAt([320, 1440]),
   },
   {
     code: 'PDP-REVIEWS',

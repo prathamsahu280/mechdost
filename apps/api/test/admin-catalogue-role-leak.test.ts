@@ -139,7 +139,7 @@ describe('product editor: who may open and save it', () => {
     const manager = await person('61', 'catalogue_manager');
     const admin = await person('62', 'super_admin');
     for (const who of [manager, admin]) {
-      const r = await call(who, EDITOR_CALLS[0] as (typeof EDITOR_CALLS)[number]);
+      const r = await call(who, { method: 'GET', path: `/admin/catalogue/products/${SLUG}` });
       expect(r.status).toBe(200);
     }
   });

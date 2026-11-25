@@ -21,7 +21,7 @@ export function meAllowsCatalogueEdit(me: unknown): boolean {
   return (
     Array.isArray(permissions) &&
     permissions.every((p) => typeof p === 'string') &&
-    canEditCatalogue(permissions as string[])
+    canEditCatalogue(permissions)
   );
 }
 
