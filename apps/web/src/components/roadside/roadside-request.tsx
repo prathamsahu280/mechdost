@@ -50,7 +50,8 @@ export function RoadsideRequest() {
   const locale = useLocale();
   const router = useRouter();
   const base = locale === 'hi' ? '/hi' : '';
-  const signedIn = useSession()?.role === 'customer';
+  const role = useSession()?.role;
+  const signedIn = role === 'customer';
   const [pincode, setPincode] = useState('');
   const [point, setPoint] = useState<Point | null>(null);
   const [via, setVia] = useState<'gps' | 'pincode'>('pincode');
@@ -185,6 +186,20 @@ export function RoadsideRequest() {
     if (!paid.ok && paid.reason !== 'cancelled' && paid.reason !== 'failed') setError(`pay_${paid.reason}`);
     router.push(`${base}/roadside/${made.data.code}`);
   };
+
+  // Signed in with a staff, shop or workshop account: roadside requests are customer-only (spec 22), so say so
+  // instead of asking them to sign in again.
+  if (role && !signedIn)
+    return (
+      <div className="rounded-card border border-line-card bg-surface p-6 shadow-card">
+        <p className="text-muted">{t(role === 'admin' ? 'staffNotice' : 'partnerNotice')}</p>
+        {role === 'admin' ? (
+          <Link href={`${base}/admin/roadside`} className={`${quiet} mt-4`}>
+            {t('staffQueueLink')}
+          </Link>
+        ) : null}
+      </div>
+    );
 
   if (!signedIn)
     return (

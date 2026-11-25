@@ -20,7 +20,7 @@ async function signIn(page: Page, phone: string, next: string, staff = false) {
 }
 
 test('a customer asks for roadside help and follows it to the bill', async ({ page }) => {
-  await signIn(page, '9000000004', '/roadside');
+  await signIn(page, '9876543210', '/roadside');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Stuck on the road');
   await page.getByLabel('PIN code').fill('492001');
   // 2W and 4W only: no three-wheeler is offered.
@@ -32,6 +32,7 @@ test('a customer asks for roadside help and follows it to the bill', async ({ pa
   await expect(page.getByText(/advance of ₹500 now/)).toBeVisible();
   await page.getByRole('button', { name: /Pay advance ₹500/ }).click();
   await expect(page).toHaveURL(/\/roadside\/RSA-RPR-/);
+  const trackingPath = new URL(page.url()).pathname;
   await expect(page.getByRole('heading', { name: 'Finding a mechanic' })).toBeVisible();
 
   // Admin sends it to the nearest workshop.
@@ -51,23 +52,23 @@ test('a customer asks for roadside help and follows it to the bill', async ({ pa
   await page.getByRole('button', { name: 'Send bill' }).click();
 
   // The customer sees the total, the advance already paid and what is left.
-  await signIn(page, '9000000004', '/roadside');
-  await page.goto('/account');
-  await page.goBack();
+  await signIn(page, '9876543210', '/roadside');
+  await expect(page).toHaveURL(/\/roadside/);
+  await page.goto(trackingPath);
   await expect(page.getByText('₹1,800').first()).toBeVisible();
   await expect(page.getByText('Left to pay')).toBeVisible();
   await expect(page.getByText('₹1,300').first()).toBeVisible();
 });
 
 test('the Hindi request page asks for a PIN code and names the choices in Hindi', async ({ page }) => {
-  await signIn(page, '9000000004', '/hi/roadside');
+  await signIn(page, '9876543210', '/hi/roadside');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('सड़क पर फँस गए');
   await page.getByLabel('पिन कोड').fill('492001');
   await expect(page.getByLabel('मुझे नहीं पता क्या खराबी है')).toBeVisible();
 });
 
 test('a PIN code outside the area gets a calm message and a call button', async ({ page }) => {
-  await signIn(page, '9000000004', '/roadside');
+  await signIn(page, '9876543210', '/roadside');
   await page.getByLabel('PIN code').fill('110001');
   await expect(page.getByText(/does not cover this area yet/)).toBeVisible();
   await expect(page.getByRole('link', { name: 'Call MechDost' })).toBeVisible();
