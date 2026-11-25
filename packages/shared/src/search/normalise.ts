@@ -103,3 +103,14 @@ export function didYouMean(query: string, candidates: readonly string[]): string
   }
   return best?.name ?? null;
 }
+
+/**
+ * The compact spellings a parsed tyre size (`90/90-12`, `175/65R14`, `3.50-10`) can be stored in on a size label:
+ * with the `R` and without it, because "90/90-12" and "90/90 R12" name the same family of sizes on a catalogue
+ * sheet. Cross-section sizes (`3.50-10`) have one spelling.
+ */
+export function tyreSizeKeys(size: string): string[] {
+  const m = /^(\d{2,3})\/(\d{2,3})[-R](\d{2})$/.exec(size.toUpperCase());
+  if (!m) return [compactAlnum(size)];
+  return [`${m[1]}${m[2]}R${m[3]}`, `${m[1]}${m[2]}${m[3]}`];
+}

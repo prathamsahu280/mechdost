@@ -285,7 +285,11 @@ export function ShopBrowser({
   function chooseSuggestion(item: ChosenSuggestion) {
     track('search_suggestion_selected', { kind: item.kind, position: item.position });
     if (item.kind === 'product') {
-      router.push(`${basePath}/${item.slug}`);
+      if (item.sizeSku)
+        track('search_size_match_clicked', { slug: item.slug, sku: item.sizeSku, source: 'suggest' });
+      router.push(
+        `${basePath}/${item.slug}${item.sizeSku ? `?size=${encodeURIComponent(item.sizeSku)}` : ''}`,
+      );
       return;
     }
     const category = item.kind === 'category' ? categoryFromSlug(item.slug) : undefined;

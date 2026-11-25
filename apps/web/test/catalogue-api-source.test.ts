@@ -22,6 +22,7 @@ const card: CatalogueCard = {
   mrpFromPaise: 47_500,
   mrpVaries: false,
   sizeCount: 1,
+  matchedSizes: [],
   offer: {
     sku: 'CAS-0900-B',
     pricePaise: 44_000,

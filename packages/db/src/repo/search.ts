@@ -38,6 +38,8 @@ export interface SuggestItem {
   /** Second line: the brand of a product, the parent brand of a range. */
   subtitle: string | null;
   photo: { path: string; alt: string; width: number; height: number } | null;
+  /** A product suggestion found by a size ("90/90-12"): the size that matched, so the list can say so. */
+  matchedSize: { label: string; sku: string } | null;
 }
 
 /**
@@ -85,7 +87,7 @@ export async function suggestCatalogue(
       order by (lower(b.name) like ${prefix}) desc, word_similarity(${word}, b.name) desc, b.name limit 2`),
   );
   for (const b of brands)
-    out.push({ kind: 'brand', label: b.name, slug: b.slug, subtitle: null, photo: null });
+    out.push({ kind: 'brand', label: b.name, slug: b.slug, subtitle: null, photo: null, matchedSize: null });
 
   if (input.ranges) out.push(...(await input.ranges(db, q, 2, input.locale)).slice(0, 2));
 
@@ -103,6 +105,7 @@ export async function suggestCatalogue(
       slug: c.slug,
       subtitle: null,
       photo: null,
+      matchedSize: null,
     });
 
   const room = SUGGEST_MAX - out.length;
@@ -120,6 +123,7 @@ export async function suggestCatalogue(
         label: card.name,
         slug: card.slug,
         subtitle: card.brand.name,
+        matchedSize: card.matchedSizes[0] ?? null,
         photo: card.photo
           ? { path: card.photo.path, alt: card.photo.alt, width: card.photo.width, height: card.photo.height }
           : null,

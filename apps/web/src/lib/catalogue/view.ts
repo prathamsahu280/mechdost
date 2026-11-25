@@ -28,6 +28,8 @@ export interface CardView {
   leadDays: number | null;
   /** Several sizes: the card says "from ₹X · N sizes" (X = lowest offered price); null for a single size. */
   sizes: { count: number; fromPaise: number | null } | null;
+  /** The sizes a search named (at most 3): the card says "Size … available" and opens on the first. Absent = none. */
+  matchedSizes?: readonly { label: string; sku: string }[];
   highlights: string[];
   rating: { avg: number; count: number } | null;
   popular: boolean;

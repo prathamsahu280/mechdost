@@ -63,6 +63,7 @@ export function auditCard(i: number, locale: AuditLocale): CatalogueCard {
     mrpFromPaise: null,
     mrpVaries: false,
     sizeCount: 1,
+    matchedSizes: [],
     specSummary: t.spec,
     highlights: [...t.highlights],
     vehicleTypes: ['2W'],

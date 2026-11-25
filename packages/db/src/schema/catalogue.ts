@@ -409,6 +409,12 @@ export const productVariants = pgTable(
     netQty: integer(),
     netUnit: text(),
     status: text().notNull().default('active'),
+    /**
+     * The size text without spaces and punctuation ("9090125 4JTL"), kept by the `product_variants_size_compact`
+     * trigger from the options and the pack; the search matches tyre sizes and pack sizes against it (trigram index,
+     * spec 02 "Search by size"). Never written by the app.
+     */
+    sizeCompact: text(),
     /** Staff edits (size label, MRP, barcode, archive) are conditional updates on this (user 2026-11-24). */
     version: version(),
     createdAt: createdAt(),

@@ -1,4 +1,5 @@
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { localePath } from '@/lib/locale-path';
 import type { CardView } from '@/lib/catalogue/view';
 import { discountPercent, formatPrice } from '@/lib/format';
 import { StarRating } from '../reviews/star-rating';
@@ -8,6 +9,7 @@ import { CompareToggle } from './compare-toggle';
 import { ProductInfoButton } from './product-info-button';
 import { ProductPhoto } from './product-photo';
 import { ProductVisual } from './product-visual';
+import { SizeMatchChip } from './size-match-chip';
 import { UnitPrice } from './unit-price';
 import { mrpOnly } from '@/lib/catalogue/mrp-only';
 import { WishlistHeartLazy } from './wishlist-lazy';
@@ -31,6 +33,10 @@ export function ProductCard({
   compare?: boolean;
 }) {
   const t = useTranslations('catalogue');
+  const locale = useLocale();
+  const matched = product.matchedSizes ?? [];
+  const first = matched[0];
+  const sizeQuery = first ? { size: first.sku } : undefined;
   const cmp = useTranslations('compare');
   const c = useTranslations('categories');
   const r = useTranslations('reviews');
@@ -48,7 +54,13 @@ export function ProductCard({
   return (
     <article className="group grid rounded-card border border-line-card bg-surface p-3 shadow-card transition-shadow duration-[var(--duration-base)] hover:shadow-card-hover">
       <div className="relative">
-        <LocalLink href={`/shop/${product.slug}`} className="block" tabIndex={-1} aria-hidden="true">
+        <LocalLink
+          href={`/shop/${product.slug}`}
+          query={sizeQuery}
+          className="block"
+          tabIndex={-1}
+          aria-hidden="true"
+        >
           {product.photo ? (
             <ProductPhoto photo={product.photo} sizes="(min-width: 1024px) 280px, 50vw" />
           ) : (
@@ -109,6 +121,7 @@ export function ProductCard({
         <h3 className="mt-0.5 px-1 font-heading text-[16px] leading-snug font-bold text-ink">
           <LocalLink
             href={`/shop/${product.slug}`}
+            query={sizeQuery}
             className="inline-block py-0.5 hover:underline"
             data-track={`product_${product.slug}`}
           >
@@ -116,6 +129,21 @@ export function ProductCard({
           </LocalLink>
         </h3>
         <div data-align="rating" className="mt-1 px-1">
+          {first ? (
+            <div className="mb-1">
+              <SizeMatchChip
+                href={`${localePath(`/shop/${product.slug}`, locale)}?size=${encodeURIComponent(first.sku)}`}
+                slug={product.slug}
+                sku={first.sku}
+                text={t('sizeAvailable', { size: first.label })}
+                more={
+                  matched.length > 1
+                    ? t('sizesAvailable', { sizes: matched.map((m) => m.label).join(', ') })
+                    : null
+                }
+              />
+            </div>
+          ) : null}
           {rating ? (
             <p className="flex items-center gap-1.5 text-xs text-muted">
               <StarRating
@@ -192,6 +220,7 @@ export function ProductCard({
             <div data-slot="card-actions" className={compare ? 'mt-1' : 'mt-2'}>
               <LocalLink
                 href={`/shop/${product.slug}`}
+                query={sizeQuery}
                 data-track="card_choose_size"
                 className="press cart-add"
               >

@@ -59,6 +59,8 @@ function take(text: string, re: RegExp, read: (m: (string | undefined)[]) => boo
 
 const TYRE_RADIAL = /(?<![\d/.])(\d{2,3})\s*\/\s*(\d{2,3})\s*(?:(-)\s*|(z?r)\s*-?\s*)(\d{2})(?!\d)/gu;
 const TYRE_BIAS = /(?<![\d.])(\d{1,2}\.\d{2})\s*-\s*(\d{2})(?!\d)/gu;
+/** "90 90 12" and "175 65 r14": the slashes dropped. Only plausible numbers count (width, aspect, rim), see below. */
+const TYRE_SPACED = /(?<![\d/.])(\d{2,3})\s+(\d{2,3})\s+(r\s*)?(\d{2})(?![\d.])/gu;
 const VISCOSITY = /(?<![\d.])(\d{1,2})\s*w\s*-?\s*(\d{2,3})(?!\d)/gu;
 const PACK =
   /(?<![\d.\p{L}])(\d+(?:\.\d+)?)\s*(millilit(?:re|er)s?|ml|lit(?:re|er)s?|ltrs?|lt|l|kilograms?|kilos?|kgs?|grams?|gms?|g)(?![\p{L}\p{N}])/gu;
@@ -119,6 +121,14 @@ export function parseSearchQuery(
   rest = take(rest, TYRE_BIAS, (m) => {
     if (out.tyreSize) return false;
     out.tyreSize = `${m[1]}-${m[2]}`;
+    return true;
+  });
+  rest = take(rest, TYRE_SPACED, (m) => {
+    const [width, aspect, rim] = [Number(m[1]), Number(m[2]), Number(m[4])];
+    const plausible =
+      width >= 60 && width <= 400 && aspect >= 30 && aspect <= 100 && rim >= 8 && rim <= 24 && width > rim;
+    if (out.tyreSize || !plausible) return false;
+    out.tyreSize = `${m[1]}/${m[2]}${m[3] ? 'R' : '-'}${m[4]}`;
     return true;
   });
   rest = take(rest, VISCOSITY, (m) => {

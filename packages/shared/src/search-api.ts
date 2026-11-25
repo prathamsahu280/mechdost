@@ -17,6 +17,8 @@ export const SuggestItemSchema = z.object({
   photo: z
     .object({ path: z.string(), alt: z.string(), width: z.number().int(), height: z.number().int() })
     .nullable(),
+  /** A product found by a size ("90/90-12"): the size that matched, so the list says "Size … available". */
+  matchedSize: z.object({ label: z.string(), sku: z.string() }).nullable().default(null),
 });
 export type SuggestItemDto = z.infer<typeof SuggestItemSchema>;
 

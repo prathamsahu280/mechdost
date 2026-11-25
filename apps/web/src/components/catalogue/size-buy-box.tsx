@@ -1,10 +1,10 @@
 'use client';
 
-import { CheckCircle2, Clock, MessageCircle, Truck } from 'lucide-react';
+import { Check, CheckCircle2, Clock, MessageCircle, Truck } from 'lucide-react';
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { track } from '@/lib/analytics';
 import { signal } from '@/lib/compare/signal';
-import { resolveSizeParam, withSizeParam } from '@/lib/catalogue/size-select';
+import { groupSizesByRim, resolveSizeParam, withSizeParam } from '@/lib/catalogue/size-select';
 import { AddToCartButton, type AddToCartLabels } from './add-to-cart-button';
 import { SellerNote } from '@/components/commerce/seller-note';
 
@@ -40,6 +40,11 @@ export interface SizeBuyBoxLabels {
   fits: string;
   /** "{size} selected": `{size}` is replaced; read out by the live region. */
   chosen: string;
+  /** "Opened on {size}, the size you searched for.": shown when a `?size=` link (a search result) opened the page. */
+  opened: string;
+  /** "{rim} inch": the heading of a group of tyre sizes of one rim. */
+  groupRim: string;
+  groupOther: string;
   inclusive: string;
   askAbout: string;
   whatsappNote: string;
@@ -87,10 +92,12 @@ export function SizeBuyBox({
 }) {
   const [sku, setSku] = useState(defaultSku);
   const [fit, setFit] = useState<{ sku: string; vehicle: string } | null>(null);
+  const [linkedSku, setLinkedSku] = useState<string | null>(null);
   const touched = useRef(false);
   const groupId = useId();
 
   const current = sizes.find((s) => s.sku === sku) ?? sizes[0];
+  const groups = groupSizesByRim(sizes);
 
   // A `?size=` link opens that size; otherwise the saved vehicle's size is preselected once the answer arrives.
   useEffect(() => {
@@ -98,6 +105,7 @@ export function SizeBuyBox({
     if (linked) {
       touched.current = true;
       setSku(linked);
+      setLinkedSku(linked);
       track('product_size_selected', { slug, sku: linked, source: 'link' });
     }
     if (!canFit) return;
@@ -145,43 +153,79 @@ export function SizeBuyBox({
         <p id={`${groupId}-help`} className="mt-1 text-xs text-muted">
           {labels.help}
         </p>
-        <div className="mt-2 flex flex-wrap gap-2" aria-describedby={`${groupId}-help`}>
-          {sizes.map((s) => {
-            const note = s.priceOnRequest
-              ? labels.onRequest
-              : !s.inStock
-                ? labels.outOfStock
-                : fit?.sku === s.sku
-                  ? labels.fits.replace('{vehicle}', fit.vehicle)
-                  : null;
-            return (
-              <label
-                key={s.sku}
-                className={`press inline-flex min-h-11 min-w-11 cursor-pointer flex-col justify-center rounded-button border px-4 py-1.5 text-sm font-bold has-checked:border-accent-button has-checked:bg-accent-soft has-checked:text-accent-soft-text has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus ${
-                  s.inStock ? 'border-input-border text-ink' : 'border-dashed border-input-border text-muted'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name={`${groupId}-size`}
-                  value={s.sku}
-                  checked={s.sku === current.sku}
-                  onChange={() => {
-                    choose(s);
-                  }}
-                  className="sr-only"
-                />
-                <span>{s.label}</span>
-                {note ? (
-                  <span
-                    className={`text-xs font-normal ${fit?.sku === s.sku && s.inStock ? 'text-success' : ''}`}
-                  >
-                    {note}
-                  </span>
-                ) : null}
-              </label>
-            );
-          })}
+        {linkedSku && linkedSku === current.sku ? (
+          <p role="status" className="mt-1 text-xs font-bold text-success">
+            {labels.opened.replace('{size}', current.label)}
+          </p>
+        ) : null}
+        <div className="mt-2 grid gap-3" aria-describedby={`${groupId}-help`}>
+          {(groups ?? [{ rim: null as number | null, items: [...sizes], plain: true }]).map((g) => (
+            <div
+              key={g.rim ?? 'all'}
+              role={groups ? 'group' : undefined}
+              aria-labelledby={groups ? `${groupId}-g-${String(g.rim)}` : undefined}
+            >
+              {groups ? (
+                <p id={`${groupId}-g-${String(g.rim)}`} className="mb-1.5 text-xs font-bold text-muted">
+                  {g.rim === null ? labels.groupOther : labels.groupRim.replace('{rim}', String(g.rim))}
+                </p>
+              ) : null}
+              <div className="grid grid-cols-2 gap-2 min-[560px]:grid-cols-3">
+                {g.items.map((s) => {
+                  const note = s.priceOnRequest
+                    ? labels.onRequest
+                    : !s.inStock
+                      ? s.mrpOnlyText
+                        ? `${s.mrpOnlyText} · ${labels.outOfStock}`
+                        : labels.outOfStock
+                      : fit?.sku === s.sku
+                        ? labels.fits.replace('{vehicle}', fit.vehicle)
+                        : null;
+                  const price = s.inStock && s.priceText ? s.priceText : null;
+                  return (
+                    <label
+                      key={s.sku}
+                      data-size={s.sku}
+                      className={`press group/size relative flex min-h-14 cursor-pointer flex-col justify-center rounded-button border-2 px-3 py-2 text-sm text-ink has-checked:border-accent-button has-checked:bg-accent-soft has-checked:text-accent-soft-text has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus ${
+                        s.inStock && !s.priceOnRequest
+                          ? 'border-input-border'
+                          : 'border-dashed border-input-border text-muted'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name={`${groupId}-size`}
+                        value={s.sku}
+                        checked={s.sku === current.sku}
+                        onChange={() => {
+                          choose(s);
+                        }}
+                        className="sr-only"
+                      />
+                      <Check
+                        aria-hidden="true"
+                        className="absolute top-1.5 right-1.5 hidden size-4 group-has-checked/size:block"
+                      />
+                      <span className="pr-5 leading-snug font-bold">{s.label}</span>
+                      {price ? (
+                        <span className="mt-0.5 flex flex-wrap items-baseline gap-x-1.5 text-xs">
+                          <span className="font-bold">{price}</span>
+                          {s.mrpText ? <span className="line-through opacity-70">{s.mrpText}</span> : null}
+                        </span>
+                      ) : null}
+                      {note ? (
+                        <span
+                          className={`mt-0.5 text-xs font-normal ${fit?.sku === s.sku && s.inStock ? 'text-success' : ''}`}
+                        >
+                          {note}
+                        </span>
+                      ) : null}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       </fieldset>
 

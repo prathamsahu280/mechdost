@@ -206,7 +206,16 @@ describe('suggestions and did you mean', () => {
       locale: 'en',
       cityCode: 'RPR',
       ranges: () =>
-        Promise.resolve([{ kind: 'range', label: 'Activ', slug: 'activ', subtitle: 'Castrol', photo: null }]),
+        Promise.resolve([
+          {
+            kind: 'range',
+            label: 'Activ',
+            slug: 'activ',
+            subtitle: 'Castrol',
+            photo: null,
+            matchedSize: null,
+          },
+        ]),
     });
     expect(items.some((i) => i.kind === 'range')).toBe(true);
   });

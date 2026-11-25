@@ -11,6 +11,8 @@ export interface SearchCopy {
   count: string;
   /** Contains `{query}`. */
   seeAll: string;
+  /** Contains `{size}`: "Size 90/90-12 available", the line under a product found by one of its sizes. */
+  sizeAvailable: string;
   esc: string;
   hint: string;
   kind: Record<'brand' | 'range' | 'category' | 'product', string>;
