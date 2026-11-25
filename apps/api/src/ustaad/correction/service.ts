@@ -75,7 +75,7 @@ export async function runCorrection(input: CorrectionRunInput): Promise<Correcti
     return meaningGuard(text, restored, present, guardOpts).ok ? restored : null;
   };
 
-  let skipped: LlmSkipReason | null = null;
+  let skipped: LlmSkipReason;
   const llm = input.llm;
   if (!llm) skipped = 'no_engine';
   else if (!input.llmAllowed) skipped = 'no_consent';

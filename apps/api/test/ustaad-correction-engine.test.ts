@@ -13,13 +13,15 @@ import { createWordListEngine } from '../src/ustaad/correction/wordlist';
 class FetchDouble {
   readonly requests: { url: string; headers: Record<string, string>; body: string }[] = [];
   constructor(
-    private readonly answer: (sentText: string) => string | 'hang' | 'error' | 'refusal' | 'max_tokens',
+    /** A reply text, or one of the behaviours 'hang', 'error', 'refusal', 'max_tokens'. */
+    private readonly answer: (sentText: string) => string,
   ) {}
 
   readonly fetch: FetchLike = (url, init) => {
     const body = typeof init.body === 'string' ? init.body : '';
     this.requests.push({ url, headers: init.headers as Record<string, string>, body });
-    const sent = (JSON.parse(JSON.parse(body).messages[0].content) as { text: string }).text;
+    const outer = JSON.parse(body) as { messages: { content: string }[] };
+    const sent = (JSON.parse(outer.messages[0]?.content ?? '{}') as { text: string }).text;
     const a = this.answer(sent);
     if (a === 'hang')
       return new Promise((_, reject) => {
@@ -209,6 +211,12 @@ describe('smart correction: masking and the request (SR-28)', () => {
     ['superscript digits', 'call ⁹⁸⁷⁶⁵⁴³²¹⁰'],
     ['combining acute between digits', 'call 9́8́7́65́432́10'],
     ['variation selectors between digits', 'call 9️8︎7️6543️210'],
+    ['a circled letter between digit groups (NFKC letter)', 'call 98765Ⓐ43210'],
+    ['a unit symbol between digit groups (NFKC letters)', 'call 9876㎏5432'],
+    ['letters between digit pairs', 'AB12 CD34 EF56 GH78'],
+    ['a phone cut into rupee amounts', '₹987 ₹654 ₹3210'],
+    ['a phone cut into viscosity grades', '10W-98 76W-54 32'],
+    ['short numbers around a safe token', '1234 10W-30 5678'],
   ])('fails closed on %s: the LLM is skipped', async (_name, text) => {
     expect(maskPii(text).safeForLlm).toBe(false);
     const double = new FetchDouble((s) => s);
@@ -225,6 +233,8 @@ describe('smart correction: masking and the request (SR-28)', () => {
       'oil 10W-30 dalo',
       'price ₹1,520 hai',
       'बेयरिंग ६३०१ लगाओ',
+      '175/65 R14 82T Apollo, 10W-30 1 L ₹1,520, 2021 Activa 6G',
+      'tyre 90/90-12 54J aur battery 12V 35Ah, BS6 XLTZ4A',
     ])
       expect(maskPii(ordinary).safeForLlm, ordinary).toBe(true);
     const double = new FetchDouble((s) => s);

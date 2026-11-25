@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { DEFAULT_ANTHROPIC_CORRECTION_MODEL } from './ustaad/correction/anthropic';
 
 /**
  * API configuration, validated once at boot (fail fast). Every variable is documented in `.env.example`.
@@ -39,6 +40,14 @@ const schema = z
     API_DOCS: z.enum(['on', 'off']).optional(),
     ANTHROPIC_API_KEY: z.string().min(20).optional(),
     ASSISTANT_MODEL: z.string().default('claude-opus-5-5'),
+    /**
+     * Ustaad smart correction (spec 23 § 11, Q-U3): `none` (default) = the word list on our server only. The assistant's
+     * ANTHROPIC_API_KEY alone never switches it on: member text goes to an LLM only when this names a provider.
+     */
+    SMART_CORRECTION_PROVIDER: z.enum(['anthropic', 'gemini', 'none']).default('none'),
+    /** Model id; default claude-haiku-5-5 for anthropic, required for gemini. */
+    SMART_CORRECTION_MODEL: z.string().trim().min(1).max(100).optional(),
+    GEMINI_API_KEY: z.string().min(20).optional(),
     /** Live updates transport (decision 2026-11-01): polling (no push) or rtdb (Firebase Realtime Database). */
     LIVE_TRANSPORT: z.enum(['polling', 'rtdb']).default('polling'),
     FIREBASE_DATABASE_URL: z.url().optional(),
@@ -164,6 +173,13 @@ const schema = z
       z.coerce.number().int().min(0).max(128).default(64),
   })
   .superRefine((env, ctx) => {
+    if (env.SMART_CORRECTION_PROVIDER === 'gemini' && !env.SMART_CORRECTION_MODEL) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['SMART_CORRECTION_MODEL'],
+        message: 'required when SMART_CORRECTION_PROVIDER=gemini',
+      });
+    }
     if (env.DATABASE_POOL_URL.includes('<')) {
       ctx.addIssue({ code: 'custom', path: ['DATABASE_POOL_URL'], message: 'still a placeholder' });
     }
@@ -342,6 +358,8 @@ function toConfig(env: z.infer<typeof schema>) {
       listenUrl: env.DATABASE_URL && !env.DATABASE_URL.includes('<') ? env.DATABASE_URL : null,
     },
     assistant: env.ANTHROPIC_API_KEY ? { apiKey: env.ANTHROPIC_API_KEY, model: env.ASSISTANT_MODEL } : null,
+    /** Smart-correction LLM; null = word list only (no provider named, or its key missing). */
+    smartCorrection: smartCorrectionConfig(env),
     /** Error reports to Sentry; null = off (nothing loaded, nothing sent). */
     sentry: env.SENTRY_DSN
       ? {
@@ -387,4 +405,21 @@ export function loadConfig(source: Record<string, string | undefined>): Config {
     throw new ConfigError(parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`));
   }
   return toConfig(parsed.data);
+}
+
+function smartCorrectionConfig(env: {
+  SMART_CORRECTION_PROVIDER: 'anthropic' | 'gemini' | 'none';
+  SMART_CORRECTION_MODEL?: string | undefined;
+  ANTHROPIC_API_KEY?: string | undefined;
+  GEMINI_API_KEY?: string | undefined;
+}): { provider: 'anthropic' | 'gemini'; apiKey: string; model: string } | null {
+  if (env.SMART_CORRECTION_PROVIDER === 'anthropic' && env.ANTHROPIC_API_KEY)
+    return {
+      provider: 'anthropic',
+      apiKey: env.ANTHROPIC_API_KEY,
+      model: env.SMART_CORRECTION_MODEL ?? DEFAULT_ANTHROPIC_CORRECTION_MODEL,
+    };
+  if (env.SMART_CORRECTION_PROVIDER === 'gemini' && env.GEMINI_API_KEY && env.SMART_CORRECTION_MODEL)
+    return { provider: 'gemini', apiKey: env.GEMINI_API_KEY, model: env.SMART_CORRECTION_MODEL };
+  return null;
 }

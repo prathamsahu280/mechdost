@@ -10,10 +10,10 @@
  * runs).
  *
  * Fail closed (security review 2026-11-26): `safeForLlm` is false, and the caller keeps the text on our server (word
- * list only), when masking failed, when the text has any numeral other than ASCII and Devanagari digits, when one
- * number mixes the two scripts, or when the masked text still has eight or more numerals between two letters (all read
- * on `numericProjection`). No offset map is needed for restore: the projection is for checks only, and the masked text
- * an engine receives is the member's own text with placeholders.
+ * list only), when masking failed, when the text has any numeral other than ASCII and Devanagari digits, when it mixes
+ * the two scripts, or when the masked text still holds eight or more numerals outside known-safe mechanic tokens,
+ * counted over the whole text (`riskyNumeralCount`). No offset map is needed for restore: the count is a check only,
+ * and the masked text an engine receives is the member's own text with placeholders.
  */
 
 const D = '[0-9०-९]'; // ASCII and Devanagari digits
@@ -54,7 +54,7 @@ const PATTERNS: readonly RegExp[] = [
 
 export const PLACEHOLDER_RE = /⟦(\d+)⟧/g;
 
-/** Fail-closed rule: a run of this many digits (separated only by non-letters) left after masking is not sent. */
+/** Fail-closed rule: this many numerals left after masking and the safe-token allowlist keep the text off the LLM. */
 export const RISK_DIGITS = 8;
 
 export interface Masked {
@@ -75,38 +75,72 @@ export function hasPlaceholderChars(text: string): boolean {
   return text.includes('⟦') || text.includes('⟧');
 }
 
-/**
- * The numeric projection every fail-closed check reads (security review 2026-11-26, rounds 2 and 3), computed once:
- * NFKC (fullwidth, circled and superscript numerals become ASCII digits), then format characters (`\p{Cf}`: zero-width
- * joiners, direction marks) removed, then every combining mark or variation selector (`\p{M}`, keycap U+20E3) next to
- * a numeral removed, placeholders turned into a space. In the projection every `\p{N}` counts as a digit and only
- * letters (`\p{L}`) split a run. It is used for checks only, never sent or shown.
- */
-export function numericProjection(text: string): string {
-  let t = text.normalize('NFKC').replace(/\p{Cf}/gu, '');
-  // Marks after a numeral, then marks before one (chains of marks included).
-  t = t.replace(/(\p{N})\p{M}+/gu, '$1').replace(/\p{M}+(?=\p{N})/gu, '');
-  return t.replace(PLACEHOLDER_RE, ' ');
+const NUMERAL = /\p{N}/u;
+const numerals = (s: string) => (s.match(/\p{N}/gu) ?? []).length;
+
+/** No numeral within `w` characters before or after `[start, end)`: the token stands alone. */
+function isolated(t: string, start: number, end: number, w: number): boolean {
+  return !NUMERAL.test(t.slice(Math.max(0, start - w), start)) && !NUMERAL.test(t.slice(end, end + w));
 }
 
-const letterFreeSegments = (projection: string) => projection.split(/\p{L}+/u);
+/**
+ * Known-safe mechanic tokens, removed before counting, each only when it stands alone (no other numeral within 3
+ * characters), so a phone cut into several "safe" pieces (`₹987 ₹654 ₹3210`, `10W-98 76W-54`) is still counted.
+ */
+const SAFE_TOKENS: readonly { re: RegExp; maxNumerals: number }[] = [
+  // tyre sizes: 175/65 R14 82T, 90/90-12 54J, 205/55ZR16
+  { re: /\b\d{2,3}\/\d{2}(?:[\s-]?Z?R?[\s-]?\d{2})?(?:\s\d{2,3}[A-Z])?\b/gi, maxNumerals: 12 },
+  // oil viscosity: 10W-30, 5W-40, 20W40
+  { re: /\b\d{1,2}W[\s-]?\d{2}\b/gi, maxNumerals: 4 },
+  // battery: 12V, 12V 35Ah, 35Ah
+  { re: /\b\d{1,2}\s?V(?:\s\d{2,3}\s?Ah)?\b|\b\d{2,3}\s?Ah\b/gi, maxNumerals: 5 },
+  // rupee amounts up to ₹99,99,999: ₹1,520, Rs 450, INR 2,000.50
+  { re: /(?:₹|\bRs\.?|\bINR)\s?\d{1,3}(?:,\d{2,3})*(?:\.\d{1,2})?/gi, maxNumerals: 9 },
+];
+
+/** Characters a removed token becomes: same length (offsets stay put), not a numeral, not a letter. */
+const blank = (s: string) => '#'.repeat(s.length);
 
 /**
- * True when a letter-free stretch of the projection holds `RISK_DIGITS` or more numerals, whatever separates them
- * (`9 8 7 6 5 . . . 4 3 2 1 0`, `98765—————43210`, keycaps, `9́8…`). Part numbers, sizes and prices
- * (`175/65 R14 82T`, `10W-30`, `₹1,520`, `6301 aur 175/65 R14`) are split by letters or stay short, so they pass.
+ * The fail-closed count (security review 2026-11-26, round 4: a gate that cannot be split). On the masked text, NFKC
+ * (only so fullwidth, circled or superscript numerals count as numerals), placeholders removed, known-safe tokens
+ * removed (tyre sizes, viscosity, battery, rupee amounts, then model codes such as `6G`, `BS6`, `XLTZ4A` with at most
+ * three numerals and short numbers of up to four numerals such as years, each only when no other numeral is within 6
+ * characters), and then **every** remaining `\p{N}` in the whole text is counted, with no segmentation at all. Eight
+ * or more → the text stays on our server. Letters, marks, format characters or symbols between digits change nothing.
  */
-export function hasDigitCluster(text: string): boolean {
-  return letterFreeSegments(numericProjection(text)).some(
-    (segment) => (segment.match(/\p{N}/gu) ?? []).length >= RISK_DIGITS,
-  );
+export function riskyNumeralCount(masked: string): number {
+  // Every decision reads the same text `t`; the ranges are blanked only at the end, so removing one token can never
+  // make its neighbours look alone.
+  const t = masked.normalize('NFKC').replace(PLACEHOLDER_RE, (m) => blank(m));
+  const ranges: [number, number][] = [];
+  for (const { re, maxNumerals } of SAFE_TOKENS) {
+    const found = [...t.matchAll(re)].map((m) => [m.index, m.index + m[0].length, numerals(m[0])] as const);
+    for (const [start, end, count] of found) {
+      // Two tokens of one kind side by side (`₹987 ₹654`, `10W-98 76W-54`) are a number cut into pieces: both count.
+      const chained = found.some(([s, e]) => (s !== start || e !== end) && s < end + 3 && e > start - 3);
+      if (count <= maxNumerals && !chained) ranges.push([start, end]);
+    }
+  }
+  const covered = (i: number) => ranges.some(([s, e]) => i >= s && i < e);
+  // Model codes (letters and at most three numerals, up to eight characters) and short numbers (years, quantities,
+  // part numbers like 6301), each only with no other numeral within 6 characters.
+  for (const m of t.matchAll(/[\p{L}\p{N}]+/gu)) {
+    const [start, end, w] = [m.index, m.index + m[0].length, m[0]];
+    if (covered(start)) continue;
+    const n = numerals(w);
+    const modelCode = /\p{L}/u.test(w) && n >= 1 && n <= 3 && w.length <= 8;
+    const shortNumber = n === w.length && n <= 4;
+    if ((modelCode || shortNumber) && isolated(t, start, end, 6)) ranges.push([start, end]);
+  }
+  let count = 0;
+  for (let i = 0; i < t.length; i++) if (!covered(i) && NUMERAL.test(t.charAt(i))) count++;
+  return count;
 }
 
-/** A number written in two digit scripts at once (`9८७६५४३२१०`), checked on the unmasked text: a disguise. */
+/** A text using both ASCII and Devanagari digits anywhere (`9८७६५४३२१०`): kept off the LLM. */
 export function hasMixedDigitScripts(text: string): boolean {
-  return letterFreeSegments(numericProjection(text)).some(
-    (segment) => /[0-9]/.test(segment) && /[०-९]/.test(segment),
-  );
+  return /[0-9]/.test(text) && /[०-९]/.test(text);
 }
 
 /**
@@ -135,7 +169,11 @@ export function maskPii(text: string): Masked {
   return {
     masked,
     count: values.length,
-    safeForLlm: !failed && !hasForeignDigits(text) && !hasMixedDigitScripts(text) && !hasDigitCluster(masked),
+    safeForLlm:
+      !failed &&
+      !hasForeignDigits(text) &&
+      !hasMixedDigitScripts(text) &&
+      riskyNumeralCount(masked) < RISK_DIGITS,
     restore(output: string): string | null {
       const seen = new Map<number, number>();
       for (const m of output.matchAll(PLACEHOLDER_RE)) {

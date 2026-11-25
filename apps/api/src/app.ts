@@ -21,6 +21,7 @@ import { adminOrderRoutes } from './routes/admin-orders';
 import { adminSettingsRoutes } from './routes/admin-settings';
 import { adminErrorRoutes } from './routes/admin-errors';
 import { assistantRoutes } from './routes/assistant';
+import { ustaadCorrectRoutes } from './routes/ustaad/correct';
 import { authRoutes } from './routes/auth';
 import { authEmailRoutes } from './routes/auth-emails';
 import { catalogueRoutes } from './routes/catalogue';
@@ -178,6 +179,7 @@ export function createApp(deps: AppDeps) {
   v1.route('/', reviewRoutes(deps, sessions));
   v1.route('/', pincodePublicRoutes(deps));
   v1.route('/', pincodeAdminRoutes(deps, sessions));
+  v1.route('/', ustaadCorrectRoutes(deps, sessions));
   app.route('/v1', v1);
 
   app.openAPIRegistry.registerComponent('securitySchemes', 'bearerAuth', {

@@ -15,6 +15,7 @@ import type { SentryIssuesClient } from '../src/monitoring/sentry-issues';
 import { setLogSink } from '../src/logger';
 import type { Revalidator } from '../src/revalidate';
 import { MemoryRateLimiter, type RateLimiter } from '../src/rate-limit/limiter';
+import type { SmartCorrectionEngine } from '../src/ustaad/correction/engine';
 
 export const ALLOWED_ORIGIN = 'http://localhost:3000';
 
@@ -161,6 +162,7 @@ export async function buildApp(
     photoStorage?: PhotoStorage | null;
     photoCache?: PhotoByteCache | null;
     revalidate?: Revalidator;
+    smartCorrection?: SmartCorrectionEngine | null;
   } = {},
 ) {
   setLogSink(() => undefined);
@@ -187,6 +189,7 @@ export async function buildApp(
     photoStorage: opts.photoStorage ?? null,
     photoCache: opts.photoCache ?? null,
     ...(opts.revalidate ? { revalidate: opts.revalidate } : {}),
+    smartCorrection: opts.smartCorrection ?? null,
   });
   return { app, db, verifier };
 }
