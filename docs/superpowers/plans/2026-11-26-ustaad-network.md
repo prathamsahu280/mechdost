@@ -16,9 +16,7 @@ under `apps/web/src/app/[locale]/ustaad/` and `apps/web/src/components/ustaad/<a
 
 **Tech stack:** Next.js 16 (Server Components, dynamic imports), Hono + zod-openapi, Drizzle + Supabase Postgres +
 PostGIS, pg-boss worker, Upstash Redis, Firebase Auth, existing `sharp` pipeline, Cloudflare R2 / Supabase Storage via
-`MediaHost`, Anthropic / Gemini HTTP via `SmartCorrectionEngine`. **No new npm dependency** (SigV4, hex grid, magic
-bytes and duration parsers, confusable skeletons are written in-house with tests); any exception goes through
-`docs/research/security-vulnerabilities.md` and the release-age policy first.
+`MediaHost`, Anthropic / Gemini HTTP via `SmartCorrectionEngine`. **No new npm dependency by default** (SigV4, hex grid, magic bytes and duration parsers are written in-house with tests). Three places will probably need a vetted exception, decided in the A4 spike: an on-phone video muxer for re-encoding (WebCodecs + an MP4/WebM muxer), the Public Suffix List for registrable-domain display (a vendored snapshot or a small library), and the Unicode TR39 confusables data (a vendored data file). Every exception goes through `docs/research/security-vulnerabilities.md`, the release-age policy and a decisions entry first.
 
 **Spec:** `docs/specs/23-ustaad-network.md` (+ design `docs/superpowers/specs/2026-11-26-ustaad-network-design.md`).
 
@@ -62,15 +60,16 @@ bytes and duration parsers, confusable skeletons are written in-house with tests
 ## Dependencies and parallelism
 
 ```
-A (foundations) ──► B identity ──► (levels engine needed by C/D only for Izzat writes: interface stub in A)
-                 ├─► C Q&A
-                 ├─► D feed + graph + messages + Discover + promotions
-                 ├─► E local (pin, zones, jobs)
-                 ├─► F smart correction + moderation + compliance
-                 └─► G admin settings UI + community manager console
+A (foundations) ──► B identity (incl. verification admin routes) ──┐
+                 ├─► C Q&A + Learn                                    │
+                 ├─► D feed + graph + messages + Discover + promotions │
+                 ├─► E local (pin, zones, jobs)                       │
+                 ├─► F smart correction + moderation (incl. admin moderation routes) + compliance
+                 ├─► G1 admin settings UI (needs only A's settings API)
+                 └────────────── G2 community manager console UI ◄── after B4 and F2
 ```
 
-- **A first, alone** (it touches every shared registry). After A merges, **B, C, D, E, F, G run concurrently**: each
+- **A first, alone** (it touches every shared registry). After A merges, **B, C, D, E, F and G1 run concurrently**; G2 (UI only) starts once B4 and F2 have merged their admin routes: each
   owns its own folders; A pre-creates every file they would otherwise both edit.
 - **Shared slots A pre-creates** (empty sections with an owner comment, so later edits never collide): `rbac.ts`
   (all Ustaad permissions and `community_manager`), `settings.ts` (every `ustaad.*` key with bounds and invariants),
@@ -105,8 +104,7 @@ graph}.ts`; modify `rbac.ts`, `settings.ts` (new `enum` kind + `ustaad.*` keys),
 {kind:'few'|'band'|'exact', value?}`; `distanceBand(metres) → 'lt2'|'2to5'|'5to10'|'10plus'`.
 
 - [ ] Failing tests `packages/shared/test/ustaad-*.test.ts`: every machine edge and actor rule (spec § 7); settings
-      bounds and invariants (AT-LEVEL-2 setting part, hide_below 4 → `SETTING_INVARIANT`, every_n 7 → invariant, video 181
-      by `community_manager` → invariant, by super admin with reason → ok, auto mode with empty protected list → invariant,
+      bounds and invariants (AT-LEVEL-2 setting part, hide_below 4 → `SETTING_INVARIANT`, every_n 7 → invariant, video 181 without a reason code → invariant, with a reason code by a super admin → ok, auto mode with empty protected list → invariant,
       weights summing 99 → `SETTING_RELATION`); `zoneCell` stable ids for fixed Raipur points, edge 1400 m area ≈ 5.1 km²;
       `bandCount` (4 → few, 5 → band, 19 → band, 20 → exact, 23 → 25 when rounding); `distanceBand` edges; DTO strictness
       (unknown keys refused, e.g. `official: true` on `PATCH /ustaad/me`, SR-5); permissions present on `mechanic` and
@@ -159,6 +157,14 @@ web `components/ustaad/media/{compress-image.ts,record-voice.tsx,record-video.ts
 `completeMedia(tx, actor, mediaId) → Media` (status `verified|rejected`); `mediaUrl(tx, actor, mediaId, variant) →
 string` (≤ 10 min, window-rounded expiry); `budget.check(tx, kind, bytes)`.
 
+- [ ] **Spike first (half a day, write the result into the spec and decisions):** on a 2 GB Android in Chrome, can a
+      180 s clip be re-encoded on the phone to ≈ 480p / 1 Mbps (MediaRecorder re-recording vs WebCodecs + muxer), how long
+      it takes and how hot the phone gets; fallback = upload within the 150 MB cap. Also choose the PSL and TR39 sources.
+- [ ] **First failing test (size enforcement is real, not assumed):** an opt-in integration test (`MEDIA_IT=1`, the dev
+      bucket of each adapter) shows that a presigned PUT with a different `Content-Length` or `Content-Type` than declared
+      is refused by the host; the unit test checks both headers are in the signed canonical request. Multipart: part URLs
+      are issued only for `ceil(declared / 8 MB)` parts, each signing its exact part length, and `complete` refuses unless
+      `HEAD` size equals the declared size (so the total can never exceed it).
 - [ ] Failing tests: SigV4 presign against AWS published vectors; `sniff()` for WebP/JPEG/MP4/M4A/WebM/Ogg/PDF and
       refusals (SVG, HTML renamed `.jpg`, ZIP, EXE: AT-UP-2, SR-17); `duration()` from `mvhd`, WebM `Duration`, Ogg
       granule; 181 s → `MEDIA_TOO_LONG`, 151 MB → `MEDIA_TOO_LARGE` before any processing (AT-UP-4); MP4 with `©xyz` or
@@ -174,7 +180,7 @@ string` (≤ 10 min, window-rounded expiry); `budget.check(tx, kind, bytes)`.
 
 **Files:** `packages/db/src/repo/ustaad/events.ts` (`recordUstaadEvent`), `apps/api/src/notify/ustaad.ts`,
 `apps/api/src/rate-limit/ustaad-rules.ts`, stubs `packages/db/src/repo/ustaad/{izzat,levels,moderation}.ts`,
-`apps/api/src/ustaad/correction/index.ts` (identity), lint rule config banning `dangerouslySetInnerHTML` under
+`apps/api/src/ustaad/correction/index.ts` (identity), the `/ustaad/notifications` page (the bell inbox filtered to `ustaad.*` kinds), lint rule config banning `dangerouslySetInnerHTML` under
 `components/ustaad` and `app/[locale]/ustaad` (SR-26).
 
 - [ ] Failing tests: every server event of § 16 validates against the catalogue (`packages/shared/test/analytics.test.ts`);
@@ -217,12 +223,12 @@ flow 15), Me › Help / Kaise use karein, Learn course "How to use Ustaad Networ
       focus moves to the card heading; Hindi coverage.
 - [ ] Implement; **screenshots** of the cards and two coach-marks.
 
-### Task B3: Card, profile, specialities, reserved names, account-takeover hardening
+### Task B3: Card, profile, specialities, settings and my choices, leaving, reserved names, account-takeover hardening
 
 **Files:** `app/[locale]/ustaad/{me,m/[handle]}/*`, `components/ustaad/card/*` (share as image, QR), `repo/ustaad/members.ts`
 (profile, specialities), `packages/shared/src/ustaad/names.ts` (NFKC + TR39 skeleton), `apps/api/src/ustaad/security-freeze.ts`.
 
-- [ ] Failing tests: AT-NAME-1 ("MechDøst", "Mech Dost", Cyrillic look-alikes → `NAME_RESERVED`); official badge only
+- [ ] Failing tests: "Settings and my choices" saves language, data saver, correction mode (only when allowed), message mode, suggest-me, the four join consents (one tap to withdraw); leaving keeps the MechDost account, removes the `mechanic` grant, hides the profile and keeps the handle reserved (`rejoin after leave`); AT-NAME-1 ("MechDøst", "Mech Dost", Cyrillic look-alikes → `NAME_RESERVED`); official badge only
       via the super-admin route (SR-5); phone never in any profile response (SR-34 profile part); SR-2: phone change or
       new device on a Pakka+ account → re-OTP required, `ustaad.security_freeze` notice, perks and job posting refused for
       72 h; counts rounded above 1,000.
@@ -230,7 +236,7 @@ flow 15), Me › Help / Kaise use karein, Learn course "How to use Ustaad Networ
 
 ### Task B4: Verification (attestation, vouches, staff queue)
 
-**Files:** `repo/ustaad/{verification,attestation,vouch}.ts`, `routes/ustaad/verification.ts`,
+**Files:** `repo/ustaad/{verification,attestation,vouch}.ts`, `routes/ustaad/verification.ts`, `routes/admin-ustaad-verification.ts` (staff queue, approve, reject, revoke, level reviews; G2 builds only the UI),
 `routes/workshop-ustaad.ts` (workshop portal confirm), public attest page `app/[locale]/ustaad/attest/[token]/page.tsx`,
 `components/ustaad/verify/*`, workshop portal card "Confirm your mechanics".
 
@@ -251,7 +257,7 @@ flow 15), Me › Help / Kaise use karein, Learn course "How to use Ustaad Networ
 **Interfaces:** `qualifiedFollowers(followers[], now, settings) → number`; `levelFor(stats, rules) → {level,
 needsReview}`; `izzat.record(...)` real.
 
-- [ ] Failing tests: AT-LEVEL-1 (600 followers from < 30-day or same-garage accounts → qualified 0, no Bada); OR groups
+- [ ] Failing tests: AT-LEVEL-1 (600 followers from < 30-day or same-garage accounts → qualified 0, no Bada); unverified followers and ring members not counted; `levels.follower_exclude_same_garage` off → same-garage followers count; OR groups
       for Naya; Bada/Master always queue a staff review (locked); no drop for inactivity; perks paused after 90 days;
       `coin_multiplier_bp > 10000` refused with `COIN_GUARD_REQUIRED` (spec 20); Izzat reversals on unfollow/vote removal;
       ring job flags > 30 % reciprocity and dense clusters, sets `ustaad_follows.counted = false`, weighs flagged votes 0
@@ -276,6 +282,18 @@ needsReview}`; `izzat.record(...)` real.
 - [ ] Implement; **screenshots** of Ask, the composer sheet, a thread with a best answer and parts.
 
 ---
+
+### Task C2: Learn (Seekho)
+
+**Files:** `repo/ustaad/learn.ts`, `routes/ustaad/learn.ts`, admin CRUD for courses and resources in
+`routes/admin-ustaad-learn.ts`, `app/[locale]/ustaad/learn/*`, `components/ustaad/learn/*` (player reused from D1 via
+the A4 media component), seed "How to use Ustaad Network" course (used by the tutorial, B2).
+
+- [ ] Failing tests: hosted video completes at ≥ 80 % watched; external links self-marked, capped at
+      `learn.self_mark_daily_cap` (5) a day; completed videos feed `videos_watched` for Naya group B through
+      `levels.recompute`; "MechDost training" label shown on labelled resources; data saver (tap to play, size shown);
+      Hindi titles required (`title_hi` not null); 120 progress writes an hour.
+- [ ] Implement; **screenshots** of Learn and a course.
 
 ## Workstream D — Feed, stories, reactions, hashtags, graph, messages, Discover, promotions, previews
 
@@ -380,17 +398,15 @@ map adapter, dynamic import).
 
 ### Task F2: Reports, actions, appeals, takedown, child safety
 
-**Files:** `repo/ustaad/{reports,moderation,strikes,quarantine}.ts` (replace A's `moderation.screen` stub),
+**Files:** `repo/ustaad/{reports,moderation,strikes,removed-archive}.ts` (replace A's `moderation.screen` stub),
 `apps/api/src/ustaad/safety/{classifier.ts,premod.ts,evidence.ts}`, `routes/ustaad/reports.ts`,
-`routes/admin-ustaad-moderation.ts`, worker `ustaad_report_clock`, `ustaad_quarantine_purge`, `ustaad_rules_reminder`.
+`routes/admin-ustaad-moderation.ts`, worker `ustaad_report_clock`, `ustaad_removed_archive_purge`, `ustaad_rules_reminder` (admin moderation routes live here; G2 builds only the UI).
 
 - [ ] Failing tests: AT-TAKEDOWN-1 (signed URL, teaser, search hit, feed card 404 within 60 s; evidence row kept); clocks
       per reason (2 h, 3 h, 36 h, 24 h, 7 days) and overdue notices at 50 % / 100 %; four-eyes and self-moderation refusals;
-      appeal decided by another staff member; minor report → restricted mode (no events, no recommendations, no promos, no
-      jobs, no messages) until review; pre-moderation of the first 3 media posts and accounts < 30 days; AT-UP-9 with the
+      appeal decided by another staff member; minor report from a verified reporter with a ≥ 30-day account → restricted mode (no events, no recommendations, no promos, no jobs, no messages; posts unchanged) until review; from any other reporter → top of the queue, nobody restricted; repeated dismissed minor reports → `false_report` strike; pre-moderation of the first 3 media posts and accounts < 30 days; AT-UP-9 with the
       classifier test double (hash hit → blocked, evidence vault, POCSO task, account frozen); AT-UP-7 (EICAR held by
-      pre-moderation); scam/UPI/OTP patterns hold comments and messages; `scam filter normalises digits`; quarantine purge
-      after 180 days unless on hold; DM content readable only with a report id, audited.
+      pre-moderation); scam/UPI/OTP patterns hold comments and messages; `scam filter normalises digits`; removed-content archive purged after 180 days unless on hold; DM content readable only with a report id, audited.
 - [ ] Implement.
 
 ### Task F3: Compliance duties and docs
@@ -400,8 +416,7 @@ POCSO reporting steps, CERT-In 6 h and DPDP 72 h incident runbooks with en + hi 
 SSMI counter), Community Rules / Terms / Privacy notice sections (content pages in the CMS, en + hi), consent notices
 per purpose, processor register (`docs/research/processors.md`), log retention config (180 days, India).
 
-- [ ] Tests: consent per purpose writes and withdraws in one tap and stops the related job (location, zone count,
-      offers, ML); 3-monthly reminder job idempotent; ICT log retention setting present; grievance tickets carry the timers.
+- [ ] Tests: consent per purpose writes and withdraws in one tap and stops the related job (location, zone count, offers, ML, voice, correction: without `ustaad_correction` only the word list runs); 3-monthly reminder job idempotent; ICT log retention setting present; grievance tickets carry the timers.
 - [ ] Commit; tabletop drill is an ops step listed in the runbook.
 
 ---
@@ -419,14 +434,14 @@ tutorial cards and coach-marks.
       super admin and a reason; save bar, discard, confirm; audit rows; AT-PROMO-1 (label change → 422).
 - [ ] Implement; **screenshots** of each section (1440 + 390).
 
-### Task G2: Community manager console
+### Task G2: Community manager console (UI only; starts after B4 and F2)
 
 **Files:** `app/[locale]/admin/ustaad/{verification,reports,members,zones,audit}/*`.
 
 - [ ] Failing tests: role-leak matrix staff rows (community manager city A → 200 for city A, 404 for city B; support,
       finance, marketing 403; super admin all); queue sorted by clock; verification approve/reject with reason codes and
       four-eyes where required; exact pin view audited; no export buttons, phones masked; DM view only from a report.
-- [ ] Implement; state-audit rows `ADM-USTAAD-*` regenerated; **screenshots**.
+- [ ] Implement on the B4 and F2 routes; state-audit rows `ADM-USTAAD-*` regenerated; **screenshots**.
 
 ---
 
@@ -440,7 +455,7 @@ screenshot review, answers to Q-U1/Q-U3/Q-U4 (or the defaults), the tabletop dri
 
 ## Self-review
 
-Spec coverage checked section by section (flows 1–15 and § 4a → B1–B5, C1, D1–D4, E1–E3, F1–F3, G1–G2; § 10 → A4;
+Spec coverage checked section by section (flows 1–15 and § 4a → B1–B5, C1–C2, D1–D4, E1–E3, F1–F3, G1–G2; § 10 → A4;
 § 13 → F2/F3; § 14a SR rows → the workstream named in their WS column; § 16 events → A5 + each task; § 17 → D2 check).
 Review Focus items each have a named test in the owning task. Names used across tasks (`izzat.record`,
 `levels.recompute`, `moderation.screen`, `mediaUrl`, `zoneCell`, `bandCount`, `distanceBand`, `qualifiedFollowers`,
