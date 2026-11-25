@@ -18,7 +18,8 @@
     "./tyre-import": "./src/tyre-import/index.ts",
     "./ceat": "./src/ceat/index.ts",
     "./mrf": "./src/mrf/index.ts",
-    "./apollo": "./src/apollo/index.ts"
+    "./apollo": "./src/apollo/index.ts",
+    "./lube-import": "./src/lube-import/index.ts"
   },
   "scripts": {
     "generate": "drizzle-kit generate && node scripts/fix-migrations.mjs",

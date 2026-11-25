@@ -140,6 +140,20 @@ export interface ServerEventProps {
     productsArchived: number;
     packsCreated: number;
   };
+  /** The HP lubricant import wrote products (CLI `pnpm db:import:hp`, 2026-11-25); old HP products are archived, never deleted. */
+  admin_hp_imported: {
+    productsCreated: number;
+    productsUpdated: number;
+    productsArchived: number;
+    packsCreated: number;
+  };
+  /** The BPCL MAK lubricant import wrote products (CLI `pnpm db:import:bpcl`, 2026-11-25); old BPCL MAK products are archived, never deleted. */
+  admin_bpcl_imported: {
+    productsCreated: number;
+    productsUpdated: number;
+    productsArchived: number;
+    packsCreated: number;
+  };
   /** A brand or product range was switched off/on in Admin → Catalogue → Brands and ranges (hides its products). */
   admin_group_switched: {
     kind: 'brand' | 'range';

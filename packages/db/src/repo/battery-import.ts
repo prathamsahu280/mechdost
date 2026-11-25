@@ -38,7 +38,9 @@ export interface BatteryImportConfig {
     | 'admin_tatagreen_imported'
     | 'admin_ceat_imported'
     | 'admin_mrf_imported'
-    | 'admin_apollo_imported';
+    | 'admin_apollo_imported'
+    | 'admin_hp_imported'
+    | 'admin_bpcl_imported';
   /** Brands (slugs) whose old products this import archives too (Apollo: Vredestein). Never anything else. */
   alsoArchiveBrands?: readonly string[];
 }
