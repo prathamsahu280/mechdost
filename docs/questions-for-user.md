@@ -291,6 +291,11 @@ The IT Rules need a named Grievance Officer with published contact (name, design
 rota? Default meanwhile: Shourya Integrated Services Pvt Ltd support (7978776551) and a `grievance@` mailbox, staff on
 call.
 
+Update 2026-11-26 (workstream A): the privacy and terms pages now show a Grievance Officer card that reads "To be
+announced" with the support line and support@mechdost.com until Admin → Settings → Company details is filled. If a
+`policy.privacy` version was published in the admin before, it overrides the built-in text: republish it from "Start
+from the current text" so the Ustaad sections appear.
+
 #### Q-U5: confirm request-only messages for everyone (Confirm, P2, ruled: yes, for every member)
 
 The research suggested request-only messages for women members. No gender is ever collected, so the safe version is

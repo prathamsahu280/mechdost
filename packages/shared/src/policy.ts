@@ -6,7 +6,14 @@
  * plain replacement at render time, so they stay in one place. Pure functions, no dependencies.
  */
 import { clip, cleanLine } from './text';
-export const POLICY_KEYS = ['policy.privacy', 'policy.returns', 'policy.delivery', 'policy.service'] as const;
+// `policy.terms` (/terms) joined 2026-11-26 so the Ustaad Network rules are admin-editable like the other policies.
+export const POLICY_KEYS = [
+  'policy.privacy',
+  'policy.returns',
+  'policy.delivery',
+  'policy.service',
+  'policy.terms',
+] as const;
 export type PolicyKey = (typeof POLICY_KEYS)[number];
 
 export const POLICY_TOKENS = ['company', 'address', 'phone'] as const;

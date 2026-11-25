@@ -24,6 +24,12 @@ export interface CspInput {
    * loaded by a script that had it (`'strict-dynamic'`), so injected inline script no longer runs there.
    */
   nonce?: string | undefined;
+  /**
+   * `NEXT_PUBLIC_USTAAD_MEDIA_ORIGINS` (comma list, https only): the Ustaad media host(s) the phone uploads to
+   * (presigned PUT, connect-src) and reads from (signed GET, img-src / media-src); spec 23 § 10. The docs host is
+   * never listed: PDFs are only ever a download link.
+   */
+  ustaadMediaOrigins?: string | undefined;
   /** `NEXT_PUBLIC_FIREBASE_DATABASE_URL`: the live-updates socket (spec 10), only a Firebase-hosted database host. */
   databaseUrl?: string | undefined;
   /** `NEXT_PUBLIC_SENTRY_DSN`: error reports go to its ingest host (EU region, decision 2026-11-14). */
@@ -111,7 +117,11 @@ export function contentSecurityPolicy(input: CspInput): string {
   if (input.dev) script.push("'unsafe-eval'");
   if (real) script.push(TURNSTILE, ...RECAPTCHA_SCRIPTS, ...RAZORPAY_SCRIPTS);
 
-  const connect = ["'self'", ...MAP_ORIGINS];
+  const media = (input.ustaadMediaOrigins ?? '')
+    .split(',')
+    .map((o) => origin(o.trim()))
+    .filter((o): o is string => o?.startsWith('https://') === true);
+  const connect = ["'self'", ...MAP_ORIGINS, ...media];
   if (api) connect.push(api);
   if (real)
     connect.push(
@@ -137,8 +147,17 @@ export function contentSecurityPolicy(input: CspInput): string {
     ['style-src', ["'self'", "'unsafe-inline'"]],
     [
       'img-src',
-      ["'self'", 'data:', 'blob:', ...MAP_ORIGINS, ...(api ? [api] : []), ...(real ? RAZORPAY_IMAGES : [])],
+      [
+        "'self'",
+        'data:',
+        'blob:',
+        ...MAP_ORIGINS,
+        ...(api ? [api] : []),
+        ...(real ? RAZORPAY_IMAGES : []),
+        ...media,
+      ],
     ],
+    ['media-src', ["'self'", 'blob:', ...media]],
     ['font-src', ["'self'", 'data:']],
     ['connect-src', connect],
     ['worker-src', ["'self'", 'blob:']],
@@ -161,6 +180,7 @@ export function cspFromEnv(nonce?: string): string {
     authEmulatorHost: process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST,
     databaseUrl: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
     sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+    ustaadMediaOrigins: process.env.NEXT_PUBLIC_USTAAD_MEDIA_ORIGINS,
     nonce,
   });
 }

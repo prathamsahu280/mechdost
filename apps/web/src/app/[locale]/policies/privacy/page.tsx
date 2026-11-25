@@ -34,6 +34,15 @@ const SECTIONS = [
   { key: 'errors', emoji: '🛠️' },
   { key: 'safe', emoji: '🔒' },
   { key: 'rights', emoji: '✋' },
+  // Ustaad Network (spec 23 § 13, 2026-11-26): mechanics only.
+  { key: 'ustaad', emoji: '🔧' },
+  { key: 'ustaadAudience', emoji: '👥' },
+  { key: 'ustaadLocation', emoji: '📍' },
+  { key: 'ustaadCorrection', emoji: '✍️' },
+  { key: 'ustaadModeration', emoji: '🛡️' },
+  { key: 'ustaadRetention', emoji: '🗓️' },
+  { key: 'ustaadConsents', emoji: '✅' },
+  { key: 'ustaadGrievance', emoji: '📮' },
 ] as const;
 
 /**

@@ -6723,7 +6723,7 @@
     "admin": {},
     "tutorial": {},
     "media": {
-      "err_MEDIA_LOCATION": "This video has location data in it. Record it in the app, or remove the location and try again.",
+      "err_MEDIA_LOCATION": "This video has extra details in it, like its location. Record it in the app and try again.",
       "err_MEDIA_TOO_LARGE": "This file is too big. Compress it and try again.",
       "err_MEDIA_TOO_LONG": "This recording is too long. Trim it and try again.",
       "err_MEDIA_TYPE": "This kind of file cannot be posted.",

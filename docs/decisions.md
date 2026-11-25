@@ -2084,3 +2084,52 @@ Spec `docs/specs/23-ustaad-network.md`, design `docs/superpowers/specs/2026-11-2
 - **Fail-closed numeral gate** (security review, four rounds): the text stays on our server when 8 or more numerals
   remain after masking and a small allowlist of mechanic tokens, counted over the whole text; any non-ASCII,
   non-Devanagari numeral or mixed digit scripts also keep it off the LLM. Details spec 23 § 11.1.
+
+## 2026-11-26 - Ustaad Network workstream A (foundations): staff preview, settings registry, media pipeline, policies
+
+- **Staff preview switch (founder 2026-11-26):** setting `ustaad.access` = `off | staff_preview | open`, default
+  `staff_preview`, global, edited in Admin → Settings (API mode, `ustaad:settings`, compare-and-set, `audit_log`,
+  `admin_ustaad_access_changed` event). API: every `/v1/ustaad/*` path passes `ustaadGate` first; anyone it refuses gets
+  exactly the generic unknown-path 404 (signed out, customers, broken tokens, staff without the two-step staff session),
+  before validation or rate limits (no oracle); only `open` answers 401 to signed-out callers. Staff = a staff grant in
+  a staff session. Staff may join during the preview (to test). `off` hides it from staff too. Public
+  `GET /v1/ustaad-access` tells the website the mode (not secret: the network is announced on /partners). Web: `off` →
+  a real 404; otherwise the client gate renders the site's not-found view to those refused (status 200, because the
+  web has no server session; the shell carries no member data; the API is the boundary). `ustaad.general.enabled`
+  stays as a separate switch (off hides the network from members; staff keep the preview).
+- **Ustaad settings registry:** `USTAAD_SETTINGS` (`packages/shared/src/ustaad/settings.ts`, int/boolean/enum, ~140
+  keys, all global) stored in the existing `settings` table under `ustaad.*`, but **not** in `OPERATIONAL_SETTINGS`
+  (deviation from spec 23 § 6.8: the existing Admin → Settings screen would list every key). Saves check type →
+  invariants (SR-40; locked floors return `SETTING_INVARIANT`, weight sums `SETTING_RELATION`) → range. Routes
+  `GET|PUT /v1/admin/ustaad/settings[/{key}]`; G1 builds the screen.
+- **Consents:** the ten Ustaad purposes (`USTAAD_CONSENT_PURPOSES`; the plan said 8, the spec lists 10 — the spec wins)
+  are a separate list from `PRIVACY_PURPOSES` so customers never see network consents on Account → Privacy; the
+  `consents` CHECK accepts both.
+- **`isStaffGrant` fix:** a system role now says itself whether it is staff (`ROLES[role].staff`); the `mechanic` grant
+  (scope self, no shop/workshop) is no longer treated as staff (it would have been withheld from normal sessions and
+  made every member look like staff on the web). Custom roles keep the old rule.
+- **Media pipeline v1 (security reviews of this branch, 2026-11-26):** verify a private copy (the upload is copied to a
+  key nobody was given, the upload key deleted, then size, type, sha256 against the declaration, magic bytes and the
+  container are checked on that copy and only it is promoted); container **allowlists that fail closed** (MP4 top
+  level only ftyp/moov/mdat/free/skip/wide; inside moov only the standard track tree; fragmented MP4 refused; WebM
+  only SeekHead/Info/Tracks/Cluster/Cues/Void, no Title; Ogg only the ENCODER comment); any extra metadata (location,
+  XMP, tags) refuses the file with the friendly `MEDIA_LOCATION` message ("record it in the app"). **Server-side
+  remux/strip is the v2 step** (ADR), together with transcoding (SR-13/14). MediaRecorder WebM without a Duration is
+  measured from its last block. Supabase signed upload URLs live 2 hours (fixed by Supabase) and do not bind size or
+  type: the 10-minute window, the bucket limits and the private-copy checks enforce them; no resumable upload on
+  Supabase yet (one PUT up to `SUPABASE_MAX_UPLOAD_MB`, 50 on the free plan).
+- **Media reads deny by default:** a member reads media they own, or media attached to a host they may see (visible
+  post or unexpired story, comment on a live post or answer, question, answer whose question is not removed, their own
+  message thread, a profile photo, a job application for applicant and employer, learning, tutorial, link preview),
+  with no block between the viewer and the owner or the host's author. A new host type must be added there.
+- **Leave/rejoin keeps the moderation standing:** the status before leaving comes back on rejoin (restricted stays
+  restricted); restricted mode, perks freeze and a revoked verification are kept; banned members can neither leave
+  nor rejoin.
+- **Promotion internal targets:** one strict path rule (`isSafeInternalPath`) in shared, mirrored by the DB CHECK.
+- **Policies:** privacy notice and terms carry the Ustaad Network sections (en + hi, "Last updated: 26 November 2026");
+  `/terms` becomes admin-editable (`policy.terms`); the grievance officer card shows "To be announced" + the support
+  line and support@mechdost.com until Admin → Company details are filled (Q-U4). No LLM provider is named (Q-U3); no
+  adult self-declaration line (Q-UC1).
+- **No device spike:** the plan's "2 GB Android" re-encode spike was not run (no device). Conservative client caps
+  stand meanwhile: 150 MB hard cap, Supabase 50 MB per file, 3 videos a day, 10 GB network budget; the recorder
+  (workstreams C/D) must write WebM from MediaRecorder and show sizes before upload.

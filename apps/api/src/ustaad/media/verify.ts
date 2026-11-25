@@ -24,7 +24,7 @@ import {
 } from '@mechdost/db/repo';
 import type { UstaadMediaKind } from '@mechdost/shared/ustaad/codes';
 import { ApiError } from '../../errors';
-import { mp4Facts, mp4TopBoxes, oggFacts, webmFacts, type ContainerFacts } from './duration';
+import { mp4Check, oggFacts, webmCheck, type ContainerFacts } from './duration';
 import type { MediaHost } from './host';
 import { matchesDeclared, sniff } from './sniff';
 
@@ -176,17 +176,10 @@ async function containerFacts(
   first: Uint8Array,
 ): Promise<ContainerFacts> {
   const read = (a: number, b: number) => host.getRange('quarantine', key, a, b);
-  const tail = () => read(Math.max(0, bytes - HEAD_BYTES), bytes - 1);
   const s = sniff(first);
-  if (s === 'mp4') {
-    const boxes = await mp4TopBoxes(read, bytes);
-    const moovs = boxes.filter((b) => b.type === 'moov');
-    const moov = moovs.length === 1 ? moovs[0] : undefined;
-    if (!moov || moov.size > MOOV_MAX) return { durationMs: null, problem: 'unreadable' };
-    return mp4Facts(await read(moov.offset, moov.offset + moov.size - 1));
-  }
-  if (s === 'webm') return webmFacts(first, await tail());
-  if (s === 'audio/ogg') return oggFacts(first, await tail());
+  if (s === 'mp4') return mp4Check(read, bytes, MOOV_MAX);
+  if (s === 'webm') return webmCheck(read, bytes);
+  if (s === 'audio/ogg') return oggFacts(first, await read(Math.max(0, bytes - HEAD_BYTES), bytes - 1));
   return { durationMs: null, problem: 'unreadable' };
 }
 
