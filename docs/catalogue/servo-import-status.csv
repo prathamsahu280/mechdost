@@ -1,0 +1,178 @@
+source_row,product_type,range,model,name,slug,sku,category,mrp_rupees,warranty_months,fitment_vehicles,picture,photo_kind,status,result
+75,greases,Automotive Greases,20 kg,Servo Grease MP,servo-grease-mp,SERVO-GREASE-MP-20-KG,greases,,,0,pictures/IndiaMART/SERVO Grease MP.jpeg,model,live,planned
+75,greases,Automotive Greases,182 kg,Servo Grease MP,servo-grease-mp,SERVO-GREASE-MP-182-KG,greases,,,0,pictures/IndiaMART/SERVO Grease MP.jpeg,model,live,planned
+80,motorcycle-oil,2 - Stroke Engine Oils,Standard pack,Servo 2T Supreme,servo-2t-supreme,SERVO-2T-SUPREME-STANDARD-PACK,motorcycle-oil,,,0,pictures/IndiaMART/SERVO 2T SUPREME.jpg,model,live,planned
+82,motorcycle-oil,4 - Stroke Engine Oils,Standard pack,Servo 4T Xtra,servo-4t-xtra,SERVO-4T-XTRA-STANDARD-PACK,motorcycle-oil,,,0,pictures/IndiaMART/SERVO 4T Xtra.jpg,model,live,planned
+86,motorcycle-oil,4 - Stroke Engine Oils,1 L,Servo 4T Zoom,servo-4t-zoom,SERVO-4T-ZOOM-1-L,motorcycle-oil,,,0,pictures/IndiaMART/SERVO 4T ZOOM.jpg,model,live,planned
+87,motorcycle-oil,4 - Stroke Engine Oils,Standard pack,Servo 4T,servo-4t,SERVO-4T-STANDARD-PACK,motorcycle-oil,,,0,pictures/IndiaMART/SERVO 4T.jpeg,model,live,planned
+88,heavy-duty-oils,Diesel Engine Oils,15 L,Servo Raftaar,servo-raftaar,SERVO-RAFTAAR-15-L,heavy-duty-oils,,,0,pictures/IndiaMART/SERVO RAFTAAR.jpg,model,live,planned
+90,heavy-duty-oils,Diesel Engine Oils,1 L,Servo Pride TC 15W-40,servo-pride-tc-15w-40,SERVO-PRIDE-TC-15W-40-1-L,heavy-duty-oils,,,0,pictures/IndiaMART/SERVO PRIDE TC 15W-40.jpg,model,live,planned
+91,heavy-duty-oils,Diesel Engine Oils,210 L,Servo Pride XL 15W-40,servo-pride-xl-15w-40,SERVO-PRIDE-XL-15W-40-210-L,heavy-duty-oils,,,0,pictures/IndiaMART/SERVO PRIDE XL 15W-40.jpg,model,live,planned
+100,heavy-duty-oils,Diesel Engine Oils,2.5 L,Servo Premium CF-4 15W-40,servo-premium-cf-4-15w-40,SERVO-PREMIUM-CF-4-15W-40-2-5-L,heavy-duty-oils,,,0,pictures/IndiaMART/SERVO PREMIUM CF-4 15W-40.jpg,model,live,planned
+100,heavy-duty-oils,Diesel Engine Oils,20 L,Servo Premium CF-4 15W-40,servo-premium-cf-4-15w-40,SERVO-PREMIUM-CF-4-15W-40-20-L,heavy-duty-oils,,,0,pictures/IndiaMART/SERVO PREMIUM CF-4 15W-40.jpg,model,live,planned
+100,heavy-duty-oils,Diesel Engine Oils,26 L,Servo Premium CF-4 15W-40,servo-premium-cf-4-15w-40,SERVO-PREMIUM-CF-4-15W-40-26-L,heavy-duty-oils,,,0,pictures/IndiaMART/SERVO PREMIUM CF-4 15W-40.jpg,model,live,planned
+100,heavy-duty-oils,Diesel Engine Oils,210 L,Servo Premium CF-4 15W-40,servo-premium-cf-4-15w-40,SERVO-PREMIUM-CF-4-15W-40-210-L,heavy-duty-oils,,,0,pictures/IndiaMART/SERVO PREMIUM CF-4 15W-40.jpg,model,live,planned
+107,tractor-agri-oils,Tractor Oils,7.5 L,Servo Tractor Oil 20W-40,servo-tractor-oil-20w-40,SERVO-TRACTOR-OIL-20W-40-7-5-L,tractor-agri-oils,,,0,pictures/IndiaMART/SERVO TRACTOR OIL 20W-40.jpg,model,live,planned
+116,car-engine-oil,Passenger Car Motor Oils,20 L,Servo Super MG 20W-40,servo-super-mg-20w-40,SERVO-SUPER-MG-20W-40-20-L,car-engine-oil,,,0,pictures/IndiaMART/SERVO SUPER MG 5W-30-10W-30-10W-40-20W-40-20W-50.jpg,model,live,planned
+116,car-engine-oil,Passenger Car Motor Oils,210 L,Servo Super MG 20W-40,servo-super-mg-20w-40,SERVO-SUPER-MG-20W-40-210-L,car-engine-oil,,,0,pictures/IndiaMART/SERVO SUPER MG 5W-30-10W-30-10W-40-20W-40-20W-50.jpg,model,live,planned
+130,gear-oils,Gear Oils,200 L,Servo Gear Super 85W-140,servo-gear-super-85w-140,SERVO-GEAR-SUPER-85W-140-200-L,gear-oils,,,0,pictures/IndiaMART/SERVO GEAR SUPER 85W-140.jpeg,model,live,planned
+130,gear-oils,Gear Oils,210 L,Servo Gear Super 85W-140,servo-gear-super-85w-140,SERVO-GEAR-SUPER-85W-140-210-L,gear-oils,,,0,pictures/IndiaMART/SERVO GEAR SUPER 85W-140.jpeg,model,live,planned
+1,General Equipment And Machinery Greases,Industrial greases,,SERVOgem 2/3/Ep Greases,,,,,,0,,,skipped: industrial,skipped
+2,General Equipment And Machinery Greases,Industrial greases,,SERVOgem Ht/Htxx,,,,,,0,,,skipped: industrial,skipped
+3,Complex Greases,Industrial greases,,SERVOrex L0/L1/L2,,,,,,0,,,skipped: industrial,skipped
+4,Complex Greases,Industrial greases,,SERVOplex Lc/Lc1/Lc2/Lc3,,,,,,0,,,skipped: industrial,skipped
+5,Complex Greases,Industrial greases,,SERVOgem Super Ht,,,,,,0,,,skipped: industrial,skipped
+6,Complex Greases,Industrial greases,,SERVOplex 2/3,,,,,,0,,,skipped: industrial,skipped
+7,Chain Grease,Industrial greases,,SERVO Chain Compound,,,,,,0,,,skipped: industrial,skipped
+8,Graphited Grease,Industrial greases,,SERVOgrease Graphited 5081/5082/5083,,,,,,0,,,skipped: industrial,skipped
+9,Cement Plant Greases,Industrial greases,,SERVOgrease Cg 10,,,,,,0,,,skipped: industrial,skipped
+10,Cement Plant Greases,Industrial greases,,SERVOgrease Rn,,,,,,0,,,skipped: industrial,skipped
+11,Industrial Greases,Industrial greases,,General Equipment & Machinery Greases,,,,,,0,,,skipped: industrial,skipped
+12,Industrial Greases,Industrial greases,,High Temperature Greases,,,,,,0,,,skipped: industrial,skipped
+13,Industrial Greases,Industrial greases,,Complex Greases,,,,,,0,,,skipped: industrial,skipped
+14,Industrial Greases,Industrial greases,,Chain Grease,,,,,,0,,,skipped: industrial,skipped
+15,Industrial Greases,Industrial greases,,Graphited Greases,,,,,,0,,,skipped: industrial,skipped
+16,Industrial Greases,Industrial greases,,Cement Plant Greases,,,,,,0,,,skipped: industrial,skipped
+17,Industrial Greases,Industrial greases,,Water Resistant Grease,,,,,,0,,,skipped: industrial,skipped
+18,Industrial Greases,Industrial greases,,Cup Greases,,,,,,0,,,skipped: industrial,skipped
+19,Industrial Greases,Industrial greases,,Synthetic Greases,,,,,,0,,,skipped: industrial,skipped
+20,Industrial Greases,Industrial greases,,Foodgrade Greases,,,,,,0,,,skipped: industrial,skipped
+21,Industrial Lubricating Oils,Industrial lubricating oils,,Turbine Oils,,,,,,0,,,skipped: industrial,skipped
+22,Industrial Lubricating Oils,Industrial lubricating oils,,Control Valve Hydraulic Fluid,,,,,,0,,,skipped: industrial,skipped
+23,Industrial Lubricating Oils,Industrial lubricating oils,,Circulating and Hydraulic Oils (R&O Type),,,,,,0,,,skipped: industrial,skipped
+24,Industrial Lubricating Oils,Industrial lubricating oils,,Circulating and Hydraulic Oils (Anti-wear Type),,,,,,0,,,skipped: industrial,skipped
+25,Industrial Lubricating Oils,Industrial lubricating oils,,Circulating Oils (Anti-wear Type),,,,,,0,,,skipped: industrial,skipped
+26,Industrial Lubricating Oils,Industrial lubricating oils,,Special Purpose Hydraulic Oils (Anti-wear Type),,,,,,0,,,skipped: industrial,skipped
+27,Industrial Lubricating Oils,Industrial lubricating oils,,Special Purpose High VI Hydraulic Oil (Anti-wear Type),,,,,,0,,,skipped: industrial,skipped
+28,Industrial Lubricating Oils,Industrial lubricating oils,,Synthetic Hydraulic Oils,,,,,,0,,,skipped: industrial,skipped
+29,Industrial Lubricating Oils,Industrial lubricating oils,,Foodgrade Hydraulic Oils,,,,,,0,,,skipped: industrial,skipped
+30,Industrial Lubricating Oils,Industrial lubricating oils,,Fire Resistant Hydraulic Fluids (Dilute Emulsion Type),,,,,,0,,,skipped: industrial,skipped
+31,Industrial Lubricating Oils,Industrial lubricating oils,,Fire Resistant Hydraulic Fluids (Water Glycol Type),,,,,,0,,,skipped: industrial,skipped
+32,Industrial Lubricating Oils,Industrial lubricating oils,,Fire Resistant Hydraulic Fluids (water free),,,,,,0,,,skipped: industrial,skipped
+33,Industrial Lubricating Oils,Industrial lubricating oils,,Spindle Oils,,,,,,0,,,skipped: industrial,skipped
+34,Industrial Lubricating Oils,Industrial lubricating oils,,Machinery Oils,,,,,,0,,,skipped: industrial,skipped
+35,Industrial Lubricating Oils,Industrial lubricating oils,,Textile Oils (Scourable Type),,,,,,0,,,skipped: industrial,skipped
+36,Industrial Lubricating Oils,Industrial lubricating oils,,Knitting Oil,,,,,,0,,,skipped: industrial,skipped
+37,Industrial Lubricating Oils,Industrial lubricating oils,,Textile Oils (Biodegradable/Synthetic ),,,,,,0,,,skipped: industrial,skipped
+38,Industrial Lubricating Oils,Industrial lubricating oils,,Anti Static Oil,,,,,,0,,,skipped: industrial,skipped
+39,Industrial Lubricating Oils,Industrial lubricating oils,,Coning Oil,,,,,,0,,,skipped: industrial,skipped
+40,Industrial Lubricating Oils,Industrial lubricating oils,,Industrial Gear Oils,,,,,,0,,,skipped: industrial,skipped
+41,Industrial Lubricating Oils,Industrial lubricating oils,,Energy Efficient Industrial Gear Oils,,,,,,0,,,skipped: industrial,skipped
+42,Industrial Lubricating Oils,Industrial lubricating oils,,Anti Micropitting Gear Oil,,,,,,0,,,skipped: industrial,skipped
+43,Industrial Lubricating Oils,Industrial lubricating oils,,Synthetic Gear Oils,,,,,,0,,,skipped: industrial,skipped
+44,Industrial Lubricating Oils,Industrial lubricating oils,,Anti-Micropitting Synthetic Gear Oils,,,,,,0,,,skipped: industrial,skipped
+45,Industrial Lubricating Oils,Industrial lubricating oils,,Foodgrade Gear Oils,,,,,,0,,,skipped: industrial,skipped
+46,Industrial Lubricating Oils,Industrial lubricating oils,,Oil Mist Lubricants,,,,,,0,,,skipped: industrial,skipped
+47,Industrial Lubricating Oils,Industrial lubricating oils,,Synthetic Chain Lubricants,,,,,,0,,,skipped: industrial,skipped
+48,Industrial Lubricating Oils,Industrial lubricating oils,,Foodgrade Chain Lubricants,,,,,,0,,,skipped: industrial,skipped
+49,Industrial Lubricating Oils,Industrial lubricating oils,,Oil Film Bearing Oils,,,,,,0,,,skipped: industrial,skipped
+50,Industrial Lubricating Oils,Industrial lubricating oils,,Morgan Bearing Oils,,,,,,0,,,skipped: industrial,skipped
+51,Industrial Lubricating Oils,Industrial lubricating oils,,Compressor Oils,,,,,,0,,,skipped: industrial,skipped
+52,Industrial Lubricating Oils,Industrial lubricating oils,,Synthetic Compressor Oil,,,,,,0,,,skipped: industrial,skipped
+53,Industrial Lubricating Oils,Industrial lubricating oils,,Refrigeration Compressor Oils,,,,,,0,,,skipped: industrial,skipped
+54,Industrial Lubricating Oils,Industrial lubricating oils,,Semi-Synthetic Refrigeration Compressor Oils,,,,,,0,,,skipped: industrial,skipped
+55,Industrial Lubricating Oils,Industrial lubricating oils,,Eco-friendly Synthetic Refrigeration Oils,,,,,,0,,,skipped: industrial,skipped
+56,Industrial Lubricating Oils,Industrial lubricating oils,,Stationary Diesel Engine Oils,,,,,,0,,,skipped: industrial,skipped
+57,Industrial Lubricating Oils,Industrial lubricating oils,,Vacuum Pump Oil,,,,,,0,,,skipped: industrial,skipped
+58,Industrial Lubricating Oils,Industrial lubricating oils,,Synthetic Vacuum Pump Oils,,,,,,0,,,skipped: industrial,skipped
+59,Industrial Lubricating Oils,Industrial lubricating oils,,Gas Holder Oils,,,,,,0,,,skipped: industrial,skipped
+60,Industrial Lubricating Oils,Industrial lubricating oils,,Pneumatic Tool Oils,,,,,,0,,,skipped: industrial,skipped
+61,Industrial Lubricating Oils,Industrial lubricating oils,,Machine Tool Way Oils,,,,,,0,,,skipped: industrial,skipped
+62,Industrial Lubricating Oils,Industrial lubricating oils,,Hydraulic-cum-Machine Tool Way Oils,,,,,,0,,,skipped: industrial,skipped
+63,Industrial Lubricating Oils,Industrial lubricating oils,,Steam Cylinder Oils,,,,,,0,,,skipped: industrial,skipped
+64,Industrial Lubricating Oils,Industrial lubricating oils,,Sugar Mill Roll Bearing Oils,,,,,,0,,,skipped: industrial,skipped
+65,Industrial Lubricating Oils,Industrial lubricating oils,,Bearing Oils (Compounded Type),,,,,,0,,,skipped: industrial,skipped
+66,Industrial Lubricating Oils,Industrial lubricating oils,,Open Gear Compounds,,,,,,0,,,skipped: industrial,skipped
+67,Industrial Lubricating Oils,Industrial lubricating oils,,Special Open Gear Compound,,,,,,0,,,skipped: industrial,skipped
+68,Industrial Lubricating Oils,Industrial lubricating oils,,General Purpose Machinery Oils,,,,,,0,,,skipped: industrial,skipped
+69,Industrial Lubricating Oils,Industrial lubricating oils,,Axle Oils,,,,,,0,,,skipped: industrial,skipped
+70,Railroad Greases,Railroad greases,,SERVO Gem RR 3,,,,,,0,,,skipped: industrial,skipped
+71,Railroad Greases,Railroad greases,,SERVO Grease RR 1,,,,,,0,,,skipped: industrial,skipped
+72,Automotive Greases,Automotive greases,,SERVO GREASE MIRACLE,,,,,,0,,,skipped: no_picture,skipped
+73,Automotive Greases,Automotive greases,,SERVO Grease C,,,,,,0,,,skipped: no_picture,skipped
+74,Automotive Greases,Automotive greases,,SERVO Grease WB,,,,,,0,,,skipped: no_picture,skipped
+76,Automotive Greases,Automotive greases,,SERVO Grease Molex,,,,,,0,,,skipped: no_picture,skipped
+77,Automotive Greases,Automotive greases,,SERVO Grease CVJ,,,,,,0,,,skipped: no_picture,skipped
+78,2 - Stroke Engine Oils,Automotive lubricating oils,,KINETIC ULTRA 2T OIL,,,,,,0,,,skipped: no_picture,skipped
+79,2 - Stroke Engine Oils,Automotive lubricating oils,,SERVO 2W GEAR OIL,,,,,,0,,,skipped: no_picture,skipped
+81,2 - Stroke Engine Oils,Automotive lubricating oils,,SERVO LML 2T OIL,,,,,,0,,,skipped: no_picture,skipped
+83,4 - Stroke Engine Oils,Automotive lubricating oils,,SERVO Blackbird X,,,,,,0,,,skipped: no_picture,skipped
+84,4 - Stroke Engine Oils,Automotive lubricating oils,,SERVO Hypersport F5,,,,,,0,,,skipped: no_picture,skipped
+85,4 - Stroke Engine Oils,Automotive lubricating oils,,SERVO 4T SYNTH 10W-30,,,,,,0,,,skipped: no_picture,skipped
+89,Diesel Engine Oils,Automotive lubricating oils,,"SERVO PRIDE SUPER 15W-40, 20W-50",,,,,,0,,,skipped: no_picture,skipped
+92,Diesel Engine Oils,Automotive lubricating oils,,"SERVO PRIDE, 10W, 20, 30, 40, 50, MG 10W-30, MG 20W-40",,,,,,0,,,skipped: no_picture,skipped
+93,Diesel Engine Oils,Automotive lubricating oils,,SERVO CKD (SKODA) GENUINE DG SET OIL,,,,,,0,,,skipped: no_picture,skipped
+94,Diesel Engine Oils,Automotive lubricating oils,,SERVO SKODA GENUINE OIL HD,,,,,,0,,,skipped: no_picture,skipped
+95,Diesel Engine Oils,Automotive lubricating oils,,SERVO SKODA GENUINE OIL XHD,,,,,,0,,,skipped: no_picture,skipped
+96,Diesel Engine Oils,Automotive lubricating oils,,SERVO SUPER PLUS 20W-40,,,,,,0,,,skipped: no_picture,skipped
+97,Diesel Engine Oils,Automotive lubricating oils,,SERVO ULTRA 40 RR,,,,,,0,,,skipped: no_picture,skipped
+98,Diesel Engine Oils,Automotive lubricating oils,,HYUNDAI SERVO CRDi PREMIUM ENGINE OIL,,,,,,0,,,skipped: no_picture,skipped
+99,Diesel Engine Oils,Automotive lubricating oils,,SERVO PREMIUM (N) 15W-40,,,,,,0,,,skipped: no_picture,skipped
+101,Diesel Engine Oils,Automotive lubricating oils,,SERVO PREMIUM CG-4 15W-40,,,,,,0,,,skipped: no_picture,skipped
+102,Diesel Engine Oils,Automotive lubricating oils,,SERVO PREMIUM XHP 15W-40,,,,,,0,,,skipped: no_picture,skipped
+103,Diesel Engine Oils,Automotive lubricating oils,,SERVO PREMIUM 20W-40,,,,,,0,,,skipped: no_picture,skipped
+104,Diesel Engine Oils,Automotive lubricating oils,,"SERVO ULTRA 10W, 20, 30, 40, 50",,,,,,0,,,skipped: no_picture,skipped
+105,Boat Engine Oil,Automotive lubricating oils,,SERVO BOAT ENGINE OIL 20W-40,,,,,,0,,,skipped: marine,skipped
+106,Tractor Oils,Automotive lubricating oils,,"SERVO PUMP SET OIL 30, 40",,,,,,0,,,skipped: no_picture,skipped
+108,Tractor Oils,Automotive lubricating oils,,"SERVO UNITRAC 30, 15W-30",,,,,,0,,,skipped: no_picture,skipped
+109,Tractor Oils,Automotive lubricating oils,,SERVO TRANSTRAC 30,,,,,,0,,,skipped: no_picture,skipped
+110,Passenger Car Motor Oils,Automotive lubricating oils,,SERVO GREENMILE,,,,,,0,,,skipped: no_picture,skipped
+111,Passenger Car Motor Oils,Automotive lubricating oils,,SERVO FUTURA SYNTH 5W-50,,,,,,0,,,skipped: no_picture,skipped
+112,Passenger Car Motor Oils,Automotive lubricating oils,,HYUNDAI SERVO PREMIUM ENGINE OIL,,,,,,0,,,skipped: no_picture,skipped
+113,Passenger Car Motor Oils,Automotive lubricating oils,,HYUNDAI SERVO ENGINE OIL,,,,,,0,,,skipped: no_picture,skipped
+114,Passenger Car Motor Oils,Automotive lubricating oils,,LANCER ENGINE OIL,,,,,,0,,,skipped: no_picture,skipped
+115,Passenger Car Motor Oils,Automotive lubricating oils,,MARUTI GENUINE OIL,,,,,,0,,,skipped: no_picture,skipped
+116,Passenger Car Motor Oils,Automotive lubricating oils,,SERVO SUPER MG 5W-30/10W-30/10W-40/20W-40/20W-50 (5W-30),,,,,,0,,,skipped: grade_without_photo,skipped
+116,Passenger Car Motor Oils,Automotive lubricating oils,,SERVO SUPER MG 5W-30/10W-30/10W-40/20W-40/20W-50 (10W-30),,,,,,0,,,skipped: grade_without_photo,skipped
+116,Passenger Car Motor Oils,Automotive lubricating oils,,SERVO SUPER MG 5W-30/10W-30/10W-40/20W-40/20W-50 (10W-40),,,,,,0,,,skipped: grade_without_photo,skipped
+116,Passenger Car Motor Oils,Automotive lubricating oils,,SERVO SUPER MG 5W-30/10W-30/10W-40/20W-40/20W-50 (20W-50),,,,,,0,,,skipped: grade_without_photo,skipped
+117,Passenger Car Motor Oils,Automotive lubricating oils,,"SERVO SUPERIOR XEE 10W-30, 10W-40, 15W-40, 20W-50",,,,,,0,,,skipped: no_picture,skipped
+118,Passenger Car Motor Oils,Automotive lubricating oils,,"SERVO SUPERIOR 10W-30, 10W-40, 20W-40, 20W-50",,,,,,0,,,skipped: no_picture,skipped
+119,Passenger Car Motor Oils,Automotive lubricating oils,,"SERVO XEE SJ 10W-30, 10W-40, 15W-40, 20W-50",,,,,,0,,,skipped: no_picture,skipped
+120,Passenger Car Motor Oils,Automotive lubricating oils,,"SERVO XEE SL 5W-20, 10W-40",,,,,,0,,,skipped: no_picture,skipped
+121,Passenger Car Motor Oils,Automotive lubricating oils,,SERVO SYNTH SJ 5W-40,,,,,,0,,,skipped: no_picture,skipped
+122,Gear Oils,Automotive lubricating oils,,HYUNDAI SERVO GEAR OIL,,,,,,0,,,skipped: no_picture,skipped
+123,Gear Oils,Automotive lubricating oils,,SERVO GEAR AXLE 85W-140,,,,,,0,,,skipped: no_picture,skipped
+124,Gear Oils,Automotive lubricating oils,,SERVO GEAR HP 75W- 90,,,,,,0,,,skipped: no_picture,skipped
+125,Gear Oils,Automotive lubricating oils,,SERVO GEAR HP 90 (T)/140 (T),,,,,,0,,,skipped: no_picture,skipped
+126,Gear Oils,Automotive lubricating oils,,SERVO GEAR HP ALFA 80W-90,,,,,,0,,,skipped: no_picture,skipped
+127,Gear Oils,Automotive lubricating oils,,"SERVO GEAR HP 80W, HP 80, HP 85W, HP 85, HP 90, HP 140",,,,,,0,,,skipped: no_picture,skipped
+128,Gear Oils,Automotive lubricating oils,,"SERVO GEAR SUPER 80W 90, 85W-140",,,,,,0,,,skipped: no_picture,skipped
+129,Gear Oils,Automotive lubricating oils,,SERVO GEAR SUPER 80W-90(T) & 85W-140(T),,,,,,0,,,skipped: no_picture,skipped
+131,Gear Oils,Automotive lubricating oils,,SERVO GEAR SUPER LS 90,,,,,,0,,,skipped: no_picture,skipped
+132,Gear Oils,Automotive lubricating oils,,"SERVO GEAR SUPER 80W, 80, 85W, 80, 90, 140",,,,,,0,,,skipped: no_picture,skipped
+133,Gear Oils,Automotive lubricating oils,,"SERVO GEAR HP 80W (T), 90(T) , SUPER 85W-140(T)",,,,,,0,,,skipped: no_picture,skipped
+134,Gear Oils,Automotive lubricating oils,,SERVO SYNCHRO 80W-90,,,,,,0,,,skipped: no_picture,skipped
+135,Gear Oils,Automotive lubricating oils,,SERVO TRANSUNO 80W-90,,,,,,0,,,skipped: no_picture,skipped
+136,Ashok Leyland Endorsed Grades,Automotive lubricating oils,,SERVO KOOL ALT,,,,,,0,,,skipped: no_picture,skipped
+137,Ashok Leyland Endorsed Grades,Automotive lubricating oils,,SERVO GEM ALT,,,,,,0,,,skipped: no_picture,skipped
+138,Ashok Leyland Endorsed Grades,Automotive lubricating oils,,SERVO PRIDE GEO ALT 20W-50,,,,,,0,,,skipped: no_picture,skipped
+139,Ashok Leyland Endorsed Grades,Automotive lubricating oils,,SERVO PRIDE ALT 15W-40,,,,,,0,,,skipped: no_picture,skipped
+140,Ashok Leyland Endorsed Grades,Automotive lubricating oils,,SERVO PREMIUM ALT 15W-40,,,,,,0,,,skipped: no_picture,skipped
+141,Ashok Leyland Endorsed Grades,Automotive lubricating oils,,SERVO POWER STEER ALT,,,,,,0,,,skipped: no_picture,skipped
+142,Ashok Leyland Endorsed Grades,Automotive lubricating oils,,SERVO POWER BRAKE ALT,,,,,,0,,,skipped: no_picture,skipped
+143,Ashok Leyland Endorsed Grades,Automotive lubricating oils,,SERVO HYDRAULIC ALT 32,,,,,,0,,,skipped: no_picture,skipped
+144,Ashok Leyland Endorsed Grades,Automotive lubricating oils,,SERVO GREASE ALT,,,,,,0,,,skipped: no_picture,skipped
+145,Ashok Leyland Endorsed Grades,Automotive lubricating oils,,SERVO GEAR SUPER ALT 85W-140,,,,,,0,,,skipped: no_picture,skipped
+146,Ashok Leyland Endorsed Grades,Automotive lubricating oils,,SERVO GEAR ALT 90,,,,,,0,,,skipped: no_picture,skipped
+147,Ashok Leyland Endorsed Grades,Automotive lubricating oils,,SERVO GEAR ALT 140,,,,,,0,,,skipped: no_picture,skipped
+148,Genuine Oils For Eicher Motors,Automotive lubricating oils,,SERVO EICHER DIFFERENTIAL OIL,,,,,,0,,,skipped: no_picture,skipped
+149,Genuine Oils For Eicher Motors,Automotive lubricating oils,,SERVO EICHER ENGINE OIL,,,,,,0,,,skipped: no_picture,skipped
+150,Genuine Oils For Eicher Motors,Automotive lubricating oils,,SERVO EICHER TRANSMISSION OIL,,,,,,0,,,skipped: no_picture,skipped
+151,Genuine Oils For Force Motors,Automotive lubricating oils,,SERVO FORCE BRAKE FLUID DOT 4,,,,,,0,,,skipped: no_picture,skipped
+152,Genuine Oils For Force Motors,Automotive lubricating oils,,SERVO FORCE BRAKE FLUID,,,,,,0,,,skipped: no_picture,skipped
+153,Genuine Oils For Force Motors,Automotive lubricating oils,,SERVO FORCE ENGINE OIL,,,,,,0,,,skipped: no_picture,skipped
+154,Genuine Oils For Force Motors,Automotive lubricating oils,,SERVO FORCE GEAR OIL,,,,,,0,,,skipped: no_picture,skipped
+155,Genuine Oils For Force Motors,Automotive lubricating oils,,SERVO FORCE GREASE,,,,,,0,,,skipped: no_picture,skipped
+156,Genuine Oils For Force Motors,Automotive lubricating oils,,SERVO FORCE PREMIUM ENGINE OIL,,,,,,0,,,skipped: no_picture,skipped
+157,Genuine Oils For Force Motors,Automotive lubricating oils,,SERVO FORCE TRANSMISSION FLUID,,,,,,0,,,skipped: no_picture,skipped
+158,Genuine Oils For HMT Vehicles,Automotive lubricating oils,,SERVO HMT GEAR OIL 90,,,,,,0,,,skipped: no_picture,skipped
+159,Genuine Oils For HMT Vehicles,Automotive lubricating oils,,SERVO HMT GREASE,,,,,,0,,,skipped: no_picture,skipped
+160,Genuine Oils For HMT Vehicles,Automotive lubricating oils,,SERVO HMT PREMIUM TRACTOR OIL,,,,,,0,,,skipped: no_picture,skipped
+161,Genuine Oils For HMT Vehicles,Automotive lubricating oils,,SERVO HMT TRACTOR OIL 20W-40,,,,,,0,,,skipped: no_picture,skipped
+162,Automatic transmission fuels,Automotive lubricating oils,,"SERVO TRANSMISSION C4 SAE 10, C4 SAE30",,,,,,0,,,skipped: no_picture,skipped
+163,Automatic transmission fuels,Automotive lubricating oils,,"SERVO TRANSMISSION T 20, T 30",,,,,,0,,,skipped: no_picture,skipped
+164,Automatic transmission fuels,Automotive lubricating oils,,SERVO TRANSCLEAN C4 SAE 30,,,,,,0,,,skipped: no_picture,skipped
+165,Automatic transmission fuels,Automotive lubricating oils,,SERVO TRANSDEX II,,,,,,0,,,skipped: no_picture,skipped
+166,Automatic transmission fuels,Automotive lubricating oils,,SERVO TRANSMISSION FLUID 10,,,,,,0,,,skipped: no_picture,skipped
+167,Automatic transmission fuels,Automotive lubricating oils,,SERVO TRANSFLUID A,,,,,,0,,,skipped: no_picture,skipped

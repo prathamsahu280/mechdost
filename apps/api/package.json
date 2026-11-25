@@ -19,7 +19,10 @@
     "import:tatagreen": "tsx --env-file-if-exists=../../.env src/cli/import-tatagreen.ts",
     "import:ceat": "tsx --env-file-if-exists=../../.env src/cli/import-ceat.ts",
     "import:mrf": "tsx --env-file-if-exists=../../.env src/cli/import-mrf.ts",
-    "import:apollo": "tsx --env-file-if-exists=../../.env src/cli/import-apollo.ts"
+    "import:apollo": "tsx --env-file-if-exists=../../.env src/cli/import-apollo.ts",
+    "import:hp": "tsx --env-file-if-exists=../../.env src/cli/import-hp.ts",
+    "import:bpcl": "tsx --env-file-if-exists=../../.env src/cli/import-bpcl.ts",
+    "import:servo": "tsx --env-file-if-exists=../../.env src/cli/import-servo.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.3.0",

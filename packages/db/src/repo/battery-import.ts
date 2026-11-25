@@ -38,9 +38,14 @@ export interface BatteryImportConfig {
     | 'admin_tatagreen_imported'
     | 'admin_ceat_imported'
     | 'admin_mrf_imported'
-    | 'admin_apollo_imported';
+    | 'admin_apollo_imported'
+    | 'admin_hp_imported'
+    | 'admin_bpcl_imported'
+    | 'admin_servo_imported';
   /** Brands (slugs) whose old products this import archives too (Apollo: Vredestein). Never anything else. */
   alsoArchiveBrands?: readonly string[];
+  /** Slugs of existing products that are never archived although they are not in the plan (HP Racer4: it has orders). */
+  keepSlugs?: readonly string[];
 }
 
 export interface BatteryImportCounts {
@@ -499,10 +504,11 @@ async function execute(
     }
   }
 
-  // Archive every other product of the brand.
+  // Archive every other product of the brand (except the ones the config keeps).
+  const keep = new Set(cfg.keepSlugs ?? []);
   const archived: BatteryRunResult['archived'] = [];
   for (const row of brandRows) {
-    if (matched.has(row.id) || row.status === 'archived') continue;
+    if (matched.has(row.id) || row.status === 'archived' || keep.has(row.slug)) continue;
     archived.push({ slug: row.slug, name: row.name, status: row.status });
     counts.productsArchived += 1;
     if (!write) continue;

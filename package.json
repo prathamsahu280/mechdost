@@ -29,7 +29,10 @@
     "db:import:tatagreen": "pnpm --filter @mechdost/api import:tatagreen",
     "db:import:ceat": "pnpm --filter @mechdost/api import:ceat",
     "db:import:mrf": "pnpm --filter @mechdost/api import:mrf",
-    "db:import:apollo": "pnpm --filter @mechdost/api import:apollo"
+    "db:import:apollo": "pnpm --filter @mechdost/api import:apollo",
+    "db:import:hp": "pnpm --filter @mechdost/api import:hp",
+    "db:import:bpcl": "pnpm --filter @mechdost/api import:bpcl",
+    "db:import:servo": "pnpm --filter @mechdost/api import:servo"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

@@ -223,7 +223,7 @@ export function parseSae(text: string): string | null {
 }
 
 const API_CLASSES = ['SG', 'SJ', 'SL', 'SM', 'SN', 'SP', 'CF4', 'CH4', 'CI4', 'CK4'] as const;
-function parseApi(text: string): string | null {
+export function parseApi(text: string): string | null {
   const t = text.toUpperCase().replace(/[-\s]/g, '');
   // Highest class named wins ("API SN/CF" → SN).
   let best: string | null = null;
@@ -232,12 +232,12 @@ function parseApi(text: string): string | null {
   return best;
 }
 
-function parseJaso(text: string): string | null {
+export function parseJaso(text: string): string | null {
   const m = /JASO\s*(MA2|MA1|MA|MB)\b/i.exec(text);
   return m?.[1] ? m[1].toUpperCase() : null;
 }
 
-function parseBaseType(text: string): string | null {
+export function parseBaseType(text: string): string | null {
   const t = text.toLowerCase();
   if (/semi[\s-]*synth|technosynthese|part[\s-]*synth/.test(t)) return 'semi_synthetic';
   if (t.includes('synth')) return 'synthetic';
