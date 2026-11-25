@@ -11,6 +11,7 @@ import {
   confirmUstaadAttestation,
   decideUstaadVouch,
   getUstaadOnboarding,
+  ustaadTutorial,
   joinUstaad,
   mapMechanicApplications,
   giveUstaadVouch,
@@ -212,8 +213,8 @@ describe('level recompute (§ 9.2, SR-8, SR-9)', () => {
   });
 
   it('enough qualified followers + best answers → Pakka, with a level event; Bada queues a staff review instead', async () => {
-    const rules = await db.select().from(s.ustaadLevelRules);
-    expect(rules).toHaveLength(0); // the engine falls back to the founder's demo rules
+    // The seed (migration ustaad_identity_seed) holds the founder's rules; replace them for this test.
+    await db.delete(s.ustaadLevelRules);
     // Lower Pakka to 2 followers for the test through the admin table.
     await db.insert(s.ustaadLevelRules).values([
       {
@@ -748,6 +749,16 @@ describe('ring detection (§ 14, SR-10, AT-VOUCH-1)', () => {
 });
 
 describe('tutorial progress (flow 15)', () => {
+  it('six seeded cards and six coach-marks, in Hindi and English, no recording yet (speech fallback)', async () => {
+    const hi = await ustaadTutorial(t(), 'hi');
+    const en = await ustaadTutorial(t(), 'en');
+    expect(hi.cards.map((c) => c.code)).toEqual(['ask', 'show_work', 'answer', 'levels', 'pin', 'dukaan']);
+    expect(hi.coachmarks).toHaveLength(6);
+    expect(hi.cards[0]?.title).toBe('सवाल पूछो');
+    expect(en.cards[0]?.title).toBe('Ask by voice');
+    expect(hi.cards.every((c) => c.audioMediaId === null)).toBe(true);
+  });
+
   it('records the last card, skip, completion and coach-marks; reset clears them', async () => {
     const m = await mkMember();
     await saveUstaadOnboarding(t(), { userId: m.userId }, { event: 'card', card: 2 });
