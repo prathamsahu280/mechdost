@@ -14,6 +14,8 @@ import type { PhotoByteCache } from './photos/byte-cache';
 import type { RazorpayGateway } from './payments/razorpay';
 import type { RateLimiter } from './rate-limit/limiter';
 import type { Revalidator } from './revalidate';
+import type { CorrectionCache } from './ustaad/correction/cache';
+import type { SmartCorrectionEngine } from './ustaad/correction/engine';
 import type { MediaHost } from './ustaad/media/host';
 
 /** Everything the app needs from the outside world — injected so tests use PGlite and fakes. */
@@ -42,6 +44,10 @@ export interface AppDeps {
   sentryIssues?: SentryIssuesClient | null;
   /** Refreshes the website's cache by tag after a publish; absent = the configured one (tests inject a spy). */
   revalidate?: Revalidator;
+  /** Ustaad smart-correction LLM (spec 23 § 11); null/absent = the word list only. */
+  smartCorrection?: SmartCorrectionEngine | null;
+  /** Cache for LLM corrections (masked text only); absent = a per-instance memory cache. */
+  correctionCache?: CorrectionCache;
   /** Ustaad Network media store (R2 or Supabase, spec 23 § 10); null → media routes answer 503 MEDIA_UNAVAILABLE. */
   mediaHost?: MediaHost | null;
 }

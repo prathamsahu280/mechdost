@@ -125,5 +125,6 @@ export * from './roadside-job';
 export * from './roadside-payments';
 export * from './roadside-responder';
 export * from './roadside-messages';
+export * from './ustaad-correction';
 // Ustaad Network (spec 23): every name carries the `ustaad` prefix.
 export * from './ustaad';

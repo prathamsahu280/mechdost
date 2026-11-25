@@ -18,6 +18,7 @@ import { validationHook } from '../../validation';
 import { errorResponses } from '../schemas';
 import { json } from '../service-schemas';
 import { ustaadMediaRoutes } from './media';
+import { ustaadCorrectRoutes } from './correct';
 import { ustaadMemberRoutes } from './members';
 
 const accessRoute = createRoute({
@@ -48,6 +49,7 @@ export function ustaadRoutes(deps: AppDeps, sessions: SessionCache, access: Usta
   // C: app.route('/', ustaadQaRoutes(deps)); app.route('/', ustaadLearnRoutes(deps));
   // D: app.route('/', ustaadPostRoutes(deps)); app.route('/', ustaadFeedRoutes(deps)); …
   // E: app.route('/', ustaadLocationRoutes(deps)); app.route('/', ustaadJobRoutes(deps));
-  // F: app.route('/', ustaadCorrectionRoutes(deps)); app.route('/', ustaadReportRoutes(deps));
+  app.route('/', ustaadCorrectRoutes(deps));
+  // F: app.route('/', ustaadReportRoutes(deps));
   return app;
 }

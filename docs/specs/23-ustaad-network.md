@@ -469,7 +469,7 @@ would duplicate (create post, question, answer, comment, job, application, repor
 | Location      | `PUT /ustaad/me/location` (point, accuracy, source, landmark, three choices), `POST /ustaad/me/location/signboard`, `GET /ustaad/zones?city=` (verified members; banded)                                                                                                                                                                                                                                                                                                                                                                                                                                                          | 10/day                                                                                                                    |
 | Jobs          | `GET /ustaad/jobs`, `GET /ustaad/jobs/{code}`, `POST /ustaad/jobs` (`ustaad:jobs_post`), `PATCH …/{code}`, `POST …/{code}/pause\|close\|fill`, `POST …/{code}/apply`, `POST /ustaad/applications/{id}/withdraw`, `GET /ustaad/jobs/mine`, `POST /ustaad/applications/{id}/seen\|shortlist\|reject\|hire` (employer of that job)                                                                                                                                                                                                                                                                                                   | jobs 5/day; applications 20/day                                                                                           |
 | Learn         | `GET /ustaad/learn`, `PUT /ustaad/learn/{resourceId}/progress`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | 120/h                                                                                                                     |
-| Correction    | `POST /ustaad/correct` (text ≤ 2,000 chars, lang hint, mode) → `{ text, changes[], engine }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | `correction.per_member_per_10min` (30)                                                                                    |
+| Correction    | `POST /ustaad/correct` (text ≤ 2,000 chars, lang hint, mode) → `{ mode, engine, text, original, changed, changes, segments[] }` (§ 11.1)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | `correction.per_member_per_10min` (30)                                                                                    |
 | Reports       | `POST /ustaad/reports`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | 20/day                                                                                                                    |
 | Share teaser  | `GET /ustaad/s/{token}` (public, generic card only, `noindex`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | 60/min/IP                                                                                                                 |
 | Promotions    | (served inside feed/search/jobs/learn responses; `POST /ustaad/promotions/{id}/hide` reason code)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | —                                                                                                                         |
@@ -725,6 +725,59 @@ interface SmartCorrectionEngine {
   provider's retention and no-training terms before turning the key on (Q-U3). Correction text is never used to
   train MechDost models without the `ustaad_ml_training` consent.
 - **Analytics:** `ustaad_correction_shown {engine, mode, changes}`, `ustaad_correction_choice {choice}`; never the text.
+
+### 11.1 As built (task F1, 2026-11-26)
+
+- **Files.** API `apps/api/src/ustaad/correction/` (`engine.ts` seam, `anthropic.ts`, `gemini.ts`, `wordlist.ts`,
+  `guard.ts`, `mask.ts`, `prompt.ts`, `cache.ts`, `service.ts` = `runCorrection`), route
+  `apps/api/src/routes/ustaad/correct.ts`, repo reads `packages/db/src/repo/ustaad-correction.ts`, contract
+  `packages/shared/src/ustaad/correction.ts` (request/response, word-level `correctionSegments`), web
+  `apps/web/src/lib/ustaad/correction.ts` and `apps/web/src/components/ustaad/correction/` (`SmartCorrection`,
+  `SuggestCard`, `EditedText`, `correctForSend` for auto mode), copy `ustaad.correction.*` (en + hi).
+- **Provider switch.** `SMART_CORRECTION_PROVIDER` defaults to `none`: the assistant's `ANTHROPIC_API_KEY` alone never
+  sends member text anywhere. `anthropic` uses model `SMART_CORRECTION_MODEL` (default `claude-haiku-5-5`, constant
+  `DEFAULT_ANTHROPIC_CORRECTION_MODEL`) over plain `fetch`, API version `2026-10-21`, `output_config.effort: low` and a
+  JSON-schema output, no sampling parameters, no tools, no metadata; a reply that is not a complete `end_turn`
+  (refusal, `max_tokens`, non-200, bad JSON) falls back. `gemini` needs `SMART_CORRECTION_MODEL` (config refuses to
+  start without it); its request shape is from Google's REST reference and **not yet tested live** (Q-U3).
+- **Consent gate.** The LLM runs only for a member whose latest `ustaad_correction` consent is granted; everyone else
+  gets the word list on our server.
+- **Response.** `{ mode, engine, text, original, changed, changes, segments[] }`; `engine` null and the text unchanged
+  when the mode is `off` or the language is switched off. Mode = network default, or (when
+  `correction.member_can_change`) the request's mode, else the member's own; a member's own `off` always wins.
+- **Gate.** `ustaad.access` off, or staff preview without a staff session → the generic 404 even for anonymous callers
+  (checked before sign-in); open + anonymous → 401; non-members and members who left → 404; banned → 403
+  `USTAAD_BANNED`. The route is mounted in `ustaadRoutes` behind A3's `ustaadGate` and `requireUstaadMember`; the
+  fresh member row is the authority (not the session-cached grant), so a member who just joined can use it at once.
+- **Length rule.** ±`max_length_change_pct` **or 12 characters, whichever is larger** (`kya h` → `kya hai` is +40 %).
+- **Numbers.** Compared exactly as written (`६३०१` turned into `6301` is refused); protected words, units and
+  negations are compared normalised (NFC, lower case, Devanagari digits as ASCII). Negations count as one class
+  (`nhi` → `nahi` is a fix; `mtlb` → `matlab` is not a negation).
+- **Word list.** Built-in list from the concept prototype plus the admin's `correction` rows; protected words are never
+  touched, not even their case; capital first letter and a closing full stop only on Latin text and never next to a
+  word with a digit (`DOT 3`, `175/65 R14`); a change the guard would refuse is skipped.
+- **Masking (security review 2026-11-26, four rounds).** E-mail, UPI, `@handle`, GSTIN, PAN, IFSC, Aadhaar, phones
+  (separators space . - / ( ), `+91`, Devanagari digits), long numbers (≥ 9 digits: cards, accounts), plates, PIN
+  codes. **Fail closed** (word list only) when: masking fails; any numeral other than ASCII or Devanagari digits
+  (Bengali, fullwidth, circled, superscript…); both digit scripts in one text; or the masked text, NFKC-normalised,
+  still holds **8 or more numerals counted over the whole text** after removing known-safe mechanic tokens (tyre
+  sizes, viscosity, battery, rupee amounts up to ₹99,99,999 — each unless chained with another of its kind — and
+  model codes / numbers of ≤ 4 digits with no other numeral within 6 characters). No segmentation, so letters, marks,
+  format characters or symbols between digits cannot split a number. Residual risk: a number cut into safe tokens
+  separated by words (`₹987 aur ₹654 aur ₹3210`) still passes; it is the member's own deliberate disguise.
+- **Cache.** LLM results only, masked text in and masked text out (no PII in Redis), Upstash when configured else a
+  per-instance memory cache; a hit is restored and guarded again. The daily budget is reserved only on a cache miss.
+- **Logs.** `ustaad_correction {engine, mode, cached, llmSkipped, changes, chars, ms}`, never the text.
+- **Web.** The suggest card highlights the **changed** words (tint, underline and a screen-reader "changed"), not
+  the protected words. The card and Undo apply only while the field still holds the checked text; Keep mine and Edit
+  myself never rewrite the field. Components are not mounted yet: composers in C, D and E add them (and their
+  state-audit rows).
+- **Word list.** The built-in list (`BUILT_IN_CORRECTIONS`) is a fallback in code; admin rows of list `correction`
+  override any entry (same phrase → the admin's replacement). An admin cannot yet switch a built-in entry off; seeding
+  the built-ins as `ustaad_word_lists` rows (so G1 can edit and deactivate them) is proposed (Q-U7).
+- **Residual masking risk.** One tyre-shaped token can carry up to 12 numerals (`987/65 43 210S` matches the tyre
+  pattern), and a number cut into safe tokens separated by words still passes. Both are deliberate disguises by the
+  member; queued as Q-U7 with the default "accept until the LLM is switched on, then tighten the tyre pattern".
 
 ## 12. Notifications (spec 10; bell + push via `queueNotice` in the transaction; texts in `notify.ustaad_*` en + hi; placeholders are names, codes and counts only)
 
