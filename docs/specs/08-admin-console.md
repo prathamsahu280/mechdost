@@ -437,3 +437,39 @@ Signed-in catalogue staff see a small pencil "Edit {product}" button on every pr
 ## Vehicle segments (2026-11-25, spec 02 "Vehicle segments")
 
 Admin → Catalogue has a closable panel "Vehicle segments": for each of the eight segments the English and Hindi name, English and Hindi description, order and a "Shown to shoppers" switch, one Save per row (conditional on `version`, 409 "someone else changed this" reloads; audited `vehicle_segment.updated` with old and new values). Switching a segment off hides its chip, tag and home tile; the products keep their rows. The product editor's "Fit & specs" tab has a "Vehicle segments" checkbox group with its own Save (`PUT .../segments`, product version; audited `product.segments_updated`). The home layout editor lists "Shop by vehicle" among the sections (order and show). Search words: the kind "Vehicle segment" in Search words. Permission `products:write` for all of it (role-leak rows in `apps/api/test/admin-catalogue-role-leak.test.ts`). The demo admin works against this browser's storage (the panel says so) and changes the shop's chips only.
+
+## Ustaad Network settings (2026-11-26, spec 23 § 15, task G1)
+
+Admin → **Network settings** under a sixth side-bar group **Ustaad Network** (`/admin/ustaad`, real sign-in only;
+the community manager console of G2 joins the same group). Screen (`components/portal/admin-ustaad/`):
+
+- **Who can open the network** card first: three radio cards (Off · Staff preview · Open, default staff preview,
+  `ustaad.adminAccess` texts) with the current mode as a badge; a change joins the other unsaved changes and is
+  always confirmed before it is saved.
+- **Ten sections** (`?sec=` keeps the place; select on phones, a list from tablet width): General, Levels & badges,
+  Verification, Posts & media (incl. Q&A and Learn), Smart correction, Location & zones, Feed & counts, Promotions,
+  Moderation, Jobs. Every key of the registry (`@mechdost/shared/ustaad/settings`) is one row: label, one-line help,
+  range and default, unit, the control (switch, number, choice), "Changed" badge, the error at the row (texts
+  `ustaad.admin.lbl_* / help_* / opt_* / unit_*`, en + hi, unit test). The screen runs the server's invariant check
+  (`ustaadSettingInvariant`) on the edited set, so "hide below 4", "every 7", weights not adding up to 100 and "auto
+  correction without a protected word" show at the row before Save.
+- **Locked, read-only** (lock badge, never sent): staff final approval (SR-8), the "Sponsored" / "प्रायोजित" label
+  (SR-41), the distance bands 2 / 5 / 10 km (SR-29), and the locked switches (mechanics only, minor report restricts,
+  never charge job seekers, adult attestation). "Decided later" (job card, trade prices, udhaar) shown greyed.
+- **One save bar** (the Admin → Settings bar): unsaved count, Discard, Save. All changed keys go in one
+  `PATCH /v1/admin/ustaad/settings` (invariants on the merged set, compare-and-set per key, all or nothing); a stale
+  version reloads the values and says so. The access switch, switching the network off, switching jobs or
+  promotions off and a video above 180 s open one confirm dialog listing them. A video above 180 s also asks for a
+  reason code (founder request · training videos · a short trial); only a super admin can choose one.
+- **Lists** in their sections, each in an admin card with a table and one inline form (Add / Edit, Save / Cancel,
+  no modal): level rules, badges (typed rule), hashtags (merge into another: posts, questions and followers move,
+  the old slug becomes an alias), word lists (protected and spelling fixes in Smart correction; banned, personal
+  details and blocked link sites in Moderation; scam phrases in Jobs), report reasons ("Something else" always on),
+  cities (open or close the network per city), promotions (draft → scheduled → ended; never edited while live;
+  the label is not a field), tutorial cards and coach-marks (pictures and narration once the media upload is ready).
+- **Who:** super admin edits everything; community manager and ops read (a read-only note, controls disabled);
+  marketing reaches the promotion routes only (the page itself needs `ustaad:read` or `ustaad:settings`, so a
+  marketing screen for promotions is open, see questions). Every change writes `audit_log` (`setting.saved`, one
+  row per key, the reason code on the video row; `ustaad.<entity>.<action>` for the lists) and the events
+  `admin_ustaad_settings_saved`, `admin_ustaad_invariant_refused`, `admin_ustaad_access_changed`,
+  `admin_ustaad_table_saved` (server) and `admin_ustaad_change` (client).

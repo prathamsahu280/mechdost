@@ -2072,3 +2072,28 @@ Spec `docs/specs/23-ustaad-network.md`, design `docs/superpowers/specs/2026-11-2
 - **Spec 07 change:** `/partners/apply/mechanic` becomes the Ustaad join; seller and workshop applications unchanged;
   old mechanic applications are mapped by a script into invites (never a silent membership, because the required
   consent is the member's own).
+
+## 2026-11-26 - Ustaad admin settings: one batch save, locked items refused as invariants (task G1)
+
+- **Batch save.** `PATCH /v1/admin/ustaad/settings` takes every changed key with its version and an optional video
+  reason code; one transaction under one advisory lock checks the invariants on the merged set once (so linked keys,
+  the two weight groups and `zones.hide_below` / `zones.exact_from`, can move together), then the ranges, then a
+  compare-and-set per key: any stale version saves nothing (409 `STALE_SETTING`). Workstream A's single-key
+  `PUT /admin/ustaad/settings/{key}` stays on the same router and goes through the same function. Spec 23 § 8 said
+  `PUT` for the screen; corrected to this pair.
+- **The video rule is not sticky.** A video length above 180 s needs a super admin and a reason code only in the
+  save that changes it (`ustaadSettingInvariant(..., { changedKeys })`); later saves of other keys are not blocked.
+- **Locked items are not settings.** Staff final approval, the Sponsored label and the distance bands are never
+  stored; a save naming one, or a promotion body carrying `label`, answers 422 `SETTING_INVARIANT` (AT-LEVEL-2,
+  AT-PROMO-1), not 400. Bada and Master level rules without the staff review, "other" report reason off, and the last
+  active protected word off while correction is automatic are refused the same way.
+- **Permissions:** read `ustaad:settings` or `ustaad:read` (super admin, community manager, ops); write
+  `ustaad:settings`; promotions `ustaad:promotions` (marketing, super admin). The guard owns only this router's
+  paths under `/admin/ustaad/` (one middleware, so the 300/min staff limit counts once and the verification and
+  moderation routers of B and F keep their own guards). Never behind `ustaad.access`.
+- **Promotion moves** (no machine existed): draft ⇄ scheduled, draft/scheduled/live → ended; `live` only by the
+  schedule. Content edits only while draft or scheduled.
+- **Messages:** `ClientMessages` accepts a part of a namespace (`ustaad.admin`, `ustaad.adminAccess`) so the admin
+  frame does not ship the whole network namespace.
+- **No new colours, fonts, radii or dependencies;** the screen reuses the admin header, card, badge, table, the
+  settings save bar pattern and `ConfirmDialog`.

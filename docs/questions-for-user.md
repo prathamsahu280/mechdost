@@ -314,3 +314,19 @@ Defaults meanwhile: build to the strictest reading; nothing goes live before cou
    or prizes above ₹20,000 a year.
 7. **Q-UC7** May the Terms of Use carry an "I am an adult working mechanic" self-declaration line without breaking the
    founder's no-age-check ruling? (Not added until counsel and the founder agree.)
+
+#### Q-U-G1a: default lists for the network admin (Decision, P2, default: empty lists, staff fill them)
+
+Admin → Network settings has the lists (level rules, badges, hashtags, protected words, scam phrases, banned words,
+tutorial cards, coach-marks) but only report reasons and the launch cities come pre-filled by the migrations. Should
+the spec's defaults (founder's level rules § 9.2, the five seed hashtags, the ten protected words, six scam phrases,
+the six tutorial cards and six coach-marks in en + hi) be added by a seed so the network opens ready? Default
+meanwhile: empty lists with "Add the first one"; the levels engine (workstream B) and smart correction (F) treat an
+empty list as "no rule".
+
+#### Q-U-G1b: a promotions screen for marketing (Decision, P3, default: super admin uses the Promotions section)
+
+Marketing holds `ustaad:promotions` and the API lets them create and schedule promotions, but the Network settings
+page needs `ustaad:read` or `ustaad:settings`, so a marketing account sees "cannot see or change this". Should
+marketing get the Promotions list alone (a small page in the same group)? Default meanwhile: the super admin runs
+promotions from Network settings → Promotions.

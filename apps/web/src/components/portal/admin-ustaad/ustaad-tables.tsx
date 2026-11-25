@@ -354,6 +354,16 @@ function EditableTable({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
   const [merging, setMerging] = useState<{ id: string; into: string } | null>(null);
+  // Where the keyboard goes after the next render (the form's first field on open, the heading on close).
+  const [pendingFocus, setPendingFocus] = useState<string | null>(null);
+  useEffect(() => {
+    if (!pendingFocus) return;
+    const el = document.getElementById(pendingFocus);
+    if (el) {
+      el.focus();
+      setPendingFocus(null);
+    }
+  }, [pendingFocus, editing, merging, rows]);
 
   const load = useCallback(async () => {
     const r = await config.read(locale);
@@ -379,6 +389,13 @@ function EditableTable({
       setEditing('new');
       setForm(emptyForm(config.fields));
     }
+    setPendingFocus(`${baseId}-${config.fields[0]?.name ?? ''}`);
+  }
+
+  function close() {
+    setEditing(null);
+    setMerging(null);
+    setPendingFocus(`${baseId}-title`);
   }
 
   async function send(
@@ -402,8 +419,7 @@ function EditableTable({
     if (res.ok) {
       track('admin_ustaad_change', { area: config.id, action, fields: 1 });
       setMessage({ tone: 'ok', text: t('t_saved') });
-      setEditing(null);
-      setMerging(null);
+      close();
       onSaved?.();
       await load();
       return;
@@ -462,7 +478,7 @@ function EditableTable({
     <section aria-labelledby={titleId} className={`${adminCard} space-y-3`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
-          <h4 id={titleId} className="font-heading text-base font-extrabold text-ink">
+          <h4 id={titleId} tabIndex={-1} className="font-heading text-base font-extrabold text-ink">
             {t(adminMessage(`tbl_${config.id}`))}
           </h4>
           <p className="mt-0.5 max-w-prose text-sm text-muted">{t(adminMessage(`tbl_${config.id}_help`))}</p>
@@ -511,7 +527,7 @@ function EditableTable({
           )}
         />
       ) : rows.length > 0 ? (
-        <AdminTable label={t(adminMessage(`tbl_${config.id}`))}>
+        <AdminTable label={t('t_rows', { name: t(adminMessage(`tbl_${config.id}`)) })}>
           <table className={adminTableClass}>
             <thead>
               <tr>
@@ -530,7 +546,12 @@ function EditableTable({
             <tbody>
               {rows.map((row) => {
                 const id = String(row[config.idField]);
-                const name = typeof row[config.nameField] === 'string' ? String(row[config.nameField]) : id;
+                const hiName =
+                  config.id === 'cities' && locale === 'hi' && typeof row.nameHi === 'string'
+                    ? row.nameHi
+                    : null;
+                const name =
+                  hiName ?? (typeof row[config.nameField] === 'string' ? String(row[config.nameField]) : id);
                 const merged =
                   typeof row.mergedIntoId === 'string'
                     ? rows.find((r) => r.id === row.mergedIntoId)
@@ -538,16 +559,23 @@ function EditableTable({
                 const status = typeof row.status === 'string' ? row.status : null;
                 return (
                   <tr key={id} className="hover:bg-pill/60">
-                    {config.columns.map((c) => (
-                      <td key={c} className={adminTd}>
-                        {shown(row, c)}
-                        {c === 'slug' && merged ? (
-                          <span className="block text-xs text-muted">
-                            {t('t_merged_into', { slug: String(merged.slug) })}
-                          </span>
-                        ) : null}
-                      </td>
-                    ))}
+                    {config.columns.map((c, i) => {
+                      const Cell = i === 0 ? 'th' : 'td';
+                      return (
+                        <Cell
+                          key={c}
+                          scope={i === 0 ? 'row' : undefined}
+                          className={`${adminTd} ${i === 0 ? 'font-bold' : ''}`}
+                        >
+                          {c === 'name' && hiName ? hiName : shown(row, c)}
+                          {c === 'slug' && merged ? (
+                            <span className="block text-xs text-muted">
+                              {t('t_merged_into', { slug: String(merged.slug) })}
+                            </span>
+                          ) : null}
+                        </Cell>
+                      );
+                    })}
                     {editable ? (
                       <td className={`${adminTd} whitespace-nowrap`}>
                         <div className="flex flex-wrap gap-2">
@@ -591,9 +619,11 @@ function EditableTable({
                               onClick={() => {
                                 setEditing(null);
                                 setMerging({ id, into: '' });
+                                setPendingFocus(`${baseId}-merge`);
                               }}
                             >
-                              {t('t_merge')}
+                              <span aria-hidden="true">{t('t_merge')}</span>
+                              <span className="sr-only">{t('t_merge_row', { name })}</span>
                             </button>
                           ) : null}
                           {config.id === 'promotions' && status
@@ -614,7 +644,10 @@ function EditableTable({
                                       )
                                     }
                                   >
-                                    {t(adminMessage(`t_move_${to}`))}
+                                    <span aria-hidden="true">{t(adminMessage(`t_move_${to}`))}</span>
+                                    <span className="sr-only">
+                                      {t('t_move_row', { action: t(adminMessage(`t_move_${to}`)), name })}
+                                    </span>
                                   </button>
                                 ))
                             : null}
@@ -632,7 +665,9 @@ function EditableTable({
       {merging && rows ? (
         <div className="space-y-2 rounded-tile bg-pill p-3">
           <label htmlFor={`${baseId}-merge`} className="text-sm font-bold text-ink">
-            {t('t_merge_into')}
+            {t('t_merge_into_named', {
+              name: textOf(rows.find((r) => r.id === merging.id)?.slug),
+            })}
           </label>
           <p id={`${baseId}-merge-help`} className="text-xs text-muted">
             {t('t_merge_help')}
@@ -672,13 +707,7 @@ function EditableTable({
             >
               {t('t_merge')}
             </button>
-            <button
-              type="button"
-              className={portalQuiet}
-              onClick={() => {
-                setMerging(null);
-              }}
-            >
+            <button type="button" className={portalQuiet} onClick={close}>
               {t('t_cancel')}
             </button>
           </div>
@@ -785,8 +814,8 @@ function EditableTable({
               type="button"
               className={portalQuiet}
               onClick={() => {
-                setEditing(null);
                 setMessage(null);
+                close();
               }}
             >
               {t('t_cancel')}
@@ -797,6 +826,8 @@ function EditableTable({
     </section>
   );
 }
+
+const textOf = (v: unknown): string => (typeof v === 'string' ? v : '');
 
 function isPromotionState(s: string): s is (typeof PROMOTION_STATES)[number] {
   return (PROMOTION_STATES as readonly string[]).includes(s);

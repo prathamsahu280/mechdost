@@ -73,6 +73,7 @@ export function AdminUstaadApi() {
   const [status, setStatus] = useState<Status>(null);
   const [serverProblem, setServerProblem] = useState<{ key: string; code: string } | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [pendingFocus, setPendingFocus] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const [res, words] = await Promise.all([
@@ -158,7 +159,18 @@ export function AdminUstaadApi() {
     setReason('');
     setStatus(null);
     setServerProblem(null);
+    setPendingFocus(`${baseId}-sec-title`);
   }
+
+  // Focus moves after the render that shows the target (another section, the heading after a save).
+  useEffect(() => {
+    if (!pendingFocus) return;
+    const el = document.getElementById(pendingFocus);
+    if (el) {
+      el.focus();
+      setPendingFocus(null);
+    }
+  }, [pendingFocus, section, data]);
 
   function requestSave() {
     if (changes.length === 0 || busy) return;
@@ -168,7 +180,9 @@ export function AdminUstaadApi() {
       const key = first as UstaadSettingKey;
       const where = key === ACCESS_KEY ? null : keysOfSectionOf(key);
       if (where) setSection(where);
-      window.setTimeout(() => document.getElementById(`${baseId}-${flatKey(key)}`)?.focus(), 0);
+      setPendingFocus(
+        key === 'ustaad.posts.video_max_s' && askReason ? `${baseId}-reason` : `${baseId}-${flatKey(key)}`,
+      );
       return;
     }
     if (risky.length > 0) setConfirming(true);
@@ -178,6 +192,16 @@ export function AdminUstaadApi() {
   async function save() {
     setBusy(true);
     setStatus(null);
+    try {
+      await sendSave();
+    } finally {
+      setBusy(false);
+      // The buttons of the bar are disabled now: keep the keyboard on the page, at the section heading.
+      setPendingFocus(`${baseId}-sec-title`);
+    }
+  }
+
+  async function sendSave() {
     const res = await adminApi(locale, '/admin/ustaad/settings', UstaadSettingsSavedDto, {
       method: 'PATCH',
       body: {
@@ -194,6 +218,8 @@ export function AdminUstaadApi() {
       const key = detailKey(res.details);
       if (key && (res.code.startsWith('SETTING_') || res.code === 'VALIDATION'))
         setServerProblem({ key, code: res.code });
+      // Someone else saved meanwhile: show their values (the message says so) instead of re-basing the edits on them.
+      if (res.code === 'STALE_SETTING') setDraft({});
       setStatus({
         tone: 'error',
         text:
@@ -205,7 +231,6 @@ export function AdminUstaadApi() {
       });
     }
     await load();
-    setBusy(false);
   }
 
   if (!data) return <LoadState error={loadError} onRetry={() => void load()} />;
@@ -298,7 +323,11 @@ export function AdminUstaadApi() {
 
         <section aria-labelledby={`${baseId}-sec-title`} className="min-w-0 space-y-4">
           <div>
-            <h3 id={`${baseId}-sec-title`} className="font-heading text-lg font-extrabold text-ink">
+            <h3
+              id={`${baseId}-sec-title`}
+              tabIndex={-1}
+              className="font-heading text-lg font-extrabold text-ink"
+            >
               {t(adminMessage(`sec_${section}`))}
             </h3>
             <p className="mt-0.5 max-w-prose text-sm text-muted">{t(adminMessage(`sec_${section}_help`))}</p>
@@ -514,10 +543,10 @@ function SettingRow({
   const shown = value ?? saved;
   const changed = shown !== saved;
   const locked = isLockedKey(settingKey);
-  const unit = unitOf(settingKey);
   const helpId = `${id}-help`;
   const errorId = `${id}-error`;
-  const describedBy = `${helpId}${problem ? ` ${errorId}` : ''}`;
+  const unit = unitOf(settingKey);
+  const describedBy = [helpId, unit ? `${id}-unit` : '', problem ? errorId : ''].filter(Boolean).join(' ');
   const show = (v: string) =>
     spec.kind === 'boolean'
       ? t(v === 'true' ? 'on' : 'off')
@@ -541,9 +570,15 @@ function SettingRow({
   return (
     <li className="grid gap-3 py-4 tab:grid-cols-[minmax(0,1fr)_auto] tab:items-start tab:gap-6">
       <div className="min-w-0">
-        <label htmlFor={id} className="text-[15px] font-bold text-ink">
-          {t(adminMessage(`lbl_${flat}`))}
-        </label>
+        {locked ? (
+          <p id={`${id}-lbl`} className="text-[15px] font-bold text-ink">
+            {t(adminMessage(`lbl_${flat}`))}
+          </p>
+        ) : (
+          <label htmlFor={id} className="text-[15px] font-bold text-ink">
+            {t(adminMessage(`lbl_${flat}`))}
+          </label>
+        )}
         <p id={helpId} className="mt-0.5 text-sm text-muted">
           {t(adminMessage(`help_${flat}`))}
           <span className="mt-1 block text-xs">{locked ? t('locked_note') : hint}</span>
@@ -558,14 +593,18 @@ function SettingRow({
           {changed ? <StatusBadge tone="warning">{t('changed')}</StatusBadge> : null}
         </p>
         {error ? (
-          <p id={errorId} role="alert" className="mt-1 text-sm font-bold text-error">
+          <p id={errorId} className="mt-1 text-sm font-bold text-error">
             {error}
           </p>
         ) : null}
       </div>
       <div className="tab:pt-0.5">
         {locked ? (
-          <p id={id} tabIndex={-1} className="inline-flex min-h-11 items-center text-sm font-bold text-ink">
+          <p
+            id={id}
+            aria-labelledby={`${id}-lbl ${id}`}
+            className="inline-flex min-h-11 items-center text-sm font-bold text-ink"
+          >
             {t('always_on')}
           </p>
         ) : spec.kind === 'boolean' ? (
@@ -575,8 +614,9 @@ function SettingRow({
             describedBy={describedBy}
             onText={t('on')}
             offText={t('off')}
+            disabled={disabled}
             onChange={(v) => {
-              if (!disabled) onChange(v ? 'true' : 'false');
+              onChange(v ? 'true' : 'false');
             }}
           />
         ) : spec.kind === 'enum' ? (
@@ -609,11 +649,15 @@ function SettingRow({
               aria-invalid={error ? true : undefined}
               aria-describedby={describedBy}
               onChange={(e) => {
-                onChange(e.target.value.replace(/\D/g, ''));
+                onChange(e.target.value.trim());
               }}
               className="min-h-10 w-24 scroll-mb-32 bg-transparent text-right text-[15px] font-bold text-ink tabular-nums focus-visible:outline-none"
             />
-            {unit ? <span className="text-sm text-muted">{t(adminMessage(`unit_${unit}`))}</span> : null}
+            {unit ? (
+              <span id={`${id}-unit`} className="text-sm text-muted">
+                {t(adminMessage(`unit_${unit}`))}
+              </span>
+            ) : null}
           </div>
         )}
       </div>
@@ -624,11 +668,18 @@ function SettingRow({
 /** Staff final approval, the Sponsored label, the distance bands: read-only, never a control. */
 function LockedItemRow({ item }: { item: (typeof USTAAD_LOCKED_ITEMS)[number] }) {
   const t = useTranslations('ustaad.admin');
+  const locale = useLocale();
   const flat = flatKey(item.item);
   const value =
     item.item === 'ustaad.promo.label' ? (
       <span>
-        <span lang="en">{item.value.en}</span> / <span lang="hi">{item.value.hi}</span>
+        {locale === 'hi' ? (
+          item.value.hi
+        ) : (
+          <>
+            {item.value.en} / <span lang="hi">{item.value.hi}</span>
+          </>
+        )}
       </span>
     ) : item.item === 'ustaad.loc.distance_bands' ? (
       t('bands_value', { a: item.value[0], b: item.value[1], c: item.value[2] })
@@ -747,7 +798,7 @@ function SaveBar({
           }`}
         >
           <p
-            role="status"
+            role={status?.tone === 'error' ? 'alert' : 'status'}
             className={`min-w-0 basis-full text-sm font-bold tab:flex-1 tab:basis-0 ${
               status?.tone === 'error' ? 'text-error' : dirty > 0 ? 'text-ink' : 'text-success'
             }`}
