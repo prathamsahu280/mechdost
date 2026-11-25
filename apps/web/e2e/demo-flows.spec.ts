@@ -238,7 +238,6 @@ test.describe('bulk quote → negotiation → order (spec 19)', () => {
     await page.getByLabel('Password', { exact: true }).fill('Raipur@2026');
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     await page.getByLabel('One-time code').fill('123456');
-    await page.getByRole('button', { name: 'Verify and continue' }).click();
     await expect(page).toHaveURL(/\/admin\/quotes$/);
 
     const price = page.getByLabel(/Price per unit for/).first();

@@ -21,6 +21,7 @@ export function PasswordField({
   hint,
   error,
   inputRef,
+  autofocus,
 }: {
   id: string;
   name: string;
@@ -30,6 +31,8 @@ export function PasswordField({
   /** Error text for this field, or null. */
   error?: string | null;
   inputRef?: Ref<HTMLInputElement>;
+  /** The step's first field: focus lands here when the step opens (a step's `data-autofocus` marker). */
+  autofocus?: boolean;
 }) {
   const t = useTranslations('auth');
   const [visible, setVisible] = useState(false);
@@ -43,6 +46,7 @@ export function PasswordField({
       <div className="relative">
         <input
           ref={inputRef}
+          data-autofocus={autofocus ? '' : undefined}
           id={id}
           name={name}
           type={visible ? 'text' : 'password'}

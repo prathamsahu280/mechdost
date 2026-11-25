@@ -10,7 +10,6 @@ async function signInAdmin(page: Page, next: string) {
   await page.getByLabel('Password', { exact: true }).fill('Raipur@2026');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await page.getByLabel('One-time code').fill('123456');
-  await page.getByRole('button', { name: 'Verify and continue' }).click();
   await expect(page).toHaveURL(new RegExp(`${next}$`));
 }
 

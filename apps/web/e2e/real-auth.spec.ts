@@ -86,7 +86,6 @@ test('sign up with a phone code, then email and password; the account area knows
   await page.getByLabel('Mobile number').fill(phone10);
   await page.getByRole('button', { name: 'Send code' }).click();
   await page.getByLabel('One-time code').fill(await latestCode(request, e164, before));
-  await page.getByRole('button', { name: 'Verify and continue' }).click();
 
   await page.getByLabel('Full name').fill(name);
   await page.getByLabel('Email', { exact: true }).fill(email);
@@ -214,6 +213,5 @@ test('staff: the password alone stops at the phone code; with the code the admin
   await other.close();
 
   await page.getByLabel('One-time code').fill(await latestCode(request, e164, before));
-  await page.getByRole('button', { name: 'Verify and continue' }).click();
   await expect(page).toHaveURL(/\/admin$/, SLOW);
 });

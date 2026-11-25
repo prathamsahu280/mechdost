@@ -30,9 +30,10 @@ import { track } from '@/lib/analytics';
 import type * as RealClientModule from '@/lib/auth/firebase-client';
 import type { PasswordResult } from '@/lib/auth/firebase-client';
 import { createAnnouncer } from '@/lib/auth/announcer';
-import { retryOnce, shouldPrefetch } from '@/lib/auth/sign-in-retry';
+import { retryOnce, shouldPrefetch, startsEarlyCheck } from '@/lib/auth/sign-in-retry';
 import type { CodeFail, PhoneFail } from '@/lib/auth/auth-errors';
 import { AUTH_MODE } from '@/lib/auth/mode';
+import { useAutoSubmitCode } from '@/lib/auth/use-auto-submit-code';
 import { PasswordField, authInput } from './password-field';
 
 type Step =
@@ -45,6 +46,7 @@ type Step =
   | 'forgot'
   | 'forgot-phone'
   | 'forgot-otp'
+  | 'forgot-password'
   | 'forgot-email'
   | 'forgot-email-sent'
   | 'reset-link';
@@ -58,6 +60,7 @@ const real = () => (realClient ??= import('@/lib/auth/firebase-client'));
 const turnstile = () => import('@/lib/auth/turnstile');
 
 const RESEND_SECONDS = 30;
+const CODE_LENGTH = 6;
 /** Busy work this slow is announced; faster work stays quiet (a11y review 2026-11-09). */
 const ANNOUNCE_BUSY_AFTER_MS = 700;
 /** Firebase reset links work once and expire after an hour; the demo link after 30 minutes. */
@@ -156,6 +159,8 @@ export function LoginFlow() {
   /** Real mode, staff: the phone the API named, and the password for the second call (memory only). */
   const [staffPhone, setStaffPhone] = useState('');
   const pendingPassword = useRef('');
+  /** Demo only: the code the reset's first step accepted, replayed to the demo store with the new password. */
+  const resetOtp = useRef('');
   const [created, setCreated] = useState<{ account: DemoAccount; email: string } | null>(null);
   const [resetEmail, setResetEmail] = useState('');
   const [resetToken, setResetToken] = useState<string | null>(null);
@@ -222,6 +227,9 @@ export function LoginFlow() {
   );
 
   function goTo(s: Step, keepNotice = false) {
+    // A step that signs in again needs its own single-use token: forget the check the last step used, so the step's
+    // first focus (its field takes focus as it opens) starts a new one at once (staff code: 30 s report 2026-11-25).
+    if (startsEarlyCheck(s)) prefetched.current = null;
     setError(null);
     setCodeExpired(false);
     if (!keepNotice) setNotice(null);
@@ -295,6 +303,8 @@ export function LoginFlow() {
   async function botCheck(): Promise<string | null> {
     try {
       const { turnstileToken } = await turnstile();
+      // The token is single use: the early check of this container is spent, so a later step may start another.
+      prefetched.current = null;
       return await turnstileToken(TURNSTILE_ID, locale, showChallenge);
     } catch {
       failForm(t('errBotCheck'));
@@ -310,10 +320,14 @@ export function LoginFlow() {
   async function signInChecked(
     r: RealClient,
     input: { identifier: string; password: string; phoneToken?: boolean },
+    /** A check already running (started beside another request); only the first attempt uses it. */
+    started?: Promise<string | null>,
   ): Promise<PasswordResult | null> {
+    let firstAttempt = started;
     return retryOnce(
       async () => {
-        const token = await botCheck();
+        const token = await (firstAttempt ?? botCheck());
+        firstAttempt = undefined;
         return token ? r.passwordSignIn({ ...input, turnstileToken: token, locale }) : null;
       },
       (result) => result !== null && !result.ok && result.reason === 'turnstile',
@@ -420,6 +434,7 @@ export function LoginFlow() {
       <PasswordField
         id="login-new-password"
         name="password"
+        autofocus={step === 'forgot-password'}
         label={t('newPassword')}
         autoComplete="new-password"
         hint={t('passwordHint', { min: PASSWORD_MIN })}
@@ -513,14 +528,27 @@ export function LoginFlow() {
     return finishReal(event);
   }
 
-  async function onStaffCode(e: SyntheticEvent<HTMLFormElement>) {
-    e.preventDefault();
+  /** The Submit button of a code form: the same call as the automatic one, with the field's value. */
+  function onCodeForm(run: (otp: string, auto: boolean) => Promise<void>) {
+    return (e: SyntheticEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      void run(text(new FormData(e.currentTarget), 'otp'), false);
+    };
+  }
+
+  /** A code is about to be checked: count it (never the code) and, when it left by itself, say so in the live region. */
+  function codeSent(kind: 'signup' | 'reset' | 'staff', auto: boolean) {
+    track('code_submitted', { kind, auto, path: window.location.pathname });
+    if (auto) announce(t('checkingCode'));
+  }
+
+  async function submitStaffCode(otp: string, auto: boolean) {
     if (busyRef.current) return;
-    const otp = text(new FormData(e.currentTarget), 'otp');
     if (!/^\d{6}$/.test(otp)) {
       fail(t('errOtp'), 'login-otp');
       return;
     }
+    codeSent('staff', auto);
     if (!REAL) {
       if (!staff || !completeStaffSignIn(staff.id, otp)) {
         fail(t('errOtp'), 'login-otp');
@@ -531,16 +559,19 @@ export function LoginFlow() {
     }
     await guarded(t('verifying'), async () => {
       const r = await real();
+      // The bot check runs beside the code check (it used to start only after it, a second wait): the token is
+      // single use, so one that is not needed (wrong code) is simply dropped. `botCheck` never rejects.
+      const token = botCheck();
       const confirmed = await r.confirmPhoneCode(otp);
       if (!confirmed.ok) {
         codeFail(confirmed.reason, confirmed.code);
         return undefined;
       }
-      const res = await signInChecked(r, {
-        identifier,
-        password: pendingPassword.current,
-        phoneToken: true,
-      });
+      const res = await signInChecked(
+        r,
+        { identifier, password: pendingPassword.current, phoneToken: true },
+        token,
+      );
       if (!res) return undefined;
       if (!res.ok || res.status !== 'signed_in') {
         if (!res.ok && res.reason === 'staff_expired') codeFail('expired');
@@ -607,11 +638,10 @@ export function LoginFlow() {
     goTo('signin', true);
   }
 
-  async function onSignUpCode(e: SyntheticEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function submitSignUpCode(otp: string, auto: boolean) {
     if (busyRef.current) return;
-    const otp = text(new FormData(e.currentTarget), 'otp');
     if (!REAL) {
+      codeSent('signup', auto);
       const result = verifyPhoneOtp(phone, otp);
       if (!result.ok) fail(t('errOtp'), 'login-otp');
       else if (result.exists) phoneHasAccount();
@@ -622,6 +652,7 @@ export function LoginFlow() {
       fail(t('errOtp'), 'login-otp');
       return;
     }
+    codeSent('signup', auto);
     await guarded(t('verifying'), async () => {
       const r = await real();
       const confirmed = await r.confirmPhoneCode(otp);
@@ -708,26 +739,27 @@ export function LoginFlow() {
 
   // ── Forgot password ───────────────────────────────────────────────────────────────────────────────────────
 
-  async function onResetWithCode(e: SyntheticEvent<HTMLFormElement>) {
-    e.preventDefault();
+  /**
+   * Forgot password, step 1: the code alone (the new password is asked next), so it can be checked the moment all
+   * six digits are in. A right code proves the phone; the next step sets the password under that session.
+   */
+  async function submitResetCode(otp: string, auto: boolean) {
     if (busyRef.current) return;
-    const data = new FormData(e.currentTarget);
-    const otp = text(data, 'otp');
     if (!/^\d{6}$/.test(otp)) {
       fail(t('errOtp'), 'login-otp');
       return;
     }
-    const password = text(data, 'password');
-    if (!checkNewPassword(password, text(data, 'confirm'), { phone })) return;
+    codeSent('reset', auto);
     await guarded(t('verifying'), async () => {
       if (!REAL) {
-        const result = await resetPasswordWithOtp(phone, otp, password);
-        if (!result.ok) {
-          if (result.reason === 'otp') fail(t('errOtp'), 'login-otp');
-          else failForm(t('noAccount'));
-          return undefined;
+        const result = verifyPhoneOtp(phone, otp);
+        if (!result.ok) fail(t('errOtp'), 'login-otp');
+        else if (!result.exists) failForm(t('noAccount'));
+        else {
+          resetOtp.current = otp;
+          goTo('forgot-password');
         }
-        return done(result.account, 'password_reset_phone');
+        return undefined;
       }
       const r = await real();
       const confirmed = await r.confirmPhoneCode(otp);
@@ -740,6 +772,30 @@ export function LoginFlow() {
         failForm(t('noAccount'));
         return undefined;
       }
+      goTo('forgot-password');
+      return undefined;
+    });
+  }
+
+  /** Forgot password, step 2: the new password, set under the phone session the code opened. */
+  async function onResetPassword(e: SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (busyRef.current) return;
+    const data = new FormData(e.currentTarget);
+    const password = text(data, 'password');
+    if (!checkNewPassword(password, text(data, 'confirm'), { phone })) return;
+    await guarded(t('verifying'), async () => {
+      if (!REAL) {
+        const result = await resetPasswordWithOtp(phone, resetOtp.current, password);
+        if (!result.ok) {
+          if (result.reason === 'otp') goTo('forgot-otp');
+          else failForm(t('noAccount'));
+          return undefined;
+        }
+        resetOtp.current = '';
+        return done(result.account, 'password_reset_phone');
+      }
+      const r = await real();
       if (!(await r.setNewPassword(password, locale))) {
         failForm(t('errUnavailable'));
         return undefined;
@@ -844,10 +900,12 @@ export function LoginFlow() {
     </form>
   );
 
-  const codeField = (describedBy?: string) => (
+  const codeField = (describedBy: string, onCode: (otp: string, auto: boolean) => Promise<void>) => (
     <CodeField
       error={errorFor('login-otp')}
       describedBy={describedBy}
+      busy={busy}
+      onCode={onCode}
       cooldownOver={codeExpired}
       onResend={resendCode}
       announce={announce}
@@ -1006,9 +1064,9 @@ export function LoginFlow() {
     case 'staff': {
       const shown = REAL ? staffPhone.replace(/^\+91/, '') : (staff?.phone ?? '');
       body = (
-        <form noValidate aria-labelledby="login-step-title" onSubmit={(e) => void onStaffCode(e)}>
+        <form noValidate aria-labelledby="login-step-title" onSubmit={onCodeForm(submitStaffCode)}>
           <StepTitle title={t('staffTitle')} lead={t('staffLead', { phone: shown })} />
-          {codeField('login-step-lead')}
+          {codeField('login-step-lead', submitStaffCode)}
           {securityCheck}
           {formError}
           {submit(t('verify'), t('verifying'))}
@@ -1024,9 +1082,9 @@ export function LoginFlow() {
 
     case 'signup-otp':
       body = (
-        <form noValidate aria-labelledby="login-step-title" onSubmit={(e) => void onSignUpCode(e)}>
+        <form noValidate aria-labelledby="login-step-title" onSubmit={onCodeForm(submitSignUpCode)}>
           {codeSentTo(t('otpTitle'))}
-          {codeField('login-otp-sent')}
+          {codeField('login-otp-sent', submitSignUpCode)}
           {formError}
           {submit(t('verify'), t('verifying'))}
         </form>
@@ -1148,10 +1206,21 @@ export function LoginFlow() {
 
     case 'forgot-otp':
       body = (
-        <form noValidate aria-labelledby="login-step-title" onSubmit={(e) => void onResetWithCode(e)}>
+        <form noValidate aria-labelledby="login-step-title" onSubmit={onCodeForm(submitResetCode)}>
           {codeSentTo(t('resetOtpTitle'))}
+          {codeField('login-otp-sent', submitResetCode)}
+          {formError}
+          {submit(t('verify'), t('verifying'))}
+          {back}
+        </form>
+      );
+      break;
+
+    case 'forgot-password':
+      body = (
+        <form noValidate aria-labelledby="login-step-title" onSubmit={(e) => void onResetPassword(e)}>
+          <StepTitle title={t('resetPasswordTitle')} lead={t('resetPasswordLead')} />
           {usernameFor(phone)}
-          {codeField('login-otp-sent')}
           {newPasswordFields}
           {securityCheck}
           {formError}
@@ -1294,18 +1363,26 @@ function StepTitle({ title, lead, focusHeading }: { title: string; lead: string;
 function CodeField({
   error,
   describedBy,
+  busy,
+  onCode,
   cooldownOver,
   onResend,
   announce,
 }: {
   error: string | null;
   describedBy?: string;
+  /** A step action is running (Submit or the automatic check). */
+  busy: boolean;
+  /** Checks the code; called by itself at full length (`auto`) and by the form's Submit button. */
+  onCode: (code: string, auto: boolean) => Promise<void>;
   cooldownOver: boolean;
   onResend: () => Promise<boolean>;
   announce: (message: string) => void;
 }) {
   const t = useTranslations('auth');
-  const [code, setCode] = useState('');
+  // The code goes to the server by itself once all six digits are in (user, 2026-11-25); Submit stays as the fallback.
+  // The bot check, where a step has one, is awaited inside the step's action, so the code is always `ready`.
+  const { inputProps, setValue } = useAutoSubmitCode({ length: CODE_LENGTH, submit: onCode, busy });
   const [resendAt, setResendAt] = useState(() => Date.now() + RESEND_SECONDS * 1000);
   const [now, setNow] = useState(() => Date.now());
   const [sending, setSending] = useState(false);
@@ -1332,23 +1409,10 @@ function CodeField({
         id="login-otp"
         name="otp"
         type="text"
-        inputMode="numeric"
-        autoComplete="one-time-code"
-        pattern="\d{6}"
         required
-        value={code}
+        {...inputProps}
         aria-invalid={error ? true : undefined}
         aria-describedby={ids(error && 'login-otp-error', describedBy, 'login-otp-hint')}
-        onChange={(e) => {
-          setCode(e.target.value.replace(/\D/g, '').slice(0, 6));
-        }}
-        onPaste={(e) => {
-          const six = /\d{6}/.exec(e.clipboardData.getData('text').replace(/[\s-]/g, ''));
-          if (six) {
-            e.preventDefault();
-            setCode(six[0]);
-          }
-        }}
         className={`${authInput} text-center font-heading text-2xl font-extrabold tracking-[0.5em] tabular-nums`}
       />
       {error ? (
@@ -1357,7 +1421,7 @@ function CodeField({
         </p>
       ) : null}
       <p id="login-otp-hint" className="mt-1 text-xs text-muted">
-        {REAL ? t('otpHint') : t('demoHint', { otp: DEMO_OTP })}
+        {REAL ? t('otpHint') : t('demoHint', { otp: DEMO_OTP })} {t('codeAutoHint', { length: CODE_LENGTH })}
       </p>
       <p className="mt-2 text-center text-sm">
         <button
@@ -1372,6 +1436,7 @@ function CodeField({
               const at = Date.now();
               setNow(at);
               setResendAt(at + RESEND_SECONDS * 1000);
+              setValue('');
               announce(t('resent'));
               document.getElementById('login-otp')?.focus();
             });

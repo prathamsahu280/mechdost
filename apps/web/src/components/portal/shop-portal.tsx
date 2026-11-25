@@ -18,7 +18,9 @@ import {
   type DemoOrder,
 } from '@/demo/store';
 import { track } from '@/lib/analytics';
+import { DELIVERY_CODE_LENGTH } from '@/lib/auth/auto-submit-code';
 import { AUTH_MODE } from '@/lib/auth/mode';
+import { useAutoSubmitCode } from '@/lib/auth/use-auto-submit-code';
 import { formatDate, formatPrice } from '@/lib/format';
 import { ShopAgreement } from './agreement-cards';
 import { PartnerGate } from './partner-gate';
@@ -349,24 +351,40 @@ function ActiveOrder({ order, shopSlug }: { order: DemoOrder; shopSlug: string }
  */
 function DeliveryCodeForm({ order, shopSlug }: { order: DemoOrder; shopSlug: string }) {
   const t = useTranslations('portal');
-  const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const locked = (order.delivery?.attempts ?? 0) >= DELIVERY_CODE_MAX_ATTEMPTS;
   const inputId = `delivery-code-${order.code}`;
+  // Checked by itself at 4 digits (user, 2026-11-25); the button stays as the fallback. A wrong code stays selected.
+  const {
+    value: code,
+    checking,
+    inputProps,
+  } = useAutoSubmitCode({
+    length: DELIVERY_CODE_LENGTH,
+    autoComplete: 'off',
+    submit: (value, auto) => {
+      check(value, auto);
+      return undefined;
+    },
+  });
 
   function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!/^\d{4}$/.test(code)) {
+    check(code, false);
+  }
+
+  function check(value: string, auto: boolean) {
+    if (!/^\d{4}$/.test(value)) {
       setError(t('deliveryCodeFormat'));
       return;
     }
-    const result = confirmDeliveryWithCode(order.code, shopSlug, code);
+    track('code_submitted', { kind: 'delivery', auto, path: window.location.pathname });
+    const result = confirmDeliveryWithCode(order.code, shopSlug, value);
     if (result.ok) {
       track('click', { id: 'shop_delivery_confirmed', path: window.location.pathname });
       return;
     }
     track('click', { id: 'shop_delivery_code_wrong', path: window.location.pathname });
-    setCode('');
     setError(
       result.reason === 'wrong'
         ? t('deliveryCodeWrong', { left: result.attemptsLeft })
@@ -392,18 +410,15 @@ function DeliveryCodeForm({ order, shopSlug }: { order: DemoOrder; shopSlug: str
       <p id={`${inputId}-hint`} className="text-xs text-muted">
         {t('deliveryCodeHint')}
       </p>
+      <p role="status" className="sr-only">
+        {checking ? t('deliveryCodeChecking') : ''}
+      </p>
       <div className="mt-2 flex flex-col gap-2 min-[420px]:flex-row">
         <input
           id={inputId}
-          inputMode="numeric"
-          autoComplete="off"
-          maxLength={4}
-          value={code}
+          {...inputProps}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${inputId}-error` : `${inputId}-hint`}
-          onChange={(e) => {
-            setCode(e.target.value.replace(/\D/g, '').slice(0, 4));
-          }}
           className={`${portalField} mt-0 w-full min-[420px]:w-32 text-center font-heading text-xl font-extrabold tracking-[0.4em] tabular-nums`}
         />
         <button

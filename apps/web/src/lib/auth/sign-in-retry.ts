@@ -30,6 +30,18 @@ export function shouldPrefetch(
   return now - last.at >= PREFETCH_REUSE_MS;
 }
 
+/**
+ * Steps that finish with a password sign-in of their own (a second single-use Cloudflare token): the staff code
+ * step, the end of sign-up and the end of a phone reset. They start the check as they open, so the token is
+ * waiting when the code or the button arrives (user report 2026-11-25: the staff code took over 30 s because the
+ * check only began after the code was confirmed).
+ */
+const EARLY_CHECK_STEPS: ReadonlySet<string> = new Set(['staff', 'signup-profile', 'forgot-password']);
+
+export function startsEarlyCheck(step: string): boolean {
+  return EARLY_CHECK_STEPS.has(step);
+}
+
 /** Run `attempt`; when `shouldRetry` says its result was a transient failure, run it once more and use that. */
 export async function retryOnce<T>(
   attempt: () => Promise<T>,

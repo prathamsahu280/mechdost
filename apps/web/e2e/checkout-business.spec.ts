@@ -60,7 +60,6 @@ test('a business purchase checks the GSTIN, notes another state, and shows on th
   await page.getByLabel('Password', { exact: true }).fill('Raipur@2026');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await page.getByLabel('One-time code').fill('123456');
-  await page.getByRole('button', { name: 'Verify and continue' }).click();
   await expect(page).toHaveURL(/\/admin\/orders$/);
   const card = page.locator('article').filter({ hasText: code });
   await expect(card.getByText('GST details on your bill: Sahu Motors (27AAPFU0939F1ZV)')).toBeVisible();

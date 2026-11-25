@@ -579,6 +579,15 @@ export const CLIENT_EVENT_SCHEMAS = {
       path,
     })
     .strict(),
+  // A one-time or delivery code was sent for checking (2026-11-25); `auto` = sent by itself at full length, not by
+  // the Submit button. Never the code.
+  code_submitted: z
+    .object({
+      kind: z.enum(['signup', 'reset', 'staff', 'partner_status', 'delivery']),
+      auto: z.boolean(),
+      path,
+    })
+    .strict(),
   // The email link page (/auth/action, 2026-11-23): which kind of link, never the code, email or any free text.
   auth_email_action_opened: z.object({ mode: z.enum(EMAIL_ACTION_MODES) }).strict(),
   auth_email_verified: z.object({ mode: z.enum(['verifyEmail', 'verifyAndChangeEmail']) }).strict(),

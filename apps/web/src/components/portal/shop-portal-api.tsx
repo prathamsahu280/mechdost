@@ -11,6 +11,8 @@ import { useCallback, useRef, useState, type SyntheticEvent } from 'react';
 import { adminApi } from '@/lib/admin-api';
 import { deadlineView, istDayTime } from '@/lib/admin-shop-form';
 import { track } from '@/lib/analytics';
+import { DELIVERY_CODE_LENGTH } from '@/lib/auth/auto-submit-code';
+import { useAutoSubmitCode } from '@/lib/auth/use-auto-submit-code';
 import { formatPrice } from '@/lib/format';
 import {
   addressLines,
@@ -533,26 +535,41 @@ function DeliveryCodeForm({
   const t = useTranslations('portal');
   const tt = useTranslations('shopTier1');
   const locale = useLocale();
-  const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   // The lock is server state (5 wrong codes): it shows again after a reload, not only on the page that saw it.
   const [locked, setLocked] = useState(order.deliveryLocked === true);
   const [busy, setBusy] = useState(false);
   const inputId = `delivery-code-${order.code}`;
+  // Checked by itself at 4 digits (user, 2026-11-25); the button stays as the fallback. A wrong code stays selected.
+  const {
+    value: code,
+    checking,
+    inputProps,
+  } = useAutoSubmitCode({
+    length: DELIVERY_CODE_LENGTH,
+    autoComplete: 'off',
+    busy,
+    submit: (value, auto) => check(value, auto),
+  });
 
-  async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
+  function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!/^\d{4}$/.test(code)) {
+    void check(code, false);
+  }
+
+  async function check(value: string, auto: boolean) {
+    if (busy) return;
+    if (!/^\d{4}$/.test(value)) {
       setError(t('deliveryCodeFormat'));
       return;
     }
+    track('code_submitted', { kind: 'delivery', auto, path: window.location.pathname });
     setBusy(true);
     const res = await adminApi(locale, `/shop/orders/${order.code}/deliver`, DeliveryCheck, {
       method: 'POST',
-      body: { deliveryCode: code, version: order.version },
+      body: { deliveryCode: value, version: order.version },
     });
     setBusy(false);
-    setCode('');
     if (!res.ok) {
       setError(t(apiErrorKey(res.code) as 'api_err_generic'));
       if (res.code !== 'NETWORK') await onChanged();
@@ -575,25 +592,22 @@ function DeliveryCodeForm({
   if (locked) return <DeliveryLocked />;
 
   return (
-    <form noValidate onSubmit={(e) => void onSubmit(e)} className="mt-4">
+    <form noValidate onSubmit={onSubmit} className="mt-4">
       <label htmlFor={inputId} className="text-sm font-bold text-ink">
         {t('deliveryCodeLabel')}
       </label>
       <p id={`${inputId}-hint`} className="text-xs text-muted">
         {t('deliveryCodeHint')}
       </p>
+      <p role="status" className="sr-only">
+        {checking ? t('deliveryCodeChecking') : ''}
+      </p>
       <div className="mt-2 flex flex-col gap-2 min-[420px]:flex-row">
         <input
           id={inputId}
-          inputMode="numeric"
-          autoComplete="off"
-          maxLength={4}
-          value={code}
+          {...inputProps}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${inputId}-error` : `${inputId}-hint`}
-          onChange={(e) => {
-            setCode(e.target.value.replace(/\D/g, '').slice(0, 4));
-          }}
           className={`${portalField} mt-0 w-full min-[420px]:w-32 text-center font-heading text-xl font-extrabold tracking-[0.4em] tabular-nums`}
         />
         <button
