@@ -1119,6 +1119,22 @@ members at the next run. Data dictionary: this § 6.
 | Q-UC1–7 | Counsel: DPDP s.9 with no age check; CSAM evidence retention; 2 h / 3 h clock scope and dates; Code on Wages; Kerala HC defamation view; LLM processor outside India + s.194R Coins; an adult self-declaration line in the Terms | Build to the strictest reading; no self-declaration line until counsel and the founder agree |
 | —       | Udhaar/credit, job card/GST invoice, trade prices, certificate upload                                                                                                                                                            | Not built (PENDING #25–#28)                                                                  |
 
+## 21a. Workstream A as built (2026-11-26)
+
+- Migrations (unapplied; renumber at merge): `0088_ustaad_foundations`, `0089_ustaad_identity`, `0090_ustaad_qa`,
+  `0091_ustaad_feed`, `0092_ustaad_local`, `0093_ustaad_moderation` (62 tables, RLS on, grants revoked, triggers;
+  `ustaad_media_totals` added for the budget; report reasons seeded; reach cities seeded from existing city slugs).
+- Access: setting `ustaad.access` (`off | staff_preview | open`, default `staff_preview`); see decisions 2026-11-26 "workstream A".
+- Settings: `USTAAD_SETTINGS` registry (not `OPERATIONAL_SETTINGS`), `/v1/admin/ustaad/settings`.
+- Media: § 10 as amended by decisions 2026-11-26 (private-copy verification, container allowlists, fragmented MP4 and
+  extra metadata refused with `MEDIA_LOCATION`, deny-by-default reads, Supabase 2 h signed upload URL caveat).
+- Stubs for B–F with final signatures: `recordIzzat`, `recomputeUstaadLevel`, `screenUstaadContent`,
+  `assertUstaadNameAllowed` (`packages/db/src/repo/ustaad/`), `applyCorrection` (`apps/api/src/ustaad/correction`),
+  real `notifyUstaad`, `recordUstaadEvent` (no analytics for restricted members, SR-42), `USTAAD_RATE_RULES`.
+- Not done in A: `/ustaad/notifications` page (the bell links to the site's inbox), the web media components
+  (compress, recorders, trim, blur, upload) and the `ustaad_media_purge` worker job (the repository functions
+  `dueUstaadMediaPurges` / `markUstaadMediaPurged` exist), Supabase TUS resumable uploads, the state-audit rows.
+
 ## 22. Not built / later
 
 Speech-to-text and transcripts (ruled out), voice search, auto-translation, server video/audio transcoding and the
