@@ -11,11 +11,11 @@ interface Props {
   searchParams?: Promise<{ tab?: string }>;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'ustaad.home' });
-  return { title: t('title'), robots: { index: false, follow: false } };
-}
+/**
+ * No network name in the tab title: during the staff preview the same page is served to everyone and the client gate
+ * shows "page not found" to those refused, so the title must not name the network (review 2026-11-26).
+ */
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 /** Shortcut tiles (spec 23 § 5 Home). Each opens its workstream's screen (B–E build them). */
 type ShortcutKey = 'ask' | 'jobs' | 'dukaan' | 'learn' | 'network' | 'area' | 'saved' | 'pin' | 'card';

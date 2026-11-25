@@ -220,6 +220,31 @@ describe('leave and rejoin never clears a moderation standing (security review 2
   });
 });
 
+describe('join mode invite_only (review 2026-11-26)', () => {
+  it('refuses every join, even with an application code, until workstream B checks the invite', async () => {
+    await saveUstaadSetting(t(), {
+      key: 'ustaad.general.join_mode',
+      value: 'invite_only',
+      expectedVersion: null,
+      staffUserId: f.staff,
+      actorRole: 'super_admin',
+    });
+    await expectCode(
+      joinUstaad(t(), { userId: f.staff }, join({ fromApplication: 'APP-RPR-2026-FAKE01' }), {
+        via: 'ustaad',
+      }),
+      'USTAAD_JOIN_CLOSED',
+    );
+    await saveUstaadSetting(t(), {
+      key: 'ustaad.general.join_mode',
+      value: 'all',
+      expectedVersion: 1,
+      staffUserId: f.staff,
+      actorRole: 'super_admin',
+    });
+  });
+});
+
 describe('disabled city (review focus 4)', () => {
   it('members already in a city stay when it is switched off; new joins from it are refused', async () => {
     await db

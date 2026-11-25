@@ -201,8 +201,9 @@ export async function joinUstaad(
   } as const;
   for (const m of input.verifyMethods)
     if (!methodOn[m]) throw new ValidationError(`The ${m} proof is not available`, 'USTAAD_METHOD_OFF');
-  // `invite_only` needs an old-application invite (workstream B maps `fromApplication` to a link row).
-  if (s['ustaad.general.join_mode'] === 'invite_only' && !input.fromApplication)
+  // `invite_only` is refused outright until workstream B checks `fromApplication` against `ustaad_application_links`
+  // (a code alone proves nothing; review 2026-11-26).
+  if (s['ustaad.general.join_mode'] === 'invite_only')
     throw new ValidationError('Joining is by invite right now', 'USTAAD_JOIN_CLOSED');
   await assertUstaadNameAllowed(db, input.displayName);
 
