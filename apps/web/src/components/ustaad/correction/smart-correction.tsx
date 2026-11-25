@@ -13,6 +13,7 @@ import {
   applyChoice,
   correctionErrorKey,
   requestCorrection,
+  stillApplies,
   suggestViewFor,
   type ChoiceOutcome,
 } from '@/lib/ustaad/correction';
@@ -56,6 +57,9 @@ export function SmartCorrection({
   const [result, setResult] = useState<CorrectResponseView | null>(null);
   const [status, setStatus] = useState<StatusKey | null>(null);
   const [undoText, setUndoText] = useState<string | null>(null);
+  /** The exact text the card was made for, and the text Undo applies to (both dropped once the field changes). */
+  const [sentText, setSentText] = useState<string | null>(null);
+  const [usedText, setUsedText] = useState<string | null>(null);
   const undoRef = useRef<HTMLButtonElement>(null);
   const focusUndo = useRef(false);
 
@@ -80,6 +84,7 @@ export function SmartCorrection({
   async function check() {
     if (busy) return;
     setUndoText(null);
+    setUsedText(null);
     setResult(null);
     if (value.trim() === '') {
       setStatus('empty');
@@ -87,6 +92,7 @@ export function SmartCorrection({
     }
     setBusy(true);
     setStatus('checking');
+    setSentText(value);
     const res = await requestCorrection(locale, { text: value, lang, mode: 'suggest' });
     setBusy(false);
     if (!res.ok) {
@@ -108,10 +114,13 @@ export function SmartCorrection({
   }
 
   function choose(choice: CorrectionChoice) {
-    if (!result) return;
-    const outcome: ChoiceOutcome = applyChoice(choice, result);
+    if (!result || !stillApplies(sentText, value)) return;
+    const outcome: ChoiceOutcome = applyChoice(choice, result, value);
     track('ustaad_correction_choice', { choice });
-    onChange(outcome.text, { correction: outcome.correction, original: outcome.original });
+    // Keep mine / Edit myself leave the field exactly as it is now.
+    if (choice === 'use')
+      onChange(outcome.text, { correction: outcome.correction, original: outcome.original });
+    setUsedText(choice === 'use' ? outcome.text : null);
     setResult(null);
     setStatus(choice === 'use' ? 'used' : 'kept');
     setUndoText(outcome.undo);
@@ -120,15 +129,20 @@ export function SmartCorrection({
   }
 
   function undo() {
-    if (undoText === null) return;
+    if (undoText === null || !stillApplies(usedText, value)) return;
     onChange(undoText, { correction: 'none', original: null });
     setUndoText(null);
+    setUsedText(null);
     setStatus(null);
     focusField();
   }
 
+  const cardShown = result !== null && stillApplies(sentText, value);
+  const undoShown = undoText !== null && stillApplies(usedText, value);
+  const shownStatus = (status === 'ready' && !cardShown) || (status === 'used' && !undoShown) ? null : status;
+
   return (
-    <div className="flex flex-col gap-2">
+    <div data-slot="smart-correction" className="flex flex-col gap-2">
       <button
         type="button"
         className={`${quiet} self-start`}
@@ -138,16 +152,16 @@ export function SmartCorrection({
         <WandSparkles aria-hidden="true" className="size-[18px]" />
         {busy ? t('checking') : t('check')}
       </button>
-      {result ? <SuggestCard result={result} onChoice={choose} hintLang={lang} /> : null}
+      {cardShown ? <SuggestCard result={result} onChoice={choose} hintLang={lang} /> : null}
       <div className="flex flex-wrap items-center gap-2">
         <p role="status" aria-atomic="true" className="min-h-5 text-sm text-ink">
-          {status ? t(status) : ''}
+          {shownStatus ? t(shownStatus) : ''}
         </p>
-        {undoText !== null ? (
+        {undoShown ? (
           <button
             ref={undoRef}
             type="button"
-            className="inline-flex min-h-11 min-w-11 items-center px-2 text-sm font-bold text-info underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+            className="inline-flex min-h-11 min-w-11 items-center px-2 text-sm font-bold text-info underline underline-offset-4 hover:no-underline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
             onClick={undo}
           >
             {t('undo')}

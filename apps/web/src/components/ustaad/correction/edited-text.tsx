@@ -27,8 +27,12 @@ export function EditedText({
   const [showOriginal, setShowOriginal] = useState(false);
   const text = shownText({ body, bodyOriginal }, showOriginal);
   return (
-    <div className="flex flex-col gap-1">
-      <p data-user-content lang={textLang(text, lang)} className={`whitespace-pre-line ${className}`}>
+    <div data-slot="edited-text" className="flex flex-col gap-1">
+      <p
+        data-user-content
+        lang={textLang(text, lang)}
+        className={`whitespace-pre-line break-words ${className}`}
+      >
         {text}
       </p>
       {bodyOriginal !== null && bodyOriginal !== body ? (
@@ -37,7 +41,7 @@ export function EditedText({
           onClick={() => {
             setShowOriginal((v) => !v);
           }}
-          className="press inline-flex min-h-11 items-center gap-1.5 self-start rounded-pill bg-info-bg px-3 text-[13px] font-bold text-info focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          className="press inline-flex min-h-11 items-center gap-1.5 self-start rounded-pill bg-info-bg px-3 text-[13px] font-bold text-info hover:underline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
         >
           <WandSparkles aria-hidden="true" className="size-4" />
           {showOriginal ? t('seeFixed') : t('edited')}

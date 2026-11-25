@@ -150,6 +150,29 @@ describe('POST /v1/ustaad/correct — gate and membership', () => {
     );
   });
 
+  it('a member who joined after the session was cached can use correction at once (member row is the authority)', async () => {
+    const ctx = await buildApp();
+    const p = await person(ctx, { member: false });
+    expect((await ctx.app.request('/v1/ustaad/correct', post(p.headers, { text: 'kr h' }))).status).toBe(404);
+    // Join: the member row and the mechanic grant, written while the session (without the grant) is cached.
+    const userId =
+      (await ctx.db.select().from(s.users)).find((u) => u.firebaseUid === `sc-${String(n).padStart(2, '0')}`)
+        ?.id ?? '';
+    await grantRole(ctx.db, { userId, role: 'mechanic', grantedBy: null });
+    await ctx.db.insert(s.ustaadMembers).values({
+      userId,
+      handle: `mistri_join_${String(n)}`,
+      displayName: 'Naya Mistri',
+      track: 'ustaad',
+      level: 'ustaad_pending',
+      cityId,
+      areaLabel: 'Pandri',
+      pincode: '492001',
+      workPlace: 'shop',
+    });
+    expect((await ctx.app.request('/v1/ustaad/correct', post(p.headers, { text: 'kr h' }))).status).toBe(200);
+  });
+
   it('validates the body strictly (no member id, ≤ 2,000 characters)', async () => {
     const ctx = await buildApp();
     const m = await person(ctx);

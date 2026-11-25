@@ -6,6 +6,7 @@ import {
   applyChoice,
   correctionErrorKey,
   shownText,
+  stillApplies,
   suggestViewFor,
   textLang,
   visibleSegments,
@@ -35,15 +36,26 @@ describe('smart correction on the web (spec 23 § 11)', () => {
     expect(suggestViewFor(result({ mode: 'off' })).kind).toBe('clear');
   });
 
+  it('the card and Undo apply only while the field holds the text they were made for', () => {
+    expect(stillApplies('brek nhi', 'brek nhi')).toBe(true);
+    expect(stillApplies('brek nhi', 'brek nhi lagta')).toBe(false); // typed since the check
+    expect(stillApplies(null, 'x')).toBe(false);
+    // Keep mine never rewrites newer words; Undo restores the text as typed (untrimmed).
+    expect(applyChoice('keep', result(), 'brek kaam nhi kr rha, aur clutch bhi').text).toBe(
+      'brek kaam nhi kr rha, aur clutch bhi',
+    );
+    expect(applyChoice('use', result(), ' brek kaam nhi kr rha ').undo).toBe(' brek kaam nhi kr rha ');
+  });
+
   it('Use suggestion stores the original and offers Undo; Keep mine and Edit myself keep the member text', () => {
-    expect(applyChoice('use', result())).toEqual({
+    expect(applyChoice('use', result(), 'brek kaam nhi kr rha')).toEqual({
       text: 'Brake kaam nahi kar raha.',
       undo: 'brek kaam nhi kr rha',
       correction: 'suggested_used',
       original: 'brek kaam nhi kr rha',
     });
     for (const c of ['keep', 'edit'] as const)
-      expect(applyChoice(c, result())).toEqual({
+      expect(applyChoice(c, result(), 'brek kaam nhi kr rha')).toEqual({
         text: 'brek kaam nhi kr rha',
         undo: null,
         correction: 'none',

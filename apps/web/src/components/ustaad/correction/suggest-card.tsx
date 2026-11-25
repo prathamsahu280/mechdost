@@ -35,17 +35,21 @@ export function SuggestCard({
   const titleId = useId();
   return (
     <section
+      data-slot="correction-suggest"
       aria-labelledby={titleId}
       className="flex flex-col gap-3 rounded-card border-2 border-info bg-surface p-3"
     >
-      <h3 id={titleId} className="flex items-center gap-2 font-heading text-[15px] font-extrabold text-info">
+      <h3
+        id={titleId}
+        className="flex items-center gap-2 text-balance font-heading text-[15px] font-extrabold text-info"
+      >
         <WandSparkles aria-hidden="true" className="size-5" />
         {t('title')}
       </h3>
       <p
         data-user-content
         lang={textLang(result.text, hintLang)}
-        className="rounded-input bg-info-bg px-3 py-2.5 text-[17px] leading-relaxed font-bold text-ink"
+        className="rounded-input bg-info-bg px-3 py-2.5 text-[17px] leading-relaxed font-bold break-words text-ink"
       >
         {visibleSegments(result.segments).map((s, i) =>
           s.kind === 'same' ? (
@@ -64,7 +68,11 @@ export function SuggestCard({
       <p className="text-xs text-muted">{t('changedHint')}</p>
       <div className="text-sm">
         <p className="font-bold text-muted">{t('youWrote')}</p>
-        <p data-user-content lang={textLang(result.original, hintLang)} className="mt-0.5 text-ink">
+        <p
+          data-user-content
+          lang={textLang(result.original, hintLang)}
+          className="mt-0.5 break-words text-ink"
+        >
           {result.original}
         </p>
       </div>
@@ -92,7 +100,7 @@ export function SuggestCard({
       </div>
       <button
         type="button"
-        className="self-start text-sm font-bold text-info underline underline-offset-4 min-h-11 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+        className="self-start text-sm font-bold text-info underline underline-offset-4 hover:no-underline min-h-11 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
         onClick={() => {
           onChoice('edit');
         }}

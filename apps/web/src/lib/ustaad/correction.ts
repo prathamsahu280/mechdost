@@ -40,16 +40,27 @@ export interface ChoiceOutcome {
   original: string | null;
 }
 
-export function applyChoice(choice: CorrectionChoice, result: CorrectResponseView): ChoiceOutcome {
+/**
+ * A choice on the suggest card. `current` is the field as it is now: Keep mine and Edit myself never rewrite it (the
+ * member may have typed since the check), and Use suggestion replaces only the exact text that was checked (Undo
+ * brings that text back, as typed, untrimmed).
+ */
+export function applyChoice(
+  choice: CorrectionChoice,
+  result: CorrectResponseView,
+  current: string,
+): ChoiceOutcome {
   if (choice === 'use')
-    return {
-      text: result.text,
-      undo: result.original,
-      correction: 'suggested_used',
-      original: result.original,
-    };
-  // Keep mine and Edit myself both leave the member's own text in the field (Edit then focuses it).
-  return { text: result.original, undo: null, correction: 'none', original: null };
+    return { text: result.text, undo: current, correction: 'suggested_used', original: current };
+  return { text: current, undo: null, correction: 'none', original: null };
+}
+
+/**
+ * The card (and Undo) only apply while the field still holds the text they were made for; once the member types,
+ * they go away instead of overwriting newer words.
+ */
+export function stillApplies(madeFor: string | null, current: string): boolean {
+  return madeFor !== null && madeFor === current;
 }
 
 /** Segments for display: a changed run with no new text (words removed) shows as nothing but keeps its `was`. */

@@ -6,7 +6,6 @@ import {
   type CorrectionMember,
   type CorrectionWords,
 } from '@mechdost/db/repo';
-import { can } from '@mechdost/shared/rbac';
 import { USTAAD_CORRECTION_MODES, type UstaadCorrectionMode } from '@mechdost/shared/ustaad/codes';
 import {
   CORRECTION_LANGS,
@@ -31,7 +30,9 @@ import { errorResponses } from '../schemas';
 /**
  * `POST /v1/ustaad/correct` (spec 23 § 8 "Correction", § 11). Mounted inside `ustaadRoutes`, so A's `ustaadGate`
  * runs first (access off / staff preview → the generic 404, even for anonymous callers; open + anonymous → 401), then
- * `requireUstaadMember` (non-members and members who left → 404, banned → 403 `USTAAD_BANNED`), then `ustaad:use`.
+ * `requireUstaadMember` (non-members and members who left → 404, banned → 403 `USTAAD_BANNED`). As on A's member and
+ * media routes the fresh member row is the authority, not the session-cached `ustaad:use` grant, so a member who just
+ * joined can use correction at once (the row and the `mechanic` grant are written in one transaction).
  *
  * Modes: `suggest` returns the corrected text with word-level segments for the suggest card; `auto` returns the same
  * shape, the client sends the corrected text and keeps `original` (stored as `body_original`); `off` returns the text
@@ -93,8 +94,7 @@ export function ustaadCorrectRoutes(deps: AppDeps) {
   return app.openapi(correct, async (c) => {
     const body = c.req.valid('json');
     const auth = c.get('auth');
-    // The same 404 the gate gives (errorBody NOT_FOUND), never a hint that the path exists.
-    if (!can(auth.grants, 'ustaad:use', {})) throw new ApiError(404, 'NOT_FOUND', 'Not found');
+    // Mode and consent are not in the guard's member view; read them (a missing row is the guard's 404).
     const member = await correctionMember(deps.db, auth.user.id);
     if (!member) throw new ApiError(404, 'NOT_FOUND', 'Not found');
     const s = await settingsNow();
