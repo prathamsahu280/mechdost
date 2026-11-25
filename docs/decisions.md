@@ -1984,3 +1984,13 @@ User: "during forgot password or anything that requires a code, if the code ente
 - **Q231, data sheets: product pages do not offer the lubricant data sheet PDFs (user: "no").** `spec.sourceDocs` stays private (`PRIVATE_SPEC_KEYS`).
 - **PENDING #24, notification priority: not admin-editable (user: "no").** `NOTICE_PRIORITY_OF_KIND` in code stays the single source.
 - Still open: footer WhatsApp number (default hidden), Q232 shared-photo drafts, Super MG other grades (explained: only the 20W-40 can has a photo; recommendation: keep 20W-40 only, or other grades as drafts until photos exist).
+
+## 2026-11-25 - Shopping personalisation plan; vehicle segments approved
+
+User approved the eight vehicle segments ("yeah the segments are fine go ahead"): Two-wheeler, Three-wheeler, Car/SUV,
+Light commercial, Truck & bus, Tractor & farm, Construction/OTR, Not a vehicle. Phases and rules in
+`docs/superpowers/specs/2026-11-25-shopping-personalisation-design.md`: (1) segments as an admin-editable many-to-many
+table back-filled from categories, chips + card tags + home tiles; (2) recently viewed (consent-gated server copy) and
+Back keeps the list position; (3) "Similar options" / "Goes well with" rule-based suggestions; (4) honest savings (delivered
+orders, printed-MRP snapshot, coupons, Coins, delivery fee; price-on-request lines not counted). Screenshots before each ships.
+Also ruled today: Super MG stays 20W-40 only; footer WhatsApp number stays hidden.
