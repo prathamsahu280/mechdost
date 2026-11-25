@@ -7,7 +7,7 @@
 import { deflateSync } from 'node:zlib';
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
-import { mp4Facts, mp4TopBoxes, oggFacts, webmFacts } from '../src/ustaad/media/duration';
+import { mp4Check, mp4Facts, oggFacts, webmCheck } from '../src/ustaad/media/duration';
 import { readWindow } from '../src/ustaad/media/host';
 import { r2MediaHost } from '../src/ustaad/media/r2';
 import { presign } from '../src/ustaad/media/sigv4';
@@ -130,7 +130,7 @@ describe('sniff (AT-UP-2, SR-17)', () => {
   });
 });
 
-describe('container facts (AT-UP-4, AT-UP-5; review 2026-11-26: walk the box tree, fail closed)', () => {
+describe('container facts (AT-UP-4, AT-UP-5; review 2026-11-26: allowlists, fail closed)', () => {
   const full = (type: string, version: number, payload: number[]) =>
     box(type, [version, 0, 0, 0, ...payload]);
   const mvhd = (timescale: number, duration: number) =>
@@ -152,133 +152,154 @@ describe('container facts (AT-UP-4, AT-UP-5; review 2026-11-26: walk the box tre
     ]);
   const mdhd = (timescale: number, duration: number) =>
     full('mdhd', 0, [...be32(0), ...be32(0), ...be32(timescale), ...be32(duration), 0, 0, 0, 0]);
-  const trak = (movieDuration: number, mediaScale: number, mediaDuration: number) =>
-    box('trak', [...tkhd(movieDuration), ...box('mdia', mdhd(mediaScale, mediaDuration))]);
+  const minf = (extra: number[] = []) =>
+    box('minf', [
+      ...full('smhd', 0, [0, 0, 0, 0]),
+      ...extra,
+      ...box('stbl', box('stsd', [0, 0, 0, 0, ...be32(0)])),
+    ]);
+  const trak = (movieDuration: number, mediaScale: number, mediaDuration: number, minfExtra: number[] = []) =>
+    box('trak', [
+      ...tkhd(movieDuration),
+      ...box('mdia', [
+        ...mdhd(mediaScale, mediaDuration),
+        ...full('hdlr', 0, new Array<number>(20).fill(0)),
+        ...minf(minfExtra),
+      ]),
+    ]);
   const moov = (...children: number[][]) => new Uint8Array(box('moov', children.flat()));
   const good = () => [mvhd(1000, 180_000), trak(180_000, 48_000, 180 * 48_000)];
+  const file = (...tops: number[][]) => new Uint8Array(tops.flat());
+  const reader = (f: Uint8Array) => (a: number, b: number) => Promise.resolve(f.subarray(a, b + 1));
+  const ftyp = () => box('ftyp', ascii('isom'));
+  const mdat = () => box('mdat', new Array<number>(64).fill(1));
 
-  it('reads the duration from mvhd as a direct child of moov, cross-checked with tkhd and mdhd', async () => {
-    const file = new Uint8Array([
-      ...box('ftyp', ascii('isom')),
-      ...box('mdat', new Array<number>(100).fill(1)),
-      ...box('moov', good().flat()),
-    ]);
-    const read = (a: number, b: number) => Promise.resolve(file.subarray(a, b + 1));
-    const boxes = await mp4TopBoxes(read, file.length);
-    expect(boxes.map((b) => b.type)).toEqual(['ftyp', 'mdat', 'moov']);
-    const m = boxes[2];
-    if (!m) throw new Error('moov');
-    expect(mp4Facts(file.subarray(m.offset, m.offset + m.size))).toEqual({
-      durationMs: 180_000,
-      problem: null,
-    });
+  it('accepts a clean MP4: allowed top-level boxes, mvhd/tkhd/mdhd agree', async () => {
+    const f = file(ftyp(), mdat(), box('moov', good().flat()), box('free', [0, 0, 0, 0]));
+    expect(await mp4Check(reader(f), f.length)).toEqual({ durationMs: 180_000, problem: null });
     expect(mp4Facts(moov(mvhd(600, 108_600), trak(108_600, 600, 108_600))).durationMs).toBe(181_000);
   });
 
-  it('refuses an mvhd that is not a direct child of moov (parser differential)', () => {
-    expect(mp4Facts(moov(box('udta', mvhd(1000, 1000)), trak(1000, 1000, 1000))).problem).toBe('unreadable');
+  it('refuses XMP in a top-level uuid box and a top-level meta box (extra details)', async () => {
+    const xmp = box('uuid', [
+      ...new Array<number>(16).fill(0xbe),
+      ...ascii('<x:xmpmeta GPSLatitude="21.25"/>'),
+    ]);
+    for (const extra of [xmp, box('meta', [0, 0, 0, 0])]) {
+      const f = file(ftyp(), mdat(), box('moov', good().flat()), extra);
+      expect((await mp4Check(reader(f), f.length)).problem).toBe('location_atom');
+    }
   });
 
-  it('refuses a track or media duration that disagrees with mvhd', () => {
-    expect(mp4Facts(moov(mvhd(1000, 10_000), trak(180_000, 1000, 10_000))).problem).toBe('unreadable');
-    expect(mp4Facts(moov(mvhd(1000, 10_000), trak(10_000, 1000, 180_000))).problem).toBe('unreadable');
-    expect(mp4Facts(moov(mvhd(1000, 10_000))).problem).toBe('unreadable');
-    expect(mp4Facts(new Uint8Array([...box('moov', good().flat()).slice(0, -5)])).problem).toBe('unreadable');
-  });
-
-  it('fails closed on location metadata: ©xyz, loci and the Apple ISO6709 key (v1 cannot strip it)', () => {
+  it('refuses udta, meta or any unknown box inside moov and trak', () => {
     expect(mp4Facts(moov(...good(), box('udta', box('©xyz', ascii('+21.25+081.63/'))))).problem).toBe(
       'location_atom',
     );
-    expect(mp4Facts(moov(...good(), box('udta', box('loci', [0, 0, 0, 0])))).problem).toBe('location_atom');
-    const keys = box('keys', [
-      0,
-      0,
-      0,
-      0,
-      ...be32(1),
-      ...box('mdta', ascii('com.apple.quicktime.location.ISO6709')),
-    ]);
-    expect(mp4Facts(moov(...good(), box('meta', [0, 0, 0, 0, ...keys]))).problem).toBe('location_atom');
+    expect(mp4Facts(moov(...good(), box('meta', [0, 0, 0, 0]))).problem).toBe('location_atom');
+    expect(mp4Facts(moov(mvhd(1000, 1000), box('trak', [...tkhd(1000), ...box('udta', [])]))).problem).toBe(
+      'location_atom',
+    );
   });
 
-  it('refuses an external data reference without any read or fetch; a self-contained one is fine', () => {
+  it('refuses an mvhd that is not a direct child of moov, and durations that disagree', () => {
+    expect(mp4Facts(moov(box('mvex', mvhd(1000, 1000)), trak(1000, 1000, 1000))).problem).not.toBeNull();
+    expect(mp4Facts(moov(mvhd(1000, 10_000), trak(180_000, 1000, 10_000))).problem).toBe('unreadable');
+    expect(mp4Facts(moov(mvhd(1000, 10_000), trak(10_000, 1000, 180_000))).problem).toBe('unreadable');
+    expect(mp4Facts(moov(mvhd(1000, 10_000))).problem).toBe('unreadable');
+  });
+
+  it('refuses an external data reference; a self-contained one is fine', () => {
     const urlEntry = box('url ', [0, 0, 0, 0, ...ascii('http://evil.example/media')]);
-    const dref = box('dref', [0, 0, 0, 0, ...be32(1), ...urlEntry]);
-    expect(mp4Facts(moov(...good(), box('dinf', dref))).problem).toBe('external_reference');
-    const selfContained = box('dref', [0, 0, 0, 0, ...be32(1), ...box('url ', [0, 0, 0, 1])]);
-    expect(mp4Facts(moov(...good(), box('dinf', selfContained))).problem).toBeNull();
+    const ext = box('dinf', full('dref', 0, [...be32(1), ...urlEntry]));
+    expect(mp4Facts(moov(mvhd(1000, 1000), trak(1000, 1000, 1000, ext))).problem).toBe('external_reference');
+    const self = box('dinf', full('dref', 0, [...be32(1), ...box('url ', [0, 0, 0, 1])]));
+    expect(mp4Facts(moov(mvhd(1000, 1000), trak(1000, 1000, 1000, self))).problem).toBeNull();
   });
 
-  const ebml = (id: number[], payload: number[]) => [...id, 0x80 | payload.length, ...payload];
+  // WebM / Matroska ----------------------------------------------------------------------------------------------
+  const size = (n: number) => (n < 0x7f ? [0x80 | n] : [0x40 | (n >> 8), n & 0xff]);
+  const el = (id: number[], payload: number[]) => [...id, ...size(payload.length), ...payload];
+  const unknownSize = [0x01, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+  const header = el([0x1a, 0x45, 0xdf, 0xa3], el([0x42, 0x86], [0x01]));
+  const info = (extra: number[] = []) =>
+    el(
+      [0x15, 0x49, 0xa9, 0x66],
+      [...el([0x2a, 0xd7, 0xb1], [0x0f, 0x42, 0x40]), ...el([0x4d, 0x80], ascii('Chrome')), ...extra],
+    );
+  const tracks = el([0x16, 0x54, 0xae, 0x6b], el([0xae], el([0xd7], [0x01])));
+  const block = (ms: number) => el([0xa3], [0x81, (ms >> 8) & 0xff, ms & 0xff, 0x80, 1, 2, 3]);
+  const cluster = (tc: number, blocks: number[]) => [
+    0x1f,
+    0x43,
+    0xb6,
+    0x75,
+    ...unknownSize,
+    ...el([0xe7], be32(tc)),
+    ...blocks.flatMap(block),
+  ];
+  const webm = (...segmentChildren: number[][]) =>
+    new Uint8Array([...header, 0x18, 0x53, 0x80, 0x67, ...unknownSize, ...segmentChildren.flat()]);
   const durationEl = (ms: number) => {
     const d = new Uint8Array(8);
     new DataView(d.buffer).setFloat64(0, ms);
-    return [0x44, 0x89, 0x88, ...d];
+    return el([0x44, 0x89], [...d]);
   };
-  const header = ebml([0x1a, 0x45, 0xdf, 0xa3], [0x42, 0x86, 0x81, 0x01]);
-  const segment = (children: number[]) => [
-    0x18,
-    0x53,
-    0x80,
-    0x67,
-    0x01,
-    0xff,
-    0xff,
-    0xff,
-    0xff,
-    0xff,
-    0xff,
-    0xff,
-    ...children,
-  ];
-  const info = (children: number[]) => ebml([0x15, 0x49, 0xa9, 0x66], children);
 
-  it('reads the WebM Duration from Segment → Info (default 1 ms timecode scale)', () => {
-    expect(
-      webmFacts(new Uint8Array([...header, ...segment(info(durationEl(125_500)))]), new Uint8Array()),
-    ).toEqual({
-      durationMs: 125_500,
-      problem: null,
-    });
+  it('accepts a MediaRecorder-style WebM (unknown sizes, no Duration): duration from the last block', async () => {
+    const f = webm(info(), tracks, cluster(0, [0, 1000]), cluster(2000, [500]));
+    expect(await webmCheck(reader(f), f.length)).toEqual({ durationMs: 2500, problem: null });
+    const g = webm(info(durationEl(2500)), tracks, cluster(0, [0, 1000]), cluster(2000, [500]));
+    expect((await webmCheck(reader(g), g.length)).problem).toBeNull();
   });
 
-  it('refuses a WebM without Duration, an Info outside the Segment, and any Tags element (fail closed)', () => {
-    expect(webmFacts(new Uint8Array([...header, ...segment(info([]))]), new Uint8Array()).problem).toBe(
-      'unreadable',
-    );
-    expect(
-      webmFacts(new Uint8Array([...header, ...info(durationEl(1000)), ...segment([])]), new Uint8Array())
-        .problem,
-    ).toBe('unreadable');
-    const tags = ebml([0x12, 0x54, 0xc3, 0x67], ascii('LOCATION'));
-    expect(
-      webmFacts(
-        new Uint8Array([...header, ...segment([...info(durationEl(1000)), ...tags])]),
-        new Uint8Array(),
-      ).problem,
-    ).toBe('location_atom');
-    expect(
-      webmFacts(new Uint8Array([...header, ...segment(info(durationEl(1000)))]), new Uint8Array(tags))
-        .problem,
-    ).toBe('location_atom');
+  it('refuses Tags anywhere (also mid-file between clusters), Attachments, Chapters and unknown elements', async () => {
+    const tags = el([0x12, 0x54, 0xc3, 0x67], ascii('LOCATION'));
+    const attachments = el([0x19, 0x41, 0xa4, 0x69], [0]);
+    const chapters = el([0x10, 0x43, 0xa7, 0x70], [0]);
+    for (const bad of [tags, attachments, chapters]) {
+      const f = webm(info(), tracks, cluster(0, [0, 1000]), bad, cluster(2000, [500]));
+      expect((await webmCheck(reader(f), f.length)).problem).not.toBeNull();
+    }
+    const titled = webm(info(el([0x7b, 0xa9], ascii('Raipur garage'))), tracks, cluster(0, [0]));
+    expect((await webmCheck(reader(titled), titled.length)).problem).toBe('location_atom');
   });
 
-  it('reads the Ogg Opus duration from the last granule minus pre-skip', () => {
-    const head = new Uint8Array([
-      ...ascii('OggS'),
-      ...new Array<number>(24).fill(0),
-      ...ascii('OpusHead'),
-      1,
-      1,
-      0x38,
-      0x01,
-      ...new Array<number>(8).fill(0),
-    ]);
+  it('refuses a Duration that disagrees with the blocks, an Info outside the Segment, and junk', async () => {
+    const lie = webm(info(durationEl(170_000)), tracks, cluster(0, [0, 1000]));
+    expect((await webmCheck(reader(lie), lie.length)).problem).toBe('unreadable');
+    const outside = new Uint8Array([...header, ...info(), 0x18, 0x53, 0x80, 0x67, ...unknownSize, ...tracks]);
+    expect((await webmCheck(reader(outside), outside.length)).problem).not.toBeNull();
+    const junk = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 0xff]);
+    expect((await webmCheck(reader(junk), junk.length)).problem).toBe('unreadable');
+  });
+
+  it('Ogg Opus: duration from the last granule; any tag other than the encoder refuses', () => {
+    const tagsPacket = (comments: string[]) => [
+      ...ascii('OpusTags'),
+      ...[3, 0, 0, 0],
+      ...ascii('lib'),
+      ...[comments.length, 0, 0, 0],
+      ...comments.flatMap((c) => [c.length, 0, 0, 0, ...ascii(c)]),
+    ];
+    const head = (comments: string[]) =>
+      new Uint8Array([
+        ...ascii('OggS'),
+        ...new Array<number>(24).fill(0),
+        ...ascii('OpusHead'),
+        1,
+        1,
+        0x38,
+        0x01,
+        ...new Array<number>(8).fill(0),
+        ...ascii('OggS'),
+        ...new Array<number>(24).fill(0),
+        ...tagsPacket(comments),
+      ]);
     const granule = 48_000 * 60 + 312;
     const g = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => Math.floor(granule / 256 ** i) % 256);
     const tail = new Uint8Array([...ascii('OggS'), 0, 0, ...g, 0, 0, 0, 0]);
-    expect(oggFacts(head, tail)).toEqual({ durationMs: 60_000, problem: null });
+    expect(oggFacts(head(['ENCODER=Mozilla']), tail)).toEqual({ durationMs: 60_000, problem: null });
+    expect(oggFacts(head(['LOCATION=21.25,81.63']), tail).problem).toBe('location_atom');
   });
 });
 
