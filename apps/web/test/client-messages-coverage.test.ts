@@ -4,7 +4,7 @@
  * workshopAnalytics, portal and refunds — because the page's `ClientMessages` list did not name them; the same bug hit
  * `shopTier1` on 2026-11-15). For each page, follow its imports, collect `useTranslations('ns')` in client modules, and
  * check that the page or one of its layouts passes every such namespace to `ClientMessages` (or that the page is under
- * a layout that provides all messages).
+ * a layout that provides all messages). A namespace may be a part of one (`ustaad.admin`, 2026-11-26).
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -70,7 +70,7 @@ function clientNamespaces(entry: string): Map<string, string> {
     seen.add(file);
     const text = read(file);
     if (/^['"]use client['"]/m.test(text)) {
-      for (const m of text.matchAll(/useTranslations\(\s*'([A-Za-z0-9_]+)'/g)) {
+      for (const m of text.matchAll(/useTranslations\(\s*'([A-Za-z0-9_.]+)'/g)) {
         const ns = m[1] ?? '';
         if (!found.has(ns)) found.set(ns, file.slice(srcDir.length + 1));
       }
@@ -99,7 +99,7 @@ function provided(file: string): Set<string> {
         if (depth === 0) break;
       }
     }
-    for (const n of text.slice(at, end).matchAll(/'([A-Za-z0-9_]+)'/g)) out.add(n[1] ?? '');
+    for (const n of text.slice(at, end).matchAll(/'([A-Za-z0-9_.]+)'/g)) out.add(n[1] ?? '');
   }
   return out;
 }
@@ -127,7 +127,8 @@ describe('client message bundles cover every client component', () => {
         }
       if (all) continue;
       for (const [ns, via] of used)
-        if (!have.has(ns))
+        // A namespace is covered by itself or by any namespace it is part of (`pages` covers `pages.shop`).
+        if (!ns.split('.').some((_, i, parts) => have.has(parts.slice(0, i + 1).join('.'))))
           missing.push(`${slash(page.slice(appDir.length + 1))}: ${ns} (used in ${slash(via)})`);
     }
     expect(missing).toEqual([]);

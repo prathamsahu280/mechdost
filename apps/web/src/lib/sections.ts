@@ -62,6 +62,8 @@ export const ALL_ADMIN_SECTIONS = [
   'exports',
   // Latest Sentry issues of the website and the API (decision 2026-11-14); real sign-in only (it reads the API).
   'errors',
+  // Ustaad Network settings and tables (spec 23 § 15, task G1): real sign-in only (it reads the API).
+  'ustaad',
 ] as const;
 export type AdminSection = (typeof ALL_ADMIN_SECTIONS)[number];
 
@@ -87,6 +89,7 @@ const REAL_SIGN_IN_ONLY: readonly string[] = [
   'coupons',
   'exports',
   'wishlist',
+  'ustaad',
 ];
 /** Real-only names that this list also shows in the demo (the account's Refunds has sample data; the admin's does not). */
 const shown = <T extends string>(all: readonly T[], demoToo: readonly string[] = []): readonly T[] =>

@@ -186,6 +186,30 @@ export const USTAAD_CLIENT_EVENT_SCHEMAS = {
   ustaad_coachmark_seen: z.object({ target: z.enum(COACHMARK_TARGETS) }).strict(),
   ustaad_coachmark_dismissed: z.object({ target: z.enum(COACHMARK_TARGETS) }).strict(),
   ustaad_help_replayed: z.object({}).strict(),
+  /** Admin → Ustaad (G1): a settings save or a list change; area = `settings` or the list's id; never values. */
+  admin_ustaad_change: z
+    .object({
+      area: z.enum([
+        'settings',
+        'levels',
+        'badges',
+        'tags',
+        'reasons',
+        'cities',
+        'promotions',
+        'cards',
+        'coachmarks',
+        'words_protected',
+        'words_correction',
+        'words_banned',
+        'words_pii_pattern',
+        'words_link_domain',
+        'words_scam_phrase',
+      ]),
+      action: z.enum(['save', 'create', 'update', 'merge', 'move']),
+      fields: count,
+    })
+    .strict(),
   /** Shell navigation (A): which bottom tab was opened. */
   ustaad_tab_opened: z.object({ tab: z.enum(['home', 'discover', 'create', 'learn', 'me']) }).strict(),
 } as const;
