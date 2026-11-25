@@ -40,6 +40,8 @@ export interface DemoFixture {
     gstRateBp: number;
     /** Vehicle types the product is for (decision 2026-11-12); empty = fitment not listed. */
     vehicleTypes?: ('2W' | '3W' | '4W')[];
+    /** Vehicle segments (design 2026-11-25); omitted = the defaults the insert trigger gives (category, then vehicle types). */
+    segments?: string[];
     /** Typed attributes for comparison (decision 2026-11-13), checked against the category's definitions. */
     attributes?: Record<string, AttrValue>;
     /** Net quantity of the pack (unit price). */
@@ -172,6 +174,13 @@ export async function seedRaipurDemo(db: Tx, f: DemoFixture): Promise<DemoSeedRe
         })
         .returning({ id: s.products.id });
       if (!product) throw new Error('demo seed: product upsert returned nothing');
+      if (p.segments) {
+        await tx.delete(s.productVehicleSegments).where(eq(s.productVehicleSegments.productId, product.id));
+        if (p.segments.length > 0)
+          await tx
+            .insert(s.productVehicleSegments)
+            .values(p.segments.map((segmentCode) => ({ productId: product.id, segmentCode })));
+      }
       const pack = { netQty: p.netQuantity?.qty ?? null, netUnit: p.netQuantity?.unit ?? null };
       const [variant] = await tx
         .insert(s.productVariants)

@@ -10,6 +10,7 @@ import {
   type CatalogueProduct,
 } from '@mechdost/shared/catalogue';
 import { readAttributes } from '@mechdost/shared/product-attributes';
+import { CatalogueSegmentsSchema } from '@mechdost/shared/vehicle-segments-api';
 import { SuggestResponseSchema } from '@mechdost/shared/search-api';
 import { categoryFromSlug } from '@/demo/catalogue';
 import type { Locale } from '@/i18n/routing';
@@ -89,6 +90,15 @@ export async function fetchCatalogueCategories(
   const res = await get(url, { revalidate: 300, tags: ['catalogue'] });
   if (!res.ok) throw new Error(`catalogue API ${String(res.status)}`);
   return CatalogueCategoriesSchema.parse(await res.json()).categories;
+}
+
+/** Active vehicle segments with live counts in the page language (the home "Shop by vehicle" tiles). */
+export async function fetchCatalogueSegments(locale: Locale) {
+  const url = new URL(`${base()}/v1/catalogue/segments`);
+  url.searchParams.set('locale', locale);
+  const res = await get(url, { revalidate: 300, tags: ['catalogue'] });
+  if (!res.ok) throw new Error(`catalogue API ${String(res.status)}`);
+  return CatalogueSegmentsSchema.parse(await res.json()).segments;
 }
 
 /** "Did you mean" for a search that found nothing (closest brand, category or product name), or null. */

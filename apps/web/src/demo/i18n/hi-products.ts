@@ -157,6 +157,7 @@ export const PRODUCT_HI: Readonly<Record<string, ProductHi>> = {
     highlights: ['लदे वाहन के लिए मज़बूत साइडवॉल', '14 प्लाई रेटिंग'],
   },
   'ceat-earthmax-175-25-otr-tyre': {
+    name: 'अर्थमैक्स 17.5-25 ओटीआर',
     spec: '17.5-25 · 12 PR · लोडर और डोज़र',
     compatibility: '25 इंच रिम वाले व्हील लोडर और ग्रेडर',
     highlights: ['ढीली ज़मीन के लिए गहरी ट्रेड', 'कट-रोधी कंपाउंड'],
@@ -167,11 +168,13 @@ export const PRODUCT_HI: Readonly<Record<string, ProductHi>> = {
     highlights: ['डीज़ल क्रैंकिंग के लिए बनी', 'कंपन सहने वाली', 'पुरानी बैटरी एक्सचेंज ऑफ़र'],
   },
   'amaron-pro-tractor-88ah-battery': {
+    name: 'प्रो ट्रैक्टर 12 V 88 Ah',
     spec: '12 V · 88 Ah · फ़्लडेड · ट्रैक्टर',
     compatibility: 'ज़्यादातर 35 से 55 hp ट्रैक्टर',
     highlights: ['ठंड में भी दमदार स्टार्ट', 'धूल और गर्मी में भरोसेमंद'],
   },
   'servo-agri-super-15w40-7l': {
+    name: 'एग्री सुपर 15W40 7.5 L',
     spec: 'ट्रैक्टर इंजन ऑयल · 15W40 · 7.5 L',
     compatibility: 'डीज़ल ट्रैक्टर और खेती के इंजन',
     highlights: ['API CH-4 ग्रेड', 'खेत के भारी काम में सुरक्षा', '7.5 L पैक'],

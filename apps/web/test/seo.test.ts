@@ -38,6 +38,7 @@ const product: ProductView = {
   spec: 'Engine oil for 2W · 20W40 · 900 ml',
   compatibility: null,
   vehicleTypes: ['2W'],
+  segments: [],
   price: { pricePaise: 44_005, mrpPaise: 47_500 },
   mrpFrom: null,
   pack: null,

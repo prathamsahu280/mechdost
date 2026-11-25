@@ -11,6 +11,7 @@ export const HOME_SECTIONS = [
   'audiences',
   'trust',
   'categories',
+  'vehicles',
   'products',
   'route',
   'service',

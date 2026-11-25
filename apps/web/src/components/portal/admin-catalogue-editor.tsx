@@ -18,6 +18,8 @@ import {
 } from '@mechdost/shared/admin-catalogue';
 import { NET_UNITS } from '@mechdost/shared/product-attributes';
 import { VEHICLE_TYPES } from '@mechdost/shared/vehicles';
+import { DEFAULT_SEGMENT_TEXT, VEHICLE_SEGMENTS } from '@mechdost/shared/vehicle-segments';
+import { AdminSegmentsSaved } from '@mechdost/shared/vehicle-segments-api';
 import { DEMO_CITY } from '@/demo/city';
 import { localName } from '@/lib/admin-analytics-view';
 import { adminApi } from '@/lib/admin-api';
@@ -543,6 +545,7 @@ function SpecsTab({ detail, onSaved }: { detail: AdminProductDetailDto; onSaved:
   const c = useTranslations('catalogue');
   const locale = useLocale();
   const [types, setTypes] = useState<string[]>(detail.vehicleTypes);
+  const [segs, setSegs] = useState<string[]>(detail.segments);
   const [notice, setNotice] = useState<Notice>(null);
   const label = { '2W': c('twoWheeler'), '3W': c('threeWheeler'), '4W': c('fourWheeler') } as const;
 
@@ -561,8 +564,46 @@ function SpecsTab({ detail, onSaved }: { detail: AdminProductDetailDto; onSaved:
     await onSaved();
   }
 
+  async function saveSegments() {
+    const res = await adminApi(
+      locale,
+      `/admin/catalogue/products/${detail.slug}/segments`,
+      AdminSegmentsSaved,
+      { method: 'PUT', body: { version: detail.version, segments: segs } },
+    );
+    setNotice(
+      res.ok
+        ? { kind: 'ok', text: t('cat_saved') }
+        : { kind: 'error', text: t(errorKey(res.code) as 'cat_err_generic') },
+    );
+    await onSaved();
+  }
+
   return (
     <div className="space-y-6">
+      <fieldset>
+        <legend className="text-sm font-extrabold text-ink">{t('cat_segments')}</legend>
+        <p className="mt-1 text-xs text-muted">{t('cat_segmentsHint')}</p>
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+          {VEHICLE_SEGMENTS.map((code) => (
+            <label key={code} className="inline-flex min-h-11 items-center gap-2 text-sm text-ink">
+              <input
+                type="checkbox"
+                checked={segs.includes(code)}
+                onChange={(e) => {
+                  const on = e.currentTarget.checked;
+                  setSegs((prev) => (on ? [...prev, code] : prev.filter((x) => x !== code)));
+                }}
+                className="size-5"
+              />
+              {locale === 'hi' ? DEFAULT_SEGMENT_TEXT[code].nameHi : DEFAULT_SEGMENT_TEXT[code].nameEn}
+            </label>
+          ))}
+        </div>
+        <button type="button" onClick={() => void saveSegments()} className={`${portalPrimary} mt-2`}>
+          {t('cat_saveSegments')}
+        </button>
+      </fieldset>
       <fieldset>
         <legend className="text-sm font-extrabold text-ink">{t('cat_vehicleTypes')}</legend>
         <div className="mt-2 flex flex-wrap gap-3">

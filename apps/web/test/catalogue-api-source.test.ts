@@ -18,6 +18,7 @@ const card: CatalogueCard = {
   specSummary: 'Engine oil for 2W · 20W40 · 900 ml',
   highlights: ['API SL'],
   vehicleTypes: [],
+  segments: [],
   rating: null,
   mrpFromPaise: 47_500,
   mrpVaries: false,

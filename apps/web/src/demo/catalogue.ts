@@ -11,7 +11,7 @@ import { productSearchText } from './i18n/product-search';
 
 // Category constants live in a small module so pages that only need them do not ship the product data.
 export { CATEGORY_KEYS, CATEGORY_SLUGS, categoryFromSlug, type CategoryKey } from './categories';
-import type { CategoryKey } from './categories';
+import { CATEGORY_SLUGS, type CategoryKey } from './categories';
 
 export type VehicleFit = '2W' | '4W' | '2W/4W' | 'EV' | 'CV';
 

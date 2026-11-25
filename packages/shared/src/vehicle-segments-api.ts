@@ -60,3 +60,9 @@ export const CatalogueSegmentsSchema = z.object({ segments: z.array(CatalogueSeg
 export type SegmentRef = z.infer<typeof SegmentRefSchema>;
 export type SegmentFacet = z.infer<typeof SegmentFacetSchema>;
 export type AdminSegment = z.infer<typeof AdminSegmentSchema>;
+
+/** Response of saving a product's segments. */
+export const AdminSegmentsSaved = z.object({
+  version: z.number().int(),
+  segments: z.array(SegmentCodeSchema),
+});
