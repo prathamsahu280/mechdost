@@ -28,6 +28,23 @@ export const BPCL_IMPORT: BatteryImportConfig = {
   event: 'admin_bpcl_imported',
 };
 
+export const SERVO_IMPORT: BatteryImportConfig = {
+  brand: { slug: 'servo', name: 'Servo' },
+  // Old Servo products may sit under an `iocl` brand; they are archived too when not in the plan. Nothing else is touched.
+  alsoArchiveBrands: ['iocl'],
+  specSource: 'servo',
+  auditSource: 'servo_import',
+  event: 'admin_servo_imported',
+};
+
+export const diffServoImport = (db: Tx, plan: readonly PlannedProduct[]): Promise<BatteryRunResult> =>
+  diffBatteryImport(db, SERVO_IMPORT, plan);
+export const applyServoImport = (
+  db: Tx,
+  plan: readonly PlannedProduct[],
+  opts: { staffUserId: string },
+): Promise<BatteryRunResult> => applyBatteryImport(db, SERVO_IMPORT, plan, opts);
+
 /** Read-only: what the import would do (the dry run). Never writes. */
 export const diffHpImport = (db: Tx, plan: readonly PlannedProduct[]): Promise<BatteryRunResult> =>
   diffBatteryImport(db, HP_IMPORT, plan);

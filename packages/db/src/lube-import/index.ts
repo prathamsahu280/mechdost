@@ -9,5 +9,8 @@ export * from './kinds';
 export * from './packs-research';
 export * from './picture';
 export * from './report';
+export * from './servo';
+export * from './servo-packs';
+export * from './features-hi-servo';
 export * from './text';
 export * from './types';

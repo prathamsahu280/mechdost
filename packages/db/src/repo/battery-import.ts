@@ -40,7 +40,8 @@ export interface BatteryImportConfig {
     | 'admin_mrf_imported'
     | 'admin_apollo_imported'
     | 'admin_hp_imported'
-    | 'admin_bpcl_imported';
+    | 'admin_bpcl_imported'
+    | 'admin_servo_imported';
   /** Brands (slugs) whose old products this import archives too (Apollo: Vredestein). Never anything else. */
   alsoArchiveBrands?: readonly string[];
   /** Slugs of existing products that are never archived although they are not in the plan (HP Racer4: it has orders). */

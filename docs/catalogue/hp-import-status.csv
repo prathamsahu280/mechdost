@@ -1,5 +1,5 @@
 source_row,product_type,range,model,name,slug,sku,category,mrp_rupees,warranty_months,fitment_vehicles,picture,photo_kind,status,result
-1,tractor-agri-oils,Agriculture Oils,3.5 L,HP Kisan Shakti,hp-kisan-shakti,HP-KISAN-SHAKTI-3-5-L,tractor-agri-oils,,,0,,model,draft: no_photo_on_site,planned
+1,tractor-agri-oils,Agriculture Oils,Standard pack,HP Kisan Shakti,hp-kisan-shakti,HP-KISAN-SHAKTI-STANDARD-PACK,tractor-agri-oils,,,0,,model,draft: no_photo_on_site,planned
 2,tractor-agri-oils,Agriculture Oils,Standard pack,HP Kisan Shakti UTTO,hp-kisan-shakti-utto,HP-KISAN-SHAKTI-UTTO-STANDARD-PACK,tractor-agri-oils,,,0,pictures/Automotive Oils/HP KISAN SHAKTI UTTO.jpg,model,live,planned
 3,tractor-agri-oils,Agriculture Oils,Standard pack,HP Kisan Tractor Oil 20W-40,hp-kisan-tractor-oil-20w-40,HP-KISAN-TRACTOR-OIL-20W-40-STANDARD-PACK,tractor-agri-oils,,,0,,model,draft: generic_photo_only,planned
 4,tractor-agri-oils,Agriculture Oils,Standard pack,HP Pumpset Oil,hp-pumpset-oil,HP-PUMPSET-OIL-STANDARD-PACK,tractor-agri-oils,,,0,pictures/Automotive Oils/HP PUMPSET OIL.jpg,model,live,planned
@@ -25,7 +25,7 @@ source_row,product_type,range,model,name,slug,sku,category,mrp_rupees,warranty_m
 23,brake-fluid-fork-oil,Brake Fluids,Standard pack,HP Super Duty Brake Fluid DOT 3,hp-super-duty-brake-fluid-dot-3,HP-SUPER-DUTY-BRAKE-FLUID-DOT-3-STANDARD-PACK,brake-fluid-fork-oil,,,0,,model,draft: no_photo_on_site,planned
 24,brake-fluid-fork-oil,Brake Fluids,Standard pack,HP Super Duty Brake Fluid DOT 4,hp-super-duty-brake-fluid-dot-4,HP-SUPER-DUTY-BRAKE-FLUID-DOT-4-STANDARD-PACK,brake-fluid-fork-oil,,,0,,model,draft: no_photo_on_site,planned
 25,heavy-duty-oils,Bs Vi Grades,Standard pack,HP Milcy Turbo GEN6 15W-40,hp-milcy-turbo-gen6-15w-40,HP-MILCY-TURBO-GEN6-15W-40-STANDARD-PACK,heavy-duty-oils,,,0,,model,draft: no_photo_on_site,planned
-25,heavy-duty-oils,Bs Vi Grades,15 L,HP Milcy Turbo GEN6 10W-30,hp-milcy-turbo-gen6-10w-30,HP-MILCY-TURBO-GEN6-10W-30-15-L,heavy-duty-oils,,,0,,model,draft: no_photo_on_site,planned
+25,heavy-duty-oils,Bs Vi Grades,Standard pack,HP Milcy Turbo GEN6 10W-30,hp-milcy-turbo-gen6-10w-30,HP-MILCY-TURBO-GEN6-10W-30-STANDARD-PACK,heavy-duty-oils,,,0,,model,draft: no_photo_on_site,planned
 26,heavy-duty-oils,Bs Vi Grades,Standard pack,HP Milcy Turbo Ultra 10W-30,hp-milcy-turbo-ultra-10w-30,HP-MILCY-TURBO-ULTRA-10W-30-STANDARD-PACK,heavy-duty-oils,,,0,,model,draft: generic_photo_only,planned
 26,heavy-duty-oils,Bs Vi Grades,Standard pack,HP Milcy Turbo Ultra 15W-40,hp-milcy-turbo-ultra-15w-40,HP-MILCY-TURBO-ULTRA-15W-40-STANDARD-PACK,heavy-duty-oils,,,0,,model,draft: generic_photo_only,planned
 27,heavy-duty-oils,Bs Vi Grades,Standard pack,HP Milcy Turbo Ultra+ 10W-40,hp-milcy-turbo-ultra-plus-10w-40,HP-MILCY-TURBO-ULTRA-PLUS-10W-40-STANDARD-PACK,heavy-duty-oils,,,0,,model,draft: generic_photo_only,planned
@@ -97,13 +97,13 @@ source_row,product_type,range,model,name,slug,sku,category,mrp_rupees,warranty_m
 88,heavy-duty-oils,Heavy Duty Diesel Engine Oils,3 L,HP Milcy Pickup,hp-milcy-pickup,HP-MILCY-PICKUP-3-L,heavy-duty-oils,,,0,pictures/Automotive Oils/HP MILCY PICKUP.jpg,model,live,planned
 89,heavy-duty-oils,Heavy Duty Diesel Engine Oils,3 L,HP Milcy Pickup Ultra,hp-milcy-pickup-ultra,HP-MILCY-PICKUP-ULTRA-3-L,heavy-duty-oils,,,0,pictures/Automotive Oils/HP MILCY PICKUP ULTRA.jpg,model,live,planned
 90,heavy-duty-oils,Heavy Duty Diesel Engine Oils,Standard pack,HP Milcy SL3 10W-40,hp-milcy-sl3-10w-40,HP-MILCY-SL3-10W-40-STANDARD-PACK,heavy-duty-oils,,,0,,model,draft: generic_photo_only,planned
-91,heavy-duty-oils,Heavy Duty Diesel Engine Oils,5 L,HP Milcy Super 20W-40,hp-milcy-super-20w-40,HP-MILCY-SUPER-20W-40-5-L,heavy-duty-oils,,,0,"pictures/Automotive Oils/HP MILCY SUPER 20W-40, 20W-50.jpg",model,live,planned
+91,heavy-duty-oils,Heavy Duty Diesel Engine Oils,Standard pack,HP Milcy Super 20W-40,hp-milcy-super-20w-40,HP-MILCY-SUPER-20W-40-STANDARD-PACK,heavy-duty-oils,,,0,"pictures/Automotive Oils/HP MILCY SUPER 20W-40, 20W-50.jpg",model,live,planned
 91,heavy-duty-oils,Heavy Duty Diesel Engine Oils,Standard pack,HP Milcy Super 20W-50,hp-milcy-super-20w-50,HP-MILCY-SUPER-20W-50-STANDARD-PACK,heavy-duty-oils,,,0,"pictures/Automotive Oils/HP MILCY SUPER 20W-40, 20W-50.jpg",model,live,planned
 92,heavy-duty-oils,Heavy Duty Diesel Engine Oils,Standard pack,HP Milcy Synthetic 15W-40,hp-milcy-synthetic-15w-40,HP-MILCY-SYNTHETIC-15W-40-STANDARD-PACK,heavy-duty-oils,,,0,,model,draft: generic_photo_only,planned
 94,heavy-duty-oils,Heavy Duty Diesel Engine Oils,Standard pack,HP Milcy Turbo Supreme 15W-40,hp-milcy-turbo-supreme-15w-40,HP-MILCY-TURBO-SUPREME-15W-40-STANDARD-PACK,heavy-duty-oils,,,0,,model,draft: generic_photo_only,planned
 94,heavy-duty-oils,Heavy Duty Diesel Engine Oils,Standard pack,HP Milcy Turbo Supreme 10W-30,hp-milcy-turbo-supreme-10w-30,HP-MILCY-TURBO-SUPREME-10W-30-STANDARD-PACK,heavy-duty-oils,,,0,,model,draft: generic_photo_only,planned
 95,heavy-duty-oils,Heavy Duty Diesel Engine Oils,Standard pack,HP Milcy Turbo Tech 10W-30,hp-milcy-turbo-tech-10w-30,HP-MILCY-TURBO-TECH-10W-30-STANDARD-PACK,heavy-duty-oils,,,0,,model,draft: generic_photo_only,planned
-96,heavy-duty-oils,Heavy Duty Diesel Engine Oils,7.5 L,HP Milcy Turbo Tech 15W-40,hp-milcy-turbo-tech-15w-40,HP-MILCY-TURBO-TECH-15W-40-7-5-L,heavy-duty-oils,,,0,pictures/Automotive Oils/HP MILCY TURBO TECH 15W-40.jpg,model,live,planned
+96,heavy-duty-oils,Heavy Duty Diesel Engine Oils,Standard pack,HP Milcy Turbo Tech 15W-40,hp-milcy-turbo-tech-15w-40,HP-MILCY-TURBO-TECH-15W-40-STANDARD-PACK,heavy-duty-oils,,,0,pictures/Automotive Oils/HP MILCY TURBO TECH 15W-40.jpg,model,live,planned
 99,heavy-duty-oils,Heavy Duty Diesel Engine Oils,7.5 L,HP Milcy Turbostar 15W-40,hp-milcy-turbostar-15w-40,HP-MILCY-TURBOSTAR-15W-40-7-5-L,heavy-duty-oils,,,0,pictures/Automotive Oils/HP MILCY TURBOSTAR 15W-40.jpg,model,live,planned
 100,heavy-duty-oils,Heavy Duty Diesel Engine Oils,Standard pack,HP Milcy Turbostar 20W-50,hp-milcy-turbostar-20w-50,HP-MILCY-TURBOSTAR-20W-50-STANDARD-PACK,heavy-duty-oils,,,0,,model,draft: generic_photo_only,planned
 101,heavy-duty-oils,Heavy Duty Diesel Engine Oils,Standard pack,HP No.1,hp-no-1,HP-NO-1-STANDARD-PACK,heavy-duty-oils,,,0,,model,draft: generic_photo_only,planned
@@ -133,8 +133,8 @@ source_row,product_type,range,model,name,slug,sku,category,mrp_rupees,warranty_m
 123,car-engine-oil,Passenger Car Engine Oils,Standard pack,HP Neosynth 10W-30,hp-neosynth-10w-30,HP-NEOSYNTH-10W-30-STANDARD-PACK,car-engine-oil,,,0,pictures/Automotive Oils/HP NEOSYNTH 10W-30.jpg,model,live,planned
 124,car-engine-oil,Passenger Car Engine Oils,Standard pack,HP Neosynth 10W-40,hp-neosynth-10w-40,HP-NEOSYNTH-10W-40-STANDARD-PACK,car-engine-oil,,,0,pictures/Automotive Oils/HP NEOSYNTH 10W-40.jpg,model,live,planned
 125,car-engine-oil,Passenger Car Engine Oils,Standard pack,HP Neosynth 15W-40,hp-neosynth-15w-40,HP-NEOSYNTH-15W-40-STANDARD-PACK,car-engine-oil,,,0,,model,draft: generic_photo_only,planned
-126,car-engine-oil,Passenger Car Engine Oils,3.5 L,HP Neosynth 5W-30,hp-neosynth-5w-30,HP-NEOSYNTH-5W-30-3-5-L,car-engine-oil,1880,,0,pictures/Automotive Oils/HP NEOSYNTH 5W-30.jpg,model,live,planned
-127,car-engine-oil,Passenger Car Engine Oils,3.5 L,HP Neosynth 5W-40,hp-neosynth-5w-40,HP-NEOSYNTH-5W-40-3-5-L,car-engine-oil,,,0,pictures/Automotive Oils/HP NEOSYNTH 5W-40.jpg,model,live,planned
+126,car-engine-oil,Passenger Car Engine Oils,3.5 L,HP Neosynth 5W-30,hp-neosynth-5w-30,HP-NEOSYNTH-5W-30-3-5-L,car-engine-oil,,,0,pictures/Automotive Oils/HP NEOSYNTH 5W-30.jpg,model,live,planned
+127,car-engine-oil,Passenger Car Engine Oils,Standard pack,HP Neosynth 5W-40,hp-neosynth-5w-40,HP-NEOSYNTH-5W-40-STANDARD-PACK,car-engine-oil,,,0,pictures/Automotive Oils/HP NEOSYNTH 5W-40.jpg,model,live,planned
 128,car-engine-oil,Passenger Car Engine Oils,Standard pack,HP Neosynth Classic 5W-30,hp-neosynth-classic-5w-30,HP-NEOSYNTH-CLASSIC-5W-30-STANDARD-PACK,car-engine-oil,,,0,pictures/Automotive Oils/HP NEOSYNTH CLASSIC 5W 30.jpg,model,live,planned
 129,car-engine-oil,Passenger Car Engine Oils,Standard pack,HP Neosynth CNG 20W-50,hp-neosynth-cng-20w-50,HP-NEOSYNTH-CNG-20W-50-STANDARD-PACK,car-engine-oil,,,0,,model,draft: generic_photo_only,planned
 132,car-engine-oil,Passenger Car Engine Oils,3.5 L,HP Neosynth Plus 0W-20,hp-neosynth-plus-0w-20,HP-NEOSYNTH-PLUS-0W-20-3-5-L,car-engine-oil,,,0,,model,draft: no_photo_on_site,planned
@@ -153,7 +153,7 @@ source_row,product_type,range,model,name,slug,sku,category,mrp_rupees,warranty_m
 150,speciality-oils,Two Wheeler Engine Oils,Standard pack,HP Air Filter Oil 20W-40,hp-air-filter-oil-20w-40,HP-AIR-FILTER-OIL-20W-40-STANDARD-PACK,speciality-oils,,,0,,model,draft: generic_photo_only,planned
 151,motorcycle-oil,Two Wheeler Engine Oils,Standard pack,HP Racer Duo 5W-30,hp-racer-duo-5w-30,HP-RACER-DUO-5W-30-STANDARD-PACK,motorcycle-oil,,,0,,model,draft: generic_photo_only,planned
 152,motorcycle-oil,Two Wheeler Engine Oils,Standard pack,HP Racer GEN6 10W-30,hp-racer-gen6-10w-30,HP-RACER-GEN6-10W-30-STANDARD-PACK,motorcycle-oil,,,0,"pictures/Automotive Oils/HP RACER GEN6 10W-30, 20W-40.jpg",model,live,planned
-152,motorcycle-oil,Two Wheeler Engine Oils,900 ml,HP Racer GEN6 20W-40,hp-racer-gen6-20w-40,HP-RACER-GEN6-20W-40-900-ML,motorcycle-oil,535,,0,"pictures/Automotive Oils/HP RACER GEN6 10W-30, 20W-40.jpg",model,live,planned
+152,motorcycle-oil,Two Wheeler Engine Oils,900 ml,HP Racer GEN6 20W-40,hp-racer-gen6-20w-40,HP-RACER-GEN6-20W-40-900-ML,motorcycle-oil,,,0,"pictures/Automotive Oils/HP RACER GEN6 10W-30, 20W-40.jpg",model,live,planned
 153,motorcycle-oil,Two Wheeler Engine Oils,Standard pack,HP Racer Green 10W-30,hp-racer-green-10w-30,HP-RACER-GREEN-10W-30-STANDARD-PACK,motorcycle-oil,,,0,,model,draft: generic_photo_only,planned
 154,motorcycle-oil,Two Wheeler Engine Oils,Standard pack,HP Racer Green 20W-40,hp-racer-green-20w-40,HP-RACER-GREEN-20W-40-STANDARD-PACK,motorcycle-oil,,,0,,model,draft: generic_photo_only,planned
 155,motorcycle-oil,Two Wheeler Engine Oils,Standard pack,HP Racer Plus 15W-50,hp-racer-plus-15w-50,HP-RACER-PLUS-15W-50-STANDARD-PACK,motorcycle-oil,,,0,,model,draft: generic_photo_only,planned

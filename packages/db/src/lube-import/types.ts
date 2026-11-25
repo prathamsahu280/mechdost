@@ -50,7 +50,14 @@ export interface LubeItem {
   /** How many products the maker's site shows this picture on (1 = its own). */
   photoSharedBy: number;
   properties: OilProperties;
-  sourceDocs: { productPage: string; dataSheetUrl: string; pictureUrl: string };
+  sourceDocs: {
+    productPage: string;
+    dataSheetUrl: string;
+    pictureUrl: string;
+    /** Seller photos (Servo): the listing the picture came from and what the source says about it. */
+    pictureListing?: string;
+    pictureNote?: string;
+  };
   /** Researched packs only: where each pack's data came from (private; by pack label). */
   packSources?: Record<string, { sourceUrls: string[]; checkedOn: string; confidence: string }>;
   /** Extra typed spec keys (`evRange`). */
@@ -66,6 +73,8 @@ export type SkipReason =
   | 'stationary_gas_engine'
   | 'agri_spray'
   | 'leaflet'
+  | 'no_picture'
+  | 'grade_without_photo'
   | 'not_automotive';
 
 export interface SkippedRow {

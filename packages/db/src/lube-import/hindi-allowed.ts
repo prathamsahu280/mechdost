@@ -133,6 +133,7 @@ const CODES = [
   'egr',
   'atf',
   'tbn',
+  'euro',
   'same',
   'chainspray',
   'dot',

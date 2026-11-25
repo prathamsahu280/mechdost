@@ -454,6 +454,7 @@ const PRIVATE_SPEC_KEYS: ReadonlySet<string> = new Set([
   'sourceChecks',
   'sourceDocs',
   'packSources',
+  'photoFlags',
 ]);
 
 /** A live product page with each active variant's best offer for the PIN (or city). Others → 404. */

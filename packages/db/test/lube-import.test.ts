@@ -9,8 +9,15 @@ import { createTestDb, type TestDb } from '../src/testing';
 import * as s from '../src/schema';
 import { events } from '../src/repo/events';
 import type { CsvRow } from '../src/battery-import';
-import { planBpcl, planHp } from '../src/lube-import';
-import { applyBpclImport, applyHpImport, diffHpImport, getCatalogueProduct, type Tx } from '../src/repo';
+import { planBpcl, planHp, planServo } from '../src/lube-import';
+import {
+  applyBpclImport,
+  applyHpImport,
+  applyServoImport,
+  diffHpImport,
+  getCatalogueProduct,
+  type Tx,
+} from '../src/repo';
 
 const row = (r: Record<string, string>): CsvRow => r;
 const hp = planHp({
@@ -60,12 +67,14 @@ beforeAll(async () => {
   for (const [slug, name] of [
     ['hp', 'HP'],
     ['castrol', 'Castrol'],
+    ['iocl', 'IOCL'],
   ] as const)
     brandIds[slug] = (await db.insert(s.brands).values({ slug, name }).returning())[0]?.id ?? '';
   for (const [brand, slug] of [
     ['hp', 'hp-old-oil'],
     ['hp', 'hp-racer4-20w40-900ml'],
     ['castrol', 'castrol-keep-oil'],
+    ['iocl', 'iocl-old-servo-oil'],
   ] as const) {
     const [p] = await db
       .insert(s.products)
@@ -202,5 +211,40 @@ describe('HP import with researched packs', () => {
     expect(page.spec).not.toHaveProperty('sourceDocs');
     const [p] = await db.select().from(s.products).where(eq(s.products.slug, 'hp-racer-pro-10w-30'));
     expect(JSON.stringify(p?.spec)).toContain('https://example.test/p');
+  });
+});
+
+describe('Servo import', () => {
+  const servo = planServo({
+    products: [
+      row({
+        Product: 'SERVO 4T',
+        Range: 'Automotive lubricating oils',
+        Category: '4 - Stroke Engine Oils',
+        'Grade (SAE / viscosity)': '20W-40',
+        'Picture file': 'pictures/IndiaMART/SERVO 4T.jpeg',
+        'Picture note':
+          'IndiaMART photo, posted by the seller Acme, Raipur. The label shows Servo 4T SAE 20W-40 bottle.',
+        'Data sheet URL': 'https://iocl.test/4t.pdf',
+      }),
+      row({ Product: 'SERVOGEM 3', Range: 'Industrial greases', Category: 'Industrial Greases' }),
+    ],
+  });
+
+  it('creates brand servo with one price-on-request pack, archives old iocl products, never another brand', async () => {
+    const run = await applyServoImport(tx, servo.products, { staffUserId: staff });
+    expect(run.counts).toMatchObject({
+      brandsCreated: 1,
+      productsCreated: 1,
+      packsCreated: 1,
+      productsArchived: 1,
+    });
+    expect(await statusOf('iocl-old-servo-oil')).toBe('archived');
+    expect(await statusOf('castrol-keep-oil')).toBe('live');
+    const page = await getCatalogueProduct(tx, 'servo-4t', { cityCode: 'RPR', locale: 'en' });
+    expect(page.spec).toMatchObject({ maker: 'IndianOil (IOCL)', saeGrade: '20W40' });
+    expect(page.spec).not.toHaveProperty('sourceDocs');
+    expect(page.variants.map((v) => [v.label, v.mrpPaise])).toEqual([['Standard pack', null]]);
+    expect(await db.select().from(events).where(eq(events.event, 'admin_servo_imported'))).toHaveLength(1);
   });
 });
