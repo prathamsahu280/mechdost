@@ -448,4 +448,44 @@ describe('media read per host (security review 2026-11-26: deny by default)', ()
     expect(await can(m.id, c)).toBeNull();
     expect(await can(m.id, b)).not.toBeNull();
   });
+
+  it('the parent chain counts: a removed question hides the voice notes of its answers (review 2026-11-26)', async () => {
+    const [q] = await db
+      .insert(s.ustaadQuestions)
+      .values({ code: 'UQ-RPR-2026-CHAINQ', askerId: a, cityId: f.raipur, title: 'Sawaal' })
+      .returning();
+    if (!q) throw new Error('q');
+    const voice = await verified(b, f.other);
+    await db.insert(s.ustaadAnswers).values({ questionId: q.id, authorId: b, voiceMediaId: voice.id });
+    expect(await can(voice.id, c)).not.toBeNull();
+    await db.update(s.ustaadQuestions).set({ status: 'removed' }).where(eq(s.ustaadQuestions.id, q.id));
+    expect(await can(voice.id, c)).toBeNull();
+  });
+
+  it('a removed post hides the media of its comments', async () => {
+    const [post] = await db
+      .insert(s.ustaadPosts)
+      .values({ authorId: a, cityId: f.raipur, kind: 'text', body: 'Post' })
+      .returning();
+    if (!post) throw new Error('post');
+    const photo = await verified(b, f.other);
+    await db.insert(s.ustaadComments).values({ postId: post.id, authorId: b, mediaId: photo.id });
+    expect(await can(photo.id, c)).not.toBeNull();
+    await db.update(s.ustaadPosts).set({ status: 'removed' }).where(eq(s.ustaadPosts.id, post.id));
+    expect(await can(photo.id, c)).toBeNull();
+  });
+
+  it('a host author who blocked the viewer hides media under their post or question', async () => {
+    const [post] = await db
+      .insert(s.ustaadPosts)
+      .values({ authorId: a, cityId: f.raipur, kind: 'text', body: 'Post' })
+      .returning();
+    if (!post) throw new Error('post');
+    const photo = await verified(b, f.other);
+    await db.insert(s.ustaadComments).values({ postId: post.id, authorId: b, mediaId: photo.id });
+    expect(await can(photo.id, c)).not.toBeNull();
+    await db.insert(s.ustaadBlocks).values({ memberId: a, targetId: c });
+    expect(await can(photo.id, c)).toBeNull();
+    await db.delete(s.ustaadBlocks);
+  });
 });

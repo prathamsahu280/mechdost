@@ -4,7 +4,7 @@
  * conditional increments (never read-then-write), the owner-only complete, the verified/rejected moves through the
  * media machine, and the read check (member, not blocked by the owner, content visible, story not expired).
  */
-import { and, eq, isNotNull, lte, ne, notInArray, or, sql } from 'drizzle-orm';
+import { and, eq, isNotNull, lte, ne, notInArray, or, sql, type SQL } from 'drizzle-orm';
 import { ustaadMediaMachine } from '@mechdost/shared/state';
 import {
   MEDIA_BUCKET_PREFIX,
@@ -345,8 +345,9 @@ export async function rejectUstaadMedia(
  * 2026-11-26): verified, in a live bucket (never quarantine or evidence, AT-UP-8), nobody blocked by the other, and
  * either the viewer owns it or it is attached to at least one host the viewer can see:
  *  - a visible post (a story only before it expires, review focus 2);
- *  - a visible comment whose post or answer is visible too;
- *  - a question that is not removed, a visible answer (voice notes);
+ *  - a visible comment whose post, or answer and its question, is still live;
+ *  - a question that is not removed, a visible answer whose question is not removed (voice notes);
+ *  - for every post, question and answer host: nobody blocked between its author and the viewer;
  *  - a message in a thread the viewer is part of (not deleted);
  *  - the profile photo of a member who has not left and is not banned;
  *  - a job application voice intro: the applicant and the job's employer only;
@@ -385,20 +386,28 @@ export async function readableUstaadMedia(
   if (blocked) return null;
   const m = row.id;
   const v = input.viewerMemberId;
+  // Nobody blocked between the viewer and a host's author (post author, question asker, answer author).
+  const open = (author: SQL) => sql`not exists (select 1 from ustaad_blocks bl
+      where (bl.member_id = ${author} and bl.target_id = ${v}) or (bl.member_id = ${v} and bl.target_id = ${author}))`;
+  const livePost = (p: SQL) =>
+    sql`(${p}.status = 'visible' and (${p}.kind <> 'story' or ${p}.expires_at > ${now}) and ${open(sql`${p}.author_id`)})`;
+  const liveQuestion = sql`(q.status <> 'removed' and ${open(sql`q.asker_id`)})`;
+  const liveAnswer = sql`(a.status = 'visible' and ${open(sql`a.author_id`)} and ${liveQuestion})`;
   const res = await tx.execute(sql`
     select (
       exists (select 1 from ustaad_post_media pm join ustaad_posts p on p.id = pm.post_id
-              where pm.media_id = ${m} and p.status = 'visible' and (p.kind <> 'story' or p.expires_at > ${now}))
-      or exists (select 1 from ustaad_comments c
-              left join ustaad_posts p on p.id = c.post_id
-              left join ustaad_answers a on a.id = c.answer_id
-              where c.media_id = ${m} and c.status = 'visible'
-                and ((p.id is not null and p.status = 'visible' and (p.kind <> 'story' or p.expires_at > ${now}))
-                  or (a.id is not null and a.status = 'visible')))
-      or exists (select 1 from ustaad_questions q where q.voice_media_id = ${m} and q.status <> 'removed')
-      or exists (select 1 from ustaad_answers a where a.voice_media_id = ${m} and a.status = 'visible')
+              where pm.media_id = ${m} and ${livePost(sql`p`)})
+      or exists (select 1 from ustaad_comments c join ustaad_posts p on p.id = c.post_id
+              where c.media_id = ${m} and c.status = 'visible' and ${livePost(sql`p`)})
+      or exists (select 1 from ustaad_comments c join ustaad_answers a on a.id = c.answer_id
+              join ustaad_questions q on q.id = a.question_id
+              where c.media_id = ${m} and c.status = 'visible' and ${liveAnswer})
+      or exists (select 1 from ustaad_questions q where q.voice_media_id = ${m} and ${liveQuestion})
+      or exists (select 1 from ustaad_answers a join ustaad_questions q on q.id = a.question_id
+              where a.voice_media_id = ${m} and ${liveAnswer})
       or exists (select 1 from ustaad_messages msg join ustaad_threads t on t.id = msg.thread_id
-              where msg.media_id = ${m} and msg.deleted_at is null and ${v} in (t.low_id, t.high_id))
+              where msg.media_id = ${m} and msg.deleted_at is null and t.status <> 'blocked'
+                and ${v} in (t.low_id, t.high_id))
       or exists (select 1 from ustaad_members mb where mb.photo_media_id = ${m} and mb.status in ('active', 'restricted'))
       or exists (select 1 from ustaad_job_applications ja join ustaad_jobs j on j.id = ja.job_id
               where ja.voice_intro_media_id = ${m} and ${v} in (ja.member_id, j.employer_member_id))
