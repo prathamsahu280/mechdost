@@ -864,7 +864,7 @@ User 2026-11-15 ~01:00 IST: "go ahead and work on the 1,2,3,4,5,6" (6 = shop Wha
 | 21  | Credit notes: who issues them once Q97 (invoice issuer) is decided, and whether they need a PDF (Q174)                                                                                                                                                                                                           | MechDost `CN` series for orders with a MechDost tax invoice; no PDF                    |
 | 22  | Settling an unsure refund by hand: a second person above an amount threshold (Q175)                                                                                                                                                                                                                              | One finance user other than the requester, no threshold                                |
 | 23  | A second capture for an already paid checkout: refund request or dashboard only (Q176)                                                                                                                                                                                                                           | Flag only; refund from the Razorpay dashboard                                          |
-| 24  | Notification priority per kind editable by admin (hard rule 8): today a code constant (`NOTICE_PRIORITY_OF_KIND`)                                                                                                                                                                                                | Keep the constant until ops asks; then a per-kind override table read by `queueNotice` | After the first week of real use     |
+| 24  | ~~Notification priority per kind editable by admin~~ **Closed 2026-11-25: user ruled no; the code constant stays**                                                                                                                                                                                               | Keep the constant until ops asks; then a per-kind override table read by `queueNotice` | After the first week of real use     |
 
 ## 2026-10-31 — Tooling (see `research/tooling-audit.md`)
 
@@ -1977,3 +1977,10 @@ User: "during forgot password or anything that requires a code, if the code ente
 - **Ranking change:** `SEARCH_WEIGHTS.tyreSize` 1 -> 3, so a size match outranks a brand-only match. A size-only query now filters on the size (it found nothing before).
 - **API additions (additive):** `matchedSizes` on catalogue cards, `matchedSize` on suggestions. Analytics `search_size_match_clicked`.
 - **Not built:** the card line "N sizes . range" (needs an API size-range field); queued as an improvement, no user decision needed.
+
+## 2026-11-25 - User rulings on the open questions (evening)
+
+- **Q229, crawler blocklist: not admin-editable (user: "the block list should not be editable in admin").** The list stays in code (`apps/web/src/lib/crawler-blocklist.ts`); a change needs a deploy. Recorded exception to hard rule 8.
+- **Q231, data sheets: product pages do not offer the lubricant data sheet PDFs (user: "no").** `spec.sourceDocs` stays private (`PRIVATE_SPEC_KEYS`).
+- **PENDING #24, notification priority: not admin-editable (user: "no").** `NOTICE_PRIORITY_OF_KIND` in code stays the single source.
+- Still open: footer WhatsApp number (default hidden), Q232 shared-photo drafts, Super MG other grades (explained: only the 20W-40 can has a photo; recommendation: keep 20W-40 only, or other grades as drafts until photos exist).
