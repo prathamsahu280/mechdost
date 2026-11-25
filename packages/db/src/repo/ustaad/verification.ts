@@ -30,6 +30,7 @@ import { attestationRefusal, vouchesSufficient, vouchRefusal } from '@mechdost/s
 import {
   auditLog,
   cities,
+  userRoles,
   users,
   ustaadAnswers,
   ustaadAttestations,
@@ -53,6 +54,11 @@ type MemberRow = typeof ustaadMembers.$inferSelect;
 const DAY_MS = 86_400_000;
 const ATTEST_TTL_MS = 7 * DAY_MS;
 const VOUCH_TTL_MS = 14 * DAY_MS;
+/**
+ * Vouches that were given at some point (security review 2026-11-26): a revoke never frees a monthly slot or clears a
+ * reciprocal pair. `decided_at` keeps the time it was given (a revoke does not overwrite it).
+ */
+const EVER_GIVEN = ['given', 'revoked'];
 
 async function activeMemberOfUser(tx: Tx, userId: string): Promise<MemberRow> {
   const [m] = await tx.select().from(ustaadMembers).where(eq(ustaadMembers.userId, userId)).limit(1);
@@ -222,21 +228,48 @@ export async function ustaadVerificationStatus(
 }
 
 /** Evidence complete → `requested → in_review` (system). Called after a vouch is given or an attestation confirmed. */
-async function maybeToReview(tx: Tx, memberId: string): Promise<void> {
-  const v = await openVerification(tx, memberId);
-  if (v?.status !== 'requested') return;
+async function evidenceComplete(tx: Tx, verificationId: string): Promise<boolean> {
   const s = await readUstaadSettingValues(tx, ['ustaad.verify.vouches_needed']);
   const [confirmed] = await tx
     .select({ id: ustaadAttestations.id })
     .from(ustaadAttestations)
-    .where(and(eq(ustaadAttestations.verificationId, v.id), eq(ustaadAttestations.status, 'confirmed')))
+    .where(
+      and(eq(ustaadAttestations.verificationId, verificationId), eq(ustaadAttestations.status, 'confirmed')),
+    )
     .limit(1);
+  if (confirmed) return true;
   const given = await tx
     .select({ voucherWorkshopId: ustaadMembers.workshopId })
     .from(ustaadVouches)
     .innerJoin(ustaadMembers, eq(ustaadMembers.id, ustaadVouches.voucherId))
-    .where(and(eq(ustaadVouches.verificationId, v.id), eq(ustaadVouches.status, 'given')));
-  if (!confirmed && !vouchesSufficient(given, Number(s['ustaad.verify.vouches_needed']))) return;
+    .where(and(eq(ustaadVouches.verificationId, verificationId), eq(ustaadVouches.status, 'given')));
+  return vouchesSufficient(given, Number(s['ustaad.verify.vouches_needed']));
+}
+
+/**
+ * After a vouch is taken back (security review 2026-11-26): an open request in review whose evidence is no longer
+ * complete is flagged for staff (`evidence_withdrawn` event; the machine has no way back to `requested`, and staff
+ * decide). The queue view shows the live vouch count.
+ */
+async function recheckEvidence(tx: Tx, memberId: string): Promise<void> {
+  const v = await openVerification(tx, memberId);
+  if (v?.status !== 'in_review' || (await evidenceComplete(tx, v.id))) return;
+  await recordUstaadEvent(tx, {
+    entityType: 'verification',
+    entityId: v.id,
+    kind: 'evidence_withdrawn',
+    fromStatus: 'in_review',
+    toStatus: 'in_review',
+    reasonCode: 'vouch_revoked',
+    actorId: null,
+    actorRole: 'system',
+  });
+}
+
+async function maybeToReview(tx: Tx, memberId: string): Promise<void> {
+  const v = await openVerification(tx, memberId);
+  if (v?.status !== 'requested') return;
+  if (!(await evidenceComplete(tx, v.id))) return;
   ustaadVerificationMachine.assert('requested', 'in_review', 'system');
   const [row] = await tx
     .update(ustaadVerifications)
@@ -313,6 +346,8 @@ export async function giveUstaadVouch(
       .limit(1);
     if (!v) throw new NotFoundError('Vouch not found');
     ustaadVouchMachine.assert(v.status as VouchView['status'], 'given', 'member');
+    if (v.expiresAt.getTime() < Date.now())
+      throw new ConflictError('This request has expired', 'VOUCH_EXPIRED');
     const s = await readUstaadSettingValues(tx, [
       'ustaad.verify.vouch_min_level',
       'ustaad.verify.vouch_min_account_days',
@@ -326,7 +361,7 @@ export async function giveUstaadVouch(
         and(
           eq(ustaadVouches.voucherId, v.voucheeId),
           eq(ustaadVouches.voucheeId, me.id),
-          eq(ustaadVouches.status, 'given'),
+          inArray(ustaadVouches.status, EVER_GIVEN),
         ),
       )
       .limit(1);
@@ -337,7 +372,7 @@ export async function giveUstaadVouch(
       .where(
         and(
           eq(ustaadVouches.voucherId, me.id),
-          eq(ustaadVouches.status, 'given'),
+          inArray(ustaadVouches.status, EVER_GIVEN),
           gte(ustaadVouches.decidedAt, monthAgo),
         ),
       );
@@ -414,7 +449,7 @@ export async function decideUstaadVouch(
       .update(ustaadVouches)
       .set({
         status: input.to,
-        decidedAt: new Date(),
+        ...(input.to === 'declined' ? { decidedAt: new Date() } : {}),
         revokedReasonCode: input.to === 'revoked' ? (input.reasonCode ?? 'other') : null,
       })
       .where(
@@ -426,6 +461,7 @@ export async function decideUstaadVouch(
       )
       .returning();
     if (!row) throw new ConflictError('This vouch changed meanwhile', 'STALE_VOUCH');
+    if (input.to === 'revoked') await recheckEvidence(tx, v.voucheeId);
     if (input.to === 'revoked' && levelAtLeast(me.level as UstaadLevel, 'pakka'))
       await tx
         .update(ustaadMemberCounters)
@@ -453,6 +489,16 @@ export async function decideUstaadVouch(
 
 // ── Attestations by a MechDost workshop (SR-6, partner path) ──────────────────────────────────────────────────
 
+/** True when the user holds any role on the workshop (owner or its staff): they may not attest for themselves. */
+async function hasWorkshopGrant(tx: Tx, userId: string, workshopId: string): Promise<boolean> {
+  const [g] = await tx
+    .select({ id: userRoles.roleId })
+    .from(userRoles)
+    .where(and(eq(userRoles.userId, userId), eq(userRoles.workshopId, workshopId)))
+    .limit(1);
+  return g !== undefined;
+}
+
 /** Member: ask a MechDost workshop's owner to confirm they work there (bell to the workshop's portal). */
 export async function requestUstaadAttestation(
   db: Tx,
@@ -467,6 +513,8 @@ export async function requestUstaadAttestation(
       .where(eq(workshops.id, input.workshopId))
       .limit(1);
     if (w?.status !== 'approved') throw new NotFoundError('Workshop not found');
+    if (await hasWorkshopGrant(tx, actor.userId, w.id))
+      throw new ForbiddenError('You cannot confirm yourself', 'SELF_ATTESTATION');
     const open = await openVerification(tx, m.id);
     if (!open) throw new ValidationError('Ask for verification first', 'USTAAD_NO_REQUEST');
     const [row] = await tx
@@ -553,6 +601,13 @@ export async function confirmUstaadAttestation(
       )
       .limit(1);
     if (!a?.workshopId) throw new NotFoundError('Not found');
+    const [self] = await tx
+      .select({ userId: ustaadMembers.userId })
+      .from(ustaadMembers)
+      .where(eq(ustaadMembers.id, a.memberId))
+      .limit(1);
+    if (self?.userId === actor.userId)
+      throw new ForbiddenError('You cannot confirm yourself', 'SELF_ATTESTATION');
     ustaadAttestationMachine.assert(a.status as AttestationView['status'], input.decision, 'workshop');
     if (a.expiresAt.getTime() < Date.now())
       throw new ConflictError('This request has expired', 'ATTEST_EXPIRED');
@@ -781,7 +836,14 @@ export async function approveUstaadVerification(
     const flipped = await tx
       .update(ustaadAnswers)
       .set({ countsForLevels: true })
-      .where(and(eq(ustaadAnswers.authorId, m.id), eq(ustaadAnswers.countsForLevels, false)))
+      .where(
+        and(
+          eq(ustaadAnswers.authorId, m.id),
+          eq(ustaadAnswers.countsForLevels, false),
+          // Removed or hidden answers never start counting and never earn (security review 2026-11-26).
+          eq(ustaadAnswers.status, 'visible'),
+        ),
+      )
       .returning({ id: ustaadAnswers.id });
     for (const a of flipped)
       await recordIzzat(

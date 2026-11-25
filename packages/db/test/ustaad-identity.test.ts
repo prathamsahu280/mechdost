@@ -9,6 +9,7 @@ import { and, eq } from 'drizzle-orm';
 import {
   approveUstaadVerification,
   confirmUstaadAttestation,
+  decideUstaadVouch,
   getUstaadOnboarding,
   giveUstaadVouch,
   listUstaadAttestationsForWorkshops,
@@ -369,6 +370,10 @@ describe('verification with staff final approval (§ 7.1, SR-8)', () => {
     await db
       .insert(s.ustaadAnswers)
       .values({ questionId: q.id, authorId: m.memberId, body: 'Plug check karo' });
+    // Security review 2026-11-26: a removed answer never starts counting and earns nothing.
+    await db
+      .insert(s.ustaadAnswers)
+      .values({ questionId: q.id, authorId: m.memberId, body: 'Spam', status: 'removed' });
     const v = await requestUstaadVerification(
       t(),
       { userId: m.userId },
@@ -380,7 +385,7 @@ describe('verification with staff final approval (§ 7.1, SR-8)', () => {
       { id: v.id, expectedVersion: v.version, grantedLevel: 'naya' },
     );
     const answers = await db.select().from(s.ustaadAnswers).where(eq(s.ustaadAnswers.authorId, m.memberId));
-    expect(answers.every((a) => a.countsForLevels)).toBe(true);
+    expect(answers.filter((a) => a.countsForLevels).map((a) => a.status)).toEqual(['visible']);
     expect((await counters(m.memberId)).izzat).toBe(2);
   });
 
@@ -485,6 +490,119 @@ describe('vouches (SR-7)', () => {
       'VOUCH_RECIPROCAL',
     );
   });
+
+  // Security review 2026-11-26 (MEDIUM): revoking must not reset the monthly cap or the reciprocity check.
+  it('a revoked vouch still counts for the monthly cap and for reciprocity', async () => {
+    const voucher = await mkMember({ level: 'pakka' });
+    const others = [await mkMember(), await mkMember(), await mkMember(), await mkMember()];
+    for (const o of others.slice(0, 3)) {
+      const v = await requestUstaadVouch(
+        t(),
+        { userId: o.userId },
+        { voucherId: voucher.memberId, relation: 'known_work' },
+      );
+      const g = await giveUstaadVouch(
+        t(),
+        { userId: voucher.userId },
+        { id: v.id, expectedVersion: v.version },
+      );
+      await decideUstaadVouch(
+        t(),
+        { userId: voucher.userId },
+        { id: g.id, expectedVersion: g.version, to: 'revoked', reasonCode: 'mistake' },
+      );
+    }
+    const fourth = others[3];
+    if (!fourth) throw new Error('seed');
+    const v4 = await requestUstaadVouch(
+      t(),
+      { userId: fourth.userId },
+      { voucherId: voucher.memberId, relation: 'known_work' },
+    );
+    await expectCode(
+      giveUstaadVouch(t(), { userId: voucher.userId }, { id: v4.id, expectedVersion: v4.version }),
+      'VOUCH_MONTHLY_CAP',
+    );
+
+    const a = await mkMember({ level: 'pakka' });
+    const b = await mkMember({ level: 'pakka' });
+    const ab = await requestUstaadVouch(
+      t(),
+      { userId: b.userId },
+      { voucherId: a.memberId, relation: 'known_work' },
+    );
+    const g = await giveUstaadVouch(t(), { userId: a.userId }, { id: ab.id, expectedVersion: ab.version });
+    await decideUstaadVouch(
+      t(),
+      { userId: a.userId },
+      { id: g.id, expectedVersion: g.version, to: 'revoked', reasonCode: 'mistake' },
+    );
+    const ba = await requestUstaadVouch(
+      t(),
+      { userId: a.userId },
+      { voucherId: b.memberId, relation: 'known_work' },
+    );
+    await expectCode(
+      giveUstaadVouch(t(), { userId: b.userId }, { id: ba.id, expectedVersion: ba.version }),
+      'VOUCH_RECIPROCAL',
+    );
+  });
+
+  it('an expired vouch request cannot be given', async () => {
+    const vouchee = await mkMember();
+    const voucher = await mkMember({ level: 'pakka' });
+    const v = await requestUstaadVouch(
+      t(),
+      { userId: vouchee.userId },
+      { voucherId: voucher.memberId, relation: 'known_work' },
+    );
+    await db
+      .update(s.ustaadVouches)
+      .set({ expiresAt: new Date(Date.now() - 1000) })
+      .where(eq(s.ustaadVouches.id, v.id));
+    const [row] = await db.select().from(s.ustaadVouches).where(eq(s.ustaadVouches.id, v.id));
+    await expectCode(
+      giveUstaadVouch(t(), { userId: voucher.userId }, { id: v.id, expectedVersion: row?.version ?? 0 }),
+      'VOUCH_EXPIRED',
+    );
+  });
+
+  it('revoking a vouch that completed the evidence flags the request for staff', async () => {
+    const vouchee = await mkMember({ level: 'ustaad_pending', verified: false });
+    await requestUstaadVerification(
+      t(),
+      { userId: vouchee.userId },
+      { proofs: ['vouch'], requestedLevel: 'naya' },
+    );
+    const p1 = await mkMember({ level: 'pakka', workshopId: workshopA });
+    const p2 = await mkMember({ level: 'pakka', workshopId: workshopB });
+    const given = [];
+    for (const p of [p1, p2]) {
+      const v = await requestUstaadVouch(
+        t(),
+        { userId: vouchee.userId },
+        { voucherId: p.memberId, relation: 'worked_together' },
+      );
+      given.push(await giveUstaadVouch(t(), { userId: p.userId }, { id: v.id, expectedVersion: v.version }));
+    }
+    const status = await ustaadVerificationStatus(t(), { userId: vouchee.userId });
+    expect(status?.status).toBe('in_review');
+    const g = given[0];
+    if (!g || !status) throw new Error('seed');
+    await decideUstaadVouch(
+      t(),
+      { userId: p1.userId },
+      { id: g.id, expectedVersion: g.version, to: 'revoked', reasonCode: 'no_longer_know' },
+    );
+    const flags = await db
+      .select()
+      .from(s.ustaadEvents)
+      .where(and(eq(s.ustaadEvents.entityId, status.id), eq(s.ustaadEvents.kind, 'evidence_withdrawn')));
+    expect(flags).toHaveLength(1);
+    expect(await ustaadVerificationStatus(t(), { userId: vouchee.userId })).toMatchObject({
+      vouchesGiven: 1,
+    });
+  });
 });
 
 describe('attestations from a MechDost workshop (SR-6)', () => {
@@ -523,6 +641,51 @@ describe('attestations from a MechDost workshop (SR-6)', () => {
     );
     expect((await ustaadVerificationStatus(t(), { userId: m.userId }))?.status).toBe('in_review');
     expect((await memberRow(m.memberId)).workshopId).toBe(workshopA);
+  });
+
+  // Security review 2026-11-26 (MEDIUM): nobody attests for themselves (SR-6).
+  it('an owner or staff member of the workshop cannot ask it to confirm them, nor confirm themselves', async () => {
+    const owner = await mkMember({ level: 'ustaad_pending', verified: false });
+    await db.insert(s.userRoles).values({
+      userId: owner.userId,
+      roleId:
+        (await db.select({ id: s.roles.id }).from(s.roles).where(eq(s.roles.key, 'workshop_owner')))[0]?.id ??
+        '',
+      workshopId: workshopB,
+    });
+    await requestUstaadVerification(
+      t(),
+      { userId: owner.userId },
+      { proofs: ['owner'], requestedLevel: 'naya' },
+    );
+    await expectCode(
+      requestUstaadAttestation(t(), { userId: owner.userId }, { workshopId: workshopB, sinceYear: null }),
+      'SELF_ATTESTATION',
+    );
+    // A row created some other way is still refused at confirm time.
+    const [open] = await db
+      .select()
+      .from(s.ustaadVerifications)
+      .where(eq(s.ustaadVerifications.memberId, owner.memberId));
+    if (!open) throw new Error('seed');
+    const [a] = await db
+      .insert(s.ustaadAttestations)
+      .values({
+        verificationId: open.id,
+        memberId: owner.memberId,
+        workshopId: workshopB,
+        expiresAt: new Date(Date.now() + DAY),
+      })
+      .returning();
+    if (!a) throw new Error('seed');
+    await expectCode(
+      confirmUstaadAttestation(
+        t(),
+        { userId: owner.userId, workshopIds: [workshopB] },
+        { id: a.id, expectedVersion: a.version, decision: 'confirmed' },
+      ),
+      'SELF_ATTESTATION',
+    );
   });
 });
 

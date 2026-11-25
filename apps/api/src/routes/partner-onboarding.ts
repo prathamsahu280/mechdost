@@ -137,7 +137,14 @@ export async function human(deps: AppDeps, c: Context<AppEnv>, token: string) {
   if (!ok) throw new ApiError(400, 'TURNSTILE_FAILED', 'Complete the check and try again');
 }
 
+/** Spec 23 § 4a: a mechanic application is now the Ustaad Network join; old clients get a stable 410. */
+function refuseMechanic(raw: unknown): void {
+  if (typeof raw === 'object' && raw !== null && (raw as { kind?: unknown }).kind === 'mechanic')
+    throw new ApiError(410, 'MOVED_TO_USTAAD', 'Mechanics now join the Ustaad Network at /ustaad/join');
+}
+
 function parseApplication(raw: unknown) {
+  refuseMechanic(raw);
   const parsed = SellerApplicationSchema.safeParse(raw);
   if (!parsed.success)
     throw new ApiError(400, 'APPLICATION_INVALID', 'Check the highlighted fields', {
