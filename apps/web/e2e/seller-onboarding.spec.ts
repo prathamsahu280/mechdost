@@ -118,7 +118,6 @@ async function signInAdmin(page: Page, next: string) {
   await page.getByLabel('Password', { exact: true }).fill('Raipur@2026');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await page.getByLabel('One-time code').fill('123456');
-  await page.getByRole('button', { name: 'Verify and continue' }).click();
   await expect(page).toHaveURL(new RegExp(`${next}$`));
 }
 
@@ -419,7 +418,6 @@ test.describe('approved seller reaches their shop', () => {
     await page.getByLabel('Mobile number').fill('9123456700');
     await page.getByRole('button', { name: 'Send code' }).click();
     await page.getByLabel('One-time code').fill('123456');
-    await page.getByRole('button', { name: 'Verify and continue' }).click();
     await page.getByLabel('Full name').fill('Kiran Verma');
     await page.getByLabel('Email', { exact: true }).fill('kiran.verma@example.com');
     await page.getByLabel('Create password', { exact: true }).fill('Ghadi#Chowk2026');

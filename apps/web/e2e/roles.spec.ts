@@ -15,7 +15,6 @@ async function signIn(page: Page, phone: string, path = '/login', password = DEM
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   if (STAFF.has(phone)) {
     await page.getByLabel('One-time code').fill('123456');
-    await page.getByRole('button', { name: 'Verify and continue' }).click();
   }
 }
 
@@ -106,10 +105,8 @@ test.describe('sign-in (spec 01: phone OTP once, then password)', () => {
     await expect(page.getByText('Sent by SMS to +91 9123456780.')).toBeVisible();
     await expect(page.getByText(/Resend in \d+s/)).toBeVisible();
     await page.getByLabel('One-time code').fill('111111');
-    await page.getByRole('button', { name: 'Verify and continue' }).click();
     await expect(page.getByText('That code is not right.', { exact: false })).toBeVisible();
     await page.getByLabel('One-time code').fill('123456');
-    await page.getByRole('button', { name: 'Verify and continue' }).click();
 
     await expect(page.getByRole('heading', { name: 'Almost done' })).toBeVisible();
     await page.getByLabel('Full name').fill('Neha Gupta');
@@ -150,7 +147,6 @@ test.describe('sign-in (spec 01: phone OTP once, then password)', () => {
     await page.getByLabel('Mobile number').fill('9876543210');
     await page.getByRole('button', { name: 'Send code' }).click();
     await page.getByLabel('One-time code').fill('123456');
-    await page.getByRole('button', { name: 'Verify and continue' }).click();
     await expect(page.getByText('This number already has an account.', { exact: false })).toBeVisible();
     await expect(page.getByLabel('Mobile number or email')).toHaveValue('9876543210');
   });
@@ -200,7 +196,6 @@ test.describe('sign-in (spec 01: phone OTP once, then password)', () => {
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Two-step verification' })).toBeVisible();
     await page.getByLabel('One-time code').fill('000000');
-    await page.getByRole('button', { name: 'Verify and continue' }).click();
     await expect(page.getByText('That code is not right.', { exact: false })).toBeVisible();
     // No session yet: the console stays locked (the guard asks to sign in; no admin data shows).
     await page.goto('/admin');

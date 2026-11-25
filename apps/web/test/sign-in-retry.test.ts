@@ -1,5 +1,32 @@
 import { describe, expect, it, vi } from 'vitest';
-import { isTransientAuthCode, retryOnce, tokenUsable, TOKEN_MAX_AGE_MS } from '../src/lib/auth/sign-in-retry';
+import {
+  isTransientAuthCode,
+  retryOnce,
+  shouldPrefetch,
+  startsEarlyCheck,
+  tokenUsable,
+  TOKEN_MAX_AGE_MS,
+} from '../src/lib/auth/sign-in-retry';
+
+describe('early Turnstile check across steps (2026-11-25, slow staff code)', () => {
+  const container = { isConnected: true };
+
+  it('starts a check when the previous one was consumed (the record is cleared), even in the same container', () => {
+    const consumedAt = 10_000;
+    // before the fix: the password step used the token and the staff step re-used the container within 60 s
+    expect(shouldPrefetch({ el: container, at: consumedAt }, container, consumedAt + 2_000)).toBe(false);
+    // after the fix: consuming a token clears the record, so the next step starts its own check
+    expect(shouldPrefetch(null, container, consumedAt + 2_000)).toBe(true);
+  });
+
+  it('names the steps that sign in again with a fresh token, so they start the check as they open', () => {
+    expect(startsEarlyCheck('staff')).toBe(true);
+    expect(startsEarlyCheck('signup-profile')).toBe(true);
+    expect(startsEarlyCheck('forgot-password')).toBe(true);
+    expect(startsEarlyCheck('signin')).toBe(false);
+    expect(startsEarlyCheck('signup-otp')).toBe(false);
+  });
+});
 
 describe('sign-in retry helpers (2026-11-23)', () => {
   it('uses a held Turnstile token only while it is young', () => {

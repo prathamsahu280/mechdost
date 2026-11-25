@@ -34,7 +34,6 @@ async function signIn(page: Page, phone: string) {
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   if (phone === ADMIN) {
     await page.getByLabel('One-time code').fill('123456');
-    await page.getByRole('button', { name: 'Verify and continue' }).click();
   }
   await expect(page).not.toHaveURL(/\/login/);
 }

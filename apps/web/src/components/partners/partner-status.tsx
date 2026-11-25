@@ -6,6 +6,7 @@ import { useState, type SyntheticEvent } from 'react';
 import { useApplications } from '@/demo/partner-store';
 import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
+import { useAutoSubmitCode } from '@/lib/auth/use-auto-submit-code';
 import { formatDate } from '@/lib/format';
 import { isValidIndianMobile } from '@/lib/shop-tier1';
 import { APPLICATION_REF, normaliseRef, stageIndex, statusErrorKey } from '@/lib/shop-tools-view';
@@ -75,11 +76,21 @@ function ApiStatus() {
   const [step, setStep] = useState<'form' | 'code' | 'result'>('form');
   const [ref, setRef] = useState('');
   const [phone, setPhone] = useState('');
-  const [code, setCode] = useState('');
   const [view, setView] = useState<ApplicationStatusView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fieldError, setFieldError] = useState<'ref' | 'phone' | 'code' | null>(null);
   const [working, setWorking] = useState(false);
+  // The code is checked by itself at 6 digits (user, 2026-11-25); the button stays as the fallback.
+  const {
+    value: code,
+    setValue: setCode,
+    checking,
+    inputProps,
+  } = useAutoSubmitCode({
+    length: 6,
+    busy: working,
+    submit: (value, auto) => checkCode(value, auto),
+  });
 
   const restart = () => {
     setStep('form');
@@ -140,17 +151,23 @@ function ApiStatus() {
     setStep('code');
   }
 
-  async function onConfirm(e: SyntheticEvent<HTMLFormElement>) {
+  function onConfirm(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
+    void checkCode(code, false);
+  }
+
+  async function checkCode(value: string, auto: boolean) {
+    if (working) return;
     setError(null);
-    if (!/^\d{6}$/.test(code.trim())) {
+    if (!/^\d{6}$/.test(value.trim())) {
       setFieldError('code');
       return;
     }
     setFieldError(null);
     setWorking(true);
+    track('code_submitted', { kind: 'partner_status', auto, path: window.location.pathname });
     const client = await import('@/lib/auth/firebase-client');
-    const r = await client.confirmPhoneCode(code.trim());
+    const r = await client.confirmPhoneCode(value.trim());
     if (!r.ok) {
       setWorking(false);
       setError(`statusErr_${r.reason === 'unavailable' ? 'unavailable' : r.reason}`);
@@ -235,29 +252,26 @@ function ApiStatus() {
           </button>
         </form>
       ) : (
-        <form
-          onSubmit={(e) => void onConfirm(e)}
-          noValidate
-          className="mt-4 space-y-4"
-          aria-busy={working || undefined}
-        >
+        <form onSubmit={onConfirm} noValidate className="mt-4 space-y-4" aria-busy={working || undefined}>
           <div>
             <label htmlFor="status-code" className="text-sm font-bold text-ink">
               {t('statusCode')}
             </label>
             <input
               id="status-code"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={6}
-              value={code}
-              onChange={(e) => {
-                setCode(e.target.value);
-              }}
+              {...inputProps}
               aria-invalid={fieldError === 'code' || undefined}
-              aria-describedby={fieldError === 'code' ? 'status-code-error' : undefined}
+              aria-describedby={
+                fieldError === 'code' ? 'status-code-error status-code-hint' : 'status-code-hint'
+              }
               className={field}
             />
+            <p id="status-code-hint" className="mt-1 text-xs text-muted">
+              {t('statusCodeHint')}
+            </p>
+            <p role="status" className="sr-only">
+              {checking ? t('statusChecking') : ''}
+            </p>
             {fieldError === 'code' ? (
               <p id="status-code-error" className="mt-1 text-sm font-bold text-error">
                 {t('statusCodeInvalid')}
