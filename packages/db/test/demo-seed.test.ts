@@ -28,6 +28,19 @@ afterAll(async () => {
 });
 
 describe('Raipur demo seed', () => {
+  it('gives heavy-vehicle demo products their segments and bikes theirs from the vehicle types (design 2026-11-25)', async () => {
+    await seedRaipurDemo(t(), fixture);
+    const page = await listCatalogue(t(), { cityCode: 'RPR', locale: 'en', segments: ['truck_bus'] });
+    expect(page.items.map((i) => i.slug)).toContain('mrf-steel-muscle-1000r20-truck-tyre');
+    const byCode = Object.fromEntries(page.facets.segments.map((f) => [f.code, f.count]));
+    expect(byCode.tractor_farm).toBeGreaterThanOrEqual(2);
+    expect(byCode.construction_otr).toBeGreaterThanOrEqual(1);
+    expect(byCode.two_wheeler).toBeGreaterThanOrEqual(1);
+    // A second seed keeps what staff set and does not duplicate rows.
+    await seedRaipurDemo(t(), fixture);
+    expect(await db.$count(s.productVehicleSegments)).toBeGreaterThan(0);
+  });
+
   it('loads once, and a second run changes nothing but keeps reservations', async () => {
     const first = await seedRaipurDemo(t(), fixture);
     expect(first.products).toBe(fixture.products.length);

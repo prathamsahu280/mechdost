@@ -70,7 +70,10 @@ export async function loadMoreCards(
     restartOnBadCursor: false,
   });
   return {
-    cards: page.items.map((p) => ({ slug: p.slug, node: <ProductCard key={p.slug} product={p} /> })),
+    cards: page.items.map((p) => ({
+      slug: p.slug,
+      node: <ProductCard key={p.slug} product={p} segmentFilter={query.segments} />,
+    })),
     nextCursor: page.nextCursor,
   };
 }

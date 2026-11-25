@@ -93,7 +93,8 @@ describe('intents', () => {
   it('trucks and tractors have no 2W/3W/4W type but name a vehicle segment (design 2026-11-25)', () => {
     expect(parse('truck oil').vehicleType).toBeNull();
     expect(parse('truck oil').segment).toBe('truck_bus');
-    expect(parse('truck oil').text).toBe('oil');
+    expect(parse('truck oil').text).toBe('truck oil');
+    expect(parse('truck oil').segmentWords).toEqual(['truck']);
     expect(parse('ट्रैक्टर').segment).toBe('tractor_farm');
   });
   it.each([

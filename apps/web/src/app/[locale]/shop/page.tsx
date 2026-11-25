@@ -142,7 +142,9 @@ export default async function ShopPage({ searchParams }: Props) {
       cursor = page.nextCursor;
       if (!cursor) break;
     }
-    cards = Object.fromEntries(items.map((p) => [p.slug, <ProductCard key={p.slug} product={p} />]));
+    cards = Object.fromEntries(
+      items.map((p) => [p.slug, <ProductCard key={p.slug} product={p} segmentFilter={initial.segments} />]),
+    );
     const didYouMean = items.length === 0 && query.q ? await fetchDidYouMean(query.q, locale) : null;
     server = {
       query,

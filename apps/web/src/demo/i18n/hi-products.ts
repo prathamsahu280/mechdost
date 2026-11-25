@@ -147,6 +147,7 @@ export const PRODUCT_HI: Readonly<Record<string, ProductHi>> = {
   },
   // Heavy vehicles, tractors and machines (design 2026-11-25).
   'mrf-steel-muscle-1000r20-truck-tyre': {
+    name: 'स्टील मसल S3L3 10.00 R20',
     spec: '10.00 R20 · 16 PR · ट्यूब टाइप · ट्रक और बस',
     compatibility: '20 इंच रिम वाले ट्रक और बसें',
     highlights: ['मिली-जुली सड़कों के लिए लग पैटर्न', '16 प्लाई रेटिंग', 'दोबारा चढ़ने (रिट्रेड) लायक ढाँचा'],
@@ -180,6 +181,7 @@ export const PRODUCT_HI: Readonly<Record<string, ProductHi>> = {
     highlights: ['API CH-4 ग्रेड', 'खेत के भारी काम में सुरक्षा', '7.5 L पैक'],
   },
   'exide-inva-master-150ah-inverter-battery': {
+    name: 'इन्वा मास्टर 12 V 150 Ah',
     spec: '12 V · 150 Ah · टॉल ट्यूबुलर · घरेलू इन्वर्टर',
     compatibility: 'घर और दुकान के इन्वर्टर (वाहनों के लिए नहीं)',
     highlights: ['लंबा बैकअप', 'कम पानी भरना पड़ता है'],

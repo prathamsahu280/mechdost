@@ -22,6 +22,11 @@ export interface ParsedQuery {
   vehicleWord: string | null;
   /** The vehicle segment a word named ("truck", "tractor", "JCB": design 2026-11-25); the word is removed from `text`. */
   segment: VehicleSegment | null;
+  /**
+   * The text words that named the segment ("truck" in "truck tyre"). They stay in `text` and match a product by its words
+   * as before, or by its segment (an untagged product that says "tractor" is still found, a tagged one need not).
+   */
+  segmentWords: string[];
   categorySlug: string | null;
   /**
    * The text words that are the category's own name ("battery" in "bike battery", "baitri" too, not "coolant"): a
@@ -112,6 +117,7 @@ export function parseSearchQuery(
     vehicleType: null,
     vehicleWord: null,
     segment: null,
+    segmentWords: [],
     categorySlug: null,
     categoryWords: [],
     expansions: {},
@@ -166,14 +172,15 @@ export function parseSearchQuery(
 
   let words = tokenise(rest);
 
-  // Segment intent (truck, tractor, JCB, inverter): first phrase wins; its words leave the text and steer the ranking.
+  // Segment intent (truck, tractor, JCB, inverter): first phrase wins; its words stay in the text (a product may say it)
+  // and the segment also matches them and steers the ranking.
   const segments = phrases(vocab, 'segment');
   for (let i = 0; i < words.length && !out.segment; i++) {
     const hit = phraseAt(segments, words, i);
     const target = hit?.entry.expandsTo[0];
     if (!hit || !isVehicleSegment(target)) continue;
     out.segment = target;
-    words = [...words.slice(0, i), ...words.slice(i + hit.words.length)];
+    out.segmentWords = [...hit.words];
   }
 
   // Vehicle intent: first phrase wins. A 2W/3W/4W word leaves the text (it steers the ranking and is rarely in a

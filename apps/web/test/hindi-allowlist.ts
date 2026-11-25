@@ -28,19 +28,8 @@ const OUR_BRANDS = ['MechDost', 'WhatsApp', 'Meta', 'Razorpay', 'Sentry', 'PostH
 
 /** Product brands come straight from the catalogue's `brand` field, plus model names used in product names. */
 const PRODUCT_BRANDS = [...new Set(DEMO_PRODUCTS.map((p) => p.brand))];
-// Steel Muscle (MRF), Endurace (Apollo), Xpress HD and Inva Master (Exide): model names of the heavy-vehicle demo products.
-const PRODUCT_MODELS = [
-  'Activ',
-  'Actibond',
-  'Advance',
-  'Racer4',
-  'Steel',
-  'Muscle',
-  'Endurace',
-  'Xpress',
-  'Inva',
-  'Master',
-] as const;
+// Endurace (Apollo) and Xpress HD (Exide): model names of the heavy-vehicle demo products.
+const PRODUCT_MODELS = ['Activ', 'Actibond', 'Advance', 'Racer4', 'Endurace', 'Xpress'] as const;
 
 /** Vehicle makes and models (compatibility lines, vehicle placeholders, the demo garage). */
 const VEHICLE_MODELS = [

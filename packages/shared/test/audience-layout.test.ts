@@ -65,7 +65,9 @@ describe('home roadside section (spec 22, user 2026-11-24)', () => {
       'partners',
       'audiences',
     ]);
-    expect(out.indexOf('products')).toBe(out.indexOf('categories') + 1);
+    // "Shop by vehicle" (2026-11-25) sits right after the categories and "products" right after it.
+    expect(out.indexOf('vehicles')).toBe(out.indexOf('categories') + 1);
+    expect(out.indexOf('products')).toBe(out.indexOf('vehicles') + 1);
     expect(new Set(out).size).toBe(HOME_SECTIONS.length);
   });
 });

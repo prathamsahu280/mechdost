@@ -28,12 +28,15 @@ export function ProductCard({
   product,
   scope = 'list',
   compare = true,
+  segmentFilter = [],
 }: {
   product: CardView;
   /** Distinguishes lists on one page (ids of the quick-details popover). */
   scope?: string;
   /** Shows the "Compare" toggle (shop pages, where the compare tray lives; not the home page). */
   compare?: boolean;
+  /** The vehicle segments the list is filtered to: the tag shows the first of the product's segments among them. */
+  segmentFilter?: readonly string[];
 }) {
   const t = useTranslations('catalogue');
   const seg = useTranslations('segments');
@@ -54,8 +57,8 @@ export function ProductCard({
   const sizes = product.sizes;
   const rating = product.rating && product.rating.count > 0 ? product.rating : null;
   const categoryName = product.category.name ?? (product.category.key ? c(product.category.key) : null);
-  // One vehicle-segment tag (design 2026-11-25): the first of the product's own, in the admin's order.
-  const segment = cardSegment(product.segments, []);
+  // One vehicle-segment tag (design 2026-11-25): the filtered segment when there is one, else the first, in the admin's order.
+  const segment = cardSegment(product.segments, segmentFilter);
 
   return (
     <article className="group grid rounded-card border border-line-card bg-surface p-3 shadow-card transition-shadow duration-[var(--duration-base)] hover:shadow-card-hover">

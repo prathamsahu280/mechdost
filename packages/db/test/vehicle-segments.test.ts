@@ -3,6 +3,8 @@
  * trigger and the backfill (category first, vehicle types for general categories, tractor text), the many-to-many
  * table, the listing filter and facet counts, the card tags, the search words and the admin edits.
  */
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq, sql } from 'drizzle-orm';
 import { DEFAULT_SEGMENTS_OF_CATEGORY, defaultSegmentsFor } from '@mechdost/shared/vehicle-segments';
@@ -204,6 +206,29 @@ describe('defaults on insert and the backfill', () => {
       .values({ productId: P['truck-tyre']!, segmentCode: 'truck_bus' });
   });
 
+  it('the read-only preview SQL in spec 02 gives the same counts as the backfill', async () => {
+    const spec = readFileSync(
+      fileURLToPath(new URL('../../../docs/specs/02-catalogue-search.md', import.meta.url)),
+      'utf8',
+    );
+    const preview = /```sql\n([\s\S]*?)```/.exec(spec.replace(/\r\n/g, '\n'))?.[1]?.trim().replace(/;$/, '');
+    expect(preview).toBeDefined();
+    const previewRows = rowsOf<{ segment: string; products: unknown; untagged_categories: string | null }>(
+      await db.execute(sql.raw(preview!)),
+    );
+    const real = rowsOf<{ segment_code: string; n: unknown }>(
+      await db.execute(sql`select ps.segment_code, count(*) as n from product_vehicle_segments ps
+        join products p on p.id = ps.product_id where p.status = 'live' group by 1`),
+    );
+    const tagged = Object.fromEntries(
+      previewRows.filter((r) => r.segment !== '(no segment)').map((r) => [r.segment, Number(r.products)]),
+    );
+    expect(tagged).toEqual(Object.fromEntries(real.map((r) => [r.segment_code, Number(r.n)])));
+    const none = previewRows.find((r) => r.segment === '(no segment)');
+    expect(Number(none?.products)).toBe(1); // grease-plain
+    expect(none?.untagged_categories).toBe('greases');
+  });
+
   it('keeps a product with the same segment once and deletes its rows with the product', async () => {
     await expect(
       db.insert(s.productVehicleSegments).values({ productId: P['truck-tyre']!, segmentCode: 'truck_bus' }),
@@ -319,9 +344,21 @@ describe('search words', () => {
     const page = await listCatalogue(t(), { cityCode: 'RPR', locale: 'en', q: 'truck tyre' });
     const slugs = page.items.map((i) => i.slug);
     expect(slugs).toContain('truck-radial');
-    expect(slugs.indexOf('truck-radial')).toBeLessThan(
-      slugs.indexOf('city-tyre') === -1 ? 99 : slugs.indexOf('city-tyre'),
+    if (slugs.includes('city-tyre'))
+      expect(slugs.indexOf('truck-radial')).toBeLessThan(slugs.indexOf('city-tyre'));
+  });
+
+  it('a segment word still finds an untagged product that says it, and ranks the tagged ones with it', async () => {
+    invalidateSearchVocab();
+    await product('untagged-tractor-grease', 'greases', { name: 'Tractor wheel bearing grease' });
+    await product('farm-battery', 'tractor-batteries', { name: 'Farm starter battery 88 Ah' });
+    const slugs = (await listCatalogue(t(), { cityCode: 'RPR', locale: 'en', q: 'tractor' })).items.map(
+      (i) => i.slug,
     );
+    expect(slugs).toContain('untagged-tractor-grease'); // found by its words, as before the segment existed
+    expect(slugs).toContain('farm-battery'); // found by its segment although its name never says tractor
+    const grease = (await listCatalogue(t(), { cityCode: 'RPR', locale: 'en', q: 'tractor grease' })).items;
+    expect(grease[0]?.slug).toBe('untagged-tractor-grease');
   });
 
   it('the migration turned the old truck / bus / tractor vehicle words into segment words', async () => {

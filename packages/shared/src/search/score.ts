@@ -36,6 +36,8 @@ export function scoreProductText(q: ParsedQuery, p: SearchableProductText): numb
     const group = [w, ...(q.expansions[w] ?? [])];
     let best = 0;
     if (q.categoryWords.includes(w) && p.categorySlug === q.categorySlug) best = W.wordInText;
+    if (q.segmentWords.includes(w) && q.segment !== null && (p.segments ?? []).includes(q.segment))
+      best = Math.max(best, W.wordInText);
     for (const g of group) {
       if (nameHay.includes(g)) best = Math.max(best, W.wordInName);
       else if (textHay.includes(g)) best = Math.max(best, W.wordInText);

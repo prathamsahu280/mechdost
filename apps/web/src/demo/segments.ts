@@ -68,7 +68,7 @@ let cache: { raw: string | null; rows: readonly DemoSegmentRow[] } = {
 };
 
 function snapshot(): readonly DemoSegmentRow[] {
-  let raw: string | null = null;
+  let raw: string | null;
   try {
     raw = window.localStorage.getItem(DEMO_SEGMENTS_KEY);
   } catch {

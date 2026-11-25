@@ -125,7 +125,7 @@ describe('the demo store behind the admin editor', () => {
     expect(saveDemoSegments(rows)).toBe(true);
     const saved = store.get(DEMO_SEGMENTS_KEY);
     expect(saved).toBeDefined();
-    expect(JSON.parse(saved!).truck_bus.nameEn).toBe('Heavy');
+    expect((JSON.parse(saved!) as Record<string, { nameEn: string }>).truck_bus?.nameEn).toBe('Heavy');
   });
   it('reports a browser that refuses to store', () => {
     (

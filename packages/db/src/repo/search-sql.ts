@@ -130,7 +130,8 @@ export function buildSearchSql(parsed: ParsedQuery): SearchSql {
       const wq = sql`(to_tsquery('english', ${lex}) || to_tsquery('simple', ${lex}))`;
       const typo = Array.from(w).length >= 4 ? sql` or ${w} <% p.name or ${w} <% b.name` : sql``;
       const byCategory = category && parsed.categoryWords.includes(w) ? sql` or ${category}` : sql``;
-      return sql`(p.search_vector @@ ${wq}${typo}${byCategory})`;
+      const bySegment = segment && parsed.segmentWords.includes(w) ? sql` or ${segment}` : sql``;
+      return sql`(p.search_vector @@ ${wq}${typo}${byCategory}${bySegment})`;
     });
     match = sql`((${sql.join(perWord, sql` and `)}) or ${anyPart})`;
     textRank = sql`(coalesce(ts_rank(p.search_vector, ${tsq}), 0)

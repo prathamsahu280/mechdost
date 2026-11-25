@@ -2,6 +2,7 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState, type SyntheticEvent } from 'react';
+import { DEFAULT_SEGMENT_TEXT } from '@mechdost/shared/vehicle-segments';
 import { AdminSegmentSchema, AdminSegmentsSchema } from '@mechdost/shared/vehicle-segments-api';
 import type { AdminSegment } from '@mechdost/shared/vehicle-segments-api';
 import { adminApi } from '@/lib/admin-api';
@@ -165,7 +166,11 @@ export function AdminSegments() {
               <li key={r.code} className="py-4">
                 <form
                   onSubmit={(e) => void save(e, r)}
-                  aria-label={r.nameEn}
+                  aria-label={
+                    locale === 'hi'
+                      ? DEFAULT_SEGMENT_TEXT[r.code].nameHi
+                      : DEFAULT_SEGMENT_TEXT[r.code].nameEn
+                  }
                   className="grid gap-3 tab:grid-cols-2 nav:grid-cols-4"
                 >
                   <div>
@@ -262,7 +267,12 @@ export function AdminSegments() {
                   </p>
                   <button type="submit" disabled={busy !== null} className={`${portalPrimary} self-end`}>
                     {t('seg_save')}
-                    <span className="sr-only"> {r.nameEn}</span>
+                    <span className="sr-only">
+                      {' '}
+                      {locale === 'hi'
+                        ? DEFAULT_SEGMENT_TEXT[r.code].nameHi
+                        : DEFAULT_SEGMENT_TEXT[r.code].nameEn}
+                    </span>
                   </button>
                 </form>
               </li>

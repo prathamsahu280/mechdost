@@ -234,3 +234,7 @@ Server: `business_application_submitted { kind, signedIn }`, `business_applicati
 
 Client `code_submitted { kind: signup|reset|staff|partner_status|delivery, auto: boolean, path }` (2026-11-25): a one-time or delivery code was sent for checking; `auto` is true when the field sent it by itself at full length, false for the Submit button. Never the code. Strict schema in `CLIENT_EVENT_SCHEMAS`; emitted from `login-flow.tsx`, `partner-status.tsx`, `shop-portal.tsx`, `shop-portal-api.tsx`. Success or failure is read from the next event (`click` ids such as `sign_up`, `shop_delivery_confirmed`, `shop_delivery_code_wrong`, `auth_code_failed`).
 Storefront edit shortcut (2026-11-25): client `admin_storefront_edit_clicked { slug, from: card|product }`, sent when catalogue staff press the pencil link on a card or the product page (no staff id; the session identifies the actor server-side).
+
+## Vehicle segments (2026-11-25)
+
+Client `shop_segment_filtered { segments: VehicleSegment[], count }` (the shop's chips changed; codes and a count, no text) and `home_segment_tile_clicked { segment }` (a "Shop by vehicle" tile). `admin_site_change` gains `area: 'segments'` (the segment panel saved). Registered in `CLIENT_EVENT_SCHEMAS` (strict), tested in `packages/shared/test/vehicle-segments.test.ts`.

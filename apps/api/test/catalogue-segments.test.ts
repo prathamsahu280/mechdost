@@ -6,7 +6,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { ensureUser, grantRole } from '@mechdost/db/repo';
 import * as s from '@mechdost/db/schema';
-import { bearer, buildApp, type ErrorJson } from './helpers';
+import { bearer, buildApp } from './helpers';
 
 let ctx: Awaited<ReturnType<typeof buildApp>>;
 let staff: Record<string, string>;
@@ -30,9 +30,9 @@ async function person(n: string, role: string | null): Promise<Record<string, st
   return { ...bearer(token), 'content-type': 'application/json' };
 }
 
-const get = async <T>(path: string): Promise<{ status: number; body: T }> => {
+const get = async (path: string): Promise<{ status: number; body: Page }> => {
   const res = await ctx.app.request(`/v1${path}`);
-  return { status: res.status, body: (await res.json()) as T };
+  return { status: res.status, body: (await res.json()) as Page };
 };
 
 interface Card {
@@ -90,17 +90,17 @@ beforeAll(async () => {
 
 describe('public listing', () => {
   it('filters by one or several segments and tags each card', async () => {
-    const truck = await get<Page>('/catalogue/products?segment=truck_bus');
+    const truck = await get('/catalogue/products?segment=truck_bus');
     expect(truck.status).toBe(200);
     expect(truck.body.items.map((i) => i.slug).sort()).toEqual(['truck-tyre-a', 'truck-tyre-b']);
     expect(truck.body.items[0]?.segments).toEqual([{ code: 'truck_bus', name: 'Truck & bus' }]);
-    const both = await get<Page>('/catalogue/products?segment=truck_bus,two_wheeler');
+    const both = await get('/catalogue/products?segment=truck_bus,two_wheeler');
     expect(both.body.items.map((i) => i.slug)).toContain('bike-battery');
     expect(both.body.items).toHaveLength(3);
   });
 
   it('returns facet counts that ignore the segment filter, in the page language', async () => {
-    const hi = await get<Page>('/catalogue/products?segment=two_wheeler&locale=hi');
+    const hi = await get('/catalogue/products?segment=two_wheeler&locale=hi');
     const byCode = Object.fromEntries(hi.body.facets.segments.map((f) => [f.code, f]));
     expect(byCode.truck_bus).toMatchObject({ count: 2, name: 'ट्रक और बस' });
     expect(byCode.two_wheeler?.count).toBe(1);
@@ -110,7 +110,7 @@ describe('public listing', () => {
 
   it('refuses an unknown segment code', async () => {
     for (const bad of ['segment=hovercraft', 'segment=truck_bus,nope']) {
-      expect((await get<ErrorJson>(`/catalogue/products?${bad}`)).status, bad).toBe(400);
+      expect((await get(`/catalogue/products?${bad}`)).status, bad).toBe(400);
     }
   });
 
@@ -143,7 +143,7 @@ describe('admin edits', () => {
       body: JSON.stringify({ version: truck.version, sort: 6 }),
     });
     expect(stale.status).toBe(409);
-    const first = await get<Page>('/catalogue/products');
+    const first = await get('/catalogue/products');
     expect(first.body.facets.segments[0]?.code).toBe('truck_bus'); // sort 5 is first now
     expect(first.body.facets.segments[0]?.name).toBe('Truck, bus & tipper');
   });
@@ -165,7 +165,7 @@ describe('admin edits', () => {
     expect((await put({ version: 99, segments: ['nope'] })).status).toBe(400);
     expect((await put({ version: 99, segments: [], role: 'admin' })).status).toBe(400);
     expect((await put({ version: 1, segments: [] }, 'no-such-product')).status).toBe(404);
-    const tagged = await get<Page>('/catalogue/products?segment=tractor_farm');
+    const tagged = await get('/catalogue/products?segment=tractor_farm');
     expect(tagged.body.items.map((i) => i.slug)).toEqual(['plain-grease']);
   });
 
