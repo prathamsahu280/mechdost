@@ -40,10 +40,11 @@ function find(b: Uint8Array, pattern: readonly number[], from = 0): number {
 }
 
 // ── MP4 / ISO BMFF ────────────────────────────────────────────────────────────────────────────────────────────────
-const TOP = new Set(['ftyp', 'moov', 'mdat', 'free', 'skip', 'wide', 'moof', 'mfra', 'sidx', 'styp']);
+// Fragmented MP4 (moof, mfra, sidx, styp, mvex) is refused in v1: its real length is not in mvhd (review 2026-11-26).
+const TOP = new Set(['ftyp', 'moov', 'mdat', 'free', 'skip', 'wide']);
 /** Container boxes we descend into and the children each may hold; every other box listed is a leaf we accept. */
 const TREE: Record<string, ReadonlySet<string>> = {
-  moov: new Set(['mvhd', 'trak', 'mvex']),
+  moov: new Set(['mvhd', 'trak']),
   trak: new Set(['tkhd', 'edts', 'mdia']),
   edts: new Set(['elst']),
   mdia: new Set(['mdhd', 'hdlr', 'minf']),
@@ -64,7 +65,6 @@ const TREE: Record<string, ReadonlySet<string>> = {
     'sbgp',
     'cslg',
   ]),
-  mvex: new Set(['mehd', 'trex']),
 };
 
 /** Walk every top-level box; only allowed types; then check `moov` (exactly one). */
@@ -213,6 +213,9 @@ const VOID = 0xec;
 const SEGMENT_CHILDREN = new Set([SEEK_HEAD, INFO, TRACKS, CLUSTER, CUES, VOID]);
 const INFO_CHILDREN = new Set([0x2ad7b1, 0x4489, 0x4d80, 0x5741, 0x73a4, 0x4461, VOID]);
 const CLUSTER_CHILDREN = new Set([0xe7, 0xa3, 0xa0, 0xab, 0xa7, VOID]);
+/** Read caps: no element is read whole above these (review 2026-11-26: unbounded reads). */
+const MAX_INFO_BYTES = 64 * 1024;
+const MAX_READ_BYTES = 1024 * 1024;
 
 /** A buffered ranged reader: 1 MB windows, so walking thousands of blocks costs a few reads. */
 function buffered(read: RangeReader, total: number) {
@@ -220,10 +223,10 @@ function buffered(read: RangeReader, total: number) {
   let start = -1;
   let buf: Uint8Array = new Uint8Array();
   return async (at: number, n: number): Promise<Uint8Array> => {
-    if (at < 0 || at >= total) return new Uint8Array();
+    if (at < 0 || at >= total || n > MAX_READ_BYTES) return new Uint8Array();
     if (start < 0 || at < start || at + Math.min(n, total - at) > start + buf.length) {
       start = at;
-      buf = await read(at, Math.min(total, at + Math.max(WINDOW, n)) - 1);
+      buf = await read(at, Math.min(total, at + WINDOW) - 1);
     }
     return buf.subarray(at - start, at - start + n);
   };
@@ -335,6 +338,7 @@ export async function webmCheck(read: RangeReader, total: number): Promise<Conta
     }
     if (h.size === null) return UNREADABLE;
     if (h.id === INFO) {
+      if (h.size > MAX_INFO_BYTES) return UNREADABLE;
       const parsed = parseInfo(await at(h.dataStart, h.size));
       if (parsed === 'extra') return EXTRA;
       if (!parsed) return UNREADABLE;

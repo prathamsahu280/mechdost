@@ -303,6 +303,37 @@ describe('container facts (AT-UP-4, AT-UP-5; review 2026-11-26: allowlists, fail
   });
 });
 
+describe('fragmented MP4 and read caps (review 2026-11-26)', () => {
+  const box2 = (type: string, payload: number[]) => box(type, payload);
+  const reader = (f: Uint8Array) => (a: number, b: number) => Promise.resolve(f.subarray(a, b + 1));
+
+  it('refuses a fragmented MP4 (moof, sidx, styp, mfra at the top; mvex in moov)', async () => {
+    for (const frag of ['moof', 'sidx', 'styp', 'mfra']) {
+      const f = new Uint8Array([...box2('ftyp', ascii('isom')), ...box2(frag, [0, 0, 0, 0])]);
+      expect((await mp4Check(reader(f), f.length)).problem, frag).toBe('location_atom');
+    }
+    expect(
+      mp4Facts(new Uint8Array(box2('moov', box2('mvex', box2('trex', new Array<number>(24).fill(0))))))
+        .problem,
+    ).toBe('location_atom');
+  });
+
+  it('refuses a WebM whose Info claims more than 64 KB, before reading it', async () => {
+    const reads: number[] = [];
+    const header = [0x1a, 0x45, 0xdf, 0xa3, 0x84, 0x42, 0x86, 0x81, 0x01];
+    const seg = [0x18, 0x53, 0x80, 0x67, 0x01, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff];
+    // Info with a 4-byte size of 50 MB.
+    const info = [0x15, 0x49, 0xa9, 0x66, 0x13, 0x00, 0x00, 0x00];
+    const f = new Uint8Array([...header, ...seg, ...info, ...new Array<number>(32).fill(0)]);
+    const read = (a: number, b: number) => {
+      reads.push(b - a + 1);
+      return Promise.resolve(f.subarray(a, b + 1));
+    };
+    expect((await webmCheck(read, 60 * 1024 * 1024)).problem).toBe('unreadable');
+    expect(Math.max(...reads)).toBeLessThanOrEqual(1024 * 1024);
+  });
+});
+
 describe('image re-encoding (AT-UP-1, AT-UP-3)', () => {
   it('drops EXIF GPS and makes the 1080 and 480 variants', async () => {
     const jpeg = await sharp({ create: { width: 1600, height: 1200, channels: 3, background: '#ea5728' } })
