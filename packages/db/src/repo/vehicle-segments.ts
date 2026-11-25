@@ -41,7 +41,7 @@ export async function listAdminSegments(db: Tx): Promise<AdminSegmentRow[]> {
     await db.execute(sql`
       select vs.code, vs.name_en, vs.name_hi, vs.description_en, vs.description_hi, vs.sort, vs.active, vs.version,
         (select count(*) from product_vehicle_segments ps join products p on p.id = ps.product_id
-          where ps.segment_code = vs.code and p.status = 'live') as n
+          where ps.segment_code = vs.code and ${productVisible('p')}) as n
       from vehicle_segments vs order by vs.sort, vs.code`),
   );
   return rows.flatMap((r) =>
