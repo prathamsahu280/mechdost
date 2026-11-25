@@ -43,6 +43,7 @@ Assertions (every state, plus a hover and keyboard-focus sweep over the componen
 - `hscroll`: the page does not scroll sideways.
 - `offphoto`: the round buttons (info, save) of a card never sit on the product picture.
 - `scroll`: the page is the only vertical scroller (side bar and text boxes marked data-scroll excepted); the side bar stays in view under the header after scrolling; never two tall columns stuck at once.
+- `adminhead`: admin page pattern: one header (title = the current side bar item, one-line description), status badges 12 px or more and never clipped, empty states with at most one action, tables only scroll inside their own box.
 - `focus`: a visible, unclipped focus ring on every control reached by Tab.
 - `console`: no console error, page error or failed request to our server.
 - `sync`: controls agree with the stored state (compare pressed = in list, stepper = in cart, tray count).
@@ -147,6 +148,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | ADM-SETTINGS          | Admin console (/admin)                                                     | Admin section: settings (section bar, tables, actions)                                                                                                                                                                                                                          | pairwise | 16       | 0       |
 | ADM-NOTIFICATIONS     | Admin console (/admin)                                                     | Admin section: notifications (section bar, tables, actions)                                                                                                                                                                                                                     | pairwise | 16       | 0       |
 | ADM-SCROLL            | Admin console (/admin)                                                     | Scroll geometry: one page scroller, side bar in view after scrolling, no second scroller (overview, orders, catalogue, content, settings, notifications)                                                                                                                        | cross    | 30       | 0       |
+| ADM-HEADER            | Admin console (/admin)                                                     | Page pattern: one header per section (title = side bar item, one-line description, primary action on the right), status badges, empty states, table boxes; 320 to 1920 px, both themes, English and Hindi                                                                       | pairwise | 96       | 0       |
 | NAV-HEADER            | Navigation                                                                 | Header nav (1024 px and up): current item, hover, focus, every role and route                                                                                                                                                                                                   | cross    | 38       | 1       |
 | NAV-TABBAR            | Navigation                                                                 | Floating dock (under 1024 px): current tab, long Hindi labels, every role, walk                                                                                                                                                                                                 | cross    | 31       | 2       |
 | NAV-ACCOUNT           | Navigation                                                                 | Account section bar: current section on each of the nine sections (scrolls on phones)                                                                                                                                                                                           | cross    | 80       | 1       |
@@ -206,9 +208,10 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ADM-AUDIT         | Admin → Audit log, real sign-in                                            | Audit log: filters, entries (closed and open with before/after), more, empty, load error                                                                                                                                                                                        | pairwise | 32       | 0       |
 | API-ADM-EXPORTS       | Admin → Exports, real sign-in                                              | CSV exports: the form (dataset, city, dates), customers with masked or open contacts, done, empty file, too many rows, expired link, range over 180 days, nothing allowed, load error                                                                                           | pairwise | 80       | 0       |
 | API-ADM-SCROLL        | Admin console, real sign-in                                                | Scroll geometry: the page is the only vertical scroller, the side bar stays in view under the header after scrolling, never two tall columns stuck (overview, orders, catalogue, customers, settings, audit log)                                                                | cross    | 30       | 0       |
+| API-ADM-HEADER        | Admin console, real sign-in                                                | Page pattern: one header per section (title = side bar item, one-line description, primary action on the right), status badges, empty states, table boxes; 320 to 1920 px, both themes, English and Hindi                                                                       | pairwise | 138      | 0       |
 | API-NAV-ADMIN         | Navigation, real sign-in                                                   | Admin section bar with every real-mode section (Analytics, Refunds, Errors included): current item, scroll, walk                                                                                                                                                                | cross    | 184      | 0       |
 | API-NAV-ACCOUNT       | Navigation, real sign-in                                                   | Account section bar in a real-sign-in build: current item, scroll, walk                                                                                                                                                                                                         | cross    | 104      | 0       |
-| **Total**             |                                                                            |                                                                                                                                                                                                                                                                                 |          | **4845** | **105** |
+| **Total**             |                                                                            |                                                                                                                                                                                                                                                                                 |          | **5079** | **105** |
 
 ## Chrome
 
@@ -2919,6 +2922,107 @@ Full cross of the high-risk dimensions, the rest pairwise; 30 states; scope `mai
 - [ ] ADM-SCROLL-028 · 1920px · dark · hi · admin · world=busy · /admin/content · asserts: present scroll hscroll console hindi
 - [ ] ADM-SCROLL-029 · 1920px · light · en · admin · world=busy · /admin/settings · asserts: present scroll hscroll console axe
 - [ ] ADM-SCROLL-030 · 1920px · dark · hi · admin · world=busy · /admin/notifications · asserts: present scroll hscroll console hindi
+
+### ADM-HEADER — Page pattern: one header per section (title = side bar item, one-line description, primary action on the right), status badges, empty states, table boxes; 320 to 1920 px, both themes, English and Hindi
+
+Pairwise (all pairs of values); 96 states; scope `main`.
+
+- [ ] ADM-HEADER-001 · 320px · light · en · admin · world=busy · /admin · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-002 · 320px · dark · hi · admin · world=busy · /admin/orders · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-003 · 320px · light · hi · admin · world=busy · /admin/services · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-004 · 320px · dark · en · admin · world=busy · /admin/roadside · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-005 · 320px · light · en · admin · world=busy · /admin/quotes · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-006 · 320px · dark · hi · admin · world=busy · /admin/applications · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-007 · 320px · light · en · admin · world=busy · /admin/partners · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-008 · 320px · dark · hi · admin · world=busy · /admin/catalogue · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-009 · 320px · light · en · admin · world=busy · /admin/customers · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-010 · 320px · dark · hi · admin · world=busy · /admin/reviews · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-011 · 320px · light · en · admin · world=busy · /admin/support · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-012 · 320px · dark · hi · admin · world=busy · /admin/coins · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-013 · 320px · light · en · admin · world=busy · /admin/content · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-014 · 320px · dark · hi · admin · world=busy · /admin/layout · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-015 · 320px · light · en · admin · world=busy · /admin/settings · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-016 · 320px · dark · hi · admin · world=busy · /admin/notifications · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-017 · 390px · dark · hi · admin · world=busy · /admin · asserts: present adminhead hscroll console hindi axe
+- [ ] ADM-HEADER-018 · 390px · light · en · admin · world=busy · /admin/orders · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-019 · 390px · dark · en · admin · world=busy · /admin/services · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-020 · 390px · light · hi · admin · world=busy · /admin/roadside · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-021 · 390px · dark · hi · admin · world=busy · /admin/quotes · asserts: present adminhead hscroll console hindi axe
+- [ ] ADM-HEADER-022 · 390px · light · en · admin · world=busy · /admin/applications · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-023 · 390px · dark · hi · admin · world=busy · /admin/partners · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-024 · 390px · light · en · admin · world=busy · /admin/catalogue · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-025 · 390px · dark · hi · admin · world=busy · /admin/customers · asserts: present adminhead hscroll console hindi axe
+- [ ] ADM-HEADER-026 · 390px · light · en · admin · world=busy · /admin/reviews · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-027 · 390px · dark · hi · admin · world=busy · /admin/support · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-028 · 390px · light · en · admin · world=busy · /admin/coins · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-029 · 390px · dark · hi · admin · world=busy · /admin/content · asserts: present adminhead hscroll console hindi axe
+- [ ] ADM-HEADER-030 · 390px · light · en · admin · world=busy · /admin/layout · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-031 · 390px · dark · hi · admin · world=busy · /admin/settings · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-032 · 390px · light · en · admin · world=busy · /admin/notifications · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-033 · 768px · light · en · admin · world=busy · /admin · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-034 · 768px · dark · hi · admin · world=busy · /admin/orders · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-035 · 768px · light · en · admin · world=busy · /admin/services · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-036 · 768px · dark · hi · admin · world=busy · /admin/roadside · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-037 · 768px · light · en · admin · world=busy · /admin/quotes · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-038 · 768px · dark · hi · admin · world=busy · /admin/applications · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-039 · 768px · light · en · admin · world=busy · /admin/partners · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-040 · 768px · dark · hi · admin · world=busy · /admin/catalogue · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-041 · 768px · light · en · admin · world=busy · /admin/customers · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-042 · 768px · dark · hi · admin · world=busy · /admin/reviews · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-043 · 768px · light · en · admin · world=busy · /admin/support · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-044 · 768px · dark · hi · admin · world=busy · /admin/coins · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-045 · 768px · light · en · admin · world=busy · /admin/content · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-046 · 768px · dark · hi · admin · world=busy · /admin/layout · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-047 · 768px · light · en · admin · world=busy · /admin/settings · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-048 · 768px · dark · hi · admin · world=busy · /admin/notifications · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-049 · 1024px · light · en · admin · world=busy · /admin · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-050 · 1024px · dark · hi · admin · world=busy · /admin/orders · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-051 · 1024px · light · en · admin · world=busy · /admin/services · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-052 · 1024px · dark · hi · admin · world=busy · /admin/roadside · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-053 · 1024px · light · en · admin · world=busy · /admin/quotes · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-054 · 1024px · dark · hi · admin · world=busy · /admin/applications · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-055 · 1024px · light · en · admin · world=busy · /admin/partners · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-056 · 1024px · dark · hi · admin · world=busy · /admin/catalogue · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-057 · 1024px · light · en · admin · world=busy · /admin/customers · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-058 · 1024px · dark · hi · admin · world=busy · /admin/reviews · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-059 · 1024px · light · en · admin · world=busy · /admin/support · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-060 · 1024px · dark · hi · admin · world=busy · /admin/coins · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-061 · 1024px · light · en · admin · world=busy · /admin/content · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-062 · 1024px · dark · hi · admin · world=busy · /admin/layout · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-063 · 1024px · light · en · admin · world=busy · /admin/settings · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-064 · 1024px · dark · hi · admin · world=busy · /admin/notifications · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-065 · 1440px · light · en · admin · world=busy · /admin · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-066 · 1440px · dark · hi · admin · world=busy · /admin/orders · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-067 · 1440px · light · en · admin · world=busy · /admin/services · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-068 · 1440px · dark · hi · admin · world=busy · /admin/roadside · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-069 · 1440px · light · en · admin · world=busy · /admin/quotes · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-070 · 1440px · dark · hi · admin · world=busy · /admin/applications · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-071 · 1440px · light · en · admin · world=busy · /admin/partners · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-072 · 1440px · dark · hi · admin · world=busy · /admin/catalogue · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-073 · 1440px · light · en · admin · world=busy · /admin/customers · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-074 · 1440px · dark · hi · admin · world=busy · /admin/reviews · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-075 · 1440px · light · en · admin · world=busy · /admin/support · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-076 · 1440px · dark · hi · admin · world=busy · /admin/coins · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-077 · 1440px · light · en · admin · world=busy · /admin/content · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-078 · 1440px · dark · hi · admin · world=busy · /admin/layout · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-079 · 1440px · light · en · admin · world=busy · /admin/settings · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-080 · 1440px · dark · hi · admin · world=busy · /admin/notifications · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-081 · 1920px · light · en · admin · world=busy · /admin · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-082 · 1920px · dark · hi · admin · world=busy · /admin/orders · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-083 · 1920px · light · en · admin · world=busy · /admin/services · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-084 · 1920px · dark · hi · admin · world=busy · /admin/roadside · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-085 · 1920px · light · en · admin · world=busy · /admin/quotes · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-086 · 1920px · dark · hi · admin · world=busy · /admin/applications · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-087 · 1920px · light · en · admin · world=busy · /admin/partners · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-088 · 1920px · dark · hi · admin · world=busy · /admin/catalogue · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-089 · 1920px · light · en · admin · world=busy · /admin/customers · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-090 · 1920px · dark · hi · admin · world=busy · /admin/reviews · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-091 · 1920px · light · en · admin · world=busy · /admin/support · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-092 · 1920px · dark · hi · admin · world=busy · /admin/coins · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-093 · 1920px · light · en · admin · world=busy · /admin/content · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-094 · 1920px · dark · hi · admin · world=busy · /admin/layout · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-095 · 1920px · light · en · admin · world=busy · /admin/settings · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-096 · 1920px · dark · hi · admin · world=busy · /admin/notifications · asserts: present adminhead hscroll console hindi
 
 ## Navigation
 
@@ -5659,6 +5763,149 @@ Full cross of the high-risk dimensions, the rest pairwise; 30 states; scope `mai
 - [ ] API-ADM-SCROLL-028 · 1920px · dark · hi · admin · world=empty · /admin/customers · asserts: present scroll hscroll console hindi
 - [ ] API-ADM-SCROLL-029 · 1920px · light · en · admin · world=empty · /admin/settings · asserts: present scroll hscroll console axe
 - [ ] API-ADM-SCROLL-030 · 1920px · dark · hi · admin · world=empty · /admin/audit · asserts: present scroll hscroll console hindi
+
+### API-ADM-HEADER — Page pattern: one header per section (title = side bar item, one-line description, primary action on the right), status badges, empty states, table boxes; 320 to 1920 px, both themes, English and Hindi
+
+Pairwise (all pairs of values); 138 states; scope `main`.
+
+- [ ] API-ADM-HEADER-001 · 320px · light · en · admin · world=empty · /admin · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-002 · 320px · dark · hi · admin · world=empty · /admin/analytics · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-003 · 320px · light · hi · admin · world=empty · /admin/orders · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-004 · 320px · dark · en · admin · world=empty · /admin/refunds · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-005 · 320px · light · en · admin · world=empty · /admin/services · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-006 · 320px · dark · hi · admin · world=empty · /admin/roadside · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-007 · 320px · light · en · admin · world=empty · /admin/quotes · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-008 · 320px · dark · hi · admin · world=empty · /admin/applications · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-009 · 320px · light · en · admin · world=empty · /admin/partners · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-010 · 320px · dark · hi · admin · world=empty · /admin/catalogue · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-011 · 320px · light · en · admin · world=empty · /admin/customers · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-012 · 320px · dark · hi · admin · world=empty · /admin/reviews · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-013 · 320px · light · en · admin · world=empty · /admin/support · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-014 · 320px · dark · hi · admin · world=empty · /admin/coins · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-015 · 320px · light · en · admin · world=empty · /admin/coupons · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-016 · 320px · dark · hi · admin · world=empty · /admin/content · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-017 · 320px · light · en · admin · world=empty · /admin/layout · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-018 · 320px · dark · hi · admin · world=empty · /admin/settings · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-019 · 320px · light · en · admin · world=empty · /admin/notifications · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-020 · 320px · dark · hi · admin · world=empty · /admin/staff · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-021 · 320px · light · en · admin · world=empty · /admin/audit · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-022 · 320px · dark · hi · admin · world=empty · /admin/exports · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-023 · 320px · light · en · admin · world=empty · /admin/errors · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-024 · 390px · dark · hi · admin · world=empty · /admin · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-025 · 390px · light · en · admin · world=empty · /admin/analytics · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-026 · 390px · dark · en · admin · world=empty · /admin/orders · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-027 · 390px · light · hi · admin · world=empty · /admin/refunds · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-028 · 390px · dark · hi · admin · world=empty · /admin/services · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-029 · 390px · light · en · admin · world=empty · /admin/roadside · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-030 · 390px · dark · hi · admin · world=empty · /admin/quotes · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-031 · 390px · light · en · admin · world=empty · /admin/applications · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-032 · 390px · dark · hi · admin · world=empty · /admin/partners · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-033 · 390px · light · en · admin · world=empty · /admin/catalogue · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-034 · 390px · dark · hi · admin · world=empty · /admin/customers · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-035 · 390px · light · en · admin · world=empty · /admin/reviews · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-036 · 390px · dark · hi · admin · world=empty · /admin/support · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-037 · 390px · light · en · admin · world=empty · /admin/coins · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-038 · 390px · dark · hi · admin · world=empty · /admin/coupons · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-039 · 390px · light · en · admin · world=empty · /admin/content · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-040 · 390px · dark · hi · admin · world=empty · /admin/layout · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-041 · 390px · light · en · admin · world=empty · /admin/settings · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-042 · 390px · dark · hi · admin · world=empty · /admin/notifications · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-043 · 390px · light · en · admin · world=empty · /admin/staff · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-044 · 390px · dark · hi · admin · world=empty · /admin/audit · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-045 · 390px · light · en · admin · world=empty · /admin/exports · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-046 · 390px · dark · hi · admin · world=empty · /admin/errors · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-047 · 768px · light · en · admin · world=empty · /admin · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-048 · 768px · dark · hi · admin · world=empty · /admin/analytics · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-049 · 768px · light · en · admin · world=empty · /admin/orders · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-050 · 768px · dark · hi · admin · world=empty · /admin/refunds · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-051 · 768px · light · en · admin · world=empty · /admin/services · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-052 · 768px · dark · hi · admin · world=empty · /admin/roadside · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-053 · 768px · light · en · admin · world=empty · /admin/quotes · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-054 · 768px · dark · hi · admin · world=empty · /admin/applications · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-055 · 768px · light · en · admin · world=empty · /admin/partners · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-056 · 768px · dark · hi · admin · world=empty · /admin/catalogue · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-057 · 768px · light · en · admin · world=empty · /admin/customers · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-058 · 768px · dark · hi · admin · world=empty · /admin/reviews · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-059 · 768px · light · en · admin · world=empty · /admin/support · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-060 · 768px · dark · hi · admin · world=empty · /admin/coins · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-061 · 768px · light · en · admin · world=empty · /admin/coupons · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-062 · 768px · dark · hi · admin · world=empty · /admin/content · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-063 · 768px · light · en · admin · world=empty · /admin/layout · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-064 · 768px · dark · hi · admin · world=empty · /admin/settings · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-065 · 768px · light · en · admin · world=empty · /admin/notifications · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-066 · 768px · dark · hi · admin · world=empty · /admin/staff · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-067 · 768px · light · en · admin · world=empty · /admin/audit · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-068 · 768px · dark · hi · admin · world=empty · /admin/exports · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-069 · 768px · light · en · admin · world=empty · /admin/errors · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-070 · 1024px · dark · hi · admin · world=empty · /admin · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-071 · 1024px · light · en · admin · world=empty · /admin/analytics · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-072 · 1024px · dark · hi · admin · world=empty · /admin/orders · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-073 · 1024px · light · en · admin · world=empty · /admin/refunds · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-074 · 1024px · dark · hi · admin · world=empty · /admin/services · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-075 · 1024px · light · en · admin · world=empty · /admin/roadside · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-076 · 1024px · dark · hi · admin · world=empty · /admin/quotes · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-077 · 1024px · light · en · admin · world=empty · /admin/applications · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-078 · 1024px · dark · hi · admin · world=empty · /admin/partners · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-079 · 1024px · light · en · admin · world=empty · /admin/catalogue · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-080 · 1024px · dark · hi · admin · world=empty · /admin/customers · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-081 · 1024px · light · en · admin · world=empty · /admin/reviews · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-082 · 1024px · dark · hi · admin · world=empty · /admin/support · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-083 · 1024px · light · en · admin · world=empty · /admin/coins · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-084 · 1024px · dark · hi · admin · world=empty · /admin/coupons · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-085 · 1024px · light · en · admin · world=empty · /admin/content · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-086 · 1024px · dark · hi · admin · world=empty · /admin/layout · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-087 · 1024px · light · en · admin · world=empty · /admin/settings · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-088 · 1024px · dark · hi · admin · world=empty · /admin/notifications · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-089 · 1024px · light · en · admin · world=empty · /admin/staff · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-090 · 1024px · dark · hi · admin · world=empty · /admin/audit · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-091 · 1024px · light · en · admin · world=empty · /admin/exports · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-092 · 1024px · dark · hi · admin · world=empty · /admin/errors · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-093 · 1440px · light · en · admin · world=empty · /admin · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-094 · 1440px · dark · hi · admin · world=empty · /admin/analytics · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-095 · 1440px · light · en · admin · world=empty · /admin/orders · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-096 · 1440px · dark · hi · admin · world=empty · /admin/refunds · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-097 · 1440px · light · en · admin · world=empty · /admin/services · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-098 · 1440px · dark · hi · admin · world=empty · /admin/roadside · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-099 · 1440px · light · en · admin · world=empty · /admin/quotes · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-100 · 1440px · dark · hi · admin · world=empty · /admin/applications · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-101 · 1440px · light · en · admin · world=empty · /admin/partners · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-102 · 1440px · dark · hi · admin · world=empty · /admin/catalogue · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-103 · 1440px · light · en · admin · world=empty · /admin/customers · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-104 · 1440px · dark · hi · admin · world=empty · /admin/reviews · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-105 · 1440px · light · en · admin · world=empty · /admin/support · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-106 · 1440px · dark · hi · admin · world=empty · /admin/coins · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-107 · 1440px · light · en · admin · world=empty · /admin/coupons · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-108 · 1440px · dark · hi · admin · world=empty · /admin/content · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-109 · 1440px · light · en · admin · world=empty · /admin/layout · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-110 · 1440px · dark · hi · admin · world=empty · /admin/settings · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-111 · 1440px · light · en · admin · world=empty · /admin/notifications · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-112 · 1440px · dark · hi · admin · world=empty · /admin/staff · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-113 · 1440px · light · en · admin · world=empty · /admin/audit · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-114 · 1440px · dark · hi · admin · world=empty · /admin/exports · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-115 · 1440px · light · en · admin · world=empty · /admin/errors · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-116 · 1920px · dark · hi · admin · world=empty · /admin · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-117 · 1920px · light · en · admin · world=empty · /admin/analytics · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-118 · 1920px · dark · hi · admin · world=empty · /admin/orders · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-119 · 1920px · light · en · admin · world=empty · /admin/refunds · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-120 · 1920px · dark · hi · admin · world=empty · /admin/services · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-121 · 1920px · light · en · admin · world=empty · /admin/roadside · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-122 · 1920px · dark · hi · admin · world=empty · /admin/quotes · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-123 · 1920px · light · en · admin · world=empty · /admin/applications · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-124 · 1920px · dark · hi · admin · world=empty · /admin/partners · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-125 · 1920px · light · en · admin · world=empty · /admin/catalogue · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-126 · 1920px · dark · hi · admin · world=empty · /admin/customers · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-127 · 1920px · light · en · admin · world=empty · /admin/reviews · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-128 · 1920px · dark · hi · admin · world=empty · /admin/support · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-129 · 1920px · light · en · admin · world=empty · /admin/coins · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-130 · 1920px · dark · hi · admin · world=empty · /admin/coupons · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-131 · 1920px · light · en · admin · world=empty · /admin/content · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-132 · 1920px · dark · hi · admin · world=empty · /admin/layout · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-133 · 1920px · light · en · admin · world=empty · /admin/settings · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-134 · 1920px · dark · hi · admin · world=empty · /admin/notifications · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-135 · 1920px · light · en · admin · world=empty · /admin/staff · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-136 · 1920px · dark · hi · admin · world=empty · /admin/audit · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-137 · 1920px · light · en · admin · world=empty · /admin/exports · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-138 · 1920px · dark · hi · admin · world=empty · /admin/errors · asserts: present adminhead hscroll console hindi
 
 ## Navigation, real sign-in
 

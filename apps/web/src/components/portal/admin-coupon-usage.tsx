@@ -97,7 +97,7 @@ export function AdminCouponUsage({ couponId, onClose }: { couponId: string; onCl
             <p className="text-sm text-muted">{t('u_empty')}</p>
           ) : (
             <AdminTable label={t('u_title', { code: load.report.code })}>
-              <table className={adminTableClass}>
+              <table className={`${adminTableClass} min-w-[420px]`}>
                 <thead>
                   <tr>
                     <th scope="col" className={adminTh}>

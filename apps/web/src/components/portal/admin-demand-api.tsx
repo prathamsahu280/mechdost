@@ -50,7 +50,7 @@ export function AdminDemandApi() {
         <>
           <p className="text-sm font-bold text-ink">{t('total', { count: load.demand.totalWaiting })}</p>
           <AdminTable label={t('title')}>
-            <table className={adminTableClass}>
+            <table className={`${adminTableClass} min-w-[34rem]`}>
               <thead>
                 <tr>
                   <th scope="col" className={adminTh}>

@@ -186,7 +186,8 @@ function navSectionMocks(c: AuditCase): Mock[] {
   const admin = c.code === 'API-NAV-ADMIN' || scroll;
   const first = sectionCases.filter((x) => x.code.startsWith('API-ADM-') === admin);
   const rest = sectionCases.filter((x) => x.code.startsWith('API-ADM-') !== admin);
-  return [...first, ...rest].flatMap((x) => mocksFor(x)).concat(navQuietMocks());
+  // Each section's mock data speaks the audited case's language (the Hindi gate reads it on /hi).
+  return [...first, ...rest].flatMap((x) => mocksFor({ ...x, locale: c.locale })).concat(navQuietMocks());
 }
 
 /** Everything the mocked API answers for one case: its row's mocks first, then the baseline (first match wins). */

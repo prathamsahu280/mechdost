@@ -123,7 +123,7 @@ function WorkshopTable({ data, locale }: { data: AdminWorkshopAnalytics; locale:
     <section className={adminCard}>
       <h3 className="font-heading text-base font-extrabold text-ink">{t('table_title')}</h3>
       <AdminTable label={t('table_title')}>
-        <table className={adminTableClass}>
+        <table className={`${adminTableClass} min-w-max`}>
           <caption className="sr-only">{t('table_title')}</caption>
           <thead>
             <tr>
