@@ -110,7 +110,8 @@
     "./account": "./src/account.ts",
     "./account-api": "./src/account-api.ts",
     "./notice-api": "./src/notice-api.ts",
-    "./notice-catalogue": "./src/notice-catalogue.ts"
+    "./notice-catalogue": "./src/notice-catalogue.ts",
+    "./ustaad/*": "./src/ustaad/*.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

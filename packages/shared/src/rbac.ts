@@ -77,6 +77,21 @@ export const PERMISSIONS = {
   'audit:read': 'Read the audit log',
   'exports:run': 'Download CSV exports of orders, refunds, service requests, partners and customers',
   'analytics:read': 'Read dashboards and reports',
+  // Ustaad Network (spec 23 § 3). Member permissions sit on the `mechanic` role; levels, track and status are checked
+  // in the repositories on every call, never cached in the token.
+  'ustaad:use': 'Use the mechanics network: read, post, react, follow, message, report, ask and learn',
+  'ustaad:answer': 'Answer questions in the mechanics network (the repository also checks the track)',
+  'ustaad:vouch': 'Vouch for another mechanic (the repository checks level and account age)',
+  'ustaad:jobs_post': 'Post jobs in the mechanics network (the repository also checks the employer)',
+  'ustaad:read':
+    'Read network members (masked phone), posts incl. held or removed, reports, queues and zone counts',
+  'ustaad:moderate':
+    'Keep, remove, hold or restore network content; warn, restrict or ban; decide reports and appeals',
+  'ustaad:verify': 'Decide mechanic verification requests, revoke verification and confirm level reviews',
+  'ustaad:location_exact': "See a mechanic's exact garage pin (every view audited)",
+  'ustaad:promotions': 'Create and schedule MechDost promotions in network slots',
+  'ustaad:settings': 'Edit every network setting and its admin tables (levels, badges, tags, words)',
+  'ustaad:takedown': 'Execute a legal takedown order on network content (fast path)',
 } as const satisfies Record<string, string>;
 
 export type Permission = keyof typeof PERMISSIONS;
@@ -152,8 +167,9 @@ export const ROLES = {
     scope: 'global',
     staff: true,
     // Prices (shop costs, customer prices, seller price requests) are super admin + catalogue manager only
-    // (user 2026-11-14).
-    permissions: OPS,
+    // (user 2026-11-14). Ustaad: ops read the network (spec 23 § 3); `OPS` itself is spread into city_manager, so
+    // the read is added here only.
+    permissions: [...OPS, 'ustaad:read'],
   },
   city_manager: {
     name: 'City manager',
@@ -236,6 +252,23 @@ export const ROLES = {
       'notifications:manage',
       'reviews:moderate',
       'analytics:read',
+      // Ustaad promotions slots only (spec 23 § 3); marketing never reads the network.
+      'ustaad:promotions',
+    ],
+  },
+  community_manager: {
+    name: 'Community manager',
+    description: 'Moderation and verification of the Ustaad mechanics network, for the assigned city',
+    // City scoped like city_manager; a grant with no city covers all cities. Never `customers:read_pii`, never
+    // `exports:run`; phone numbers masked; DM content only from an open report (SR-38).
+    scope: 'city',
+    staff: true,
+    permissions: [
+      'ustaad:read',
+      'ustaad:moderate',
+      'ustaad:verify',
+      'ustaad:location_exact',
+      'ustaad:takedown',
     ],
   },
   seller_owner: {
@@ -288,10 +321,18 @@ export const ROLES = {
   },
   mechanic: {
     name: 'Mechanic',
-    description: 'Mechanic network member (P2 portal)',
+    description: 'Ustaad Network member (joining grants it; spec 23)',
     scope: 'self',
     staff: false,
-    permissions: ['account:read', 'account:write', 'tickets:create'],
+    permissions: [
+      'account:read',
+      'account:write',
+      'tickets:create',
+      'ustaad:use',
+      'ustaad:answer',
+      'ustaad:vouch',
+      'ustaad:jobs_post',
+    ],
   },
   customer: {
     name: 'Customer',

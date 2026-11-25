@@ -62,7 +62,7 @@ export function NoticesPanel() {
     void load();
   }, [load]);
 
-  const groups = (['customer', 'partner', 'staff'] as const).map((audience) => ({
+  const groups = (['customer', 'partner', 'member', 'staff'] as const).map((audience) => ({
     audience,
     items: (catalogue ?? []).filter((c) => c.audience === audience),
   }));

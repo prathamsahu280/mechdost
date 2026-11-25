@@ -4,13 +4,15 @@ import { scrubFreeText } from './privacy';
 import { COUPON_FUNDERS, COUPON_REASONS } from './coupon';
 import { ORDER_CANCEL_REASONS } from './state';
 import { VEHICLE_SEGMENTS } from './vehicle-segments';
+import { USTAAD_CLIENT_EVENT_SCHEMAS, type UstaadServerEventProps } from './ustaad/analytics';
 
 /**
  * Server-side analytics events (spec 12; hard rules 9 and 16). Emitted by the API inside the same transaction
  * as the state or money change they describe, so each is stored exactly once. Props carry ids, codes, enums and
- * integer paise only — never names, phone numbers, emails, addresses or free text.
+ * integer paise only — never names, phone numbers, emails, addresses or free text. The Ustaad Network's events
+ * (spec 23 § 16) live in `ustaad/analytics.ts` and are merged here.
  */
-export interface ServerEventProps {
+export interface ServerEventProps extends UstaadServerEventProps {
   purchase: {
     orderCode: string;
     subOrders: number;
@@ -573,6 +575,8 @@ const AUTH_MS = z.number().int().min(0).max(600_000);
 const EMAIL_ACTION_MODES = ['verifyEmail', 'resetPassword', 'recoverEmail', 'verifyAndChangeEmail'] as const;
 
 export const CLIENT_EVENT_SCHEMAS = {
+  // Ustaad Network (spec 23 § 16), kept in their own file.
+  ...USTAAD_CLIENT_EVENT_SCHEMAS,
   page_view: z.object({ path, locale: z.enum(['en', 'hi']) }).strict(),
   click: z.object({ id, path }).strict(),
   // A phone-code send or check failed (2026-11-16): the Firebase error code only, never the phone number.

@@ -19,6 +19,8 @@ export const NOTICE_ENTITY_TYPES = [
   'shop',
   'application',
   'account',
+  // Ustaad Network (spec 23 § 12): one entity type; the kind says what it is about.
+  'ustaad',
 ] as const;
 export type NoticeEntityType = (typeof NOTICE_ENTITY_TYPES)[number];
 
@@ -68,6 +70,36 @@ export const NOTICE_PRIORITY_OF_KIND = {
   'shop.order_routed': 'urgent',
   'shop.offer_expiring': 'urgent',
   'partner.warning': 'action',
+  // Ustaad Network (spec 23 § 12)
+  'ustaad.question_waiting': 'action',
+  'ustaad.answer_received': 'info',
+  'ustaad.best_answer': 'success',
+  'ustaad.reply': 'info',
+  'ustaad.likes_digest': 'info',
+  'ustaad.follow': 'info',
+  'ustaad.connect_request': 'action',
+  'ustaad.connect_accepted': 'success',
+  'ustaad.message_request': 'action',
+  'ustaad.message': 'info',
+  'ustaad.vouch_requested': 'action',
+  'ustaad.attestation_requested': 'action',
+  'ustaad.verification_decided': 'info',
+  'ustaad.level_up': 'success',
+  'ustaad.badge_earned': 'success',
+  'ustaad.mentor_request': 'action',
+  'ustaad.mentor_accepted': 'success',
+  'ustaad.job_application': 'action',
+  'ustaad.application_status': 'info',
+  'ustaad.report_outcome': 'info',
+  'ustaad.content_removed': 'action',
+  'ustaad.strike': 'action',
+  'ustaad.rules_reminder': 'info',
+  'ustaad.invite': 'action',
+  'ustaad.security_freeze': 'urgent',
+  'staff.ustaad_report': 'action',
+  'staff.ustaad_report_overdue': 'urgent',
+  'staff.ustaad_media_budget': 'urgent',
+  'staff.ustaad_verification': 'action',
   // Staff
   'staff.rsa_cash': 'info',
   'staff.order_needs_routing': 'urgent',
@@ -224,7 +256,7 @@ const CopyDto = z.object({ title: z.string(), body: z.string() }).strict();
 export const NoticeCatalogueEntryDto = z
   .object({
     key: z.string(),
-    audience: z.enum(['customer', 'partner', 'staff']),
+    audience: z.enum(['customer', 'partner', 'staff', 'member']),
     category: z.enum(NOTICE_CATEGORIES),
     placeholders: z.array(z.string()),
     defaults: z.object({ en: CopyDto, hi: CopyDto }).strict(),

@@ -1,4 +1,4 @@
-import { CUSTOMER_ROLE, type Grant } from './rbac';
+import { CUSTOMER_ROLE, isRoleKey, ROLES, type Grant } from './rbac';
 
 /**
  * Sign-in rules shared by the web and the API (spec 01 "Password sign-in", decision 2026-11-01).
@@ -29,9 +29,14 @@ export function parseSignInIdentifier(input: string): SignInIdentifier | null {
 
 /**
  * Staff grants are the ones not tied to a shop or workshop (platform or city scope), including roles an admin
- * created (no code list, learning L17). Holding one means signing in with password **and** a phone code.
+ * created (no code list, learning L17). Holding one means signing in with password **and** a phone code. A system
+ * role says itself whether it is staff: the `mechanic` grant (Ustaad Network member, scope self) is not, although it
+ * names no shop or workshop (spec 23; it would otherwise be withheld from normal sessions).
  */
-export function isStaffGrant(g: Grant): boolean {
+export function isStaffGrant(
+  g: Pick<Grant, 'role' | 'shopId' | 'workshopId'> & Partial<Pick<Grant, 'cityId' | 'permissions'>>,
+): boolean {
+  if (isRoleKey(g.role)) return ROLES[g.role].staff;
   return g.role !== CUSTOMER_ROLE && g.shopId === null && g.workshopId === null;
 }
 

@@ -3415,7 +3415,23 @@
       "rightsTitle": "Your choices and rights",
       "rightsBody": "Ask us to show, correct or delete your data, or withdraw a permission you gave. Deletion is confirmed by our support team first; order and invoice records are kept as long as tax law requires, then removed.",
       "help": "Questions, requests or complaints about your data? Call us:",
-      "updated": "Last updated: 15 November 2026."
+      "updated": "Last updated: 26 November 2026 (Ustaad Network added).",
+      "ustaadTitle": "Ustaad Network: what mechanics share",
+      "ustaadBody": "The Ustaad Network is a part of MechDost only for people who repair vehicles. If you join, we keep your network profile: your name, area, the work you do, years of experience, level and Izzat, and your garage name only if you choose to show it. You can post voice notes, photos, short videos, PDF documents, links, polls and text, and ask and answer questions. Your phone number is never shown to other members.",
+      "ustaadAudienceTitle": "Who sees what you post",
+      "ustaadAudienceBody": "Only signed-in members of the network, who are mechanics, see your profile and posts. Customers and the public do not, and network pages are kept out of search engines. A post you share on WhatsApp shows only a card asking people to sign in, never the post itself. Our community managers see network content to keep it safe. Photos lose their location and camera details when uploaded, and the tool to blur faces and number plates is on by default.",
+      "ustaadLocationTitle": "Your garage location",
+      "ustaadLocationBody": "By default other mechanics see only your area name and a rough circle, never your exact spot. In nearby lists they see a distance band such as under 2 km, never the exact distance. Your exact pin is shown only if you switch on Show my exact pin, and only to the people you pick. If you work from home or on the road, only your area name is shown. Area totals appear only when enough mechanics are counted that nobody can be picked out.",
+      "ustaadCorrectionTitle": "Smart correction of what you type",
+      "ustaadCorrectionBody": "When smart correction is on, the text you type may be sent to an AI service that fixes spelling, which may process it outside India. Before it is sent, phone numbers, vehicle number plates, emails, PIN codes and member names are replaced by placeholders, and your name and member number are never sent. Voice notes are never sent anywhere and are never turned into text. You keep your original text, and you can turn smart correction off in Settings and my choices. Your text is not used to train our systems unless you agree to that separately.",
+      "ustaadModerationTitle": "Reports, removal and appeals",
+      "ustaadModerationBody": "Any member can report a post, comment, profile, job or message. Our community managers check reports, may hold or remove content, and may warn, restrict or ban an account. You are told why, in your language, and you can appeal through MechDost support, where a different staff member decides. Some new posts with photos or videos are checked before they appear. Messages are private: staff read a message only when it has been reported, and each such reading is recorded.",
+      "ustaadRetentionTitle": "How long network data is kept",
+      "ustaadRetentionBody": "Stories disappear after 24 hours and their files are deleted soon after. Removed content is kept out of sight for 180 days for complaints and the law, then deleted, unless the law requires us to keep it longer. Proof given for verification, such as a signboard photo or the garage owner's contact, is deleted 30 days after the decision; only the result and the date stay. If you leave the network your profile is hidden and you keep your MechDost account. To delete your data, ask us as described under Your choices and rights.",
+      "ustaadConsentsTitle": "Your choices in the network",
+      "ustaadConsentsBody": "When you join, one choice is required: saving your network profile. Everything else is your choice, starts switched off, and can be withdrawn with one tap in Settings and my choices: appearing in Discover, training updates, parts and business offers on WhatsApp, using your pin for verification, being counted in your area total, showing your exact pin, saving your voice notes, smart correction, and helping to train our systems. We never ask for Aadhaar.",
+      "ustaadGrievanceTitle": "Complaints and the Grievance Officer",
+      "ustaadGrievanceBody": "Complaints about network content, takedown requests and questions about your data go to our Grievance Officer, whose details are below. We acknowledge a complaint within 24 hours and resolve it within 7 days, and act faster in the urgent cases the law names, such as intimate images. If you are not satisfied with the answer, you can appeal to the Grievance Appellate Committee at gac.gov.in."
     },
     "delivery": {
       "eyebrow": "Policies",
@@ -3501,7 +3517,13 @@
       "contactTitle": "Questions and complaints",
       "contactBody": "Raise a support request from your account, call us or contact support on WhatsApp. Our grievance officer acknowledges a complaint within 48 hours and resolves it within one month, as the Consumer Protection (E-Commerce) Rules require.",
       "help": "Questions about these terms? Call us:",
-      "updated": "Last updated: 14 November 2026."
+      "updated": "Last updated: 26 November 2026 (Ustaad Network rules added).",
+      "ustaadTitle": "Ustaad Network rules",
+      "ustaadBody": "The Ustaad Network is only for people who repair vehicles. Join with your own details, keep one account, and never pretend to be someone else or to speak for MechDost. Levels, badges and Izzat are respect only: they have no money value and cannot be exchanged for MechDost Coins or cash. Advice from members is community advice, not a professional guarantee; check safety work on brakes, steering, fuel, airbags and high-voltage electric parts yourself.",
+      "ustaadContentTitle": "What you may post in the network",
+      "ustaadContentBody": "Post only your own work or content you have the right to share. Not allowed: abuse or hate; sexual content, and anything sexual involving children, which we report to the police; photos or videos of children working; customers' faces, number plates or phone numbers; illegal modifications such as silencer, odometer, emission or number plate tampering; fake or misleading claims; spam and selling; job scams, including asking anyone to pay for a job; and AI-made content that falsely shows a real person. Mark content made or edited with AI. What you post stays yours, and you allow MechDost to show it to network members.",
+      "ustaadEnforcementTitle": "Moderation, takedowns, jobs and appeals",
+      "ustaadEnforcementBody": "We may hold, remove or limit content, and warn, restrict or ban accounts that break these rules; we also remove content when a court or the government lawfully orders it. You are told why and can appeal through MechDost support. Employers who post jobs must state the pay, must hire only people aged 18 or older, and may never ask candidates for money; MechDost never charges anyone for a job. Report anyone who asks for money to 1930 or at cybercrime.gov.in."
     }
   },
   "support": {
@@ -4235,6 +4257,122 @@
     "staff_rsa_cash": {
       "title": "Roadside balance marked as cash",
       "body": "A workshop marked the balance of roadside request {requestCode} as paid in cash. Check it if the amount looks wrong."
+    },
+    "ustaad_question_waiting": {
+      "title": "A question needs an Ustaad",
+      "body": "{memberName} asked about {topic}. Can you help?"
+    },
+    "ustaad_answer_received": {
+      "title": "Your question has an answer",
+      "body": "{memberName} answered your question."
+    },
+    "ustaad_best_answer": {
+      "title": "Your answer was chosen as best",
+      "body": "Your answer was marked best. Izzat added."
+    },
+    "ustaad_reply": {
+      "title": "New reply",
+      "body": "{memberName} replied to your post."
+    },
+    "ustaad_likes_digest": {
+      "title": "People liked your work",
+      "body": "{count} people liked your post today."
+    },
+    "ustaad_follow": {
+      "title": "New followers",
+      "body": "{count} mechanics started following you."
+    },
+    "ustaad_connect_request": {
+      "title": "Connection request",
+      "body": "{memberName} wants to connect with you."
+    },
+    "ustaad_connect_accepted": {
+      "title": "You are connected",
+      "body": "{memberName} accepted your request."
+    },
+    "ustaad_message_request": {
+      "title": "Message request",
+      "body": "{memberName} wants to send you a message."
+    },
+    "ustaad_message": {
+      "title": "New message",
+      "body": "{memberName} sent you a message."
+    },
+    "ustaad_vouch_requested": {
+      "title": "Someone asked you to vouch",
+      "body": "{memberName} asked you to vouch for their work."
+    },
+    "ustaad_attestation_requested": {
+      "title": "Confirm a mechanic",
+      "body": "{memberName} says they work at {workshopName}. Is that right?"
+    },
+    "ustaad_verification_decided": {
+      "title": "Your verification is decided",
+      "body": "Open the network to see the result."
+    },
+    "ustaad_level_up": {
+      "title": "New level reached",
+      "body": "You reached a new level. Well done!"
+    },
+    "ustaad_badge_earned": {
+      "title": "New badge",
+      "body": "You earned the badge {badge}."
+    },
+    "ustaad_mentor_request": {
+      "title": "Be my Ustaad",
+      "body": "{memberName} asked you to be their Ustaad."
+    },
+    "ustaad_mentor_accepted": {
+      "title": "You have an Ustaad",
+      "body": "{memberName} accepted to be your Ustaad."
+    },
+    "ustaad_job_application": {
+      "title": "New job application",
+      "body": "Someone applied to job {jobCode}."
+    },
+    "ustaad_application_status": {
+      "title": "Your job application moved",
+      "body": "There is news about your application for {jobCode}."
+    },
+    "ustaad_report_outcome": {
+      "title": "Your report was checked",
+      "body": "Thank you. Our team checked report {reportCode}."
+    },
+    "ustaad_content_removed": {
+      "title": "Your content was removed",
+      "body": "Something you posted broke the network rules. Open it to see why and how to appeal."
+    },
+    "ustaad_strike": {
+      "title": "A strike on your account",
+      "body": "Your account got a strike. Open it to see why and how to appeal."
+    },
+    "ustaad_rules_reminder": {
+      "title": "Network rules reminder",
+      "body": "A short reminder of what you may and may not post."
+    },
+    "ustaad_invite": {
+      "title": "Join the Ustaad Network",
+      "body": "Mechanic applications have moved to the Ustaad Network. Join in two minutes."
+    },
+    "ustaad_security_freeze": {
+      "title": "New sign-in on your account",
+      "body": "Some network features are paused for 72 hours to keep your account safe."
+    },
+    "staff_ustaad_report": {
+      "title": "New network report",
+      "body": "Report {reportCode} is waiting in the queue."
+    },
+    "staff_ustaad_report_overdue": {
+      "title": "Network report running late",
+      "body": "Report {reportCode} is close to or past its deadline."
+    },
+    "staff_ustaad_media_budget": {
+      "title": "Network media space is filling up",
+      "body": "Media storage is at {count}% of its budget."
+    },
+    "staff_ustaad_verification": {
+      "title": "Verification waiting",
+      "body": "A mechanic verification is ready for review."
     }
   },
   "adminNotices": {
@@ -4268,7 +4406,8 @@
     "err_stale": "Someone changed this message. Reload and try again.",
     "problem_placeholder": "Use only the placeholders listed, in curly brackets.",
     "problem_html": "Write plain text only.",
-    "problem_long": "That text is too long (title 80, message 240 characters)."
+    "problem_long": "That text is too long (title 80, message 240 characters).",
+    "group_member": "To mechanics in the Ustaad Network"
   },
   "bell": {
     "label": "Notifications",
@@ -5209,7 +5348,9 @@
     "cinLabel": "CIN",
     "grievanceTitle": "Grievance officer",
     "grievanceLead": "Questions or complaints about an order, a booking or these policies can go to our grievance officer.",
-    "updatedOn": "Last updated: {date}"
+    "updatedOn": "Last updated: {date}",
+    "grievanceTba": "To be announced",
+    "grievanceTbaNote": "Until then, write or call MechDost support:"
   },
   "adminTier2": {
     "pol_title": "Policy pages",
@@ -5313,7 +5454,8 @@
     "com_err_format": "This is not in the right form. Check it and try again.",
     "com_save": "Save company details",
     "com_saved": "Saved. The website and emails use these details.",
-    "com_invalid": "Fix the field marked above."
+    "com_invalid": "Fix the field marked above.",
+    "pol_name_terms": "Terms of service"
   },
   "workshopAnalytics": {
     "unit_s": "{n} s",
@@ -6474,5 +6616,90 @@
     "tagFor": "For {name}",
     "tileCount": "{count, plural, =0 {Coming soon} one {# product} other {# products}}",
     "tileOpen": "Shop {name}"
+  },
+  "ustaad": {
+    "shell": {
+      "brand": "Ustaad Network",
+      "tagline": "Hunar dikhao. Pehchaan banao.",
+      "navLabel": "Ustaad Network sections",
+      "tab_home": "Home",
+      "tab_discover": "Discover",
+      "tab_create": "Create",
+      "tab_create_aria": "Create a post",
+      "tab_learn": "Learn",
+      "tab_me": "Me",
+      "bell": "Notifications",
+      "previewTitle": "Staff preview",
+      "previewBody": "Only MechDost staff can see the network right now. Mechanics will see it when it opens.",
+      "loading": "Opening the network…",
+      "signInTitle": "Sign in to open the network",
+      "signInBody": "The Ustaad Network is only for mechanics. Sign in with your mobile number.",
+      "signIn": "Sign in",
+      "joinTitle": "Join the Ustaad Network",
+      "joinBody": "Ask Ustaads, show your work, earn Izzat and levels, find jobs. Only mechanics can see it.",
+      "joinCta": "Join now"
+    },
+    "home": {
+      "title": "Ustaad Network home",
+      "greeting": "Namaste, {name}",
+      "greetingStaff": "Namaste",
+      "askTitle": "Stuck on a job?",
+      "askBody": "Hold the mic and ask. An Ustaad will answer.",
+      "askCta": "Ask an Ustaad",
+      "shortcutsTitle": "Shortcuts",
+      "sc_ask": "Ask",
+      "sc_jobs": "Jobs",
+      "sc_dukaan": "Dukaan",
+      "sc_learn": "Learn",
+      "sc_network": "My network",
+      "sc_area": "Area map",
+      "sc_saved": "Saved",
+      "sc_pin": "Pin garage",
+      "sc_card": "My card",
+      "storiesTitle": "Today at the garages",
+      "storiesEmpty": "No stories yet today.",
+      "storyAdd": "Add yours",
+      "questionsUstaad": "Questions waiting for you",
+      "questionsChhotu": "Your questions",
+      "questionsEmpty": "No questions right now. We will tell you when someone needs your help.",
+      "feedTitle": "Work from the garages",
+      "feed_for_you": "For you",
+      "feed_following": "Following",
+      "feedEmptyTitle": "Nothing here yet",
+      "feedEmptyBody": "Be the first: show a job you fixed today.",
+      "feedEmptyCta": "Show your work",
+      "pinTitle": "Pin your garage",
+      "pinBody": "Others see only your area, never the exact spot, unless you choose."
+    },
+    "notifications": {
+      "title": "Network notifications",
+      "empty": "No network notifications yet."
+    },
+    "adminAccess": {
+      "title": "Who can open the Ustaad Network",
+      "lead": "Switch the network between off, a preview for MechDost staff, and open for every mechanic. Every change is recorded in the audit log.",
+      "mode_off": "Off",
+      "mode_off_help": "Nobody can open it, staff included.",
+      "mode_staff_preview": "Staff preview",
+      "mode_staff_preview_help": "Only MechDost staff signed in with their staff code. Everyone else sees a page that does not exist.",
+      "mode_open": "Open",
+      "mode_open_help": "Every signed-in mechanic can join and use it.",
+      "save": "Save",
+      "saved": "Saved.",
+      "stale": "Someone else changed this just now. Reload and try again.",
+      "error": "Could not save. Try again.",
+      "current": "Now: {mode}"
+    },
+    "join": {},
+    "card": {},
+    "qa": {},
+    "feed": {},
+    "local": {},
+    "jobs": {},
+    "correction": {},
+    "moderation": {},
+    "admin": {},
+    "tutorial": {},
+    "media": {}
   }
 }

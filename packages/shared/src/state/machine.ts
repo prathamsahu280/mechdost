@@ -4,7 +4,8 @@
  * docs/specs/14-data-integrity.md. The machine decides *whether* a move is legal and *who* may make it.
  */
 
-export type Actor = 'customer' | 'shop' | 'workshop' | 'admin' | 'system';
+/** `member` = an Ustaad Network member acting in the network (spec 23 § 7). */
+export type Actor = 'customer' | 'shop' | 'workshop' | 'admin' | 'system' | 'member';
 
 export interface TransitionDef<S extends string> {
   from: S;

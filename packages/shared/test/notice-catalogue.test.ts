@@ -22,6 +22,14 @@ const SAMPLE = {
   workshopName: 'Sharma Garage',
   minutes: '15',
   pincode: '492001',
+  // Ustaad Network (spec 23 § 12)
+  memberName: 'Ramesh Sahu',
+  topic: 'two-wheeler electrical',
+  questionCode: 'UQ-RPR-2026-4K7Q2M',
+  jobCode: 'UJ-RPR-2026-7H2K9P',
+  reportCode: 'UR-RPR-2026-9F2KQA',
+  badge: 'Battery expert',
+  count: '12',
 };
 
 describe('notice catalogue', () => {

@@ -1,4 +1,5 @@
 import type { DemoRole } from '@/demo/session-state';
+import { isStaffGrant } from '@mechdost/shared/auth';
 
 /**
  * The part of `GET /v1/me` the web needs after a real (Firebase) sign-in. Light on purpose: no Firebase import,
@@ -19,7 +20,8 @@ export interface RealMe {
  * portal (Stream E, 2026-11-14), both on the API in real sign-in; everyone else → customer.
  */
 export function demoRoleFor(me: RealMe): DemoRole {
-  const staff = me.roles.some((r) => r.role !== 'customer' && r.shopId === null && r.workshopId === null);
+  // Same rule as the API (`isStaffGrant`): the Ustaad `mechanic` grant names no shop or workshop but is not staff.
+  const staff = me.roles.some((r) => isStaffGrant(r));
   if (staff) return 'admin';
   if (me.roles.some((r) => r.shopId !== null)) return 'shop';
   return me.roles.some((r) => r.workshopId !== null) ? 'workshop' : 'customer';

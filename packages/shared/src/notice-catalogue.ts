@@ -18,7 +18,8 @@ import en from './i18n/en.json';
 import hi from './i18n/hi.json';
 import type { NoticeCategory, NoticeEntityType } from './notice-api';
 
-export type NoticeAudience = 'customer' | 'partner' | 'staff';
+/** `member` = an Ustaad Network member (spec 23 § 12). */
+export type NoticeAudience = 'customer' | 'partner' | 'staff' | 'member';
 
 export interface NoticeDef {
   category: NoticeCategory;
@@ -37,6 +38,8 @@ const roadside = (p: Record<string, string>) => `/roadside/${enc(p.requestCode ?
 const quote = (p: Record<string, string>) => `/quotes/${enc(p.quoteCode ?? '')}`;
 const ticket = (p: Record<string, string>) => `/account/support?ticket=${enc(p.ticketCode ?? '')}`;
 const at = (path: string) => () => path;
+const ustaadQuestion = (p: Record<string, string>) => `/ustaad/q/${enc(p.questionCode ?? '')}`;
+const ustaadJob = (p: Record<string, string>) => `/ustaad/jobs/${enc(p.jobCode ?? '')}`;
 
 const T = 'transactional' as const;
 const def = (d: NoticeDef): NoticeDef => d;
@@ -341,6 +344,210 @@ export const NOTICE_CATALOGUE = {
     audience: 'staff',
     text: ['ticketCode'],
     link: at('/admin/support'),
+  }),
+  // ----- Ustaad Network (spec 23 § 12): names, codes and counts only; links stay inside /ustaad ----------
+  'ustaad.question_waiting': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: ['memberName', 'topic', 'questionCode'],
+    link: ustaadQuestion,
+  }),
+  'ustaad.answer_received': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: ['memberName', 'questionCode'],
+    link: ustaadQuestion,
+  }),
+  'ustaad.best_answer': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: ['questionCode'],
+    link: ustaadQuestion,
+  }),
+  'ustaad.reply': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: ['memberName'],
+    link: at('/ustaad/notifications'),
+  }),
+  'ustaad.likes_digest': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: ['count'],
+    link: at('/ustaad/me'),
+  }),
+  'ustaad.follow': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: ['count'],
+    link: at('/ustaad/network'),
+  }),
+  'ustaad.connect_request': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: ['memberName'],
+    link: at('/ustaad/network'),
+  }),
+  'ustaad.connect_accepted': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: ['memberName'],
+    link: at('/ustaad/network'),
+  }),
+  'ustaad.message_request': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: ['memberName'],
+    link: at('/ustaad/messages'),
+  }),
+  'ustaad.message': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: ['memberName'],
+    link: at('/ustaad/messages'),
+  }),
+  'ustaad.vouch_requested': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: ['memberName'],
+    link: at('/ustaad/me/verify'),
+  }),
+  'ustaad.attestation_requested': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'partner',
+    text: ['memberName', 'workshopName'],
+    link: at('/partner/workshop'),
+  }),
+  'ustaad.verification_decided': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: [],
+    link: at('/ustaad/me/verify'),
+  }),
+  'ustaad.level_up': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: [],
+    link: at('/ustaad/me'),
+  }),
+  'ustaad.badge_earned': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: ['badge'],
+    link: at('/ustaad/me'),
+  }),
+  'ustaad.mentor_request': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: ['memberName'],
+    link: at('/ustaad/network'),
+  }),
+  'ustaad.mentor_accepted': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: ['memberName'],
+    link: at('/ustaad/network'),
+  }),
+  'ustaad.job_application': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: ['jobCode'],
+    link: at('/ustaad/jobs/mine'),
+  }),
+  'ustaad.application_status': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: ['jobCode'],
+    link: ustaadJob,
+  }),
+  'ustaad.report_outcome': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: ['reportCode'],
+    link: at('/ustaad/notifications'),
+  }),
+  'ustaad.content_removed': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: [],
+    link: at('/ustaad/notifications'),
+  }),
+  'ustaad.strike': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: [],
+    link: at('/ustaad/notifications'),
+  }),
+  'ustaad.rules_reminder': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: [],
+    link: at('/terms'),
+  }),
+  'ustaad.invite': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'customer',
+    text: [],
+    link: at('/ustaad/join'),
+  }),
+  'ustaad.security_freeze': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: [],
+    link: at('/account'),
+  }),
+  'staff.ustaad_report': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'staff',
+    text: ['reportCode'],
+    link: at('/admin/ustaad'),
+  }),
+  'staff.ustaad_report_overdue': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'staff',
+    text: ['reportCode'],
+    link: at('/admin/ustaad'),
+  }),
+  'staff.ustaad_media_budget': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'staff',
+    text: ['count'],
+    link: at('/admin/ustaad'),
+  }),
+  'staff.ustaad_verification': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'staff',
+    text: [],
+    link: at('/admin/ustaad'),
   }),
 } as const satisfies Record<string, NoticeDef>;
 

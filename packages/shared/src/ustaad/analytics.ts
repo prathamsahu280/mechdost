@@ -1,0 +1,176 @@
+/**
+ * Ustaad Network analytics (spec 23 § 16; spec 12; hard rules 9 and 16). Ids, codes and counts only: never text,
+ * names, phones or locations. Merged into `ServerEventProps` and `CLIENT_EVENT_SCHEMAS` in `../analytics.ts`, so one
+ * catalogue stays the source; this file exists so the network's events do not collide with other workstreams.
+ * A member in restricted mode emits no events at all (SR-42; enforced in `recordUstaadEvent`).
+ */
+import { z } from 'zod';
+import {
+  type CORRECTION_APPLIED,
+  type JOB_ROLES,
+  type MEDIA_KINDS,
+  type MEDIA_REJECT_REASONS,
+  type MODERATION_ACTIONS,
+  type POST_KINDS,
+  type POST_TEMPLATES,
+  type REPORT_CLOCKS,
+  type REPORT_REASONS,
+  type REPORT_TARGETS,
+  type USTAAD_LEVELS,
+  type USTAAD_TRACKS,
+  type USTAAD_VERIFY_METHODS,
+  type USTAAD_ACCESS_MODES,
+  COACHMARK_TARGETS,
+  PROMOTION_SLOTS,
+} from './codes';
+
+type Of<T extends readonly string[]> = T[number];
+
+/** Server events (event store, forwarded to PostHog by the worker). */
+export interface UstaadServerEventProps {
+  ustaad_joined: { memberId: string; track: Of<typeof USTAAD_TRACKS>; via: 'ustaad' | 'partners_apply' };
+  ustaad_left: { memberId: string };
+  ustaad_verification_requested: { memberId: string; proofs: Of<typeof USTAAD_VERIFY_METHODS>[] };
+  ustaad_verification_decided: {
+    memberId: string;
+    outcome: 'approved' | 'rejected' | 'revoked';
+    reason: string | null;
+  };
+  ustaad_vouch_given: { voucherId: string; voucheeId: string };
+  ustaad_attestation_decided: { memberId: string; outcome: 'confirmed' | 'declined' | 'expired' };
+  ustaad_level_reached: { memberId: string; level: Of<typeof USTAAD_LEVELS> };
+  ustaad_badge_earned: { memberId: string; badge: string };
+  ustaad_post_created: {
+    postId: string;
+    kind: Of<typeof POST_KINDS>;
+    template: Of<typeof POST_TEMPLATES> | null;
+    mediaCount: number;
+    tagCount: number;
+    correction: Of<typeof CORRECTION_APPLIED>;
+  };
+  ustaad_story_created: { postId: string; kind: Of<typeof POST_KINDS> };
+  ustaad_question_asked: {
+    questionCode: string;
+    input: 'voice' | 'photo' | 'text';
+    segment: string | null;
+    work: string | null;
+    correction: Of<typeof CORRECTION_APPLIED>;
+  };
+  ustaad_answer_posted: { answerId: string; input: 'voice' | 'photo' | 'text' };
+  ustaad_answer_helpful: { answerId: string };
+  ustaad_best_answer_chosen: { questionCode: string; answerId: string };
+  ustaad_followed: { followerId: string; followeeId: string };
+  ustaad_connected: { memberId: string; otherId: string };
+  ustaad_mentorship_changed: { mentorshipId: string; to: string };
+  ustaad_message_thread_started: { threadId: string };
+  ustaad_job_posted: { jobCode: string; role: Of<typeof JOB_ROLES> };
+  ustaad_job_applied: { jobCode: string; applicationId: string };
+  ustaad_application_moved: { applicationId: string; to: string };
+  ustaad_report_created: {
+    reportCode: string;
+    reason: Of<typeof REPORT_REASONS>;
+    target: Of<typeof REPORT_TARGETS>;
+  };
+  ustaad_moderation_action: {
+    action: Of<typeof MODERATION_ACTIONS>;
+    reason: string;
+    clock: Of<typeof REPORT_CLOCKS> | null;
+    onTime: boolean | null;
+  };
+  ustaad_media_rejected: {
+    mediaId: string;
+    kind: Of<typeof MEDIA_KINDS>;
+    reason: Of<typeof MEDIA_REJECT_REASONS>;
+  };
+  ustaad_media_budget_full: { kind: Of<typeof MEDIA_KINDS> };
+  ustaad_location_confirmed: {
+    source: 'gps' | 'manual';
+    accuracyBand: 'lt20' | '20to50' | '50to100' | 'gt100';
+  };
+  ustaad_zone_counts_built: { zones: number };
+  ustaad_application_mapped: { outcome: 'invited' | 'joined' | 'closed' | 'skipped' };
+  ustaad_takedown_executed: { clock: Of<typeof REPORT_CLOCKS>; seconds: number };
+  ustaad_restricted_mode: { memberId: string; reason: 'minor_report' | 'review' | 'cleared' };
+  admin_ustaad_settings_saved: { keys: string[] };
+  admin_ustaad_invariant_refused: { key: string };
+  /** The staff preview switch (founder 2026-11-26). */
+  admin_ustaad_access_changed: { from: Of<typeof USTAAD_ACCESS_MODES>; to: Of<typeof USTAAD_ACCESS_MODES> };
+}
+
+/** Runtime list of the server event names (tests check the catalogue covers spec 23 § 16). */
+export const USTAAD_SERVER_EVENTS = [
+  'ustaad_joined',
+  'ustaad_left',
+  'ustaad_verification_requested',
+  'ustaad_verification_decided',
+  'ustaad_vouch_given',
+  'ustaad_attestation_decided',
+  'ustaad_level_reached',
+  'ustaad_badge_earned',
+  'ustaad_post_created',
+  'ustaad_story_created',
+  'ustaad_question_asked',
+  'ustaad_answer_posted',
+  'ustaad_answer_helpful',
+  'ustaad_best_answer_chosen',
+  'ustaad_followed',
+  'ustaad_connected',
+  'ustaad_mentorship_changed',
+  'ustaad_message_thread_started',
+  'ustaad_job_posted',
+  'ustaad_job_applied',
+  'ustaad_application_moved',
+  'ustaad_report_created',
+  'ustaad_moderation_action',
+  'ustaad_media_rejected',
+  'ustaad_media_budget_full',
+  'ustaad_location_confirmed',
+  'ustaad_zone_counts_built',
+  'ustaad_application_mapped',
+  'ustaad_takedown_executed',
+  'ustaad_restricted_mode',
+  'admin_ustaad_settings_saved',
+  'admin_ustaad_invariant_refused',
+  'admin_ustaad_access_changed',
+] as const satisfies readonly (keyof UstaadServerEventProps)[];
+
+const count = z.number().int().min(0).max(100_000);
+const code = z.string().regex(/^[a-z0-9_]{1,40}$/);
+
+/** Client events (browser, consent-gated like every client event). */
+export const USTAAD_CLIENT_EVENT_SCHEMAS = {
+  ustaad_feed_viewed: z.object({ tab: z.enum(['for_you', 'following']) }).strict(),
+  ustaad_post_liked: z.object({}).strict(),
+  ustaad_post_saved: z.object({}).strict(),
+  ustaad_post_shared: z.object({ channel: z.enum(['whatsapp', 'copy_link', 'member']) }).strict(),
+  ustaad_story_viewed: z.object({}).strict(),
+  ustaad_video_played: z.object({ secondsBand: z.enum(['lt15', '15to60', '60to180', 'gt180']) }).strict(),
+  ustaad_voice_played: z.object({}).strict(),
+  ustaad_discover_searched: z.object({ results: count }).strict(),
+  ustaad_tag_opened: z.object({}).strict(),
+  ustaad_promo_impression: z.object({ promo: z.uuid(), slot: z.enum(PROMOTION_SLOTS) }).strict(),
+  ustaad_promo_click: z.object({ promo: z.uuid() }).strict(),
+  ustaad_promo_hidden: z.object({ reason: code }).strict(),
+  ustaad_correction_shown: z
+    .object({
+      engine: z.enum(['llm_anthropic', 'llm_gemini', 'wordlist']),
+      mode: z.enum(['suggest', 'auto']),
+      changes: count,
+    })
+    .strict(),
+  ustaad_correction_choice: z.object({ choice: z.enum(['use', 'keep', 'edit']) }).strict(),
+  ustaad_data_saver: z.object({ on: z.boolean() }).strict(),
+  ustaad_learn_completed: z.object({ resource: z.uuid() }).strict(),
+  ustaad_join_step: z
+    .object({ step: z.number().int().min(1).max(5), via: z.enum(['ustaad', 'partners_apply']) })
+    .strict(),
+  tutorial_started: z.object({}).strict(),
+  tutorial_step: z.object({ card: z.number().int().min(1).max(12), narrationPlayed: z.boolean() }).strict(),
+  tutorial_completed: z.object({}).strict(),
+  tutorial_skipped: z.object({ atCard: z.number().int().min(1).max(12) }).strict(),
+  ustaad_coachmark_seen: z.object({ target: z.enum(COACHMARK_TARGETS) }).strict(),
+  ustaad_coachmark_dismissed: z.object({ target: z.enum(COACHMARK_TARGETS) }).strict(),
+  ustaad_help_replayed: z.object({}).strict(),
+  /** Shell navigation (A): which bottom tab was opened. */
+  ustaad_tab_opened: z.object({ tab: z.enum(['home', 'discover', 'create', 'learn', 'me']) }).strict(),
+} as const;

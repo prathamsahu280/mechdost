@@ -2,6 +2,13 @@ import { defineMachine } from './machine';
 
 export * from './machine';
 export * from './rsa';
+// Ustaad Network machines (spec 23 § 7): one file per area; workstreams B–G only read them.
+export * from './ustaad-verification';
+export * from './ustaad-level';
+export * from './ustaad-content';
+export * from './ustaad-job';
+export * from './ustaad-media';
+export * from './ustaad-graph';
 
 /** Sub-order status (docs/specs/04-orders-routing-fulfilment.md). Parent order status is derived. */
 export const ORDER_STATES = [
