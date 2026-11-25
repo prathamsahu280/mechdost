@@ -34,6 +34,7 @@ test.describe('Ustaad Network: staff preview', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Page not found' })).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Ustaad Network sections' })).toHaveCount(0);
     await expect(page.getByText('Ustaad Network')).toHaveCount(0);
+    await expect(page).not.toHaveTitle(/Ustaad/);
     const robots = await page.locator('meta[name="robots"]').getAttribute('content');
     expect(robots).toContain('noindex');
   });
