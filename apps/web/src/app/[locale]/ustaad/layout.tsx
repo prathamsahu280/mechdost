@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
@@ -112,14 +113,14 @@ export default async function UstaadLayout({ children, params }: Props) {
               <span className="block font-heading text-lg font-extrabold text-ink">{t('brand')}</span>
               <span className="block text-[13px] text-muted">{t('tagline')}</span>
             </p>
-            <a
+            <Link
               href={localePath('/notifications', locale)}
               aria-label={t('bell')}
               data-track="ustaad_bell"
               className="press inline-flex size-12 items-center justify-center rounded-full bg-surface text-ink shadow-card"
             >
               <UstaadIcon name="bell" />
-            </a>
+            </Link>
           </header>
           {children}
         </div>
