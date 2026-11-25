@@ -107,6 +107,7 @@ export * from './wishlist';
 export * from './business-applications';
 export * from './visibility';
 export * from './catalogue-groups';
+export * from './vehicle-segments';
 export * from './catalogue-bulk';
 export * from './catalogue-v2-import';
 export * from './battery-import';

@@ -18,6 +18,7 @@ import {
 import { HIDE_REASONS } from '@mechdost/shared/catalogue-groups';
 import { GST_STATUSES } from '@mechdost/shared/partners';
 import { NET_UNITS } from '@mechdost/shared/product-attributes';
+import { VEHICLE_SEGMENTS } from '@mechdost/shared/vehicle-segments';
 import { INVITE_STATES, PRICE_REQUEST_STATES } from '@mechdost/shared/state';
 import {
   createdAt,
@@ -385,6 +386,69 @@ export const products = pgTable(
       .on(t.createdAt.desc(), t.id.desc())
       .where(sql`status = 'live'`),
   ],
+);
+
+/**
+ * Vehicle segments (design 2026-11-25, spec 02 "Vehicle segments"): the kind of vehicle a product is for. The codes
+ * are a closed enum (`VEHICLE_SEGMENTS`); names, order and on/off are staff-edited (hard rule 8). Switching a segment
+ * off hides its chip and tag, never the products. Seeded by migration 0087.
+ */
+export const vehicleSegments = pgTable(
+  'vehicle_segments',
+  {
+    code: text().primaryKey(),
+    nameEn: text().notNull(),
+    nameHi: text().notNull(),
+    descriptionEn: text(),
+    descriptionHi: text(),
+    sort: integer().notNull().default(0),
+    active: boolean().notNull().default(true),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    check('vehicle_segments_code_valid', sql`${t.code} in (${inList(VEHICLE_SEGMENTS)})`),
+    check(
+      'vehicle_segments_names',
+      sql`char_length(${t.nameEn}) between 1 and 60 and char_length(${t.nameHi}) between 1 and 60`,
+    ),
+  ],
+);
+
+/** A product's segments (many to many). Rows are added and removed by staff (audited) and by the default trigger. */
+export const productVehicleSegments = pgTable(
+  'product_vehicle_segments',
+  {
+    productId: uuid()
+      .notNull()
+      .references(() => products.id, { onDelete: 'cascade' }),
+    segmentCode: text()
+      .notNull()
+      .references(() => vehicleSegments.code, { onDelete: 'restrict' }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.productId, t.segmentCode] }),
+    // "Products of this segment" (the shop filter and its counts) reads by segment first.
+    index('product_vehicle_segments_segment_idx').on(t.segmentCode, t.productId),
+  ],
+);
+
+/**
+ * The reviewed mapping from category slug to default segments (migration 0087; the same table as
+ * `DEFAULT_SEGMENTS_OF_CATEGORY`). A new product takes these (a trigger), staff change them per product. By slug,
+ * not id, so it works before the categories exist (fresh databases and tests).
+ */
+export const categoryDefaultSegments = pgTable(
+  'category_default_segments',
+  {
+    categorySlug: text().notNull(),
+    segmentCode: text()
+      .notNull()
+      .references(() => vehicleSegments.code, { onDelete: 'restrict' }),
+  },
+  (t) => [primaryKey({ columns: [t.categorySlug, t.segmentCode] })],
 );
 
 export const productVariants = pgTable(

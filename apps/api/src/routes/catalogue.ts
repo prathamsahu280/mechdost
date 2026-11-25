@@ -1,5 +1,6 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { VEHICLE_TYPES } from '@mechdost/shared/vehicles';
+import { SegmentListParam } from '@mechdost/shared/vehicle-segments-api';
 import {
   CATALOGUE_PAGE_MAX,
   CATALOGUE_QUERY_MAX,
@@ -75,6 +76,8 @@ const products = createRoute({
       brand: Slug.optional(),
       /** Only products tagged for this vehicle type (decision 2026-11-12). */
       vehicle: z.enum(VEHICLE_TYPES).optional(),
+      /** Comma-separated vehicle segments (any of; design 2026-11-25), e.g. `truck_bus,tractor_farm`. */
+      segment: SegmentListParam.optional().openapi({ example: 'truck_bus' }),
       q: z.string().trim().max(CATALOGUE_QUERY_MAX).optional(),
       sort: z.enum(CATALOGUE_SORTS).optional(),
       available: z.enum(['true', 'false']).optional(),
@@ -140,6 +143,7 @@ export function catalogueRoutes(deps: AppDeps) {
         category: query.category ?? null,
         brand: query.brand ?? null,
         vehicleType: query.vehicle ?? null,
+        segments: query.segment ?? null,
         q: query.q ?? null,
         sort: query.sort ?? null,
         availableOnly: query.available === 'true',
@@ -153,6 +157,7 @@ export function catalogueRoutes(deps: AppDeps) {
           place: place(page.place),
           items: page.items.map(({ id: _id, ...card }) => card),
           nextCursor: page.nextCursor,
+          facets: page.facets,
         },
         200,
       );

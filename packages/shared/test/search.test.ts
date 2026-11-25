@@ -90,10 +90,30 @@ describe('intents', () => {
   ])('vehicle %s → %s', (q, type) => {
     expect(parse(q).vehicleType).toBe(type);
   });
-  it('trucks and tractors have no 2W/3W/4W type but are recognised', () => {
+  it('trucks and tractors have no 2W/3W/4W type but name a vehicle segment (design 2026-11-25)', () => {
     expect(parse('truck oil').vehicleType).toBeNull();
-    expect(parse('truck oil').vehicleWord).toBe('truck');
-    expect(parse('ट्रैक्टर').vehicleWord).toBe('tractor');
+    expect(parse('truck oil').segment).toBe('truck_bus');
+    expect(parse('truck oil').text).toBe('oil');
+    expect(parse('ट्रैक्टर').segment).toBe('tractor_farm');
+  });
+  it.each([
+    ['truck tyre', 'truck_bus'],
+    ['lorry battery', 'truck_bus'],
+    ['ट्रक टायर', 'truck_bus'],
+    ['bus tyre', 'truck_bus'],
+    ['tractor battery', 'tractor_farm'],
+    ['kisan tel', 'tractor_farm'],
+    ['tempo tyre', 'light_commercial'],
+    ['pick up tyre', 'light_commercial'],
+    ['JCB battery', 'construction_otr'],
+    ['earth mover tyre', 'construction_otr'],
+    ['inverter battery', 'not_vehicle'],
+  ])('segment %s → %s', (q, segment) => {
+    expect(parse(q).segment).toBe(segment);
+  });
+  it('a segment word is not a 2W/3W/4W type and a bike word is not a segment', () => {
+    expect(parse('bike tyre').segment).toBeNull();
+    expect(parse('truck tyre').vehicleType).toBeNull();
   });
   it.each([
     ['engine oil', 'lubricants'],

@@ -596,6 +596,13 @@
       "when": 1795605679210,
       "tag": "0086_variant_size_search",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1795622275505,
+      "tag": "0087_vehicle_segments",
+      "breakpoints": true
     }
   ]
 }

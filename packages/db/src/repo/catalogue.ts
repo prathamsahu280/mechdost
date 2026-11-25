@@ -2,6 +2,7 @@ import { sql, type SQL } from 'drizzle-orm';
 import { adminPriceJoins, CUSTOMER_PRICE } from './admin-price-sql';
 import { variantLabel } from '@mechdost/shared/variants';
 import { VEHICLE_TYPES, isVehicleType, type VehicleType } from '@mechdost/shared/vehicles';
+import { isVehicleSegment, type VehicleSegment } from '@mechdost/shared/vehicle-segments';
 import {
   attributeDefs,
   isNetQuantity,
@@ -70,6 +71,8 @@ export interface CatalogueCard {
   highlights: string[];
   /** Vehicle types the product is for, in 2W/3W/4W order; empty = fitment not listed (decision 2026-11-12). */
   vehicleTypes: VehicleType[];
+  /** Vehicle segments in the staff's order, named in the page language; only active segments (design 2026-11-25). */
+  segments: { code: VehicleSegment; name: string }[];
   /** Lowest MRP among active packs, with or without a shop offer (spec 02); null = no MRP. */
   mrpFromPaise: number | null;
   /** True when the packs have different MRPs ("MRP from"). */
@@ -91,9 +94,17 @@ export interface CataloguePhoto {
   lqip: string | null;
 }
 
+export interface SegmentFacet {
+  code: VehicleSegment;
+  name: string;
+  count: number;
+}
+
 export interface CataloguePage {
   place: CataloguePlace;
   items: CatalogueCard[];
+  /** Live product count per active segment for this search, category and brand, ignoring the segment filter (first page only). */
+  facets: { segments: SegmentFacet[] };
   /** Opaque cursor for the next page; null on the last page. */
   nextCursor: string | null;
 }
@@ -105,6 +116,8 @@ export interface CatalogueQuery {
   brand?: string | null;
   /** Only products tagged for this vehicle type. */
   vehicleType?: VehicleType | null;
+  /** Only products in any of these vehicle segments (design 2026-11-25). */
+  segments?: readonly VehicleSegment[] | null;
   q?: string | null;
   /** Only these products (recommendations read cards for ids they already ranked; at most 48). */
   productIds?: readonly string[] | null;
@@ -203,6 +216,7 @@ interface CardRow {
   highlights: string[] | null;
   highlights_hi: string[] | null;
   vehicle_types: string[] | null;
+  segments: { code: string; name: string }[] | null;
   price: unknown;
   sku: string | null;
   mrp: unknown;
@@ -237,6 +251,9 @@ function toCard(r: CardRow, locale: CatalogueLocale): CatalogueCard {
     specSummary: r.spec_summary === null ? null : localized(r.spec_summary, r.spec_summary_hi, locale),
     highlights: locale === 'hi' && highlightsHi.length > 0 ? highlightsHi : (r.highlights ?? []),
     vehicleTypes: vehicleTypesOf(r.vehicle_types),
+    segments: (r.segments ?? []).flatMap((x) =>
+      isVehicleSegment(x.code) ? [{ code: x.code, name: x.name }] : [],
+    ),
     mrpFromPaise: numOrNull(r.mrp_from),
     mrpVaries: r.mrp_varies === true,
     sizeCount: Math.max(1, num(r.size_count ?? 1)),
@@ -288,6 +305,17 @@ function vehicleTypesOf(raw: string[] | null): VehicleType[] {
   return VEHICLE_TYPES.filter((t) => set.has(t));
 }
 
+/**
+ * A product's active segments as JSON `[{code, name}]` in staff order, named in the page language (for the alias
+ * `pg`). Segment names are Hindi-first on /hi: `name_hi` is required, so no fallback is needed.
+ */
+const segmentsOf = (
+  locale: CatalogueLocale,
+): SQL => sql`(select coalesce(jsonb_agg(jsonb_build_object('code', vs.code,
+    'name', ${locale === 'hi' ? sql`vs.name_hi` : sql`vs.name_en`}) order by vs.sort, vs.code), '[]'::jsonb)
+  from product_vehicle_segments ps join vehicle_segments vs on vs.code = ps.segment_code and vs.active
+  where ps.product_id = pg.id) as segments`;
+
 /** First photo and approved-review rating for the rows of `page` (joined after the page is cut). */
 const cardExtras = sql`
   left join lateral (
@@ -337,7 +365,19 @@ export async function listCatalogue(db: Tx, query: CatalogueQuery): Promise<Cata
           )})`,
     );
   if (query.vehicleType) filters.push(sql`p.vehicle_types @> array[${query.vehicleType}]::text[]`);
-  if (query.availableOnly) filters.push(sql`o.price is not null`);
+  // The counts behind the segment chips ignore the segment filter itself (so a chip shows what choosing it adds).
+  const facetFilters = [...filters];
+  if (query.segments && query.segments.length > 0)
+    filters.push(
+      sql`exists (select 1 from product_vehicle_segments fs where fs.product_id = p.id and fs.segment_code in (${sql.join(
+        query.segments.map((x) => sql`${x}`),
+        sql`, `,
+      )}))`,
+    );
+  if (query.availableOnly) {
+    filters.push(sql`o.price is not null`);
+    facetFilters.push(sql`o.price is not null`);
+  }
 
   // Which sizes the words named, only for the rows of the page (the subquery runs after the page is cut, and the
   // trigram index on `size_compact` keeps it cheap); `null` when the query names no size.
@@ -391,16 +431,57 @@ export async function listCatalogue(db: Tx, query: CatalogueQuery): Promise<Cata
     pg as (
       select r.*, r.sort_key::text as sort_key_text from ranked r where ${after} order by ${order} limit ${limit + 1}
     )
-    select pg.*, ph.*, rv.*, ${matchedSizes} as matched_sizes from pg ${cardExtras}
+    select pg.*, ph.*, rv.*, ${matchedSizes} as matched_sizes, ${segmentsOf(query.locale)} from pg ${cardExtras}
     order by ${order}`);
   const rows = rowsOf<CardRow>(result);
   const page = rows.slice(0, limit);
   const last = page.at(-1);
+  const facets = query.cursor
+    ? []
+    : await segmentFacets(db, place, facetFilters, query.availableOnly === true, query.locale);
   return {
     place,
+    facets: { segments: facets },
     items: page.map((r) => toCard(r, query.locale)),
     nextCursor: rows.length > limit && last ? encodeCursor({ k: last.sort_key_text, id: last.id }) : null,
   };
+}
+
+/**
+ * Live product counts per active segment under `filters` (the listing's own filters without the segment one;
+ * aliases p, b, c, and `o` when `needsOffer`). One indexed grouped read; segments with no product count 0.
+ */
+async function segmentFacets(
+  db: Tx,
+  place: CataloguePlace,
+  filters: readonly SQL[],
+  needsOffer: boolean,
+  locale: CatalogueLocale,
+): Promise<SegmentFacet[]> {
+  const [segments, counts] = await Promise.all([
+    db
+      .execute(
+        sql`select code, ${locale === 'hi' ? sql`name_hi` : sql`name_en`} as name from vehicle_segments
+          where active order by sort, code`,
+      )
+      .then((r) => rowsOf<{ code: string; name: string }>(r)),
+    db
+      .execute(
+        sql`select ps.segment_code as code, count(distinct p.id) as n
+          from products p
+          join brands b on b.id = p.brand_id
+          join categories c on c.id = p.category_id
+          ${needsOffer ? offerLateral(place, sql`v.product_id = p.id`) : sql``}
+          join product_vehicle_segments ps on ps.product_id = p.id
+          where ${sql.join(filters, sql` and `)}
+          group by ps.segment_code`,
+      )
+      .then((r) => rowsOf<{ code: string; n: unknown }>(r)),
+  ]);
+  const byCode = new Map(counts.map((r) => [r.code, num(r.n)]));
+  return segments.flatMap((r) =>
+    isVehicleSegment(r.code) ? [{ code: r.code, name: r.name, count: byCode.get(r.code) ?? 0 }] : [],
+  );
 }
 
 export interface CatalogueVariant {
@@ -509,7 +590,7 @@ export async function getCatalogueProduct(
           left join categories pc on pc.id = c.parent_id
         where p.slug = ${slug} and ${productVisible('p')}
       )
-      select pg.*, ph.*, rv.* from pg ${cardExtras}`),
+      select pg.*, ph.*, rv.*, ${segmentsOf(opts.locale)} from pg ${cardExtras}`),
   );
   const place = await placeLookup;
   if (!p) throw new NotFoundError('Product not found');
