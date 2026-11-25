@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { WandSparkles } from 'lucide-react';
 import { useState } from 'react';
+import type { CorrectionLang } from '@mechdost/shared/ustaad/correction';
 import { shownText, textLang } from '@/lib/ustaad/correction';
 
 /**
@@ -14,17 +15,20 @@ export function EditedText({
   body,
   bodyOriginal,
   className = '',
+  lang = null,
 }: {
   body: string;
   bodyOriginal: string | null;
   className?: string;
+  /** The post's language hint, for `lang` on Latin-script text. */
+  lang?: CorrectionLang | null;
 }) {
   const t = useTranslations('ustaad.correction');
   const [showOriginal, setShowOriginal] = useState(false);
   const text = shownText({ body, bodyOriginal }, showOriginal);
   return (
     <div className="flex flex-col gap-1">
-      <p data-user-content lang={textLang(text)} className={`whitespace-pre-line ${className}`}>
+      <p data-user-content lang={textLang(text, lang)} className={`whitespace-pre-line ${className}`}>
         {text}
       </p>
       {bodyOriginal !== null && bodyOriginal !== body ? (

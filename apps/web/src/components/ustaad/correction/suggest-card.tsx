@@ -3,7 +3,11 @@
 import { useTranslations } from 'next-intl';
 import { Check, WandSparkles } from 'lucide-react';
 import { useId } from 'react';
-import type { CorrectionChoice, CorrectResponseView } from '@mechdost/shared/ustaad/correction';
+import type {
+  CorrectionChoice,
+  CorrectionLang,
+  CorrectResponseView,
+} from '@mechdost/shared/ustaad/correction';
 import { textLang, visibleSegments } from '@/lib/ustaad/correction';
 
 const primary =
@@ -20,14 +24,15 @@ const quiet =
 export function SuggestCard({
   result,
   onChoice,
+  hintLang = null,
 }: {
   result: CorrectResponseView;
   onChoice: (choice: CorrectionChoice) => void;
+  /** The composer's language hint (sets `lang` on Latin-script member text). */
+  hintLang?: CorrectionLang | null;
 }) {
   const t = useTranslations('ustaad.correction');
   const titleId = useId();
-  const hintId = useId();
-  const lang = textLang(result.original);
   return (
     <section
       aria-labelledby={titleId}
@@ -39,8 +44,7 @@ export function SuggestCard({
       </h3>
       <p
         data-user-content
-        lang={lang}
-        aria-describedby={hintId}
+        lang={textLang(result.text, hintLang)}
         className="rounded-input bg-info-bg px-3 py-2.5 text-[17px] leading-relaxed font-bold text-ink"
       >
         {visibleSegments(result.segments).map((s, i) =>
@@ -57,12 +61,10 @@ export function SuggestCard({
           ),
         )}
       </p>
-      <p id={hintId} className="text-xs text-muted">
-        {t('changedHint')}
-      </p>
+      <p className="text-xs text-muted">{t('changedHint')}</p>
       <div className="text-sm">
         <p className="font-bold text-muted">{t('youWrote')}</p>
-        <p data-user-content lang={lang} className="mt-0.5 text-ink">
+        <p data-user-content lang={textLang(result.original, hintLang)} className="mt-0.5 text-ink">
           {result.original}
         </p>
       </div>

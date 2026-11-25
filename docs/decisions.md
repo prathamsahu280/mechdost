@@ -2072,3 +2072,15 @@ Spec `docs/specs/23-ustaad-network.md`, design `docs/superpowers/specs/2026-11-2
 - **Spec 07 change:** `/partners/apply/mechanic` becomes the Ustaad join; seller and workshop applications unchanged;
   old mechanic applications are mapped by a script into invites (never a silent membership, because the required
   consent is the member's own).
+
+## 2026-11-26 - Ustaad smart correction as built (task F1)
+
+- **Provider off by default:** `SMART_CORRECTION_PROVIDER=none` unless set; the assistant's `ANTHROPIC_API_KEY` does
+  not switch smart correction on (member text leaves the server only after Q-U3 is answered and the provider is named).
+  Default model for `anthropic`: `claude-haiku-5-5` (env `SMART_CORRECTION_MODEL`). Plain `fetch`, no SDK (spec 23 § 11
+  ruling, over the claude-api skill's SDK default).
+- **LLM only with the `ustaad_correction` consent**; otherwise the word list.
+- **Length rule floor:** 12 characters of change are always allowed (short-text expansions).
+- **Fail-closed numeral gate** (security review, four rounds): the text stays on our server when 8 or more numerals
+  remain after masking and a small allowlist of mechanic tokens, counted over the whole text; any non-ASCII,
+  non-Devanagari numeral or mixed digit scripts also keep it off the LLM. Details spec 23 § 11.1.

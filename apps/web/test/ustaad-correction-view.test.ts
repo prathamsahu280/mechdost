@@ -71,7 +71,9 @@ describe('smart correction on the web (spec 23 § 11)', () => {
     expect(correctionErrorKey('RATE_LIMITED')).toBe('limited');
     expect(correctionErrorKey('NETWORK')).toBe('failed');
     expect(textLang('बैटरी नई है')).toBe('hi');
-    expect(textLang('battery new hai')).toBe('hi-Latn');
+    expect(textLang('battery new hai')).toBeUndefined(); // no guessed Hinglish voice for Latin text
+    expect(textLang('battery new hai', 'hinglish')).toBe('hi-Latn');
+    expect(textLang('battery is new', 'en')).toBe('en');
     expect(textLang('6301')).toBeUndefined();
   });
 

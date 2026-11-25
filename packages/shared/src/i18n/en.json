@@ -6699,9 +6699,10 @@
     "correction": {
       "check": "Make it clearer",
       "checking": "Checking your words…",
+      "ready": "A suggestion is ready below.",
       "title": "Suggestion: a clearer version",
       "youWrote": "You wrote",
-      "changedHint": "Changed words are underlined.",
+      "changedHint": "Changed words are marked.",
       "changedWord": "changed",
       "note": "Only spelling and spacing are made clearer. Numbers, part names and your meaning stay the same. You decide.",
       "use": "Use suggestion",
