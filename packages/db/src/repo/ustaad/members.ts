@@ -7,7 +7,7 @@
  * (SR-34).
  */
 import { randomInt } from 'node:crypto';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import {
   USTAAD_CONSENT_NOTICE_VERSION,
   USTAAD_JOIN_CONSENTS,
@@ -22,6 +22,7 @@ import {
   roles,
   states,
   userRoles,
+  ustaadEvents,
   ustaadMemberCounters,
   ustaadMemberOnboarding,
   ustaadMembers,
@@ -149,6 +150,27 @@ async function revokeMechanic(tx: Tx, userId: string): Promise<void> {
   await tx.delete(userRoles).where(and(eq(userRoles.userId, userId), inArray(userRoles.roleId, ids)));
 }
 
+/**
+ * The status a member had when they last left (from the append-only `left` event), so a rejoin restores it. Only
+ * `active` or `restricted` can leave (banned members cannot); anything unexpected restores `restricted`, never
+ * a cleaner standing.
+ */
+async function statusBeforeLeaving(tx: Tx, memberId: string): Promise<'active' | 'restricted'> {
+  const [last] = await tx
+    .select({ fromStatus: ustaadEvents.fromStatus })
+    .from(ustaadEvents)
+    .where(
+      and(
+        eq(ustaadEvents.entityType, 'member'),
+        eq(ustaadEvents.entityId, memberId),
+        eq(ustaadEvents.kind, 'left'),
+      ),
+    )
+    .orderBy(desc(ustaadEvents.occurredAt), desc(ustaadEvents.id))
+    .limit(1);
+  return last?.fromStatus === 'active' ? 'active' : 'restricted';
+}
+
 export interface JoinContext {
   via: 'ustaad' | 'partners_apply';
 }
@@ -206,15 +228,20 @@ export async function joinUstaad(
     };
     let row: MemberRow | undefined;
     if (existing) {
-      // Rejoin: same row, same handle, same earned track and level; profile refreshed; verification state is kept
-      // when it was already verified.
+      // Rejoin: same row, same handle, same earned track and level; profile refreshed. A moderation standing never
+      // resets by leaving (security review 2026-11-26): the status before leaving comes back (a restricted member stays
+      // restricted), `restricted_mode`, `perks_frozen_until` and `banned_until` are not touched, and a verified or
+      // revoked verification state is kept.
+      const standing = await statusBeforeLeaving(tx, existing.id);
+      const keepVerification =
+        existing.verificationState === 'verified' || existing.verificationState === 'revoked';
       [row] = await tx
         .update(ustaadMembers)
         .set({
           ...profile,
-          status: 'active',
+          status: standing,
           leftAt: null,
-          verificationState: existing.verificationState === 'verified' ? 'verified' : verificationState,
+          verificationState: keepVerification ? existing.verificationState : verificationState,
           lastActiveAt: new Date(),
         })
         .where(
@@ -255,7 +282,12 @@ export async function joinUstaad(
     await tx.insert(ustaadMemberCounters).values({ memberId: member.id }).onConflictDoNothing();
     await tx.insert(ustaadMemberOnboarding).values({ memberId: member.id }).onConflictDoNothing();
     await writeConsents(tx, actor.userId, input.consents, 'ustaad_join');
-    if (input.verifyMethods.length > 0 && member.verificationState !== 'verified') {
+    // No automatic request for a verified member, nor for a revoked one (staff decide what happens next).
+    if (
+      input.verifyMethods.length > 0 &&
+      member.verificationState !== 'verified' &&
+      member.verificationState !== 'revoked'
+    ) {
       await tx
         .insert(ustaadVerifications)
         .values({ memberId: member.id, proofKinds: [...new Set(input.verifyMethods)] })
@@ -269,7 +301,7 @@ export async function joinUstaad(
         entityId: member.id,
         kind: existing ? 'rejoined' : 'joined',
         fromStatus: existing ? 'left' : null,
-        toStatus: 'active',
+        toStatus: member.status,
         actorId: actor.userId,
         actorRole: 'member',
         cityId,

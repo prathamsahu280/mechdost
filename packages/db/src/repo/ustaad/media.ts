@@ -16,7 +16,7 @@ import { istDateString } from '@mechdost/shared/time';
 import { ustaadBlocks, ustaadMedia, ustaadMediaTotals, ustaadMediaUsage } from '../../schema';
 import { ConflictError, NotFoundError, ValidationError } from '../errors';
 import type { Tx } from '../orders';
-import { num, rowsOf } from '../sql-rows';
+import { rowsOf } from '../sql-rows';
 import { recordUstaadEvent } from './events';
 import { readUstaadSettingValues } from './settings';
 
@@ -341,9 +341,18 @@ export async function rejectUstaadMedia(
 }
 
 /**
- * The media a viewer may read (SR-21, SR-35), or null (the API answers 404): verified, in a live bucket (never
- * quarantine or evidence, AT-UP-8), the viewer is not blocked by the owner, and when it belongs to posts, at least
- * one of them is visible and not an expired story (review focus 2: `url refused for expired story`).
+ * The media a viewer may read (SR-21, SR-35), or null (the API answers 404). **Deny by default** (security review
+ * 2026-11-26): verified, in a live bucket (never quarantine or evidence, AT-UP-8), nobody blocked by the other, and
+ * either the viewer owns it or it is attached to at least one host the viewer can see:
+ *  - a visible post (a story only before it expires, review focus 2);
+ *  - a visible comment whose post or answer is visible too;
+ *  - a question that is not removed, a visible answer (voice notes);
+ *  - a message in a thread the viewer is part of (not deleted);
+ *  - the profile photo of a member who has not left and is not banned;
+ *  - a job application voice intro: the applicant and the job's employer only;
+ *  - an active learning resource or tutorial card, a link-preview image.
+ * Unlinked media (a signboard photo, an upload not yet posted) is the owner's alone. Staff reads go through the
+ * audited moderation path of workstream F, never through this function. A new host type must be added here.
  */
 export async function readableUstaadMedia(
   tx: Tx,
@@ -362,27 +371,44 @@ export async function readableUstaadMedia(
     )
     .limit(1);
   if (!row) return null;
-  if (row.ownerMemberId !== input.viewerMemberId) {
-    const [blocked] = await tx
-      .select({ x: sql`1` })
-      .from(ustaadBlocks)
-      .where(
-        or(
-          and(eq(ustaadBlocks.memberId, row.ownerMemberId), eq(ustaadBlocks.targetId, input.viewerMemberId)),
-          and(eq(ustaadBlocks.memberId, input.viewerMemberId), eq(ustaadBlocks.targetId, row.ownerMemberId)),
-        ),
-      )
-      .limit(1);
-    if (blocked) return null;
-  }
-  const usage = await tx.execute(sql`
-    select count(*)::int as total,
-           count(*) filter (where p.status = 'visible' and (p.kind <> 'story' or p.expires_at > ${now}))::int as live
-    from ustaad_post_media pm join ustaad_posts p on p.id = pm.post_id
-    where pm.media_id = ${row.id}`);
-  const u = rowsOf<{ total: unknown; live: unknown }>(usage)[0];
-  if (u && num(u.total) > 0 && num(u.live) === 0) return null;
-  return row;
+  if (row.ownerMemberId === input.viewerMemberId) return row;
+  const [blocked] = await tx
+    .select({ x: sql`1` })
+    .from(ustaadBlocks)
+    .where(
+      or(
+        and(eq(ustaadBlocks.memberId, row.ownerMemberId), eq(ustaadBlocks.targetId, input.viewerMemberId)),
+        and(eq(ustaadBlocks.memberId, input.viewerMemberId), eq(ustaadBlocks.targetId, row.ownerMemberId)),
+      ),
+    )
+    .limit(1);
+  if (blocked) return null;
+  const m = row.id;
+  const v = input.viewerMemberId;
+  const res = await tx.execute(sql`
+    select (
+      exists (select 1 from ustaad_post_media pm join ustaad_posts p on p.id = pm.post_id
+              where pm.media_id = ${m} and p.status = 'visible' and (p.kind <> 'story' or p.expires_at > ${now}))
+      or exists (select 1 from ustaad_comments c
+              left join ustaad_posts p on p.id = c.post_id
+              left join ustaad_answers a on a.id = c.answer_id
+              where c.media_id = ${m} and c.status = 'visible'
+                and ((p.id is not null and p.status = 'visible' and (p.kind <> 'story' or p.expires_at > ${now}))
+                  or (a.id is not null and a.status = 'visible')))
+      or exists (select 1 from ustaad_questions q where q.voice_media_id = ${m} and q.status <> 'removed')
+      or exists (select 1 from ustaad_answers a where a.voice_media_id = ${m} and a.status = 'visible')
+      or exists (select 1 from ustaad_messages msg join ustaad_threads t on t.id = msg.thread_id
+              where msg.media_id = ${m} and msg.deleted_at is null and ${v} in (t.low_id, t.high_id))
+      or exists (select 1 from ustaad_members mb where mb.photo_media_id = ${m} and mb.status in ('active', 'restricted'))
+      or exists (select 1 from ustaad_job_applications ja join ustaad_jobs j on j.id = ja.job_id
+              where ja.voice_intro_media_id = ${m} and ${v} in (ja.member_id, j.employer_member_id))
+      or exists (select 1 from ustaad_learning_resources lr where lr.media_id = ${m} and lr.active)
+      or exists (select 1 from ustaad_tutorial_cards tc
+              where tc.active and ${m} in (tc.image_media_id, tc.audio_en_media_id, tc.audio_hi_media_id))
+      or exists (select 1 from ustaad_link_previews lp where lp.image_media_id = ${m} and lp.status = 'ok')
+    ) as ok`);
+  const ok = rowsOf<{ ok: unknown }>(res)[0]?.ok;
+  return ok === true || ok === 't' ? row : null;
 }
 
 /** Rows whose object the purge job deletes now (pending > 1 h, rejected, expired stories after the grace). */

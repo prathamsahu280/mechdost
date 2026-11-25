@@ -50,6 +50,8 @@ export const JoinDto = z
       .regex(/^[A-Z0-9-]{6,40}$/)
       .optional(),
     turnstileToken: z.string().min(10).max(4096),
+    /** Which entry point the join came from (analytics only): `/ustaad/join` or `/partners/apply/mechanic`. */
+    via: z.enum(['ustaad', 'partners_apply']).optional(),
   })
   .strict();
 export type Join = z.infer<typeof JoinDto>;

@@ -181,6 +181,45 @@ describe('rejoin after leave (review focus 3)', () => {
   });
 });
 
+describe('leave and rejoin never clears a moderation standing (security review 2026-11-26, HIGH)', () => {
+  it('restricted → leave → rejoin stays restricted, restricted mode and revoked verification are kept', async () => {
+    const m = await ustaadMemberOfUser(t(), f.other);
+    if (!m) throw new Error('member');
+    await db
+      .update(s.ustaadMembers)
+      .set({ status: 'restricted', restrictedMode: 'minor_report', verificationState: 'revoked' })
+      .where(eq(s.ustaadMembers.id, m.id));
+    await leaveUstaad(t(), { userId: f.other });
+    const again = await joinUstaad(
+      t(),
+      { userId: f.other },
+      join({ track: 'apprentice', verifyMethods: ['owner'], displayName: 'Chhotu Ram' }),
+      { via: 'ustaad' },
+    );
+    expect(again.status).toBe('restricted');
+    expect(again.verificationState).toBe('revoked');
+    const [row] = await db.select().from(s.ustaadMembers).where(eq(s.ustaadMembers.id, m.id));
+    expect(row?.restrictedMode).toBe('minor_report');
+    // A revoked member gets no automatic new verification request from a rejoin (staff decide).
+    const open = await db
+      .select()
+      .from(s.ustaadVerifications)
+      .where(eq(s.ustaadVerifications.memberId, m.id));
+    expect(open).toHaveLength(0);
+  });
+
+  it('a banned member can neither leave nor rejoin', async () => {
+    const m = await ustaadMemberOfUser(t(), f.other);
+    if (!m) throw new Error('member');
+    await db
+      .update(s.ustaadMembers)
+      .set({ status: 'banned', bannedUntil: new Date(Date.now() + 86_400_000) })
+      .where(eq(s.ustaadMembers.id, m.id));
+    await expectCode(leaveUstaad(t(), { userId: f.other }), 'USTAAD_BANNED');
+    await expectCode(joinUstaad(t(), { userId: f.other }, join(), { via: 'ustaad' }), 'USTAAD_BANNED');
+  });
+});
+
 describe('disabled city (review focus 4)', () => {
   it('members already in a city stay when it is switched off; new joins from it are refused', async () => {
     await db

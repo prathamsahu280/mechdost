@@ -21,7 +21,7 @@ import {
 } from '../src/repo';
 import * as s from '../src/schema';
 import { createTestDb, type TestDb } from '../src/testing';
-import { seedServiceFixture, type Fixture } from './service-fixture';
+import { addWorkshop, seedServiceFixture, type Fixture } from './service-fixture';
 
 let db: TestDb;
 let client: Awaited<ReturnType<typeof createTestDb>>['client'];
@@ -257,15 +257,23 @@ describe('complete and read', () => {
     expect(after?.rejectReasonCode).toBe('expired_upload');
   });
 
-  it('quarantine is never readable (AT-UP-8); verified media is', async () => {
+  it('quarantine is never readable (AT-UP-8); unlinked verified media only by its owner (deny by default)', async () => {
     const pending = await declareUstaadMedia(t(), declare({ memberId: b, userId: f.other, bytes: 10_000 }));
     expect(await readableUstaadMedia(t(), { mediaId: pending.id, viewerMemberId: b })).toBeNull();
     const m = await verified(b, f.other);
-    expect(await readableUstaadMedia(t(), { mediaId: m.id, viewerMemberId: a })).not.toBeNull();
+    expect(await readableUstaadMedia(t(), { mediaId: m.id, viewerMemberId: b })).not.toBeNull();
+    expect(await readableUstaadMedia(t(), { mediaId: m.id, viewerMemberId: a })).toBeNull();
   });
 
   it('a blocked viewer gets nothing (SR-35)', async () => {
     const m = await verified(b, f.other);
+    const [post] = await db
+      .insert(s.ustaadPosts)
+      .values({ authorId: b, cityId: f.raipur, kind: 'photo', body: 'Aaj ka kaam' })
+      .returning();
+    if (!post) throw new Error('post');
+    await db.insert(s.ustaadPostMedia).values({ postId: post.id, mediaId: m.id, position: 0 });
+    expect(await readableUstaadMedia(t(), { mediaId: m.id, viewerMemberId: a })).not.toBeNull();
     await db.insert(s.ustaadBlocks).values({ memberId: b, targetId: a });
     expect(await readableUstaadMedia(t(), { mediaId: m.id, viewerMemberId: a })).toBeNull();
     await db.delete(s.ustaadBlocks);
@@ -296,5 +304,148 @@ describe('complete and read', () => {
     await rejectUstaadMedia(t(), row, 'magic_mismatch');
     const due = await dueUstaadMediaPurges(t(), 100, new Date(Date.now() + 1000));
     expect(due.map((d) => d.id)).toContain(row.id);
+  });
+});
+
+describe('media read per host (security review 2026-11-26: deny by default)', () => {
+  const can = (mediaId: string, viewer: string) =>
+    readableUstaadMedia(t(), { mediaId, viewerMemberId: viewer });
+  let c: string;
+
+  beforeAll(async () => {
+    c = (
+      await joinUstaad(
+        t(),
+        { userId: f.staff },
+        {
+          track: 'apprentice',
+          specialities: ['two_wheeler'],
+          displayName: 'Third Member',
+          showGarage: false,
+          pincode: '492001',
+          areaLabel: 'Pandri',
+          yearsClaimed: 1,
+          workPlace: 'shop',
+          verifyMethods: [],
+          consents: {
+            ustaad_profile: true,
+            ustaad_directory: false,
+            ustaad_training: false,
+            ustaad_offers: false,
+          },
+          turnstileToken: 'human-token-123',
+        },
+        { via: 'ustaad' },
+      )
+    ).id;
+  });
+
+  it('a message photo: only the two people in the thread', async () => {
+    const m = await verified(b, f.other);
+    const [low, high] = [a, b].sort();
+    if (!low || !high) throw new Error('pair');
+    const [thread] = await db
+      .insert(s.ustaadThreads)
+      .values({ lowId: low, highId: high, requestedBy: b, status: 'open' })
+      .returning();
+    if (!thread) throw new Error('thread');
+    await db
+      .insert(s.ustaadMessages)
+      .values({ threadId: thread.id, senderId: b, kind: 'photo', mediaId: m.id });
+    expect(await can(m.id, a)).not.toBeNull();
+    expect(await can(m.id, c)).toBeNull();
+  });
+
+  it('a question voice note: members while the question is not removed', async () => {
+    const m = await verified(b, f.other);
+    const [q] = await db
+      .insert(s.ustaadQuestions)
+      .values({
+        code: 'UQ-RPR-2026-MEDIAQ',
+        askerId: b,
+        cityId: f.raipur,
+        title: 'Awaaz wala sawaal',
+        voiceMediaId: m.id,
+      })
+      .returning();
+    if (!q) throw new Error('q');
+    expect(await can(m.id, c)).not.toBeNull();
+    await db.update(s.ustaadQuestions).set({ status: 'removed' }).where(eq(s.ustaadQuestions.id, q.id));
+    expect(await can(m.id, c)).toBeNull();
+  });
+
+  it('an answer voice note and a comment photo: only while visible', async () => {
+    const [q] = await db
+      .insert(s.ustaadQuestions)
+      .values({ code: 'UQ-RPR-2026-MEDIAR', askerId: a, cityId: f.raipur, title: 'Sawaal' })
+      .returning();
+    if (!q) throw new Error('q');
+    const voice = await verified(b, f.other);
+    const [ans] = await db
+      .insert(s.ustaadAnswers)
+      .values({ questionId: q.id, authorId: b, voiceMediaId: voice.id })
+      .returning();
+    if (!ans) throw new Error('a');
+    expect(await can(voice.id, c)).not.toBeNull();
+    await db.update(s.ustaadAnswers).set({ status: 'removed' }).where(eq(s.ustaadAnswers.id, ans.id));
+    expect(await can(voice.id, c)).toBeNull();
+    const photo = await verified(b, f.other);
+    const [com] = await db
+      .insert(s.ustaadComments)
+      .values({ answerId: ans.id, authorId: b, mediaId: photo.id })
+      .returning();
+    if (!com) throw new Error('c');
+    // The comment is visible but sits on a removed answer: hidden with it.
+    expect(await can(photo.id, c)).toBeNull();
+    await db.update(s.ustaadAnswers).set({ status: 'visible' }).where(eq(s.ustaadAnswers.id, ans.id));
+    expect(await can(photo.id, c)).not.toBeNull();
+    await db.update(s.ustaadComments).set({ status: 'held' }).where(eq(s.ustaadComments.id, com.id));
+    expect(await can(photo.id, c)).toBeNull();
+  });
+
+  it('a profile photo: members while the profile is not left or banned', async () => {
+    const m = await verified(b, f.other);
+    await db.update(s.ustaadMembers).set({ photoMediaId: m.id }).where(eq(s.ustaadMembers.id, b));
+    expect(await can(m.id, c)).not.toBeNull();
+  });
+
+  it('a job application voice intro: only the applicant and the employer', async () => {
+    const ws = await addWorkshop(db, f);
+    const [job] = await db
+      .insert(s.ustaadJobs)
+      .values({
+        code: 'UJ-RPR-2026-MEDIAJ',
+        employerMemberId: a,
+        workshopId: ws.id,
+        cityId: f.raipur,
+        areaLabel: 'Pandri',
+        roleCode: 'helper',
+        title: 'Helper wanted',
+        description: 'Helper for the garage, full day.',
+        payMinPaiseMonth: 800_000,
+        payMaxPaiseMonth: 1_000_000,
+        timing: '9 to 7',
+        adultAttestedAt: new Date(),
+        expiresAt: new Date(Date.now() + 86_400_000),
+        status: 'open',
+      })
+      .returning();
+    if (!job) throw new Error('job');
+    const m = await verified(b, f.other);
+    await db.insert(s.ustaadJobApplications).values({ jobId: job.id, memberId: b, voiceIntroMediaId: m.id });
+    expect(await can(m.id, a)).not.toBeNull();
+    expect(await can(m.id, c)).toBeNull();
+  });
+
+  it('a story photo and a removed post are refused; a held post too', async () => {
+    const m = await verified(b, f.other);
+    const [post] = await db
+      .insert(s.ustaadPosts)
+      .values({ authorId: b, cityId: f.raipur, kind: 'photo', body: 'x', status: 'held' })
+      .returning();
+    if (!post) throw new Error('post');
+    await db.insert(s.ustaadPostMedia).values({ postId: post.id, mediaId: m.id, position: 0 });
+    expect(await can(m.id, c)).toBeNull();
+    expect(await can(m.id, b)).not.toBeNull();
   });
 });
