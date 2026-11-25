@@ -31,7 +31,13 @@ import type * as RealClientModule from '@/lib/auth/firebase-client';
 import type { PasswordResult } from '@/lib/auth/firebase-client';
 import { createAnnouncer } from '@/lib/auth/announcer';
 import { startTiming, type AuthFlow, type AuthOutcome, type AuthTiming } from '@/lib/auth/auth-timing';
-import { retryOnce, shouldPrefetch, startsEarlyCheck } from '@/lib/auth/sign-in-retry';
+import {
+  attemptWithProof,
+  createChallengeSlot,
+  retryOnce,
+  shouldPrefetch,
+  startsEarlyCheck,
+} from '@/lib/auth/sign-in-retry';
 import type { CodeFail, PhoneFail } from '@/lib/auth/auth-errors';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { useAutoSubmitCode } from '@/lib/auth/use-auto-submit-code';
@@ -173,7 +179,7 @@ export function LoginFlow() {
   /** The attempt being timed (`auth_timing`), so the bot-check callbacks can mark a shown challenge. */
   const timing = useRef<AuthTiming | null>(null);
   /** Real mode, staff: the signed challenge from the password step; it replaces the second Cloudflare check. */
-  const staffChallenge = useRef('');
+  const [staffChallenge] = useState(createChallengeSlot);
   const root = useRef<HTMLDivElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const seq = useRef(0);
@@ -224,13 +230,13 @@ export function LoginFlow() {
         r.warmRecaptcha(locale, RECAPTCHA_ID);
       });
     // A staff step that holds a signed challenge needs no Cloudflare check of its own.
-    if (step === 'staff' && staffChallenge.current) return;
+    if (step === 'staff' && staffChallenge.has()) return;
     const container = document.getElementById(TURNSTILE_ID);
     // Keyed by the container: a form swapped in (Forgot password) has a new one and starts its own early check.
     if (!container || !shouldPrefetch(prefetched.current, container, Date.now())) return;
     prefetched.current = { el: container, at: Date.now() };
     void turnstile().then((m) => {
-      m.prefetchTurnstileToken(TURNSTILE_ID, locale, showChallenge, showSlow);
+      m.prefetchTurnstileToken(TURNSTILE_ID, locale, showChallenge);
     });
   }
 
@@ -245,7 +251,7 @@ export function LoginFlow() {
     // A step that signs in again needs its own single-use token: forget the check the last step used, so the step's
     // first focus (its field takes focus as it opens) starts a new one at once (staff code: 30 s report 2026-11-25).
     if (startsEarlyCheck(s)) prefetched.current = null;
-    if (s === 'signin') staffChallenge.current = '';
+    if (s === 'signin') staffChallenge.clear();
     setError(null);
     setCodeExpired(false);
     if (!keepNotice) setNotice(null);
@@ -365,26 +371,25 @@ export function LoginFlow() {
     } = {},
   ): Promise<PasswordResult | null> {
     let firstAttempt = opts.started;
-    let challengeLeft = opts.staffChallenge;
     const stage = <T,>(name: 'botCheckMs' | 'apiMs', work: () => Promise<T>) =>
       opts.attempt ? opts.attempt.stage(name, work) : work();
-    return retryOnce(
-      async () => {
-        if (challengeLeft) {
-          // Used once: the API refuses a second use, and then the retry below runs a Cloudflare check as before.
-          const signed = challengeLeft;
-          challengeLeft = undefined;
-          opts.attempt?.botCheckSkipped();
-          return stage('apiMs', () => r.passwordSignIn({ ...input, staffChallenge: signed, locale }));
-        }
+    // The staff challenge is used once; if the API refuses it (or it is absent) the check runs as before, and a token
+    // the API calls expired or used is replaced once.
+    return attemptWithProof({
+      proof: opts.staffChallenge,
+      withProof: (staffChallenge) => {
+        opts.attempt?.botCheckSkipped();
+        return stage('apiMs', () => r.passwordSignIn({ ...input, staffChallenge, locale }));
+      },
+      withCheck: async () => {
         const token = await stage('botCheckMs', () => firstAttempt ?? botCheck());
         firstAttempt = undefined;
         return token
           ? stage('apiMs', () => r.passwordSignIn({ ...input, turnstileToken: token, locale }))
           : null;
       },
-      (result) => result !== null && !result.ok && result.reason === 'turnstile',
-    );
+      refused: (result) => !result.ok && result.reason === 'turnstile',
+    });
   }
 
   function phoneFail(reason: PhoneFail, code: string) {
@@ -582,7 +587,7 @@ export function LoginFlow() {
         phoneFail(sent.reason === 'phone' ? 'unavailable' : sent.reason, sent.code);
         return undefined;
       }
-      staffChallenge.current = res.staffChallenge ?? '';
+      staffChallenge.set(res.staffChallenge);
       pendingPassword.current = password;
       setIdentifier(who);
       setStaffPhone(res.phone);
@@ -630,11 +635,10 @@ export function LoginFlow() {
       // A signed challenge from the password step replaces the second bot check (single use; the API falls back to
       // a Cloudflare check when it is refused). Without one, the check runs beside the code check (the token is
       // single use, so one that is not needed - wrong code - is simply dropped). `botCheck` never rejects.
-      const signed = staffChallenge.current;
-      staffChallenge.current = '';
-      const token = signed ? undefined : botCheck();
+      const token = staffChallenge.has() ? undefined : botCheck();
       const confirmed = await attempt.stage('codeConfirmMs', () => r.confirmPhoneCode(otp));
       if (!confirmed.ok) {
+        // A mistyped code keeps the challenge for the next try.
         reportTiming(attempt, 'invalid');
         codeFail(confirmed.reason, confirmed.code);
         return undefined;
@@ -642,7 +646,7 @@ export function LoginFlow() {
       const res = await signInChecked(
         r,
         { identifier, password: pendingPassword.current, phoneToken: true },
-        { started: token, attempt, staffChallenge: signed },
+        { started: token, attempt, staffChallenge: staffChallenge.take() || undefined },
       );
       if (!res) {
         reportTiming(attempt, 'bot_check_failed');

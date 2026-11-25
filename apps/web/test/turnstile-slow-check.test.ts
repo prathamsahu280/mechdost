@@ -101,6 +101,19 @@ describe('a slow but working Cloudflare check', () => {
     expect(token).toBe('second-try');
   });
 
+  it('"still checking" counts from the press, not from the check started while typing', async () => {
+    const m = await import('../src/lib/auth/turnstile');
+    const slow: boolean[] = [];
+    m.prefetchTurnstileToken('login-turnstile', 'en');
+    await vi.advanceTimersByTimeAsync(20_000); // typing for 20 s: the form says nothing
+    expect(slow).toEqual([]);
+    void m.turnstileToken('login-turnstile', 'en', undefined, (on) => slow.push(on)).catch(() => undefined);
+    await vi.advanceTimersByTimeAsync(7_000);
+    expect(slow).toEqual([]);
+    await vi.advanceTimersByTimeAsync(1_500);
+    expect(slow).toEqual([true]);
+  });
+
   it('an expired token before it was used fails the check at once', async () => {
     const m = await import('../src/lib/auth/turnstile');
     let failed: unknown = null;

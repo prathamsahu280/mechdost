@@ -79,6 +79,21 @@ describe('staff challenge on POST /v1/auth/password', () => {
     expect(await code(replay)).toBe('TURNSTILE_FAILED');
   });
 
+  it('two parallel second calls with the same challenge: exactly one is accepted', async () => {
+    const a = await staff('12');
+    const one = await first(a);
+    const body = { identifier: a.email, password: PASSWORD, staffChallenge: one.staffChallenge };
+    // Different phone sessions (auth times), so only the challenge can tell the twins apart.
+    const now = Math.floor(Date.now() / 1000);
+    const session = (id: string, authTime: number) =>
+      bearer(ctx.verifier.add(id, { firebaseUid: a.firebaseUid, phone: a.phone, authTime }));
+    const results = await Promise.all([
+      post(body, session('sc-12-phone-token-a-00', now - 1)),
+      post(body, session('sc-12-phone-token-b-00', now - 2)),
+    ]);
+    expect(results.map((r) => r.status).sort()).toEqual([200, 400]);
+  });
+
   it('an expired challenge is refused', async () => {
     const a = await staff('03');
     const old = signStaffChallenge(

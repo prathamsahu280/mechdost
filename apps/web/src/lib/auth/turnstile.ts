@@ -47,8 +47,6 @@ let shown: (on: boolean) => void = () => undefined;
 let interactiveNow = false;
 /** Who hears "a visible challenge is up": the call that started the check, or the one that took it over. */
 let listener: (on: boolean) => void = () => undefined;
-/** Who hears "the check is slow but still working" (and that it is over). */
-let slowListener: (slow: boolean) => void = () => undefined;
 /** A check started ahead of the submit (first focus in the form): the token is waiting when the button is pressed. */
 let warm: { promise: Promise<string>; at: number; el: HTMLElement | null } | null = null;
 
@@ -92,11 +90,9 @@ export function prefetchTurnstileToken(
   containerId: string,
   locale: string,
   onInteractive: (shown: boolean) => void = () => undefined,
-  onSlow: (slow: boolean) => void = () => undefined,
 ): void {
   if (warm && tokenUsable(warm.at, Date.now()) && sameContainer(warm, containerId)) return;
   listener = onInteractive;
-  slowListener = onSlow;
   const promise = run(containerId, locale);
   const mine = { promise, at: Date.now(), el: document.getElementById(containerId) };
   warm = mine;
@@ -117,9 +113,29 @@ export async function turnstileToken(
   onInteractive: (shown: boolean) => void = () => undefined,
   onSlow: (slow: boolean) => void = () => undefined,
 ): Promise<string> {
+  // "Still checking" counts from the press (a check started while typing is not slow yet) and is not said while a
+  // visible challenge waits for the person.
+  const slow = { shown: false };
+  const slowTimer = setTimeout(() => {
+    if (interactiveNow) return;
+    slow.shown = true;
+    onSlow(true);
+  }, SLOW_AFTER_MS);
+  try {
+    return await obtainToken(containerId, locale, onInteractive);
+  } finally {
+    clearTimeout(slowTimer);
+    if (slow.shown) onSlow(false);
+  }
+}
+
+async function obtainToken(
+  containerId: string,
+  locale: string,
+  onInteractive: (shown: boolean) => void,
+): Promise<string> {
   const held = warm;
   warm = null;
-  slowListener = onSlow;
   // A check started in a form that has been replaced (sign-in → "Forgot password") never answers: run a fresh one.
   if (held && tokenUsable(held.at, Date.now()) && sameContainer(held, containerId)) {
     listener = onInteractive;
@@ -147,7 +163,6 @@ export async function turnstileToken(
 async function run(containerId: string, locale: string): Promise<string> {
   let waitingForPerson = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const state = { slowShown: false };
   const giveUp = new Promise<never>((_, reject) => {
     const arm = (ms: number) => {
       timer = setTimeout(() => {
@@ -158,28 +173,17 @@ async function run(containerId: string, locale: string): Promise<string> {
     };
     arm(GIVE_UP_MS);
   });
-  const slowTimer = setTimeout(() => {
-    if (waitingForPerson) return;
-    state.slowShown = true;
-    slowListener(true);
-  }, SLOW_AFTER_MS);
   try {
     return await Promise.race([
       issue(containerId, locale, (on) => {
         waitingForPerson = on;
         interactiveNow = on;
-        if (on && state.slowShown) {
-          state.slowShown = false;
-          slowListener(false);
-        }
         listener(on);
       }),
       giveUp,
     ]);
   } finally {
     clearTimeout(timer);
-    clearTimeout(slowTimer);
-    if (state.slowShown) slowListener(false);
     interactiveNow = false;
   }
 }
