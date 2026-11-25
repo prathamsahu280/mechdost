@@ -93,6 +93,20 @@ export interface UstaadServerEventProps {
   ustaad_restricted_mode: { memberId: string; reason: 'minor_report' | 'review' | 'cleared' };
   admin_ustaad_settings_saved: { keys: string[] };
   admin_ustaad_invariant_refused: { key: string };
+  /** Admin → Ustaad tables (task G1): which table, what was done; never the text. */
+  admin_ustaad_table_saved: {
+    table:
+      | 'levels'
+      | 'badges'
+      | 'tags'
+      | 'words'
+      | 'reasons'
+      | 'reach_cities'
+      | 'promotions'
+      | 'tutorial_cards'
+      | 'coachmarks';
+    action: 'create' | 'update' | 'merge' | 'move';
+  };
   /** The staff preview switch (founder 2026-11-26). */
   admin_ustaad_access_changed: { from: Of<typeof USTAAD_ACCESS_MODES>; to: Of<typeof USTAAD_ACCESS_MODES> };
 }
@@ -131,6 +145,7 @@ export const USTAAD_SERVER_EVENTS = [
   'ustaad_restricted_mode',
   'admin_ustaad_settings_saved',
   'admin_ustaad_invariant_refused',
+  'admin_ustaad_table_saved',
   'admin_ustaad_access_changed',
 ] as const satisfies readonly (keyof UstaadServerEventProps)[];
 
