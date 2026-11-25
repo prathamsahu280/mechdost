@@ -4,6 +4,7 @@ import { findPasswordAccount, recordSignInAudit, recordStaffSignIn } from '@mech
 import { parseSignInIdentifier, STAFF_2FA_CLAIM, STAFF_CODE_MAX_AGE_SECONDS } from '@mechdost/shared/auth';
 import { PASSWORD_CHANGE_WINDOW_MS } from '../auth/email-actions';
 import { announcePasswordChange } from '../auth/password-notice';
+import { readStaffChallenge, signStaffChallenge, STAFF_CHALLENGE_TTL_SECONDS } from '../auth/staff-challenge';
 import { TokenError } from '../auth/token-verifier';
 import { ApiError } from '../errors';
 import { log, safeError } from '../logger';
@@ -37,7 +38,10 @@ const Body = z
   .object({
     identifier: z.string().min(1).max(254),
     password: z.string().min(1).max(256),
-    turnstileToken: z.string().min(1).max(2048),
+    /** Required unless a valid `staffChallenge` comes with the phone token (second staff call). */
+    turnstileToken: z.string().min(1).max(2048).optional(),
+    /** Returned by the first staff call; lets the second call skip the Cloudflare check (decision 2026-11-25). */
+    staffChallenge: z.string().min(1).max(700).optional(),
   })
   .strict()
   .openapi('PasswordSignIn');
@@ -45,7 +49,7 @@ const Body = z
 const Result = z
   .union([
     z.object({ status: z.literal('signed_in'), customToken: z.string() }),
-    z.object({ status: z.literal('staff_code'), phone: z.string() }),
+    z.object({ status: z.literal('staff_code'), phone: z.string(), staffChallenge: z.string().optional() }),
   ])
   .openapi('PasswordSignInResult');
 
@@ -63,6 +67,14 @@ const route = createRoute({
     ...errorResponses,
   },
 });
+
+/** A staff challenge works once (its nonce is counted in the fail-closed store); the window outlives the token. */
+const STAFF_CHALLENGE_ONCE: RateRule = {
+  name: 'staff_challenge_once',
+  limit: 1,
+  windowSeconds: STAFF_CHALLENGE_TTL_SECONDS + 60,
+  failClosed: true,
+};
 
 export const unavailable = () =>
   new ApiError(503, 'AUTH_UNAVAILABLE', 'Sign-in is unavailable right now — please try again shortly');
@@ -108,12 +120,33 @@ export function authRoutes(deps: AppDeps) {
     // counted before the check passes), which takes one database round trip off every sign-in.
     const lookup = ident ? findPasswordAccount(deps.db, ident) : Promise.resolve(null);
     lookup.catch(() => undefined);
-    let human: boolean;
-    try {
-      human = await turnstile.verify(body.turnstileToken, ip);
-    } catch (err) {
-      log('error', 'turnstile_unavailable', safeError(err));
-      throw unavailable();
+    const phoneToken = BEARER.exec(c.req.header('authorization') ?? '')?.[1];
+    // Second staff call: a challenge from the first call (Cloudflare and password passed) replaces a second
+    // Cloudflare check when it is ours, unexpired, bound to this very account and phone, and unused. It counts only
+    // with the phone ID token, which is verified below; used or not, the password and the limits still apply.
+    let human = false;
+    const challenge =
+      deps.keyring && phoneToken && body.staffChallenge
+        ? readStaffChallenge(deps.keyring, body.staffChallenge)
+        : null;
+    if (challenge) {
+      const bound = await lookup;
+      if (
+        bound?.staff &&
+        bound.userId === challenge.u &&
+        bound.firebaseUid === challenge.f &&
+        bound.phone === challenge.p
+      ) {
+        human = (await closed(() => deps.rateLimiter.hit(STAFF_CHALLENGE_ONCE, challenge.nonce))).allowed;
+      }
+    }
+    if (!human && body.turnstileToken) {
+      try {
+        human = await turnstile.verify(body.turnstileToken, ip);
+      } catch (err) {
+        log('error', 'turnstile_unavailable', safeError(err));
+        throw unavailable();
+      }
     }
     if (!human) throw new ApiError(400, 'TURNSTILE_FAILED', 'Complete the check and try again');
 
@@ -146,9 +179,24 @@ export function authRoutes(deps: AppDeps) {
     await closed(() => deps.rateLimiter.reset(SIGN_IN_FAILURES, key));
     let claims: Record<string, boolean> | undefined;
     if (account.staff) {
-      const phoneToken = BEARER.exec(c.req.header('authorization') ?? '')?.[1];
-      if (!phoneToken || !account.phone)
-        return c.json({ status: 'staff_code' as const, phone: account.phone ?? '' }, 200);
+      if (!phoneToken || !account.phone) {
+        const staffChallenge =
+          deps.keyring && account.phone
+            ? signStaffChallenge(deps.keyring, {
+                u: account.userId,
+                f: account.firebaseUid,
+                p: account.phone,
+              })
+            : undefined;
+        return c.json(
+          {
+            status: 'staff_code' as const,
+            phone: account.phone ?? '',
+            ...(staffChallenge ? { staffChallenge } : {}),
+          },
+          200,
+        );
+      }
       let t;
       try {
         t = await deps.verifier.verify(phoneToken, { checkRevoked: true });

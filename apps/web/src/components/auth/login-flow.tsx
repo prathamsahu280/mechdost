@@ -30,7 +30,14 @@ import { track } from '@/lib/analytics';
 import type * as RealClientModule from '@/lib/auth/firebase-client';
 import type { PasswordResult } from '@/lib/auth/firebase-client';
 import { createAnnouncer } from '@/lib/auth/announcer';
-import { retryOnce, shouldPrefetch, startsEarlyCheck } from '@/lib/auth/sign-in-retry';
+import { startTiming, type AuthFlow, type AuthOutcome, type AuthTiming } from '@/lib/auth/auth-timing';
+import {
+  attemptWithProof,
+  createChallengeSlot,
+  retryOnce,
+  shouldPrefetch,
+  startsEarlyCheck,
+} from '@/lib/auth/sign-in-retry';
 import type { CodeFail, PhoneFail } from '@/lib/auth/auth-errors';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { useAutoSubmitCode } from '@/lib/auth/use-auto-submit-code';
@@ -167,6 +174,12 @@ export function LoginFlow() {
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [codeExpired, setCodeExpired] = useState(false);
   const [challenge, setChallenge] = useState(false);
+  /** The Cloudflare check is slow but still working (a calm status line, not an error). */
+  const [slowCheck, setSlowCheck] = useState(false);
+  /** The attempt being timed (`auth_timing`), so the bot-check callbacks can mark a shown challenge. */
+  const timing = useRef<AuthTiming | null>(null);
+  /** Real mode, staff: the signed challenge from the password step; it replaces the second Cloudflare check. */
+  const [staffChallenge] = useState(createChallengeSlot);
   const root = useRef<HTMLDivElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const seq = useRef(0);
@@ -210,6 +223,14 @@ export function LoginFlow() {
   const prefetched = useRef<{ el: HTMLElement; at: number } | null>(null);
   function onFirstTouch() {
     if (!REAL) return;
+    // The phone code's reCAPTCHA is made while they type the password (it sends nothing; the staff step sends the
+    // code only after the API verified the password), so that send does not wait for Google's script.
+    if (step === 'signin' || step === 'signup-phone' || step === 'forgot-phone')
+      void real().then((r) => {
+        r.warmRecaptcha(locale, RECAPTCHA_ID);
+      });
+    // A staff step that holds a signed challenge needs no Cloudflare check of its own.
+    if (step === 'staff' && staffChallenge.has()) return;
     const container = document.getElementById(TURNSTILE_ID);
     // Keyed by the container: a form swapped in (Forgot password) has a new one and starts its own early check.
     if (!container || !shouldPrefetch(prefetched.current, container, Date.now())) return;
@@ -230,6 +251,7 @@ export function LoginFlow() {
     // A step that signs in again needs its own single-use token: forget the check the last step used, so the step's
     // first focus (its field takes focus as it opens) starts a new one at once (staff code: 30 s report 2026-11-25).
     if (startsEarlyCheck(s)) prefetched.current = null;
+    if (s === 'signin') staffChallenge.clear();
     setError(null);
     setCodeExpired(false);
     if (!keepNotice) setNotice(null);
@@ -291,9 +313,26 @@ export function LoginFlow() {
     return done(account, event(account.role));
   }
 
+  function showSlow(slow: boolean) {
+    setSlowCheck(slow);
+    if (slow) announce(t('stillChecking'));
+  }
+
+  /** One `auth_timing` event per attempt (spec 12): where the time went, never who. */
+  function reportTiming(attempt: AuthTiming, outcome: AuthOutcome) {
+    track('auth_timing', { ...attempt.done(outcome), path: window.location.pathname });
+  }
+  const outcomeOf = (reason: string): AuthOutcome =>
+    reason === 'invalid' || reason === 'locked' || reason === 'staff_mismatch' || reason === 'staff_expired'
+      ? 'invalid'
+      : reason === 'turnstile'
+        ? 'bot_check_failed'
+        : 'error';
+
   function showChallenge(shown: boolean) {
     setChallenge(shown);
     if (shown) {
+      timing.current?.challengeShown();
       announce(t('securityCheckLead'));
       track('click', { id: 'login_bot_check_shown', path: window.location.pathname });
     }
@@ -305,10 +344,12 @@ export function LoginFlow() {
       const { turnstileToken } = await turnstile();
       // The token is single use: the early check of this container is spent, so a later step may start another.
       prefetched.current = null;
-      return await turnstileToken(TURNSTILE_ID, locale, showChallenge);
+      return await turnstileToken(TURNSTILE_ID, locale, showChallenge, showSlow);
     } catch {
       failForm(t('errBotCheck'));
       return null;
+    } finally {
+      setSlowCheck(false);
     }
   }
 
@@ -320,18 +361,35 @@ export function LoginFlow() {
   async function signInChecked(
     r: RealClient,
     input: { identifier: string; password: string; phoneToken?: boolean },
-    /** A check already running (started beside another request); only the first attempt uses it. */
-    started?: Promise<string | null>,
+    opts: {
+      /** A check already running (started beside another request); only the first attempt uses it. */
+      started?: Promise<string | null>;
+      /** The attempt's stage timer. */
+      attempt?: AuthTiming;
+      /** Staff second call: the signed challenge from the first call stands in for the Cloudflare check. */
+      staffChallenge?: string;
+    } = {},
   ): Promise<PasswordResult | null> {
-    let firstAttempt = started;
-    return retryOnce(
-      async () => {
-        const token = await (firstAttempt ?? botCheck());
-        firstAttempt = undefined;
-        return token ? r.passwordSignIn({ ...input, turnstileToken: token, locale }) : null;
+    let firstAttempt = opts.started;
+    const stage = <T,>(name: 'botCheckMs' | 'apiMs', work: () => Promise<T>) =>
+      opts.attempt ? opts.attempt.stage(name, work) : work();
+    // The staff challenge is used once; if the API refuses it (or it is absent) the check runs as before, and a token
+    // the API calls expired or used is replaced once.
+    return attemptWithProof({
+      proof: opts.staffChallenge,
+      withProof: (staffChallenge) => {
+        opts.attempt?.botCheckSkipped();
+        return stage('apiMs', () => r.passwordSignIn({ ...input, staffChallenge, locale }));
       },
-      (result) => result !== null && !result.ok && result.reason === 'turnstile',
-    );
+      withCheck: async () => {
+        const token = await stage('botCheckMs', () => firstAttempt ?? botCheck());
+        firstAttempt = undefined;
+        return token
+          ? stage('apiMs', () => r.passwordSignIn({ ...input, turnstileToken: token, locale }))
+          : null;
+      },
+      refused: (result) => !result.ok && result.reason === 'turnstile',
+    });
   }
 
   function phoneFail(reason: PhoneFail, code: string) {
@@ -406,6 +464,8 @@ export function LoginFlow() {
       <p id="login-turnstile-label" hidden={!challenge} className="text-sm font-bold text-ink">
         {t('securityCheck')}
       </p>
+      {/* The live region already announced it; this is the same calm line for everyone else. */}
+      {slowCheck && !challenge ? <p className="text-sm text-muted">{t('stillChecking')}</p> : null}
       <div id={TURNSTILE_ID} />
     </div>
   ) : null;
@@ -499,11 +559,18 @@ export function LoginFlow() {
     password: string,
     who: string = identifier,
     event: (role: DemoRole) => string = (role) => `login_${role}`,
+    flow: AuthFlow = 'password',
   ): Promise<Outcome> {
     const r = await real();
-    const res = await signInChecked(r, { identifier: who, password });
-    if (!res) return undefined;
+    const attempt = startTiming(flow);
+    timing.current = attempt;
+    const res = await signInChecked(r, { identifier: who, password }, { attempt });
+    if (!res) {
+      reportTiming(attempt, 'bot_check_failed');
+      return undefined;
+    }
     if (!res.ok) {
+      reportTiming(attempt, outcomeOf(res.reason));
       track('click', { id: 'login_password_failed', path: window.location.pathname });
       if (res.reason === 'invalid') fail(t('errSignIn'), 'login-password');
       else if (res.reason === 'locked')
@@ -514,18 +581,22 @@ export function LoginFlow() {
       return undefined;
     }
     if (res.status === 'staff_code') {
-      const sent = await r.sendPhoneCode(res.phone, locale, RECAPTCHA_ID);
+      const sent = await attempt.stage('smsSendMs', () => r.sendPhoneCode(res.phone, locale, RECAPTCHA_ID));
+      reportTiming(attempt, sent.ok ? 'ok' : 'error');
       if (!sent.ok) {
         phoneFail(sent.reason === 'phone' ? 'unavailable' : sent.reason, sent.code);
         return undefined;
       }
+      staffChallenge.set(res.staffChallenge);
       pendingPassword.current = password;
       setIdentifier(who);
       setStaffPhone(res.phone);
       goTo('staff');
       return undefined;
     }
-    return finishReal(event);
+    const finished = await attempt.stage('finishMs', () => finishReal(event));
+    reportTiming(attempt, finished === 'leaving' ? 'ok' : 'error');
+    return finished;
   }
 
   /** The Submit button of a code form: the same call as the automatic one, with the field's value. */
@@ -559,21 +630,30 @@ export function LoginFlow() {
     }
     await guarded(t('verifying'), async () => {
       const r = await real();
-      // The bot check runs beside the code check (it used to start only after it, a second wait): the token is
-      // single use, so one that is not needed (wrong code) is simply dropped. `botCheck` never rejects.
-      const token = botCheck();
-      const confirmed = await r.confirmPhoneCode(otp);
+      const attempt = startTiming('staff_code');
+      timing.current = attempt;
+      // A signed challenge from the password step replaces the second bot check (single use; the API falls back to
+      // a Cloudflare check when it is refused). Without one, the check runs beside the code check (the token is
+      // single use, so one that is not needed - wrong code - is simply dropped). `botCheck` never rejects.
+      const token = staffChallenge.has() ? undefined : botCheck();
+      const confirmed = await attempt.stage('codeConfirmMs', () => r.confirmPhoneCode(otp));
       if (!confirmed.ok) {
+        // A mistyped code keeps the challenge for the next try.
+        reportTiming(attempt, 'invalid');
         codeFail(confirmed.reason, confirmed.code);
         return undefined;
       }
       const res = await signInChecked(
         r,
         { identifier, password: pendingPassword.current, phoneToken: true },
-        token,
+        { started: token, attempt, staffChallenge: staffChallenge.take() || undefined },
       );
-      if (!res) return undefined;
+      if (!res) {
+        reportTiming(attempt, 'bot_check_failed');
+        return undefined;
+      }
       if (!res.ok || res.status !== 'signed_in') {
+        reportTiming(attempt, res.ok ? 'error' : outcomeOf(res.reason));
         if (!res.ok && res.reason === 'staff_expired') codeFail('expired');
         else if (!res.ok && res.reason === 'staff_mismatch') failForm(t('errStaffOtherAccount'));
         else if (!res.ok && res.reason === 'turnstile') failForm(t('errBotCheck'));
@@ -581,7 +661,9 @@ export function LoginFlow() {
         return undefined;
       }
       pendingPassword.current = '';
-      return finishReal((role) => `login_${role}`);
+      const finished = await attempt.stage('finishMs', () => finishReal((role) => `login_${role}`));
+      reportTiming(attempt, finished === 'leaving' ? 'ok' : 'error');
+      return finished;
     });
   }
 
@@ -714,12 +796,19 @@ export function LoginFlow() {
         return undefined;
       }
       // Linking turned the session into a `password` sign-in, which the API refuses: sign in the API's way.
-      const session = await signInChecked(r, { identifier: `+91${phone}`, password });
-      if (!session) return undefined;
+      const attempt = startTiming('signup');
+      timing.current = attempt;
+      const session = await signInChecked(r, { identifier: `+91${phone}`, password }, { attempt });
+      if (!session) {
+        reportTiming(attempt, 'bot_check_failed');
+        return undefined;
+      }
       if (!session.ok || session.status !== 'signed_in') {
+        reportTiming(attempt, session.ok ? 'error' : outcomeOf(session.reason));
         failForm(t('errUnavailable'));
         return undefined;
       }
+      reportTiming(attempt, 'ok');
       const me = await r.fetchMe();
       if (!me || me === 'blocked') {
         failForm(me === 'blocked' ? t('blocked') : t('errUnavailable'));
@@ -801,7 +890,7 @@ export function LoginFlow() {
         return undefined;
       }
       // The new password made this a `password` session, which the API refuses: sign in the API's way.
-      return signInReal(password, `+91${phone}`, () => 'password_reset_phone');
+      return signInReal(password, `+91${phone}`, () => 'password_reset_phone', 'reset');
     });
   }
 

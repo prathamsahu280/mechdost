@@ -1574,6 +1574,7 @@
     "resetPasswordTitle": "Choose a new password",
     "resetPasswordLead": "Your phone is confirmed. Pick the password you will use from now on.",
     "checkingCode": "Checking code…",
+    "stillChecking": "Still checking your browser…",
     "codeAutoHint": "We check the code as soon as you enter all {length} digits.",
     "noAccount": "We couldn't find an account with this number. Go back and create one.",
     "savePassword": "Save new password",

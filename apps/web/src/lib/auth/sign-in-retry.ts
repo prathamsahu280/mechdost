@@ -51,6 +51,54 @@ export async function retryOnce<T>(
   return shouldRetry(first) ? attempt() : first;
 }
 
+/**
+ * Holds the staff challenge between the password step and the code step (2026-11-25). It is only taken once the phone
+ * code is confirmed: a mistyped code must not spend it, or the next try would run a cold Cloudflare check.
+ */
+export function createChallengeSlot() {
+  let held = '';
+  return {
+    set(value: string | undefined) {
+      held = value ?? '';
+    },
+    has: () => held !== '',
+    /** The challenge, once; empty after. */
+    take() {
+      const value = held;
+      held = '';
+      return value;
+    },
+    clear() {
+      held = '';
+    },
+  };
+}
+
+/**
+ * One sign-in call that may carry earlier proof of the bot check (the staff challenge): the proof is used for the
+ * first attempt only, and when the API refuses it as a failed bot check (`refused`) the call is made again with a
+ * real check (`withCheck`, which may return null when that check itself failed).
+ */
+export async function attemptWithProof<R>(opts: {
+  proof: string | undefined;
+  withProof: (proof: string) => Promise<R>;
+  withCheck: () => Promise<R | null>;
+  refused: (result: R) => boolean;
+}): Promise<R | null> {
+  let left = opts.proof;
+  return retryOnce(
+    async () => {
+      if (left) {
+        const proof = left;
+        left = undefined;
+        return opts.withProof(proof);
+      }
+      return opts.withCheck();
+    },
+    (result) => result !== null && opts.refused(result),
+  );
+}
+
 /** Firebase codes that mean "the network blinked": the same call is worth one more try. */
 export function isTransientAuthCode(code: string | undefined): boolean {
   return code === 'auth/network-request-failed' || code === 'auth/internal-error';

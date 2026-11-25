@@ -566,6 +566,9 @@ const id = z
   .refine((v) => !/\d{7,}/u.test(v), 'looks like a phone number');
 const path = ANALYTICS_PATH;
 
+/** A stage duration in whole milliseconds (capped at 10 minutes). */
+const AUTH_MS = z.number().int().min(0).max(600_000);
+
 const EMAIL_ACTION_MODES = ['verifyEmail', 'resetPassword', 'recoverEmail', 'verifyAndChangeEmail'] as const;
 
 export const CLIENT_EVENT_SCHEMAS = {
@@ -585,6 +588,24 @@ export const CLIENT_EVENT_SCHEMAS = {
     .object({
       kind: z.enum(['signup', 'reset', 'staff', 'partner_status', 'delivery']),
       auto: z.boolean(),
+      path,
+    })
+    .strict(),
+  // How long one sign-in attempt took, by stage (2026-11-25, staff sign-in report). Milliseconds from the browser's
+  // monotonic clock; a stage that did not run is left out. No ids, no account, no typed text.
+  auth_timing: z
+    .object({
+      flow: z.enum(['password', 'staff_code', 'signup', 'reset']),
+      outcome: z.enum(['ok', 'bot_check_failed', 'invalid', 'error']),
+      botCheckMs: AUTH_MS.optional(),
+      apiMs: AUTH_MS.optional(),
+      smsSendMs: AUTH_MS.optional(),
+      codeConfirmMs: AUTH_MS.optional(),
+      finishMs: AUTH_MS.optional(),
+      totalMs: AUTH_MS,
+      challengeShown: z.boolean(),
+      /** The second staff call went without a Cloudflare check (signed staff challenge). */
+      botCheckSkipped: z.boolean(),
       path,
     })
     .strict(),
