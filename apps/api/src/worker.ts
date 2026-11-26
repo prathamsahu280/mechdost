@@ -19,6 +19,8 @@ import {
   expireDueAssignments,
   expireDueServiceRequests,
   expireDueRsaOffers,
+  expireDueDeliveryOffers,
+  resumePausedAgents,
   expireUnpaidRsa,
   releaseExpiredReservations,
   expireUnpaidOnlineOrders,
@@ -222,6 +224,28 @@ requestTimer.unref();
 // Roadside (spec 22): an offer past the city's accept timer goes back to the dispatch queue, and a request whose advance
 // was not paid within the window is closed (nothing was charged). Every 30 s; each is its own compare-and-set
 // transaction under the request lock, so several workers may run this safely.
+// Delivery agents (spec 24): offers past their timer go back to the admin queue; paused agents with an end date
+// resume. One transaction per offer, so several workers may run this safely.
+let expiringDelivery = false;
+const deliveryTimer = setInterval(() => {
+  if (expiringDelivery) return;
+  expiringDelivery = true;
+  void expireDueDeliveryOffers(db)
+    .then(async ({ expired, failed }) => {
+      if (expired > 0) log('info', 'delivery_offers_expired', { count: expired });
+      for (const f of failed)
+        log('error', 'delivery_offer_expiry_failed', { offerId: f.offerId, ...safeError(f.error) });
+      const resumed = await resumePausedAgents(db);
+      if (resumed > 0) log('info', 'delivery_agents_resumed', { count: resumed });
+    })
+    .catch((err: unknown) => {
+      log('error', 'delivery_sweep_failed', safeError(err));
+    })
+    .finally(() => {
+      expiringDelivery = false;
+    });
+}, 30_000);
+
 let expiringRsa = false;
 const rsaTimer = setInterval(() => {
   if (expiringRsa) return;
@@ -244,6 +268,7 @@ const rsaTimer = setInterval(() => {
     });
 }, 30_000);
 rsaTimer.unref();
+deliveryTimer.unref();
 
 // Pauses with an end date resume by themselves (Q28, user 2026-11-13). Every 60 s; each shop is its own
 // compare-and-set, so several workers may run this safely.

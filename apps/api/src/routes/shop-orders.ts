@@ -127,6 +127,8 @@ const decline = createRoute({
 const Advance = z
   .discriminatedUnion('to', [
     z.object({ to: z.literal('packed'), version: z.number().int().min(1) }).strict(),
+    // Agent-delivered orders (spec 24): packed ? ready for pickup (a delivery job opens; the pickup code is shown).
+    z.object({ to: z.literal('ready_for_pickup'), version: z.number().int().min(1) }).strict(),
     z
       .object({
         to: z.literal('shipped'),
@@ -260,6 +262,7 @@ export function shopOrderRoutes(deps: AppDeps, cache: SessionCache) {
         cursor: q.cursor ?? null,
         // Staff do not see what the shop is paid (spec 13): money only for shops where the caller reads payouts.
         moneyShopIds: shops(c, 'payouts:read'),
+        keyring: deps.keyring ?? null,
       });
       return c.json(
         {

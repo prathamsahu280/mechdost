@@ -18,7 +18,7 @@ export type Tx = PgDatabase<PgQueryResultHKT, any, any>;
 type OrderPatch = Partial<
   Pick<
     typeof orders.$inferInsert,
-    'shopId' | 'confirmedAt' | 'deliveredAt' | 'statusReasonCode' | 'customerMessage'
+    'shopId' | 'confirmedAt' | 'deliveredAt' | 'statusReasonCode' | 'customerMessage' | 'deliveryMode'
   >
 >;
 
@@ -61,6 +61,8 @@ export async function transitionOrder(
     expectedVersion: number;
     actor: ActorContext;
     patch?: OrderPatch;
+    /** For `returned` (spec 24, Lead's call 13): refund everything, or the parts only (the delivery fee is kept). */
+    returnRefund?: 'full' | 'parts_only';
   },
 ) {
   orderMachine.assert(args.from, args.to, args.actor.type);
@@ -96,12 +98,13 @@ export async function transitionOrder(
   await queueOrderStatusEmail(tx, { orderId: row.id, to: args.to, version: row.version });
   // MechDost Coins (spec 20), same transaction: a cancelled or rejected part gives its coins back (as coins, once);
   // a delivered part earns the admin-set reward, usable after the unlock days.
-  if (args.to === 'cancelled' || args.to === 'rejected') {
+  if (args.to === 'cancelled' || args.to === 'rejected' || args.to === 'returned') {
     await restoreCoinsForSubOrder(tx, row.id);
     // The coupon's use goes back once the whole order is dead (after the coins, the order a place takes them in).
     await releaseCouponIfOrderDead(tx, row.groupId);
-    // A paid online part waits in the finance queue for a refund approval (spec 05, decision 2026-11-15).
-    await requestRefundForClosedOrder(tx, row.id);
+    // A paid online part waits in the finance queue for a refund approval (spec 05, decision 2026-11-15). A part the
+    // agent brought back keeps the delivery fee when the customer was at fault (spec 24, Lead's call 13).
+    await requestRefundForClosedOrder(tx, row.id, { keepShipping: args.returnRefund === 'parts_only' });
   }
   if (args.to === 'delivered') {
     await createOrderRewards(tx, row.id);

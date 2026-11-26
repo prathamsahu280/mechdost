@@ -334,7 +334,7 @@ async function notifyCustomer(
 export async function requestRefundForClosedOrder(
   tx: Tx,
   orderId: string,
-  opts: { lateCapture?: boolean } = {},
+  opts: { lateCapture?: boolean; keepShipping?: boolean } = {},
 ): Promise<string | null> {
   const [o] = await tx
     .select({
@@ -345,11 +345,12 @@ export async function requestRefundForClosedOrder(
       cityId: orders.cityId,
       userId: orders.userId,
       totalPaise: orders.totalPaise,
+      shippingPaise: orders.shippingPaise,
     })
     .from(orders)
     .where(eq(orders.id, orderId))
     .limit(1);
-  if (!o || (o.status !== 'cancelled' && o.status !== 'rejected')) return null;
+  if (!o || (o.status !== 'cancelled' && o.status !== 'rejected' && o.status !== 'returned')) return null;
   const [group] = await tx
     .select({ method: orderGroups.paymentMethod })
     .from(orderGroups)
@@ -363,14 +364,17 @@ export async function requestRefundForClosedOrder(
     .limit(1);
   if (!paid) return null;
   const payment = await lockLedger(tx, paid.id);
-  const amount = o.totalPaise - (await heldForOrder(tx, o.id));
+  const kept = opts.keepShipping ? Math.min(o.shippingPaise, o.totalPaise) : 0;
+  const amount = o.totalPaise - kept - (await heldForOrder(tx, o.id));
   if (amount <= 0) return null;
   // A capture after the payment window closed is its own source, so finance sees why money arrived for a dead order.
   const source: RefundSource = opts.lateCapture
     ? 'payment_after_close'
     : o.status === 'rejected'
       ? 'order_rejected'
-      : 'order_cancelled';
+      : o.status === 'returned'
+        ? 'delivery_returned'
+        : 'order_cancelled';
   const made = await insertRequest(tx, {
     payment,
     groupId: o.groupId,

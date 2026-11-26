@@ -204,6 +204,36 @@ export const OPERATIONAL_SETTINGS = {
   'api.signed_in_per_minute': { kind: 'int', min: 60, max: 5_000, default: 300, globalOnly: true },
   'api.guest_per_ip_per_minute': { kind: 'int', min: 60, max: 5_000, default: 600, globalOnly: true },
   'api.ip_flood_per_minute': { kind: 'int', min: 300, max: 20_000, default: 3_000, globalOnly: true },
+  /*
+   * Delivery agents (spec 24, design 2026-11-26). Per city; the dispatch mode is not a setting yet (only "admin
+   * assigns" is built; `DELIVERY_DISPATCH_MODES`).
+   */
+  /** MechDost agents deliver prepaid orders of `agents`-mode shops in this city. Off until the founder confirms the
+   *  compliance items (Lead's call 11). Off: every sub-order is delivered by its shop, as before. */
+  'delivery.agents_enabled': { kind: 'boolean', default: false },
+  /** How long an agent has to accept an offered job (minutes; founder 2026-11-26: 15). */
+  'delivery.offer_timeout_min': { kind: 'int', min: 1, max: 60, default: 15 },
+  /** Weight of the agent's rating in the dispatch ranking, 0–100 % (0 = ratings ignored; founder 2026-11-26). */
+  'delivery.rank_rating_weight_pct': { kind: 'int', min: 0, max: 100, default: 20 },
+  /** Staff are alerted when an agent's average falls below this, in tenths of a star (35 = 3.5). */
+  'delivery.low_rating_alert_x10': { kind: 'int', min: 10, max: 50, default: 35 },
+  /** Ratings an agent needs before the low-rating alert can fire. */
+  'delivery.low_rating_min_count': { kind: 'int', min: 1, max: 100, default: 5 },
+  /** Jobs an agent may hold at once (accepted, picked up, failed or returning). */
+  'delivery.max_active_jobs': { kind: 'int', min: 1, max: 10, default: 3 },
+  /** A photo is required at pickup, at delivery and with a failed delivery (founder 2026-11-26). */
+  'delivery.photos_required': { kind: 'boolean', default: true },
+  /** Delivery attempts per sub-order: 2 = one free retry, then return to the shop (Lead's call 13). */
+  'delivery.max_attempts': { kind: 'int', min: 1, max: 3, default: 2 },
+  /** Hours an agent invite link stays valid (design: 72 h). */
+  'delivery.invite_hours': { kind: 'int', min: 24, max: 168, default: 72 },
+  /** Days agent documents are kept after offboarding, unless a dispute holds them (design "Roles, security"). */
+  'delivery.document_retention_days': { kind: 'int', min: 30, max: 3_650, default: 180, globalOnly: true },
+  /** Maximum load per vehicle type (kg; Lead's call 12). */
+  'delivery.max_load_bike_kg': { kind: 'int', min: 1, max: 100, default: 20 },
+  'delivery.max_load_scooter_kg': { kind: 'int', min: 1, max: 100, default: 20 },
+  'delivery.max_load_three_wheeler_kg': { kind: 'int', min: 1, max: 1_000, default: 300 },
+  'delivery.max_load_goods_vehicle_kg': { kind: 'int', min: 1, max: 5_000, default: 1_000 },
 } as const satisfies Record<string, SettingSpec>;
 
 /**

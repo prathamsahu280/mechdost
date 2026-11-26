@@ -55,7 +55,8 @@ export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
   { id: 'orders', icon: Package, prefixes: ['orders.', 'checkout.', 'quotes.'] },
   { id: 'payments', icon: CreditCard, prefixes: ['refunds.'] },
   { id: 'coins', icon: Coins, prefixes: ['coins.'], link: { section: 'coins' } },
-  { id: 'partners', icon: Handshake, prefixes: ['partners.'] },
+  // Delivery agents (spec 24) sit with the partners until the Delivery section has its own settings screen.
+  { id: 'partners', icon: Handshake, prefixes: ['partners.', 'delivery.'] },
   { id: 'service', icon: Wrench, prefixes: ['service.'] },
   { id: 'area', icon: MapPin, prefixes: [] },
   {

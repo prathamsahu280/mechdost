@@ -28,6 +28,7 @@ import {
   REFUND_SOURCES,
   REFUND_STATES,
 } from '@mechdost/shared/state';
+import { DELIVERY_FAIL_REASONS, ORDER_DELIVERY_MODES } from '@mechdost/shared/delivery/codes';
 import { citext, createdAt, encryptedCheck, id, paise, ts, updatedAt, version } from './_common';
 import { cities } from './geography';
 import { users } from './identity';
@@ -172,6 +173,11 @@ export const orders = pgTable(
     couponDiscountPaise: paise().notNull().default(0),
     couponFunder: text(),
     cancellableUntilStatus: text().notNull().default('confirmed'),
+    /**
+     * Who delivers this sub-order (spec 24, Lead's call 9): `agent` (MechDost delivery agent) or `shop` (the shop
+     * itself, today's flow). Set at routing from the shop's mode; COD is always `shop`; staff may switch to `shop`.
+     */
+    deliveryMode: text().notNull().default('shop'),
     /** Reject (later: cancel) reason code and the message shown to the customer (spec 04). */
     statusReasonCode: text(),
     customerMessage: text(),
@@ -186,6 +192,12 @@ export const orders = pgTable(
     unique().on(t.groupId, t.subNo),
     check('orders_status_valid', sql`${t.status} in (${inList(ORDER_STATES)})`),
     check('orders_sub_no_positive', sql`${t.subNo} > 0`),
+    check('orders_delivery_mode_valid', sql`${t.deliveryMode} in (${inList(ORDER_DELIVERY_MODES)})`),
+    // Agent-only states (spec 24).
+    check(
+      'orders_agent_states',
+      sql`${t.status} not in ('ready_for_pickup','returned') or ${t.deliveryMode} = 'agent'`,
+    ),
     // The reason code belongs to the status it explains (code review 2026-11-03): a rejected order carries a
     // reject reason, a cancelled one a cancel reason, every other status none.
     check(
@@ -193,6 +205,7 @@ export const orders = pgTable(
       sql`case ${t.status}
         when 'rejected' then ${t.statusReasonCode} in (${inList(ORDER_REJECT_REASONS)})
         when 'cancelled' then ${t.statusReasonCode} in (${inList(ORDER_CANCEL_REASONS)})
+        when 'returned' then ${t.statusReasonCode} in (${inList(DELIVERY_FAIL_REASONS)})
         else ${t.statusReasonCode} is null end`,
     ),
     check(
@@ -387,7 +400,10 @@ export const orderEvents = pgTable(
     createdAt: createdAt(),
   },
   (t) => [
-    check('order_events_actor_valid', sql`${t.actorType} in ('customer','shop','workshop','admin','system')`),
+    check(
+      'order_events_actor_valid',
+      sql`${t.actorType} in ('customer','shop','workshop','admin','system','delivery_agent')`,
+    ),
     index().on(t.orderId, t.id),
   ],
 );
@@ -447,7 +463,8 @@ export const shipments = pgTable(
     updatedAt: updatedAt(),
   },
   (t) => [
-    check('shipments_mode_valid', sql`${t.mode} in ('own','courier')`),
+    // `agent`: a MechDost delivery agent carries it (spec 24).
+    check('shipments_mode_valid', sql`${t.mode} in ('own','courier','agent')`),
     check('shipments_delivery_code_encrypted', encryptedCheck(t.deliveryCodeEnc)),
     check('shipments_delivery_attempts_range', sql`${t.deliveryCodeAttempts} between 0 and 5`),
     check(
@@ -461,7 +478,7 @@ export const shipments = pgTable(
     index().on(t.overrideBy),
     check(
       'shipments_courier_awb',
-      sql`${t.mode} = 'own' or (${t.courier} is not null and ${t.awb} is not null)`,
+      sql`${t.mode} in ('own','agent') or (${t.courier} is not null and ${t.awb} is not null)`,
     ),
     unique().on(t.courier, t.awb),
     index().on(t.orderId),

@@ -295,3 +295,22 @@ Decision record: `docs/decisions.md` 2026-11-25 "Notification inbox". Migration 
   super admin with a confirmed email (their own language).
 - One alert per metric, level and UTC month (`usage_alerts` unique row, written in the same transaction as the bell
   and the outbox rows); crossing both thresholds at once sends only critical. Details: runbook `monitoring.md`.
+
+## Delivery notices and templates (2026-11-26, spec 24)
+
+New notice kinds (`packages/shared/src/notice-catalogue.ts`, en + hi): agent `delivery.offer`,
+`delivery.job_withdrawn`, `delivery.retry`, `delivery.return_to_shop`, `delivery.document_decided`,
+`delivery.status_changed`; shop `shop.delivery_agent_assigned`, `shop.delivery_switch`, `shop.delivery_returning`,
+`shop.delivery_mode_decided`; customer `order.picked_up`, `order.delivery_failed`, `order.returned`; staff
+`staff.delivery_agent_application`, `staff.delivery_documents`, `staff.delivery_needs_agent`,
+`staff.delivery_offer_expired`, `staff.delivery_declined`, `staff.delivery_failed`, `staff.delivery_switch_declined`,
+`staff.shop_delivery_mode_request`, `staff.delivery_agent_unavailable` (on pause, suspend and offboard, one per held
+job), `staff.delivery_low_rating`.
+
+- **Email:** `delivery_agent_invite`, `delivery_offer`.
+- **WhatsApp (not submitted to Meta; needs the founder's go-ahead):** `delivery.agent_invite` (Meta name
+  `partner_delivery_invite`; no token in the message: it sends the person to the join page, where signing in with the
+  OTP-proven phone finds the invite bound to it; the email carries the link) and `delivery.offer`
+  (`partner_delivery_offer`: order code and minutes). See `docs/runbooks/whatsapp-templates.md`.
+- Notices queue in the same transaction as the move (outbox); actionable staff notices resolve when the queue item is
+  handled (2026-11-23 rule).

@@ -31,6 +31,39 @@ This file is the single source of truth for **where the build is right now**. It
 - **Next (lead):** merge; apply 0110 before deploying; Gate 0 G0-1/G0-2 per the plan; revert the bypass commit within
   48 h of the run (Q-SIM-3).
 
+## 2026-11-26 (night) — delivery agents backend (branch worktree-agent-aa4e4463a8d74ac65, not pushed)
+
+- **Step 1 done: contract** ("feat(delivery): contract"): job/offer/agent machines, order machine
+  (`ready_for_pickup`, `returned`, actor `delivery_agent`), codes + rules (`@mechdost/shared/delivery/codes`), DTOs
+  (`@mechdost/shared/delivery/api`), role `delivery_agent` + staff permissions, `delivery.*` settings, `delivery.*`
+  copy en + hi, route table in the design doc, decisions "Delivery agents: contract". Plan:
+  `docs/superpowers/plans/2026-11-26-delivery-agents.md` (advisor brief inside).
+- **Known gap until migration 0105:** the database CHECKs (`orders_status_valid`, `order_events_actor_valid`) do not
+  yet accept the new states/actor; nothing writes them before the repositories land.
+- **Commits on this branch (since 473a6356):** 63c68d0c contract; 0a02d4ac contract update (rider ratings, 15 min
+  offer timer) + schema + migration **0105**; 56db024d repositories (onboarding, dispatch, pickup/deliver/fail/return,
+  switch, shop mode, ratings); c7fce3d6 security review fix (agent standing, document re-verification); b44c63db pause
+  keeps held parcels finishable, every held job flagged on pause/suspend/offboard; e7531842 manual agent payouts
+  (contract, migration **0106**) and the HTTP API. Migrations 0105 + 0106 are **not applied** anywhere.
+- **Later commits (2026-11-27):** 4e9f423e admin label completions; 63caf418 new shops start with agents only where
+  agents are on (Lead call 11); ea030d73 review 2 (responses parse with the contract DTOs, photos-required path incl.
+  paused finishing, old order deliver-override refuses agent mode, limiter dedupe on shared prefixes, WhatsApp invite
+  behind the channel gate, expired unswept offer shows nothing); 4a84a721 web contract gaps G1–G7 (spec 24 § 16); 8d050173 payout replay scope + reserved `rev-` keys
+  (security review); d681a1c3 OpenAPI parameter-name clash fix; then cursor alias on all paged lists + DTO parse of the
+  customer order + replay-scope test with a visible agent.
+- **Gates (2026-11-27):** db full suite 130 files / 1773 tests exit 0 (before review 2; delivery files re-run after:
+  31/31 + affected 49/49); shared 1042/1043 (tooling-hooks commit-msg test fails only under PowerShell, 3/3 under
+  bash); web tsc 0 + 64 related web unit tests; api tsc 0, delivery API tests 10/10; prettier check clean on the diff.
+- **Docs done:** spec 24 (new) + 04, 05, 07, 08, 10, 12, 13, 14; decisions "security review fixes" and "pause ruling and
+  manual payouts"; questions Q-DA1–Q-DA4 (Q217 marked answered); WhatsApp runbook; learnings L-DA1–L-DA4, T-DA1.
+- **Not built:** web screens, demo store, masked calling, broadcast dispatch, live map, rider cash/COD, automatic
+  payouts and rate cards, Meta template submission (not submitted), document retention purge job, reroute after a
+  declined switch.
+- **Next:** web agent builds the screens from the contract (design doc "Contract" + spec 24); lead merge; apply
+  migrations 0105 + 0106 (check `drizzle-kit generate` says no changes first, L-DA1); submit the two WhatsApp templates
+  to Meta on the founder's go-ahead (Q-DA1); turn `delivery.agents_enabled` on for Raipur only after the founder
+  confirms the compliance items.
+
 ## 2026-11-26 (night) — four fixes agent (branch worktree-agent-a3b1a256dd1a31849, not pushed, no migration)
 
 - **Shop:** the 2W/3W/4W "Vehicle type" select is retired (founder ruling, Q-segments answered); old `?vehicle=` links

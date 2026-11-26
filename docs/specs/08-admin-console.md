@@ -548,3 +548,13 @@ Switches (who may pay cash): Settings → **Payments** (`checkout.cod_everyone` 
 `checkout.cod_min_order_paise`, `checkout.cod_min_items`, `checkout.cod_request_reapply_days`), per city with the
 all-cities value as fallback. The demo shows the three switches on the COD requests card (its "everyone" starts on,
 Q-COD-3). Spec 03 § Cash-on-delivery eligibility has the rule.
+
+## Delivery section (2026-11-26, spec 24; backend built, screens not built yet)
+
+New section **Delivery** (en + hi, city-scoped, `delivery_agents:manage` and `delivery_jobs:assign`):
+Applications (partner applications of kind `delivery_agent`), Invites (create, revoke; email + WhatsApp), Agents (list,
+detail, edit, status with reason, rating), Documents (audited view, verify or reject with reason), Jobs queue (needs an
+agent / offered / active / failed, timers, ranked suggestions, offer, withdraw, failure decision retry or return,
+audited overrides, switch an order to the shop), Shop delivery mode (requests, approve or reject, set directly),
+Payouts (record, reverse, list, CSV; `delivery_payouts:manage`, finance and super admin), KPIs. The `delivery.*`
+settings show under Admin → Settings → Partners until the section has its own settings screen.

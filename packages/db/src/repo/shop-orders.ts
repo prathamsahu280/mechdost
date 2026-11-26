@@ -22,7 +22,8 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '.
 import { commitReservation, reserveStock } from './inventory';
 import { decodeCursor, encodeCursor, pageSize } from './cursor';
 import { recordServerEvent } from './events';
-import { transitionOrder, type Tx } from './orders';
+import { lockOrder, transitionOrder, type Tx } from './orders';
+import { openDeliveryJob, shopDeliveryInfo, type ShopOrderDeliveryInfo } from './delivery-jobs';
 import { num, numOrNull, rowsOf } from './sql-rows';
 
 /**
@@ -101,6 +102,10 @@ export interface ShopOrderItem {
   address: Record<string, unknown> | null;
   /** Active orders: 5 wrong delivery codes were entered (server state; support takes over). */
   deliveryLocked: boolean;
+  /** Who delivers (spec 24): `agent` sub-orders stop at ready for pickup; the agent's details come from `delivery`. */
+  deliveryMode: 'agent' | 'shop';
+  /** Agent-mode active orders: pickup code, agent, return, switch request (null otherwise). */
+  delivery: ShopOrderDeliveryInfo | null;
 }
 
 /**
@@ -111,7 +116,12 @@ export async function listShopOrders(
   db: Tx,
   shopIds: readonly string[],
   view: ShopView,
-  page: { cursor?: string | null; limit?: number; moneyShopIds?: readonly string[] } = {},
+  page: {
+    cursor?: string | null;
+    limit?: number;
+    moneyShopIds?: readonly string[];
+    keyring?: Keyring | null;
+  } = {},
 ): Promise<{ items: ShopOrderItem[]; nextCursor: string | null }> {
   // Staff never see what the shop is paid (design 2026-11-15, spec 13): money only for shops where the caller holds
   // `payouts:read` (the API passes those ids). Default: all the shops, for callers that already checked.
@@ -124,6 +134,7 @@ export async function listShopOrders(
     status: string;
     shop_id: string;
     delivery_locked?: boolean;
+    delivery_mode?: string;
     version: unknown;
     total_paise: unknown;
     coin_discount_paise: unknown;
@@ -137,7 +148,7 @@ export async function listShopOrders(
   }>(
     view === 'offers'
       ? await db.execute(sql`
-          select o.id, o.code, o.status, a.shop_id, o.version, o.total_paise, o.coin_discount_paise,
+          select o.id, o.code, o.status, a.shop_id, o.delivery_mode, o.version, o.total_paise, o.coin_discount_paise,
             (select g.payment_method from order_groups g where g.id = o.group_id) as payment_method,
             o.pincode, o.shipping_address,
             a.id as assignment_id, a.expires_at, '' as sort_key
@@ -146,14 +157,14 @@ export async function listShopOrders(
           order by a.expires_at limit 100`)
       : view === 'active'
         ? await db.execute(sql`
-          select o.id, o.code, o.status, o.shop_id, o.version, o.total_paise, o.coin_discount_paise,
+          select o.id, o.code, o.status, o.shop_id, o.delivery_mode, o.version, o.total_paise, o.coin_discount_paise,
             (select g.payment_method from order_groups g where g.id = o.group_id) as payment_method,
             o.pincode, o.shipping_address,
             exists (select 1 from shipments sh where sh.order_id = o.id
               and sh.delivery_code_attempts >= ${DELIVERY_CODE_MAX_ATTEMPTS}) as delivery_locked,
             null::uuid as assignment_id, null::timestamptz as expires_at, '' as sort_key
           from orders o
-          where ${inShops(shopIds, 'o.shop_id')} and o.status in ('confirmed', 'packed', 'shipped', 'out_for_delivery')
+          where ${inShops(shopIds, 'o.shop_id')} and o.status in ('confirmed', 'packed', 'ready_for_pickup', 'shipped', 'out_for_delivery')
           order by o.placed_at limit 100`)
         : await db.execute(sql`
           select u.id, u.code, u.status, u.shop_id, u.version, u.total_paise, u.coin_discount_paise, u.payment_method,
@@ -165,7 +176,7 @@ export async function listShopOrders(
               o.pincode, o.shipping_address, null::text as give_up_reason,
               null::uuid as assignment_id, null::timestamptz as expires_at, o.updated_at as sort_ts
             from orders o
-            where ${inShops(shopIds, 'o.shop_id')} and o.status in ('delivered', 'cancelled')
+            where ${inShops(shopIds, 'o.shop_id')} and o.status in ('delivered', 'cancelled', 'returned')
               and o.updated_at > now() - interval '30 days'
             union all
             select o.id, o.code, 'given_up' as status, a.shop_id, o.version, o.total_paise, o.coin_discount_paise,
@@ -200,7 +211,10 @@ export async function listShopOrders(
           })
           .from(orderItems)
           .where(inArray(orderItems.orderId, ids));
+  const agentIds = view === 'active' ? rows.filter((r) => r.delivery_mode === 'agent').map((r) => r.id) : [];
+  const deliveries = await shopDeliveryInfo(db, agentIds, page.keyring ?? null);
   const list = rows.map((r) => {
+    const agentMode = r.delivery_mode === 'agent';
     const lines = items.filter((i) => i.orderId === r.id);
     const priced = r.status !== 'given_up';
     const shows = priced && moneyShops.has(r.shop_id);
@@ -224,8 +238,11 @@ export async function listShopOrders(
       assignmentId: r.assignment_id,
       expiresAt: r.expires_at ? new Date(r.expires_at) : null,
       // Shared only while the shop is fulfilling the order (DPDP minimisation, advisor review 2026-11-03).
-      address: view === 'active' ? r.shipping_address : null,
+      // An agent delivers agent-mode orders, so the shop never needs the customer's address for them.
+      address: view === 'active' && !agentMode ? r.shipping_address : null,
       deliveryLocked: r.delivery_locked === true,
+      deliveryMode: agentMode ? ('agent' as const) : ('shop' as const),
+      delivery: agentMode ? (deliveries.get(r.id) ?? null) : null,
     };
   });
   return { items: list, nextCursor };
@@ -373,6 +390,7 @@ async function ownOrder(tx: Tx, shopIds: readonly string[], code: string) {
       version: orders.version,
       shopId: orders.shopId,
       cityId: orders.cityId,
+      deliveryMode: orders.deliveryMode,
     })
     .from(orders)
     .where(eq(orders.code, code))
@@ -394,6 +412,8 @@ async function shipmentOf(tx: Tx, orderId: string) {
 
 export type ShopStep =
   | { to: 'packed' }
+  /** Agent-mode sub-orders (spec 24): packed ? ready for pickup; a delivery job opens and the pickup code is issued. */
+  | { to: 'ready_for_pickup' }
   | { to: 'shipped'; mode: 'own' | 'courier'; courier?: string | null; awb?: string | null }
   /** `handOverOwn`: from `packed`, hand over for own delivery and go out for delivery in this one call. */
   | { to: 'out_for_delivery'; handOverOwn?: boolean };
@@ -421,8 +441,43 @@ export async function advanceShopOrder(
     throw new ConflictError('Delivery codes are not configured on this server', 'DELIVERY_CODES_UNAVAILABLE');
   return db.transaction(async (tx) => {
     const o = await ownOrder(tx, input.shopIds, input.code);
+    if (step.to === 'ready_for_pickup') {
+      if (o.deliveryMode !== 'agent')
+        throw new ConflictError('This order is delivered by the shop', 'WRONG_STEP');
+      if (o.status !== 'packed') throw new ConflictError(`Order is ${o.status}`, 'WRONG_STEP');
+      // Order row first (lock order, spec 14), then the new job.
+      await lockOrder(tx, o.id);
+      const row = await transitionOrder(tx, {
+        orderId: o.id,
+        from: 'packed',
+        to: 'ready_for_pickup',
+        expectedVersion: input.expectedVersion,
+        actor: { type: 'shop', userId: input.staffUserId },
+      });
+      await openDeliveryJob(tx, {
+        orderId: o.id,
+        keyring: input.keyring,
+        actor: 'shop',
+        actorId: input.staffUserId,
+      });
+      await auditShop(tx, {
+        staffUserId: input.staffUserId,
+        action: 'order.ready_for_pickup',
+        orderId: o.id,
+        after: { status: 'ready_for_pickup' },
+      });
+      await recordServerEvent(tx, 'order_fulfilment_step', {
+        userId: input.staffUserId,
+        cityId: o.cityId,
+        props: { orderCode: input.code, shopId: o.shopId, step: 'ready_for_pickup' },
+      });
+      return { status: row.status, version: row.version };
+    }
+    // An agent picks up and delivers agent-mode sub-orders: the shop only packs and marks them ready (spec 24).
+    if (o.deliveryMode === 'agent' && step.to !== 'packed')
+      throw new ConflictError('A MechDost delivery agent delivers this order', 'AGENT_DELIVERY');
     const compound = step.to === 'out_for_delivery' && step.handOverOwn === true && o.status === 'packed';
-    const moves: ShopStep[] = compound
+    const moves: Exclude<ShopStep, { to: 'ready_for_pickup' }>[] = compound
       ? [{ to: 'shipped', mode: 'own' }, { to: 'out_for_delivery' }]
       : [step];
     const from = { packed: 'confirmed', shipped: 'packed', out_for_delivery: 'shipped' } as const;
@@ -492,6 +547,8 @@ export async function deliverShopOrder(
   const keyring = input.keyring;
   return db.transaction(async (tx) => {
     const o = await ownOrder(tx, input.shopIds, input.code);
+    if (o.deliveryMode === 'agent')
+      throw new ConflictError('A MechDost delivery agent delivers this order', 'AGENT_DELIVERY');
     if (o.status !== 'out_for_delivery') throw new ConflictError(`Order is ${o.status}`, 'WRONG_STEP');
     const shipment = await shipmentOf(tx, o.id);
     const check = await verifyDeliveryCode(tx, keyring, shipment.id, input.deliveryCode);

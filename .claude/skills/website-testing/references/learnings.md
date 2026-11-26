@@ -375,3 +375,9 @@ ustaad-console.test.ts` (held answer/question/comment/post/message, NCII re-hold
   account/admin/checkout ClientMessages lists did not pass, so production would show raw keys; caught by
   `client-messages-coverage.test.ts` · add every new namespace to the page/layout ClientMessages list in the same change.
 - T-QA1 · 2026-11-27 · admin UI guards · A new admin client component failed two repo-wide source guards on the first full web run: its next-intl namespace was not in the admin layout's client bundle (client-messages-coverage) and its inline confirm lacked the data-disclosure-trigger / data-panel-cancel pair (panel-dismiss) · new component wired to neither · test/client-messages-coverage.test.ts, test/panel-dismiss.test.ts (run the full web suite, not only the new test file).
+- T-DA1 · 2026-11-26 · partner standing · bug class "partner standing not re-checked on in-flight work": a suspended
+  agent could keep acting on held jobs, and a replaced document kept a verified agent working → test every action per
+  status × stage, and test that a changed document unverifies. Pinned by `packages/db/test/delivery-agents.test.ts`,
+  block "security review 2026-11-26: standing and documents". · active
+
+T-DA2 · 2026-11-27 · API/OpenAPI · a shared path-param schema (.openapi({ param: { name: 'code' } })) reused as a query field broke /openapi.json (500 'Conflicting names for parameter') while every route test passed · a schema with param metadata names one parameter only; query fields get their own schema · test/platform.test.ts 'publishes the OpenAPI document'

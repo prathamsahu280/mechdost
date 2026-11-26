@@ -184,3 +184,18 @@ A delivered, cancelled or rejected order (all parts closed) offers "Order again"
 ## Customer wording (2026-11-22, user)
 
 Routing stays a back-office flow (admin routes, shop accepts or declines). Customer-facing text never mentions it: stage `routing` reads "Confirming availability", `confirmed` reads "Confirmed - will be shipped" with "MechDost confirmed your order", rejections say "We could not fulfil it" / "Not in stock near you", and emails and notifications to the customer say "MechDost confirmed {code}". Portals, admin and partner copy keep the shop wording. Decisions 2026-11-22.
+
+## Agent delivery path (2026-11-26, spec 24)
+
+- Each sub-order stores `delivery_mode` (`agent|shop`), set at routing from the shop's mode. Cash on delivery stays
+  with the shop (`shop`), whatever the shop's mode. Agent mode needs `delivery.agents_enabled` for the city.
+- New states: `ready_for_pickup` (after `packed`, agent mode only) and `returned` (terminal; the reason code is the last
+  delivery failure reason). Actor `delivery_agent`.
+- Agent path: `packed →(shop) ready_for_pickup` (one delivery job opens, the shop sees a 4-digit pickup code) `→(agent
+pickup with the code and a photo) out_for_delivery →(agent with the customer's delivery code and a photo) delivered`.
+  The shop cannot ship or deliver an agent-mode order itself; staff override is audited.
+- Hand-back after a failed delivery: `out_for_delivery →(shop types the agent's return code) ready_for_pickup` (retry
+  with another agent) or `returned` (close; refund per spec 05). Switch to the shop's own delivery:
+  `ready_for_pickup →(shop confirms) packed`. Staff cancel works from `ready_for_pickup`.
+- Customer sees the agent's first name and vehicle, never the shop or the agent's phone; the delivery code path is
+  unchanged. Full rules, states and flows: `docs/specs/24-delivery-agents.md`.

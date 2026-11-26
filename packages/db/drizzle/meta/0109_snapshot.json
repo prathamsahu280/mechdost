@@ -1,6 +1,6 @@
 {
   "id": "5f0451c8-781f-4f04-8f66-c83a521205b9",
-  "prevId": "968a20f6-a4d9-4abb-b53b-9e633a0143f0",
+  "prevId": "04d71430-fa3c-441c-81e2-04907673ab00",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -3497,6 +3497,13 @@
             "type": "stored"
           }
         },
+        "load_class": {
+          "name": "load_class",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'light'"
+        },
         "search_compact": {
           "name": "search_compact",
           "type": "text",
@@ -3718,6 +3725,10 @@
         "products_status_valid": {
           "name": "products_status_valid",
           "value": "\"products\".\"status\" in ('draft','submitted','live','rejected','archived')"
+        },
+        "products_load_class_valid": {
+          "name": "products_load_class_valid",
+          "value": "\"products\".\"load_class\" in ('light','heavy','bulky')"
         },
         "products_hsn_format": {
           "name": "products_hsn_format",
@@ -4799,6 +4810,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "delivery_mode": {
+          "name": "delivery_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'self'"
+        },
         "free_delivery_min_paise": {
           "name": "free_delivery_min_paise",
           "type": "bigint",
@@ -4996,6 +5014,10 @@
         "shops_gstin_format": {
           "name": "shops_gstin_format",
           "value": "\"shops\".\"gstin\" is null or \"shops\".\"gstin\" ~ '^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$'"
+        },
+        "shops_delivery_mode_valid": {
+          "name": "shops_delivery_mode_valid",
+          "value": "\"shops\".\"delivery_mode\" in ('agents','self')"
         },
         "shops_timeout_positive": {
           "name": "shops_timeout_positive",
@@ -6671,7 +6693,7 @@
       "checkConstraints": {
         "order_events_actor_valid": {
           "name": "order_events_actor_valid",
-          "value": "\"order_events\".\"actor_type\" in ('customer','shop','workshop','admin','system')"
+          "value": "\"order_events\".\"actor_type\" in ('customer','shop','workshop','admin','system','delivery_agent')"
         }
       },
       "isRLSEnabled": false
@@ -7471,6 +7493,13 @@
           "notNull": true,
           "default": "'confirmed'"
         },
+        "delivery_mode": {
+          "name": "delivery_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'shop'"
+        },
         "status_reason_code": {
           "name": "status_reason_code",
           "type": "text",
@@ -7741,15 +7770,23 @@
       "checkConstraints": {
         "orders_status_valid": {
           "name": "orders_status_valid",
-          "value": "\"orders\".\"status\" in ('placed','awaiting_shop','needs_rerouting','confirmed','packed','shipped','out_for_delivery','delivered','cancelled','rejected')"
+          "value": "\"orders\".\"status\" in ('placed','awaiting_shop','needs_rerouting','confirmed','packed','ready_for_pickup','shipped','out_for_delivery','delivered','cancelled','rejected','returned')"
         },
         "orders_sub_no_positive": {
           "name": "orders_sub_no_positive",
           "value": "\"orders\".\"sub_no\" > 0"
         },
+        "orders_delivery_mode_valid": {
+          "name": "orders_delivery_mode_valid",
+          "value": "\"orders\".\"delivery_mode\" in ('agent','shop')"
+        },
+        "orders_agent_states": {
+          "name": "orders_agent_states",
+          "value": "\"orders\".\"status\" not in ('ready_for_pickup','returned') or \"orders\".\"delivery_mode\" = 'agent'"
+        },
         "orders_reason_code_valid": {
           "name": "orders_reason_code_valid",
-          "value": "case \"orders\".\"status\"\n        when 'rejected' then \"orders\".\"status_reason_code\" in ('no_stock_nearby','all_shops_declined','unserviceable_address','suspected_fraud','pricing_error','other')\n        when 'cancelled' then \"orders\".\"status_reason_code\" in ('changed_mind','ordered_by_mistake','found_cheaper','delivery_too_slow','customer_unreachable','payment_not_completed','other')\n        else \"orders\".\"status_reason_code\" is null end"
+          "value": "case \"orders\".\"status\"\n        when 'rejected' then \"orders\".\"status_reason_code\" in ('no_stock_nearby','all_shops_declined','unserviceable_address','suspected_fraud','pricing_error','other')\n        when 'cancelled' then \"orders\".\"status_reason_code\" in ('changed_mind','ordered_by_mistake','found_cheaper','delivery_too_slow','customer_unreachable','payment_not_completed','other')\n        when 'returned' then \"orders\".\"status_reason_code\" in ('customer_unreachable','customer_refused','wrong_address','unsafe_location','vehicle_issue','other')\n        else \"orders\".\"status_reason_code\" is null end"
         },
         "orders_rejected_explained": {
           "name": "orders_rejected_explained",
@@ -8837,11 +8874,11 @@
         },
         "refunds_source_valid": {
           "name": "refunds_source_valid",
-          "value": "\"refunds\".\"source\" in ('order_rejected','order_cancelled','service_cancelled','rsa_cancelled','rsa_overpaid','duplicate_payment','payment_after_close','unfulfilled','support_claim','part_refund','other')"
+          "value": "\"refunds\".\"source\" in ('order_rejected','order_cancelled','service_cancelled','rsa_cancelled','rsa_overpaid','duplicate_payment','payment_after_close','delivery_returned','unfulfilled','support_claim','part_refund','other')"
         },
         "refunds_reason_valid": {
           "name": "refunds_reason_valid",
-          "value": "\"refunds\".\"reason_code\" in ('order_rejected','order_cancelled','service_cancelled','rsa_cancelled','rsa_overpaid','duplicate_payment','payment_after_close','faulty','damaged_in_transit','wrong_item','missing_item','not_fulfilled','goodwill','other')"
+          "value": "\"refunds\".\"reason_code\" in ('order_rejected','order_cancelled','service_cancelled','rsa_cancelled','rsa_overpaid','duplicate_payment','payment_after_close','delivery_returned','faulty','damaged_in_transit','wrong_item','missing_item','not_fulfilled','goodwill','other')"
         },
         "refunds_reject_reason_valid": {
           "name": "refunds_reject_reason_valid",
@@ -9238,7 +9275,7 @@
       "checkConstraints": {
         "shipments_mode_valid": {
           "name": "shipments_mode_valid",
-          "value": "\"shipments\".\"mode\" in ('own','courier')"
+          "value": "\"shipments\".\"mode\" in ('own','courier','agent')"
         },
         "shipments_delivery_code_encrypted": {
           "name": "shipments_delivery_code_encrypted",
@@ -9258,7 +9295,7 @@
         },
         "shipments_courier_awb": {
           "name": "shipments_courier_awb",
-          "value": "\"shipments\".\"mode\" = 'own' or (\"shipments\".\"courier\" is not null and \"shipments\".\"awb\" is not null)"
+          "value": "\"shipments\".\"mode\" in ('own','agent') or (\"shipments\".\"courier\" is not null and \"shipments\".\"awb\" is not null)"
         }
       },
       "isRLSEnabled": false
@@ -11525,7 +11562,19 @@
           "name": "pincode",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "city_id": {
+          "name": "city_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vehicle_type": {
+          "name": "vehicle_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "details": {
           "name": "details",
@@ -11666,6 +11715,21 @@
         }
       },
       "indexes": {
+        "partner_applications_city_id_index": {
+          "name": "partner_applications_city_id_index",
+          "columns": [
+            {
+              "expression": "city_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "partner_applications_status_created_at_index": {
           "name": "partner_applications_status_created_at_index",
           "columns": [
@@ -11779,6 +11843,19 @@
         }
       },
       "foreignKeys": {
+        "partner_applications_city_id_cities_id_fk": {
+          "name": "partner_applications_city_id_cities_id_fk",
+          "tableFrom": "partner_applications",
+          "tableTo": "cities",
+          "columnsFrom": [
+            "city_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
         "partner_applications_invite_id_partner_invites_id_fk": {
           "name": "partner_applications_invite_id_partner_invites_id_fk",
           "tableFrom": "partner_applications",
@@ -11846,7 +11923,15 @@
       "checkConstraints": {
         "partner_applications_kind_valid": {
           "name": "partner_applications_kind_valid",
-          "value": "\"partner_applications\".\"kind\" in ('seller','garage','mechanic')"
+          "value": "\"partner_applications\".\"kind\" in ('seller','garage','mechanic','delivery_agent')"
+        },
+        "partner_applications_agent_complete": {
+          "name": "partner_applications_agent_complete",
+          "value": "(\"partner_applications\".\"kind\" = 'delivery_agent') = (\"partner_applications\".\"city_id\" is not null and \"partner_applications\".\"vehicle_type\" is not null) and (\"partner_applications\".\"vehicle_type\" is null or \"partner_applications\".\"vehicle_type\" in ('bike','scooter','three_wheeler','goods_vehicle'))"
+        },
+        "partner_applications_pincode_needed": {
+          "name": "partner_applications_pincode_needed",
+          "value": "\"partner_applications\".\"kind\" = 'delivery_agent' or \"partner_applications\".\"pincode\" is not null"
         },
         "partner_applications_status_valid": {
           "name": "partner_applications_status_valid",
@@ -11854,7 +11939,7 @@
         },
         "partner_applications_pincode": {
           "name": "partner_applications_pincode",
-          "value": "\"partner_applications\".\"pincode\" ~ '^[1-9][0-9]{5}$'"
+          "value": "\"partner_applications\".\"pincode\" is null or \"partner_applications\".\"pincode\" ~ '^[1-9][0-9]{5}$'"
         },
         "partner_applications_kyc_encrypted": {
           "name": "partner_applications_kyc_encrypted",
@@ -11882,7 +11967,7 @@
         },
         "partner_applications_details_for_others": {
           "name": "partner_applications_details_for_others",
-          "value": "\"partner_applications\".\"kind\" = 'seller' or \"partner_applications\".\"details\" is not null"
+          "value": "\"partner_applications\".\"kind\" in ('seller','delivery_agent') or \"partner_applications\".\"details\" is not null"
         }
       },
       "isRLSEnabled": false
@@ -20452,7 +20537,7 @@
       "checkConstraints": {
         "media_objects_owner_kind_valid": {
           "name": "media_objects_owner_kind_valid",
-          "value": "\"media_objects\".\"owner_kind\" in ('service_photo','ticket_message','product_photo','quote_message')"
+          "value": "\"media_objects\".\"owner_kind\" in ('service_photo','ticket_message','product_photo','quote_message','delivery_photo','agent_document')"
         },
         "media_objects_mime_valid": {
           "name": "media_objects_mime_valid",
@@ -36277,6 +36362,3301 @@
         "cod_requests_not_self": {
           "name": "cod_requests_not_self",
           "value": "\"cod_requests\".\"decided_by\" is null or \"cod_requests\".\"decided_by\" <> \"cod_requests\".\"user_id\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.delivery_ratings": {
+      "name": "delivery_ratings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "job_id": {
+          "name": "job_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "order_id": {
+          "name": "order_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agent_id": {
+          "name": "agent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stars": {
+          "name": "stars",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reasons": {
+          "name": "reasons",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::text[]"
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "editable_until": {
+          "name": "editable_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "delivery_ratings_agent_idx": {
+          "name": "delivery_ratings_agent_idx",
+          "columns": [
+            {
+              "expression": "agent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_ratings_order_id_index": {
+          "name": "delivery_ratings_order_id_index",
+          "columns": [
+            {
+              "expression": "order_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_ratings_user_id_index": {
+          "name": "delivery_ratings_user_id_index",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "delivery_ratings_job_id_delivery_jobs_id_fk": {
+          "name": "delivery_ratings_job_id_delivery_jobs_id_fk",
+          "tableFrom": "delivery_ratings",
+          "tableTo": "delivery_jobs",
+          "columnsFrom": [
+            "job_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_ratings_order_id_orders_id_fk": {
+          "name": "delivery_ratings_order_id_orders_id_fk",
+          "tableFrom": "delivery_ratings",
+          "tableTo": "orders",
+          "columnsFrom": [
+            "order_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_ratings_agent_id_delivery_agents_id_fk": {
+          "name": "delivery_ratings_agent_id_delivery_agents_id_fk",
+          "tableFrom": "delivery_ratings",
+          "tableTo": "delivery_agents",
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_ratings_user_id_users_id_fk": {
+          "name": "delivery_ratings_user_id_users_id_fk",
+          "tableFrom": "delivery_ratings",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "delivery_ratings_jobId_unique": {
+          "name": "delivery_ratings_jobId_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "job_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "delivery_ratings_stars": {
+          "name": "delivery_ratings_stars",
+          "value": "\"delivery_ratings\".\"stars\" between 1 and 5"
+        },
+        "delivery_ratings_reasons": {
+          "name": "delivery_ratings_reasons",
+          "value": "\"delivery_ratings\".\"reasons\" <@ array['on_time','polite','careful_with_parcel','late','rude','damaged','other']::text[]"
+        },
+        "delivery_ratings_other_note": {
+          "name": "delivery_ratings_other_note",
+          "value": "not ('other' = any(\"delivery_ratings\".\"reasons\")) or \"delivery_ratings\".\"note\" is not null"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.delivery_handover_codes": {
+      "name": "delivery_handover_codes",
+      "schema": "",
+      "columns": {
+        "job_id": {
+          "name": "job_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "purpose": {
+          "name": "purpose",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code_enc": {
+          "name": "code_enc",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attempts": {
+          "name": "attempts",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "used_at": {
+          "name": "used_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "delivery_handover_codes_job_id_delivery_jobs_id_fk": {
+          "name": "delivery_handover_codes_job_id_delivery_jobs_id_fk",
+          "tableFrom": "delivery_handover_codes",
+          "tableTo": "delivery_jobs",
+          "columnsFrom": [
+            "job_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "delivery_handover_codes_job_id_purpose_pk": {
+          "name": "delivery_handover_codes_job_id_purpose_pk",
+          "columns": [
+            "job_id",
+            "purpose"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "delivery_handover_codes_purpose": {
+          "name": "delivery_handover_codes_purpose",
+          "value": "\"delivery_handover_codes\".\"purpose\" in ('pickup','return')"
+        },
+        "delivery_handover_codes_attempts": {
+          "name": "delivery_handover_codes_attempts",
+          "value": "\"delivery_handover_codes\".\"attempts\" between 0 and 5"
+        },
+        "delivery_handover_codes_encrypted": {
+          "name": "delivery_handover_codes_encrypted",
+          "value": "\"delivery_handover_codes\".\"code_enc\" is null or \"delivery_handover_codes\".\"code_enc\" ~ '^v1\\.[A-Za-z0-9_-]{1,16}\\.[A-Za-z0-9_-]{16}\\.[A-Za-z0-9_-]*\\.[A-Za-z0-9_-]{22}$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.order_delivery_switches": {
+      "name": "order_delivery_switches",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "order_id": {
+          "name": "order_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "shop_id": {
+          "name": "shop_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'requested'"
+        },
+        "reason_code": {
+          "name": "reason_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decline_reason": {
+          "name": "decline_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decline_note": {
+          "name": "decline_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "requested_by": {
+          "name": "requested_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "decided_by": {
+          "name": "decided_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decided_at": {
+          "name": "decided_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "order_delivery_switches_one_open_uq": {
+          "name": "order_delivery_switches_one_open_uq",
+          "columns": [
+            {
+              "expression": "order_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"order_delivery_switches\".\"status\" = 'requested'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "order_delivery_switches_shop_id_status_index": {
+          "name": "order_delivery_switches_shop_id_status_index",
+          "columns": [
+            {
+              "expression": "shop_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "order_delivery_switches_requested_by_index": {
+          "name": "order_delivery_switches_requested_by_index",
+          "columns": [
+            {
+              "expression": "requested_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "order_delivery_switches_decided_by_index": {
+          "name": "order_delivery_switches_decided_by_index",
+          "columns": [
+            {
+              "expression": "decided_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "order_delivery_switches_order_id_orders_id_fk": {
+          "name": "order_delivery_switches_order_id_orders_id_fk",
+          "tableFrom": "order_delivery_switches",
+          "tableTo": "orders",
+          "columnsFrom": [
+            "order_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "order_delivery_switches_shop_id_shops_id_fk": {
+          "name": "order_delivery_switches_shop_id_shops_id_fk",
+          "tableFrom": "order_delivery_switches",
+          "tableTo": "shops",
+          "columnsFrom": [
+            "shop_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "order_delivery_switches_requested_by_users_id_fk": {
+          "name": "order_delivery_switches_requested_by_users_id_fk",
+          "tableFrom": "order_delivery_switches",
+          "tableTo": "users",
+          "columnsFrom": [
+            "requested_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "order_delivery_switches_decided_by_users_id_fk": {
+          "name": "order_delivery_switches_decided_by_users_id_fk",
+          "tableFrom": "order_delivery_switches",
+          "tableTo": "users",
+          "columnsFrom": [
+            "decided_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "order_delivery_switches_status_valid": {
+          "name": "order_delivery_switches_status_valid",
+          "value": "\"order_delivery_switches\".\"status\" in ('requested','confirmed','declined','withdrawn')"
+        },
+        "order_delivery_switches_reason_valid": {
+          "name": "order_delivery_switches_reason_valid",
+          "value": "\"order_delivery_switches\".\"reason_code\" in ('no_vehicle_for_load','no_agent_available','repeated_failures','customer_request','other')"
+        },
+        "order_delivery_switches_decline": {
+          "name": "order_delivery_switches_decline",
+          "value": "(\"order_delivery_switches\".\"status\" = 'declined') = (\"order_delivery_switches\".\"decline_reason\" is not null) and (\"order_delivery_switches\".\"decline_reason\" is null or \"order_delivery_switches\".\"decline_reason\" in ('no_rider','too_far','too_busy','other'))"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.delivery_job_events": {
+      "name": "delivery_job_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "delivery_job_events_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "job_id": {
+          "name": "job_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "order_id": {
+          "name": "order_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "from_status": {
+          "name": "from_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "to_status": {
+          "name": "to_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reason_code": {
+          "name": "reason_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "offer_id": {
+          "name": "offer_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agent_id": {
+          "name": "agent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "media_id": {
+          "name": "media_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "actor_type": {
+          "name": "actor_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "delivery_job_events_job_id_created_at_index": {
+          "name": "delivery_job_events_job_id_created_at_index",
+          "columns": [
+            {
+              "expression": "job_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_job_events_order_id_index": {
+          "name": "delivery_job_events_order_id_index",
+          "columns": [
+            {
+              "expression": "order_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_job_events_offer_id_index": {
+          "name": "delivery_job_events_offer_id_index",
+          "columns": [
+            {
+              "expression": "offer_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_job_events_agent_id_created_at_index": {
+          "name": "delivery_job_events_agent_id_created_at_index",
+          "columns": [
+            {
+              "expression": "agent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_job_events_media_id_index": {
+          "name": "delivery_job_events_media_id_index",
+          "columns": [
+            {
+              "expression": "media_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_job_events_actor_id_index": {
+          "name": "delivery_job_events_actor_id_index",
+          "columns": [
+            {
+              "expression": "actor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_job_events_kind_idx": {
+          "name": "delivery_job_events_kind_idx",
+          "columns": [
+            {
+              "expression": "kind",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "delivery_job_events_job_id_delivery_jobs_id_fk": {
+          "name": "delivery_job_events_job_id_delivery_jobs_id_fk",
+          "tableFrom": "delivery_job_events",
+          "tableTo": "delivery_jobs",
+          "columnsFrom": [
+            "job_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_job_events_order_id_orders_id_fk": {
+          "name": "delivery_job_events_order_id_orders_id_fk",
+          "tableFrom": "delivery_job_events",
+          "tableTo": "orders",
+          "columnsFrom": [
+            "order_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_job_events_offer_id_delivery_job_offers_id_fk": {
+          "name": "delivery_job_events_offer_id_delivery_job_offers_id_fk",
+          "tableFrom": "delivery_job_events",
+          "tableTo": "delivery_job_offers",
+          "columnsFrom": [
+            "offer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_job_events_agent_id_delivery_agents_id_fk": {
+          "name": "delivery_job_events_agent_id_delivery_agents_id_fk",
+          "tableFrom": "delivery_job_events",
+          "tableTo": "delivery_agents",
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_job_events_media_id_media_objects_id_fk": {
+          "name": "delivery_job_events_media_id_media_objects_id_fk",
+          "tableFrom": "delivery_job_events",
+          "tableTo": "media_objects",
+          "columnsFrom": [
+            "media_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "delivery_job_events_kind_valid": {
+          "name": "delivery_job_events_kind_valid",
+          "value": "\"delivery_job_events\".\"kind\" in ('created','status','offered','offer_declined','offer_expired','offer_withdrawn','offer_given_up','contact_revealed','photo','code_wrong','code_locked','override','agent_unavailable')"
+        },
+        "delivery_job_events_actor_valid": {
+          "name": "delivery_job_events_actor_valid",
+          "value": "\"delivery_job_events\".\"actor_type\" in ('delivery_agent','shop','admin','system')"
+        },
+        "delivery_job_events_status_valid": {
+          "name": "delivery_job_events_status_valid",
+          "value": "(\"delivery_job_events\".\"from_status\" is null or \"delivery_job_events\".\"from_status\" in ('needs_agent','offered','accepted','picked_up','delivered','failed','returning','returned','cancelled')) and (\"delivery_job_events\".\"to_status\" is null or \"delivery_job_events\".\"to_status\" in ('needs_agent','offered','accepted','picked_up','delivered','failed','returning','returned','cancelled'))"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.delivery_job_offers": {
+      "name": "delivery_job_offers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "job_id": {
+          "name": "job_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agent_id": {
+          "name": "agent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'offered'"
+        },
+        "offered_by": {
+          "name": "offered_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "offered_at": {
+          "name": "offered_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "responded_at": {
+          "name": "responded_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reason_code": {
+          "name": "reason_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "distance_m": {
+          "name": "distance_m",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        }
+      },
+      "indexes": {
+        "delivery_job_offers_one_open_uq": {
+          "name": "delivery_job_offers_one_open_uq",
+          "columns": [
+            {
+              "expression": "job_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"delivery_job_offers\".\"status\" in ('offered','accepted')",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_job_offers_expiring_idx": {
+          "name": "delivery_job_offers_expiring_idx",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"delivery_job_offers\".\"status\" = 'offered'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_job_offers_agent_idx": {
+          "name": "delivery_job_offers_agent_idx",
+          "columns": [
+            {
+              "expression": "agent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "offered_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_job_offers_job_id_offered_at_index": {
+          "name": "delivery_job_offers_job_id_offered_at_index",
+          "columns": [
+            {
+              "expression": "job_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "offered_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_job_offers_offered_by_index": {
+          "name": "delivery_job_offers_offered_by_index",
+          "columns": [
+            {
+              "expression": "offered_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "delivery_job_offers_job_id_delivery_jobs_id_fk": {
+          "name": "delivery_job_offers_job_id_delivery_jobs_id_fk",
+          "tableFrom": "delivery_job_offers",
+          "tableTo": "delivery_jobs",
+          "columnsFrom": [
+            "job_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_job_offers_agent_id_delivery_agents_id_fk": {
+          "name": "delivery_job_offers_agent_id_delivery_agents_id_fk",
+          "tableFrom": "delivery_job_offers",
+          "tableTo": "delivery_agents",
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_job_offers_offered_by_users_id_fk": {
+          "name": "delivery_job_offers_offered_by_users_id_fk",
+          "tableFrom": "delivery_job_offers",
+          "tableTo": "users",
+          "columnsFrom": [
+            "offered_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "delivery_job_offers_status_valid": {
+          "name": "delivery_job_offers_status_valid",
+          "value": "\"delivery_job_offers\".\"status\" in ('offered','accepted','declined','expired','withdrawn','given_up')"
+        },
+        "delivery_job_offers_expiry_after_offer": {
+          "name": "delivery_job_offers_expiry_after_offer",
+          "value": "\"delivery_job_offers\".\"expires_at\" > \"delivery_job_offers\".\"offered_at\""
+        },
+        "delivery_job_offers_reason": {
+          "name": "delivery_job_offers_reason",
+          "value": "case \"delivery_job_offers\".\"status\"\n        when 'declined' then \"delivery_job_offers\".\"reason_code\" in ('too_far','vehicle_unsuitable','busy','going_offline','other')\n        when 'given_up' then \"delivery_job_offers\".\"reason_code\" in ('vehicle_issue','emergency','shop_closed','parcel_not_ready','other')\n        when 'withdrawn' then \"delivery_job_offers\".\"reason_code\" is null or \"delivery_job_offers\".\"reason_code\" in ('agent_unresponsive','reassigning','order_changed','other')\n        else \"delivery_job_offers\".\"reason_code\" is null end"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.delivery_jobs": {
+      "name": "delivery_jobs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "order_id": {
+          "name": "order_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "city_id": {
+          "name": "city_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "shop_id": {
+          "name": "shop_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agent_id": {
+          "name": "agent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'needs_agent'"
+        },
+        "seq": {
+          "name": "seq",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "failed_attempts": {
+          "name": "failed_attempts",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "load_weight_g": {
+          "name": "load_weight_g",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "load_class": {
+          "name": "load_class",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'light'"
+        },
+        "unknown_weight": {
+          "name": "unknown_weight",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "pickup_photo_id": {
+          "name": "pickup_photo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "delivery_photo_id": {
+          "name": "delivery_photo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fail_photo_id": {
+          "name": "fail_photo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fail_reason": {
+          "name": "fail_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fail_note": {
+          "name": "fail_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "return_outcome": {
+          "name": "return_outcome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "return_intent": {
+          "name": "return_intent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancel_reason": {
+          "name": "cancel_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "accepted_at": {
+          "name": "accepted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "picked_up_at": {
+          "name": "picked_up_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "delivered_at": {
+          "name": "delivered_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "failed_at": {
+          "name": "failed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "returned_at": {
+          "name": "returned_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "closed_at": {
+          "name": "closed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "override_kind": {
+          "name": "override_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "override_reason": {
+          "name": "override_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "override_by": {
+          "name": "override_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "delivery_jobs_one_active_uq": {
+          "name": "delivery_jobs_one_active_uq",
+          "columns": [
+            {
+              "expression": "order_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"delivery_jobs\".\"status\" in ('needs_agent','offered','accepted','picked_up','failed','returning')",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_jobs_city_status_idx": {
+          "name": "delivery_jobs_city_status_idx",
+          "columns": [
+            {
+              "expression": "city_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_jobs_agent_status_idx": {
+          "name": "delivery_jobs_agent_status_idx",
+          "columns": [
+            {
+              "expression": "agent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_jobs_order_id_seq_index": {
+          "name": "delivery_jobs_order_id_seq_index",
+          "columns": [
+            {
+              "expression": "order_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "seq",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_jobs_shop_id_index": {
+          "name": "delivery_jobs_shop_id_index",
+          "columns": [
+            {
+              "expression": "shop_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_jobs_pickup_photo_id_index": {
+          "name": "delivery_jobs_pickup_photo_id_index",
+          "columns": [
+            {
+              "expression": "pickup_photo_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_jobs_delivery_photo_id_index": {
+          "name": "delivery_jobs_delivery_photo_id_index",
+          "columns": [
+            {
+              "expression": "delivery_photo_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_jobs_fail_photo_id_index": {
+          "name": "delivery_jobs_fail_photo_id_index",
+          "columns": [
+            {
+              "expression": "fail_photo_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_jobs_override_by_index": {
+          "name": "delivery_jobs_override_by_index",
+          "columns": [
+            {
+              "expression": "override_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "delivery_jobs_order_id_orders_id_fk": {
+          "name": "delivery_jobs_order_id_orders_id_fk",
+          "tableFrom": "delivery_jobs",
+          "tableTo": "orders",
+          "columnsFrom": [
+            "order_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_jobs_city_id_cities_id_fk": {
+          "name": "delivery_jobs_city_id_cities_id_fk",
+          "tableFrom": "delivery_jobs",
+          "tableTo": "cities",
+          "columnsFrom": [
+            "city_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_jobs_shop_id_shops_id_fk": {
+          "name": "delivery_jobs_shop_id_shops_id_fk",
+          "tableFrom": "delivery_jobs",
+          "tableTo": "shops",
+          "columnsFrom": [
+            "shop_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_jobs_agent_id_delivery_agents_id_fk": {
+          "name": "delivery_jobs_agent_id_delivery_agents_id_fk",
+          "tableFrom": "delivery_jobs",
+          "tableTo": "delivery_agents",
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_jobs_pickup_photo_id_media_objects_id_fk": {
+          "name": "delivery_jobs_pickup_photo_id_media_objects_id_fk",
+          "tableFrom": "delivery_jobs",
+          "tableTo": "media_objects",
+          "columnsFrom": [
+            "pickup_photo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_jobs_delivery_photo_id_media_objects_id_fk": {
+          "name": "delivery_jobs_delivery_photo_id_media_objects_id_fk",
+          "tableFrom": "delivery_jobs",
+          "tableTo": "media_objects",
+          "columnsFrom": [
+            "delivery_photo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_jobs_fail_photo_id_media_objects_id_fk": {
+          "name": "delivery_jobs_fail_photo_id_media_objects_id_fk",
+          "tableFrom": "delivery_jobs",
+          "tableTo": "media_objects",
+          "columnsFrom": [
+            "fail_photo_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_jobs_override_by_users_id_fk": {
+          "name": "delivery_jobs_override_by_users_id_fk",
+          "tableFrom": "delivery_jobs",
+          "tableTo": "users",
+          "columnsFrom": [
+            "override_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "delivery_jobs_status_valid": {
+          "name": "delivery_jobs_status_valid",
+          "value": "\"delivery_jobs\".\"status\" in ('needs_agent','offered','accepted','picked_up','delivered','failed','returning','returned','cancelled')"
+        },
+        "delivery_jobs_load_class_valid": {
+          "name": "delivery_jobs_load_class_valid",
+          "value": "\"delivery_jobs\".\"load_class\" in ('light','heavy','bulky')"
+        },
+        "delivery_jobs_load_nonneg": {
+          "name": "delivery_jobs_load_nonneg",
+          "value": "\"delivery_jobs\".\"load_weight_g\" >= 0 and \"delivery_jobs\".\"seq\" >= 1 and \"delivery_jobs\".\"failed_attempts\" >= 0"
+        },
+        "delivery_jobs_agent_when_held": {
+          "name": "delivery_jobs_agent_when_held",
+          "value": "\"delivery_jobs\".\"status\" in ('needs_agent','offered','cancelled') or \"delivery_jobs\".\"agent_id\" is not null"
+        },
+        "delivery_jobs_fail_reason_valid": {
+          "name": "delivery_jobs_fail_reason_valid",
+          "value": "\"delivery_jobs\".\"fail_reason\" is null or \"delivery_jobs\".\"fail_reason\" in ('customer_unreachable','customer_refused','wrong_address','unsafe_location','vehicle_issue','other')"
+        },
+        "delivery_jobs_failed_explained": {
+          "name": "delivery_jobs_failed_explained",
+          "value": "\"delivery_jobs\".\"status\" <> 'failed' or \"delivery_jobs\".\"fail_reason\" is not null"
+        },
+        "delivery_jobs_return_outcome": {
+          "name": "delivery_jobs_return_outcome",
+          "value": "(\"delivery_jobs\".\"status\" = 'returned') = (\"delivery_jobs\".\"return_outcome\" is not null) and (\"delivery_jobs\".\"return_outcome\" is null or \"delivery_jobs\".\"return_outcome\" in ('retry','close'))"
+        },
+        "delivery_jobs_return_intent": {
+          "name": "delivery_jobs_return_intent",
+          "value": "(\"delivery_jobs\".\"return_intent\" is null or \"delivery_jobs\".\"return_intent\" in ('retry','close')) and (\"delivery_jobs\".\"status\" <> 'returning' or \"delivery_jobs\".\"return_intent\" is not null)"
+        },
+        "delivery_jobs_override": {
+          "name": "delivery_jobs_override",
+          "value": "\"delivery_jobs\".\"override_kind\" is null or (\"delivery_jobs\".\"override_kind\" in ('override_pickup','override_delivery','override_return') and char_length(\"delivery_jobs\".\"override_reason\") between 5 and 300 and \"delivery_jobs\".\"override_by\" is not null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.delivery_agent_invites": {
+      "name": "delivery_agent_invites",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "token_hash": {
+          "name": "token_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "phone": {
+          "name": "phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "citext",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "city_id": {
+          "name": "city_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vehicle_type": {
+          "name": "vehicle_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "application_id": {
+          "name": "application_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'sent'"
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "used_at": {
+          "name": "used_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "used_by": {
+          "name": "used_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "delivery_agent_invites_one_open_per_phone_uq": {
+          "name": "delivery_agent_invites_one_open_per_phone_uq",
+          "columns": [
+            {
+              "expression": "phone",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"delivery_agent_invites\".\"status\" = 'sent'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_agent_invites_city_id_created_at_id_index": {
+          "name": "delivery_agent_invites_city_id_created_at_id_index",
+          "columns": [
+            {
+              "expression": "city_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_agent_invites_status_expires_at_index": {
+          "name": "delivery_agent_invites_status_expires_at_index",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_agent_invites_created_by_index": {
+          "name": "delivery_agent_invites_created_by_index",
+          "columns": [
+            {
+              "expression": "created_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_agent_invites_used_by_index": {
+          "name": "delivery_agent_invites_used_by_index",
+          "columns": [
+            {
+              "expression": "used_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_agent_invites_application_id_index": {
+          "name": "delivery_agent_invites_application_id_index",
+          "columns": [
+            {
+              "expression": "application_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "delivery_agent_invites_city_id_cities_id_fk": {
+          "name": "delivery_agent_invites_city_id_cities_id_fk",
+          "tableFrom": "delivery_agent_invites",
+          "tableTo": "cities",
+          "columnsFrom": [
+            "city_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_agent_invites_application_id_partner_applications_id_fk": {
+          "name": "delivery_agent_invites_application_id_partner_applications_id_fk",
+          "tableFrom": "delivery_agent_invites",
+          "tableTo": "partner_applications",
+          "columnsFrom": [
+            "application_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "delivery_agent_invites_created_by_users_id_fk": {
+          "name": "delivery_agent_invites_created_by_users_id_fk",
+          "tableFrom": "delivery_agent_invites",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_agent_invites_used_by_users_id_fk": {
+          "name": "delivery_agent_invites_used_by_users_id_fk",
+          "tableFrom": "delivery_agent_invites",
+          "tableTo": "users",
+          "columnsFrom": [
+            "used_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "delivery_agent_invites_tokenHash_unique": {
+          "name": "delivery_agent_invites_tokenHash_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "token_hash"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "delivery_agent_invites_status_valid": {
+          "name": "delivery_agent_invites_status_valid",
+          "value": "\"delivery_agent_invites\".\"status\" in ('sent','used','expired','revoked')"
+        },
+        "delivery_agent_invites_vehicle_valid": {
+          "name": "delivery_agent_invites_vehicle_valid",
+          "value": "\"delivery_agent_invites\".\"vehicle_type\" in ('bike','scooter','three_wheeler','goods_vehicle')"
+        },
+        "delivery_agent_invites_token_hash": {
+          "name": "delivery_agent_invites_token_hash",
+          "value": "\"delivery_agent_invites\".\"token_hash\" ~ '^[0-9a-f]{64}$'"
+        },
+        "delivery_agent_invites_phone": {
+          "name": "delivery_agent_invites_phone",
+          "value": "\"delivery_agent_invites\".\"phone\" ~ '^\\+91[6-9][0-9]{9}$'"
+        },
+        "delivery_agent_invites_used": {
+          "name": "delivery_agent_invites_used",
+          "value": "(\"delivery_agent_invites\".\"status\" = 'used') = (\"delivery_agent_invites\".\"used_at\" is not null and \"delivery_agent_invites\".\"used_by\" is not null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.delivery_agent_events": {
+      "name": "delivery_agent_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "delivery_agent_events_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "agent_id": {
+          "name": "agent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "from_status": {
+          "name": "from_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "to_status": {
+          "name": "to_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reason_code": {
+          "name": "reason_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "document_kind": {
+          "name": "document_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "actor_type": {
+          "name": "actor_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "delivery_agent_events_agent_id_created_at_index": {
+          "name": "delivery_agent_events_agent_id_created_at_index",
+          "columns": [
+            {
+              "expression": "agent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_agent_events_actor_id_index": {
+          "name": "delivery_agent_events_actor_id_index",
+          "columns": [
+            {
+              "expression": "actor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "delivery_agent_events_agent_id_delivery_agents_id_fk": {
+          "name": "delivery_agent_events_agent_id_delivery_agents_id_fk",
+          "tableFrom": "delivery_agent_events",
+          "tableTo": "delivery_agents",
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "delivery_agent_events_kind_valid": {
+          "name": "delivery_agent_events_kind_valid",
+          "value": "\"delivery_agent_events\".\"kind\" in ('joined','status','document_submitted','document_verified','document_rejected','online','offline','vehicle','document_viewed')"
+        },
+        "delivery_agent_events_actor_valid": {
+          "name": "delivery_agent_events_actor_valid",
+          "value": "\"delivery_agent_events\".\"actor_type\" in ('delivery_agent','admin','system')"
+        },
+        "delivery_agent_events_status_valid": {
+          "name": "delivery_agent_events_status_valid",
+          "value": "(\"delivery_agent_events\".\"from_status\" is null or \"delivery_agent_events\".\"from_status\" in ('onboarding','active','paused','suspended','offboarded')) and (\"delivery_agent_events\".\"to_status\" is null or \"delivery_agent_events\".\"to_status\" in ('onboarding','active','paused','suspended','offboarded'))"
+        },
+        "delivery_agent_events_document_kind": {
+          "name": "delivery_agent_events_document_kind",
+          "value": "\"delivery_agent_events\".\"document_kind\" is null or \"delivery_agent_events\".\"document_kind\" in ('pan','driving_licence','vehicle_rc')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.delivery_agents": {
+      "name": "delivery_agents",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "city_id": {
+          "name": "city_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "phone": {
+          "name": "phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vehicle_type": {
+          "name": "vehicle_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'onboarding'"
+        },
+        "status_reason": {
+          "name": "status_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status_note": {
+          "name": "status_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status_changed_by": {
+          "name": "status_changed_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status_changed_at": {
+          "name": "status_changed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "paused_until": {
+          "name": "paused_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "online": {
+          "name": "online",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "last_online_at": {
+          "name": "last_online_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "home_location": {
+          "name": "home_location",
+          "type": "geography(Point,4326)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "invite_id": {
+          "name": "invite_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "application_id": {
+          "name": "application_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "verified_by": {
+          "name": "verified_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "verified_at": {
+          "name": "verified_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "offboarded_at": {
+          "name": "offboarded_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rating_sum": {
+          "name": "rating_sum",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "rating_count": {
+          "name": "rating_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "low_rating_alerted_at": {
+          "name": "low_rating_alerted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "delivery_agents_city_status_online_idx": {
+          "name": "delivery_agents_city_status_online_idx",
+          "columns": [
+            {
+              "expression": "city_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "online",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_agents_city_created_idx": {
+          "name": "delivery_agents_city_created_idx",
+          "columns": [
+            {
+              "expression": "city_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_agents_home_gix": {
+          "name": "delivery_agents_home_gix",
+          "columns": [
+            {
+              "expression": "home_location",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "gist",
+          "with": {}
+        },
+        "delivery_agents_status_changed_by_index": {
+          "name": "delivery_agents_status_changed_by_index",
+          "columns": [
+            {
+              "expression": "status_changed_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_agents_invite_id_index": {
+          "name": "delivery_agents_invite_id_index",
+          "columns": [
+            {
+              "expression": "invite_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_agents_application_id_index": {
+          "name": "delivery_agents_application_id_index",
+          "columns": [
+            {
+              "expression": "application_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_agents_verified_by_index": {
+          "name": "delivery_agents_verified_by_index",
+          "columns": [
+            {
+              "expression": "verified_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_agents_paused_until_idx": {
+          "name": "delivery_agents_paused_until_idx",
+          "columns": [
+            {
+              "expression": "paused_until",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"delivery_agents\".\"status\" = 'paused' and \"delivery_agents\".\"paused_until\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "delivery_agents_user_id_users_id_fk": {
+          "name": "delivery_agents_user_id_users_id_fk",
+          "tableFrom": "delivery_agents",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_agents_city_id_cities_id_fk": {
+          "name": "delivery_agents_city_id_cities_id_fk",
+          "tableFrom": "delivery_agents",
+          "tableTo": "cities",
+          "columnsFrom": [
+            "city_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_agents_status_changed_by_users_id_fk": {
+          "name": "delivery_agents_status_changed_by_users_id_fk",
+          "tableFrom": "delivery_agents",
+          "tableTo": "users",
+          "columnsFrom": [
+            "status_changed_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_agents_invite_id_delivery_agent_invites_id_fk": {
+          "name": "delivery_agents_invite_id_delivery_agent_invites_id_fk",
+          "tableFrom": "delivery_agents",
+          "tableTo": "delivery_agent_invites",
+          "columnsFrom": [
+            "invite_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "delivery_agents_application_id_partner_applications_id_fk": {
+          "name": "delivery_agents_application_id_partner_applications_id_fk",
+          "tableFrom": "delivery_agents",
+          "tableTo": "partner_applications",
+          "columnsFrom": [
+            "application_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "delivery_agents_verified_by_users_id_fk": {
+          "name": "delivery_agents_verified_by_users_id_fk",
+          "tableFrom": "delivery_agents",
+          "tableTo": "users",
+          "columnsFrom": [
+            "verified_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "delivery_agents_userId_unique": {
+          "name": "delivery_agents_userId_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "delivery_agents_status_valid": {
+          "name": "delivery_agents_status_valid",
+          "value": "\"delivery_agents\".\"status\" in ('onboarding','active','paused','suspended','offboarded')"
+        },
+        "delivery_agents_vehicle_valid": {
+          "name": "delivery_agents_vehicle_valid",
+          "value": "\"delivery_agents\".\"vehicle_type\" in ('bike','scooter','three_wheeler','goods_vehicle')"
+        },
+        "delivery_agents_phone": {
+          "name": "delivery_agents_phone",
+          "value": "\"delivery_agents\".\"phone\" ~ '^\\+91[6-9][0-9]{9}$'"
+        },
+        "delivery_agents_reason_valid": {
+          "name": "delivery_agents_reason_valid",
+          "value": "\"delivery_agents\".\"status_reason\" is null or \"delivery_agents\".\"status_reason\" in ('documents_expired','documents_invalid','customer_complaint','repeated_declines','repeated_failures','safety_incident','fraud_suspected','agent_request','inactive','other')"
+        },
+        "delivery_agents_standing_has_reason": {
+          "name": "delivery_agents_standing_has_reason",
+          "value": "\"delivery_agents\".\"status\" not in ('paused','suspended','offboarded') or (\"delivery_agents\".\"status_reason\" is not null and \"delivery_agents\".\"status_changed_by\" is not null)"
+        },
+        "delivery_agents_online_active": {
+          "name": "delivery_agents_online_active",
+          "value": "not \"delivery_agents\".\"online\" or \"delivery_agents\".\"status\" = 'active'"
+        },
+        "delivery_agents_rating_range": {
+          "name": "delivery_agents_rating_range",
+          "value": "\"delivery_agents\".\"rating_count\" >= 0 and \"delivery_agents\".\"rating_sum\" between \"delivery_agents\".\"rating_count\" and \"delivery_agents\".\"rating_count\" * 5"
+        },
+        "delivery_agents_active_verified": {
+          "name": "delivery_agents_active_verified",
+          "value": "\"delivery_agents\".\"status\" <> 'active' or \"delivery_agents\".\"verified_at\" is not null"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.delivery_agent_documents": {
+      "name": "delivery_agent_documents",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "agent_id": {
+          "name": "agent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "number_enc": {
+          "name": "number_enc",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "number_index": {
+          "name": "number_index",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "number_last4": {
+          "name": "number_last4",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "media_id": {
+          "name": "media_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'submitted'"
+        },
+        "reject_reason": {
+          "name": "reject_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reviewed_by": {
+          "name": "reviewed_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reviewed_at": {
+          "name": "reviewed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "delivery_agent_documents_kind_uq": {
+          "name": "delivery_agent_documents_kind_uq",
+          "columns": [
+            {
+              "expression": "agent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "kind",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_agent_documents_kind_number_index_index": {
+          "name": "delivery_agent_documents_kind_number_index_index",
+          "columns": [
+            {
+              "expression": "kind",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "number_index",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_agent_documents_media_id_index": {
+          "name": "delivery_agent_documents_media_id_index",
+          "columns": [
+            {
+              "expression": "media_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_agent_documents_reviewed_by_index": {
+          "name": "delivery_agent_documents_reviewed_by_index",
+          "columns": [
+            {
+              "expression": "reviewed_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_agent_documents_queue_idx": {
+          "name": "delivery_agent_documents_queue_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"delivery_agent_documents\".\"status\" = 'submitted'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "delivery_agent_documents_agent_id_delivery_agents_id_fk": {
+          "name": "delivery_agent_documents_agent_id_delivery_agents_id_fk",
+          "tableFrom": "delivery_agent_documents",
+          "tableTo": "delivery_agents",
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_agent_documents_media_id_media_objects_id_fk": {
+          "name": "delivery_agent_documents_media_id_media_objects_id_fk",
+          "tableFrom": "delivery_agent_documents",
+          "tableTo": "media_objects",
+          "columnsFrom": [
+            "media_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_agent_documents_reviewed_by_users_id_fk": {
+          "name": "delivery_agent_documents_reviewed_by_users_id_fk",
+          "tableFrom": "delivery_agent_documents",
+          "tableTo": "users",
+          "columnsFrom": [
+            "reviewed_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "delivery_agent_documents_kind_valid": {
+          "name": "delivery_agent_documents_kind_valid",
+          "value": "\"delivery_agent_documents\".\"kind\" in ('pan','driving_licence','vehicle_rc')"
+        },
+        "delivery_agent_documents_status_valid": {
+          "name": "delivery_agent_documents_status_valid",
+          "value": "\"delivery_agent_documents\".\"status\" in ('submitted','verified','rejected')"
+        },
+        "delivery_agent_documents_encrypted": {
+          "name": "delivery_agent_documents_encrypted",
+          "value": "\"delivery_agent_documents\".\"number_enc\" is null or \"delivery_agent_documents\".\"number_enc\" ~ '^v1\\.[A-Za-z0-9_-]{1,16}\\.[A-Za-z0-9_-]{16}\\.[A-Za-z0-9_-]*\\.[A-Za-z0-9_-]{22}$'"
+        },
+        "delivery_agent_documents_last4": {
+          "name": "delivery_agent_documents_last4",
+          "value": "\"delivery_agent_documents\".\"number_last4\" ~ '^[0-9A-Z]{4}$'"
+        },
+        "delivery_agent_documents_reject_reason": {
+          "name": "delivery_agent_documents_reject_reason",
+          "value": "(\"delivery_agent_documents\".\"status\" = 'rejected') = (\"delivery_agent_documents\".\"reject_reason\" is not null) and (\"delivery_agent_documents\".\"reject_reason\" is null or \"delivery_agent_documents\".\"reject_reason\" in ('unreadable','name_mismatch','expired','wrong_document','number_mismatch','other'))"
+        },
+        "delivery_agent_documents_reviewed": {
+          "name": "delivery_agent_documents_reviewed",
+          "value": "\"delivery_agent_documents\".\"status\" = 'submitted' or (\"delivery_agent_documents\".\"reviewed_by\" is not null and \"delivery_agent_documents\".\"reviewed_at\" is not null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.delivery_agent_payouts": {
+      "name": "delivery_agent_payouts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "agent_id": {
+          "name": "agent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "city_id": {
+          "name": "city_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount_paise": {
+          "name": "amount_paise",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "period_from": {
+          "name": "period_from",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "period_to": {
+          "name": "period_to",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "method": {
+          "name": "method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reference": {
+          "name": "reference",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reverses_id": {
+          "name": "reverses_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "idem_key": {
+          "name": "idem_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recorded_by": {
+          "name": "recorded_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "delivery_agent_payouts_agent_idx": {
+          "name": "delivery_agent_payouts_agent_idx",
+          "columns": [
+            {
+              "expression": "agent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_agent_payouts_city_idx": {
+          "name": "delivery_agent_payouts_city_idx",
+          "columns": [
+            {
+              "expression": "city_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "delivery_agent_payouts_recorded_by_index": {
+          "name": "delivery_agent_payouts_recorded_by_index",
+          "columns": [
+            {
+              "expression": "recorded_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "delivery_agent_payouts_agent_id_delivery_agents_id_fk": {
+          "name": "delivery_agent_payouts_agent_id_delivery_agents_id_fk",
+          "tableFrom": "delivery_agent_payouts",
+          "tableTo": "delivery_agents",
+          "columnsFrom": [
+            "agent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_agent_payouts_city_id_cities_id_fk": {
+          "name": "delivery_agent_payouts_city_id_cities_id_fk",
+          "tableFrom": "delivery_agent_payouts",
+          "tableTo": "cities",
+          "columnsFrom": [
+            "city_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_agent_payouts_reverses_id_delivery_agent_payouts_id_fk": {
+          "name": "delivery_agent_payouts_reverses_id_delivery_agent_payouts_id_fk",
+          "tableFrom": "delivery_agent_payouts",
+          "tableTo": "delivery_agent_payouts",
+          "columnsFrom": [
+            "reverses_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "delivery_agent_payouts_recorded_by_users_id_fk": {
+          "name": "delivery_agent_payouts_recorded_by_users_id_fk",
+          "tableFrom": "delivery_agent_payouts",
+          "tableTo": "users",
+          "columnsFrom": [
+            "recorded_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "delivery_agent_payouts_reversesId_unique": {
+          "name": "delivery_agent_payouts_reversesId_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "reverses_id"
+          ]
+        },
+        "delivery_agent_payouts_idemKey_unique": {
+          "name": "delivery_agent_payouts_idemKey_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "idem_key"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "delivery_agent_payouts_kind_valid": {
+          "name": "delivery_agent_payouts_kind_valid",
+          "value": "\"delivery_agent_payouts\".\"kind\" in ('payment','reversal')"
+        },
+        "delivery_agent_payouts_method_valid": {
+          "name": "delivery_agent_payouts_method_valid",
+          "value": "\"delivery_agent_payouts\".\"method\" in ('upi','bank_transfer','cash','other')"
+        },
+        "delivery_agent_payouts_sign": {
+          "name": "delivery_agent_payouts_sign",
+          "value": "(\"delivery_agent_payouts\".\"kind\" = 'payment' and \"delivery_agent_payouts\".\"amount_paise\" > 0 and \"delivery_agent_payouts\".\"reverses_id\" is null) or (\"delivery_agent_payouts\".\"kind\" = 'reversal' and \"delivery_agent_payouts\".\"amount_paise\" < 0 and \"delivery_agent_payouts\".\"reverses_id\" is not null and \"delivery_agent_payouts\".\"note\" is not null)"
+        },
+        "delivery_agent_payouts_period": {
+          "name": "delivery_agent_payouts_period",
+          "value": "\"delivery_agent_payouts\".\"period_from\" <= \"delivery_agent_payouts\".\"period_to\""
+        },
+        "delivery_agent_payouts_other_note": {
+          "name": "delivery_agent_payouts_other_note",
+          "value": "\"delivery_agent_payouts\".\"method\" <> 'other' or \"delivery_agent_payouts\".\"note\" is not null"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.shop_delivery_mode_requests": {
+      "name": "shop_delivery_mode_requests",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "shop_id": {
+          "name": "shop_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "requested_mode": {
+          "name": "requested_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'shop'"
+        },
+        "reason_code": {
+          "name": "reason_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "decision_reason": {
+          "name": "decision_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decision_note": {
+          "name": "decision_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "requested_by": {
+          "name": "requested_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "decided_by": {
+          "name": "decided_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decided_at": {
+          "name": "decided_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "shop_delivery_mode_requests_one_pending_uq": {
+          "name": "shop_delivery_mode_requests_one_pending_uq",
+          "columns": [
+            {
+              "expression": "shop_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"shop_delivery_mode_requests\".\"status\" = 'pending'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "shop_delivery_mode_requests_status_created_at_index": {
+          "name": "shop_delivery_mode_requests_status_created_at_index",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "shop_delivery_mode_requests_shop_id_created_at_index": {
+          "name": "shop_delivery_mode_requests_shop_id_created_at_index",
+          "columns": [
+            {
+              "expression": "shop_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "shop_delivery_mode_requests_requested_by_index": {
+          "name": "shop_delivery_mode_requests_requested_by_index",
+          "columns": [
+            {
+              "expression": "requested_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "shop_delivery_mode_requests_decided_by_index": {
+          "name": "shop_delivery_mode_requests_decided_by_index",
+          "columns": [
+            {
+              "expression": "decided_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "shop_delivery_mode_requests_shop_id_shops_id_fk": {
+          "name": "shop_delivery_mode_requests_shop_id_shops_id_fk",
+          "tableFrom": "shop_delivery_mode_requests",
+          "tableTo": "shops",
+          "columnsFrom": [
+            "shop_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "shop_delivery_mode_requests_requested_by_users_id_fk": {
+          "name": "shop_delivery_mode_requests_requested_by_users_id_fk",
+          "tableFrom": "shop_delivery_mode_requests",
+          "tableTo": "users",
+          "columnsFrom": [
+            "requested_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "shop_delivery_mode_requests_decided_by_users_id_fk": {
+          "name": "shop_delivery_mode_requests_decided_by_users_id_fk",
+          "tableFrom": "shop_delivery_mode_requests",
+          "tableTo": "users",
+          "columnsFrom": [
+            "decided_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "shop_delivery_mode_requests_mode_valid": {
+          "name": "shop_delivery_mode_requests_mode_valid",
+          "value": "\"shop_delivery_mode_requests\".\"requested_mode\" in ('agents','self')"
+        },
+        "shop_delivery_mode_requests_source_valid": {
+          "name": "shop_delivery_mode_requests_source_valid",
+          "value": "\"shop_delivery_mode_requests\".\"source\" in ('shop','staff')"
+        },
+        "shop_delivery_mode_requests_status_valid": {
+          "name": "shop_delivery_mode_requests_status_valid",
+          "value": "\"shop_delivery_mode_requests\".\"status\" in ('pending','approved','rejected','withdrawn')"
+        },
+        "shop_delivery_mode_requests_reason": {
+          "name": "shop_delivery_mode_requests_reason",
+          "value": "\"shop_delivery_mode_requests\".\"source\" = 'staff' or \"shop_delivery_mode_requests\".\"reason_code\" in ('own_riders','faster_local_delivery','customer_relationship','agents_unreliable','other')"
+        },
+        "shop_delivery_mode_requests_decision": {
+          "name": "shop_delivery_mode_requests_decision",
+          "value": "(\"shop_delivery_mode_requests\".\"status\" = 'rejected') = (\"shop_delivery_mode_requests\".\"decision_reason\" is not null) and (\"shop_delivery_mode_requests\".\"decision_reason\" is null or \"shop_delivery_mode_requests\".\"decision_reason\" in ('agents_cover_area','service_quality','incomplete_request','other'))"
         }
       },
       "isRLSEnabled": false

@@ -57,6 +57,16 @@ and is not part of this catalogue (WhatsApp OTP sending is not built, Q56).
 Templates added to the catalogue later (for example quote events) appear in the dry run, this table and the admin screen
 automatically; a new key without Meta copy fails typecheck until `META_TEMPLATE_COPY` has an entry for it.
 
+## Partner delivery templates (2026-11-26, spec 24): not submitted
+
+Added to the plan for delivery agents; in the code catalogue (the dry run lists them) but **not submitted** (needs the founder's
+go-ahead, Q-DA1). Email templates `delivery_agent_invite` and `delivery_offer` exist separately.
+
+| Event key               | Meta name (planned)       | Purpose                                                      | Button                                                                                        |
+| ----------------------- | ------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| `delivery.agent_invite` | `partner_delivery_invite` | Invite to join as a delivery agent; placeholders name, hours | none (no token in WhatsApp: sign in with this phone on the join page; the email has the link) |
+| `delivery.offer`        | `partner_delivery_offer`  | A delivery job is offered to an agent; order code, minutes   | none                                                                                          |
+
 ## If something fails
 
 - `FAILED name/lang: HTTP 400, Meta code 100 ...`: Meta refused the payload; the message is printed (the token never is).

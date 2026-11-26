@@ -14,6 +14,8 @@
     "./time": "./src/time.ts",
     "./invoice": "./src/invoice.ts",
     "./state": "./src/state/index.ts",
+    "./delivery/codes": "./src/delivery/codes.ts",
+    "./delivery/api": "./src/delivery/api.ts",
     "./rbac": "./src/rbac.ts",
     "./live": "./src/live.ts",
     "./whatsapp": "./src/whatsapp.ts",

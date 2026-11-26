@@ -12,7 +12,7 @@ import type { Tx } from './orders';
  */
 export interface ApplicationStatusRow {
   code: string;
-  kind: 'seller' | 'garage' | 'mechanic';
+  kind: 'seller' | 'garage' | 'mechanic' | 'delivery_agent';
   stage: 'new' | 'in_review' | 'approved' | 'rejected';
   updatedAt: Date;
 }

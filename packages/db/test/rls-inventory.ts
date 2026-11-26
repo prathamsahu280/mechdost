@@ -222,6 +222,24 @@ const USAGE_NONE = [
 
 /** Cash-on-delivery requests (0109): customers and staff only through the API. */
 const COD_NONE = ['cod_request_events', 'cod_requests'];
+/**
+ * Delivery agents (0105, spec 24): deny-all; agents, shops and staff read through the API only (contact reveal by
+ * stage is audited there, so no direct read path may exist).
+ */
+const DELIVERY_NONE = [
+  'delivery_agent_documents',
+  'delivery_agent_events',
+  'delivery_agent_invites',
+  'delivery_agent_payouts',
+  'delivery_agents',
+  'delivery_handover_codes',
+  'delivery_job_events',
+  'delivery_job_offers',
+  'delivery_jobs',
+  'delivery_ratings',
+  'order_delivery_switches',
+  'shop_delivery_mode_requests',
+];
 
 export const RLS_INVENTORY: Record<string, RlsAccess> = {
   ...Object.fromEntries(PUBLIC.map((n) => [n, 'public' as const])),
@@ -231,4 +249,5 @@ export const RLS_INVENTORY: Record<string, RlsAccess> = {
   ...Object.fromEntries(USTAAD_NONE.map((n) => [n, 'none' as const])),
   ...Object.fromEntries(USAGE_NONE.map((n) => [n, 'none' as const])),
   ...Object.fromEntries(COD_NONE.map((n) => [n, 'none' as const])),
+  ...Object.fromEntries(DELIVERY_NONE.map((n) => [n, 'none' as const])),
 };

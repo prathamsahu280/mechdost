@@ -29,3 +29,5 @@ export * from './savings';
 export * from './usage';
 // Cash-on-delivery requests and approvals (founder ruling 2026-11-26, migration 0109).
 export * from './cod';
+// Delivery agents (spec 24, migration 0105).
+export * from './delivery';

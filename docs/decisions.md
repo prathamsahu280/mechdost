@@ -2611,3 +2611,101 @@ no shop or workshop would count as staff in `isStaffGrant`). Super admin only (`
 names accounts, masked phone only); reason codes, audited, cap 50; removal keeps the row. Testers pass the access gate
 only — no staff preview, no `general.enabled` bypass, no admin power. The web learns tester status by asking the gated
 `/v1/ustaad/me` (no new public field). Details: spec 23 "as built".
+
+## 2026-11-26 — Delivery agents: contract (builder's choices within the approved design)
+
+Contract and route table: design doc § "Contract (builder, 2026-11-26)". Where the builder filled a gap or changed a
+word of the design:
+
+- **Agent statuses** `onboarding → active ↔ paused → suspended → offboarded` (design: applied|approved|active|…). The
+  application keeps its own statuses (`partner_applications`, kind `delivery_agent`); the agent row exists from the
+  accepted invite on; `active` = documents verified by admin (the design's "approved + verified"). Offers go only to
+  active agents who are online, in a city with `delivery.agents_enabled` on.
+- **Retry model:** retry with the **same** agent is `failed → picked_up` (the parcel never left them). Retry with
+  **another** agent goes through the shop: `failed → returning`, the shop types the agent's 4-digit **return code**
+  (`returned`), the order goes back to `ready_for_pickup` and a new job waits for an agent. Close = the same hand-back,
+  then the order ends `returned` with the last failure reason as its reason code and the refund per Lead's call 13
+  (`returnRefundKind`). Attempts per sub-order: setting `delivery.max_attempts` (default 2 = one free retry).
+- **Contact by stage:** `failed` keeps the customer visible to the agent (admin may send them again), `returning` shows
+  the shop only; delivered / returned / cancelled show nothing (Lead's call 6 otherwise unchanged).
+- **Documents** are stored in the existing private media host (`media_objects`, private Supabase Storage bucket,
+  served only through the API), not R2 (design text); R2 stays Ustaad-only. Numbers encrypted (`*_enc`) with a
+  blind index; any 12-digit number refused (Aadhaar).
+- **Invites** have their own table (`delivery_agent_invites`): email optional (WhatsApp may be the only channel),
+  phone-bound, single use, `delivery.invite_hours` (default 72). Seller invites (`partner_invites`) unchanged.
+- **Dispatch mode** is a code list (`DELIVERY_DISPATCH_MODES = ['admin']`), not an admin setting: the settings registry
+  holds ints and booleans only (L-USAGE3) and a switch that does nothing would mislead; `broadcast` is added when the
+  founder decides.
+- **Vehicle loads** are per-city int settings in kg (`delivery.max_load_<vehicle>_kg`; defaults 20/20/300/1000);
+  `load_class` (light/heavy/bulky) is the fallback for lines without a variant weight; bike and scooter carry light
+  only, three-wheeler light + heavy, goods vehicle all.
+- **Permissions:** agent role `delivery_agent` (scope self) holds `deliveries:read|respond|fulfil` plus account and
+  ticket basics; staff `delivery_agents:manage`, `delivery_jobs:assign` on ops_manager and city_manager (super_admin
+  via ALL). `cityScopeFrom` additionally ignores non-staff grants (defence in depth).
+- **Settings screen:** the `delivery.*` settings are listed under Admin → Settings → Partners until the Delivery
+  section has its own screen (web agent).
+
+## 2026-11-26 — Delivery agents: founder rulings (dispatch, offer timer, ratings, insurance, uniform)
+
+1. **Dispatch:** admin assigns from suggested agents (confirmed); no broadcast.
+2. **Offer timer:** default **15 minutes** (was 5), per-city setting `delivery.offer_timeout_min` (1–60, audited like
+   every setting, en + hi label).
+3. **Rider ratings: yes.** After a delivered agent job the customer rates the agent 1–5 with optional reason codes
+   (`on_time, polite, careful_with_parcel, late, rude, damaged, other` + note for `other`). One rating per job,
+   editable for 24 h; the agent row keeps a versioned running sum and count; the dispatch ranking weighs the average by
+   `delivery.rank_rating_weight_pct` (default 20 %); staff get one alert when an agent's average drops below
+   `delivery.low_rating_alert_x10` (default 35 = 3.5) after `delivery.low_rating_min_count` ratings (default 5).
+   Admin sees ratings (never who rated in agent views); the agent sees only their own average and count. Table
+   `delivery_ratings`, route `PUT /v1/me/orders/{code}/delivery-rating`, DTOs `DeliveryRatingInput`,
+   `CustomerDeliveryBlock.rating/canRate`.
+4. **No accident insurance and no uniform or dress requirement** for agents: removed from the "before go-live" list
+   (design doc, research §5–6).
+
+## 2026-11-26 — Delivery agents: security review fixes (standing, documents)
+
+Spec 24 § 5. Found in the security review of the delivery repositories; fixed in c7fce3d6 and b44c63db.
+
+- **Every agent job action needs agent status `active`**, checked once in the shared agent lookup that all job actions
+  use, not per route.
+- **A paused agent may only finish parcels already picked up** (deliver, fail; and see the return code while carrying
+  a parcel back). A paused agent gets no new offers and cannot accept or pick up. **Suspended and offboarded agents can
+  do nothing**; staff take over.
+- **On pause, suspend and offboard:** open offers are withdrawn, accepted (not picked-up) jobs go back to the admin
+  queue, and **every job the agent holds** gets an `agent_unavailable` job event and a staff notice
+  `staff.delivery_agent_unavailable`. Offboarding removes the `delivery_agent` role grant.
+- **Replacing a document** sets it back to `submitted` (unverified), takes the agent offline and withdraws open
+  offers. Suggestions and accepts need all three documents verified.
+- `cityScopeFrom` ignores known non-staff roles, so an agent grant never becomes a staff city scope.
+- WhatsApp invite (builder's call; the codebase study flagged a token in a WhatsApp URL as needing a security ruling):
+  the WhatsApp message carries **no token** (lock screens, chat backups); it sends the person to the join page and signing in with the invite's phone finds the open invite. The
+  email carries the link. The two WhatsApp templates (`partner_delivery_invite`, `partner_delivery_offer`) are **not
+  submitted to Meta** (founder's go-ahead needed, Q-DA1).
+- Tests that pin it: `packages/db/test/delivery-agents.test.ts`, block "security review 2026-11-26".
+
+## 2026-11-26 — Delivery agents: pause ruling and manual payouts
+
+- **Pause (lead ruling after the review):** pausing is for a short break or a check, not a punishment, so a paused
+  agent may still finish the parcels in hand (deliver, fail, show the return code when carrying a parcel back); the
+  held jobs are flagged to staff. Paused agents with an end date resume in the worker.
+- **Payouts are manual** (founder 2026-11-26: "payouts would be manual and we can make it automatic later"). Append-only
+  table `delivery_agent_payouts` (migration 0106). Staff with `delivery_payouts:manage` (finance, super admin) record a
+  payment made outside the app: amount in integer paise, IST period, method `upi|bank_transfer|cash|other`, reference,
+  note (required for `other`), idempotency key. Corrections are one reversing row per payment (negative amount, note
+  required). Routes: staff list and CSV `/v1/admin/delivery/payouts` and `.csv`, delivered-count helper
+  `/v1/admin/delivery/payouts/delivered-count`, the agent's own view `/v1/agent/me/earnings` (no staff notes or names; paths aligned with the web stream 2026-11-27), staff summary `/v1/admin/delivery/payouts/summary`, correction `POST …/payouts/{id}/correct`.
+  No rate maths, no transfers, no TDS until the founder sets rates.
+- **Refund on return (lead's call 13):** refund source and reason code `delivery_returned`; parts only keeps
+  `shipping_paise`. Failed deliveries then close the order as `returned`.
+- **Media:** pickup, delivery and failure photos and document photos are `media_objects` with owner kinds
+  `delivery_photo` and `agent_document` in the existing private bucket (not R2); staff-only signed URLs at
+  `/v1/delivery-photos/{id}/{variant}`.
+- **Worker:** offers expire every 30 s (one transaction each; failures logged and skipped).
+- **Not built (queued as founder questions):** reroute to another shop after a declined switch; document retention
+  purge job (setting `delivery.document_retention_days` only); Meta template submission.
+
+### 2026-11-27 · Delivery payouts: replay scope and reserved keys (security review)
+
+A replayed payout key checks the caller's city scope before returning anything (404 otherwise). A correction loads the
+target payment in scope first; one reversal per payment (UNIQUE `reverses_id`) is the idempotency, so a second
+correction returns the first one and any client key is ignored. Client payout keys may not start with `rev-`
+(422 `RESERVED_KEY`); that prefix is reserved for reversal rows. Tests: `packages/db/test/delivery-payouts.test.ts`.

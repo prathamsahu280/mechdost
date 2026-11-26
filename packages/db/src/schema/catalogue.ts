@@ -19,6 +19,7 @@ import { HIDE_REASONS } from '@mechdost/shared/catalogue-groups';
 import { GST_STATUSES } from '@mechdost/shared/partners';
 import { NET_UNITS } from '@mechdost/shared/product-attributes';
 import { VEHICLE_SEGMENTS } from '@mechdost/shared/vehicle-segments';
+import { LOAD_CLASSES, SHOP_DELIVERY_MODES } from '@mechdost/shared/delivery/codes';
 import { INVITE_STATES, PRICE_REQUEST_STATES } from '@mechdost/shared/state';
 import {
   createdAt,
@@ -156,6 +157,12 @@ export const shops = pgTable(
     busyUntil: ts(),
     acceptanceTimeoutMin: integer(),
     /**
+     * Who delivers this shop's prepaid orders (spec 24): `agents` (MechDost delivery agents, in a city where they are
+     * switched on) or `self`. Staff-set only (a shop asks through `shop_delivery_mode_requests`); shops that existed
+     * before migration 0105 are `self` (Lead's call 11).
+     */
+    deliveryMode: text().notNull().default('self'),
+    /**
      * Free delivery from this order value for this shop's orders (paise). NULL = the city setting
      * `checkout.free_delivery_min_paise`; 0 = always free. A PIN override wins over it (spec 03 delivery chain).
      */
@@ -183,6 +190,10 @@ export const shops = pgTable(
     check(
       'shops_gstin_format',
       sql`${t.gstin} is null or ${t.gstin} ~ '^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$'`,
+    ),
+    check(
+      'shops_delivery_mode_valid',
+      sql`${t.deliveryMode} in (${sql.raw(SHOP_DELIVERY_MODES.map((m) => `'${m}'`).join(','))})`,
     ),
     check('shops_timeout_positive', sql`${t.acceptanceTimeoutMin} is null or ${t.acceptanceTimeoutMin} > 0`),
     check('shops_hours_object', sql`jsonb_typeof(${t.hours}) = 'object'`),
@@ -355,6 +366,11 @@ export const products = pgTable(
      * (migration 0080): "Activ 4T 20W-40 900 ml" → "ACTIV4T20W40900ML". The search matches viscosity grades, battery
      * capacities and tyre sizes against it however the customer spaced them (trigram index, spec 02 "Smart search").
      */
+    /**
+     * Load class (spec 24, Lead's calls 5, 12): the fallback for delivery-agent vehicle matching when a variant has no
+     * weight. `light` fits a two-wheeler, `heavy` a three-wheeler, `bulky` a goods vehicle. Staff edit.
+     */
+    loadClass: text().notNull().default('light'),
     searchCompact: text().generatedAlwaysAs(
       sql`regexp_replace(upper(coalesce("name", '') || ' ' || coalesce("spec_summary", '') || ' ' || coalesce("compatibility", '')), '[^A-Z0-9]', '', 'g')`,
     ),
@@ -364,6 +380,10 @@ export const products = pgTable(
   },
   (t) => [
     check('products_status_valid', sql`${t.status} in ('draft','submitted','live','rejected','archived')`),
+    check(
+      'products_load_class_valid',
+      sql`${t.loadClass} in (${sql.raw(LOAD_CLASSES.map((m) => `'${m}'`).join(','))})`,
+    ),
     check('products_hsn_format', sql`${t.hsn} ~ '^[0-9]{4,8}$'`),
     check('products_gst_rate_range', sql`${t.gstRateBp} between 0 and 4000`),
     // Typed attributes per category live here (decision 2026-11-13); always a JSON object.

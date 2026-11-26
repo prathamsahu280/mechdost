@@ -3355,7 +3355,23 @@
     "api_set_checkout_cod_ustaad_min_level": "Lowest Ustaad level for cash on delivery",
     "api_set_checkout_cod_min_order_paise": "Smallest cash-on-delivery order",
     "api_set_checkout_cod_min_items": "Fewest pieces in a cash-on-delivery order",
-    "api_set_checkout_cod_request_reapply_days": "Wait before asking again after a no"
+    "api_set_checkout_cod_request_reapply_days": "Wait before asking again after a no",
+    "api_set_delivery_agents_enabled": "MechDost delivery agents deliver prepaid orders",
+    "api_set_delivery_offer_timeout_min": "Time an agent has to accept a job",
+    "api_set_delivery_max_active_jobs": "Jobs an agent may hold at once",
+    "api_set_delivery_photos_required": "Agents must take pickup and delivery photos",
+    "api_set_delivery_max_attempts": "Delivery attempts per order",
+    "api_set_delivery_invite_hours": "Hours an agent invite stays valid",
+    "api_set_delivery_document_retention_days": "Days agent documents are kept after offboarding",
+    "api_set_delivery_max_load_bike_kg": "Most a motorcycle carries (kg)",
+    "api_set_delivery_max_load_scooter_kg": "Most a scooter carries (kg)",
+    "api_set_delivery_max_load_three_wheeler_kg": "Most a three-wheeler carries (kg)",
+    "api_set_delivery_max_load_goods_vehicle_kg": "Most a goods vehicle carries (kg)",
+    "api_set_delivery_rank_rating_weight_pct": "Weight of ratings when suggesting agents (%)",
+    "api_set_delivery_low_rating_alert_x10": "Alert staff below this average (tenths of a star, 35 = 3.5)",
+    "api_set_delivery_low_rating_min_count": "Ratings needed before a low-rating alert",
+    "notify_ev_delivery_offer": "New delivery job for an agent",
+    "notify_ev_delivery_agent_invite": "Invitation to become a delivery agent"
   },
   "shopGiveUp": {
     "action": "Can't fulfil this order",
@@ -3779,7 +3795,8 @@
     "reason_goodwill": "Goodwill refund",
     "reason_other": "Other",
     "reason_rsa_cancelled": "Roadside request cancelled",
-    "reason_rsa_overpaid": "Roadside total below the advance"
+    "reason_rsa_overpaid": "Roadside total below the advance",
+    "reason_delivery_returned": "Delivery could not be completed"
   },
   "refunds": {
     "title": "Refunds",
@@ -3932,7 +3949,9 @@
     "source_rsa_cancelled": "Roadside request cancelled",
     "source_rsa_overpaid": "Roadside total below the advance",
     "reason_rsa_cancelled": "Roadside request cancelled",
-    "reason_rsa_overpaid": "Roadside total below the advance"
+    "reason_rsa_overpaid": "Roadside total below the advance",
+    "source_delivery_returned": "Delivery not completed",
+    "reason_delivery_returned": "Delivery could not be completed"
   },
   "accountApi": {
     "loadError": "We couldn't load this. Check your connection and try again.",
@@ -4074,7 +4093,9 @@
     "tpl_rsa_refund_processed": "Roadside refund processed",
     "tpl_cod_approved": "Cash on delivery approved",
     "tpl_cod_rejected": "Cash on delivery not approved",
-    "tpl_cod_revoked": "Cash on delivery turned off"
+    "tpl_cod_revoked": "Cash on delivery turned off",
+    "tpl_delivery_agent_invite": "Delivery agent invitation",
+    "tpl_delivery_offer": "New delivery job for an agent"
   },
   "reco": {
     "title": "Goes well with this",
@@ -4486,6 +4507,98 @@
     "account_cod_revoked": {
       "title": "Cash on delivery turned off",
       "body": "Cash on delivery is no longer available on your account. You can pay online."
+    },
+    "delivery_offer": {
+      "title": "New delivery job",
+      "body": "Order {orderCode} is offered to you. Accept within {minutes} minutes."
+    },
+    "delivery_job_withdrawn": {
+      "title": "Job taken back",
+      "body": "MechDost took back the job for order {orderCode}."
+    },
+    "delivery_retry": {
+      "title": "Try the delivery again",
+      "body": "Please try delivering order {orderCode} again."
+    },
+    "delivery_return_to_shop": {
+      "title": "Take the parcel back",
+      "body": "Take order {orderCode} back to the shop and show your return code."
+    },
+    "delivery_document_decided": {
+      "title": "Document checked",
+      "body": "MechDost checked one of your documents. Open your profile to see it."
+    },
+    "delivery_status_changed": {
+      "title": "Account updated",
+      "body": "Your delivery account status changed. Open your profile to see it."
+    },
+    "shop_delivery_agent_assigned": {
+      "title": "Agent on the way",
+      "body": "A delivery agent is coming to pick up order {orderCode}. Keep the pickup code ready."
+    },
+    "shop_delivery_switch": {
+      "title": "Please deliver this order",
+      "body": "MechDost asks you to deliver order {orderCode} yourselves. Confirm or decline."
+    },
+    "shop_delivery_returning": {
+      "title": "Parcel coming back",
+      "body": "Order {orderCode} could not be delivered. The agent is bringing it back."
+    },
+    "shop_delivery_mode_decided": {
+      "title": "Delivery setting decided",
+      "body": "MechDost decided on your delivery request. Open your portal to see it."
+    },
+    "order_picked_up": {
+      "title": "Order picked up",
+      "body": "Your order {orderCode} is on its way."
+    },
+    "order_delivery_failed": {
+      "title": "Delivery could not be completed",
+      "body": "We couldn't deliver order {orderCode}. We'll update you soon."
+    },
+    "order_returned": {
+      "title": "Order returned",
+      "body": "Order {orderCode} went back. Your refund is being processed."
+    },
+    "staff_delivery_agent_application": {
+      "title": "New delivery agent application",
+      "body": "A new application is waiting for review."
+    },
+    "staff_delivery_documents": {
+      "title": "Agent documents to check",
+      "body": "A delivery agent uploaded a document."
+    },
+    "staff_delivery_needs_agent": {
+      "title": "Needs a delivery agent",
+      "body": "Order {orderCode} is ready for pickup and needs an agent."
+    },
+    "staff_delivery_offer_expired": {
+      "title": "Agent did not answer",
+      "body": "The offer for order {orderCode} expired. Pick another agent."
+    },
+    "staff_delivery_declined": {
+      "title": "Agent declined",
+      "body": "An agent declined order {orderCode}. Pick another agent."
+    },
+    "staff_delivery_failed": {
+      "title": "Delivery failed",
+      "body": "Order {orderCode} could not be delivered. Retry or send it back."
+    },
+    "staff_delivery_switch_declined": {
+      "title": "Shop will not deliver",
+      "body": "The shop declined to deliver order {orderCode} itself."
+    },
+    "staff_shop_delivery_mode_request": {
+      "title": "Shop delivery request",
+      "body": "A shop asked to change who delivers its orders."
+    },
+    "staff_delivery_low_rating": {
+      "title": "Low agent rating",
+      "body": "A delivery agent's average rating fell below the alert level."
+    },
+    "staff_delivery_agent_unavailable": {
+      "title": "Agent stopped mid-delivery",
+      "body": "The agent carrying order {orderCode} is no longer active. Take over the delivery."
     }
   },
   "adminNotices": {
@@ -5112,7 +5225,9 @@
       "customer_block_expired_closed": "Customer block ended",
       "auth_locked": "Sign-in locked"
     },
-    "audit_wholeValue": "whole value"
+    "audit_wholeValue": "whole value",
+    "ostatus_ready_for_pickup": "Ready for pickup",
+    "ostatus_returned": "Returned to the shop"
   },
   "adminExports": {
     "title": "Exports",
@@ -5372,7 +5487,8 @@
     "staffShow90": "Show 90 days",
     "staffSeeOrders": "See new orders",
     "staffRetry": "Try again",
-    "staffLoadError": "We could not load this. Check your connection and try again."
+    "staffLoadError": "We could not load this. Check your connection and try again.",
+    "statusKind_delivery_agent": "Delivery agent application"
   },
   "shopTier1": {
     "busyTitle": "Availability",
@@ -6487,7 +6603,21 @@
     "help_checkout_cod_min_order_paise": "Cash on delivery only from this amount paid at the door. 0 = no minimum.",
     "help_checkout_cod_min_items": "Cash on delivery only from this many pieces in one order. 1 = no minimum.",
     "help_checkout_cod_request_reapply_days": "After a request is turned down or approval is taken back, the customer waits this many days before asking again.",
-    "risk_codEveryone": "Every customer will be able to pay cash on delivery again, even for a single piece. Cash handling at the door is the reason this is off."
+    "risk_codEveryone": "Every customer will be able to pay cash on delivery again, even for a single piece. Cash handling at the door is the reason this is off.",
+    "help_delivery_agents_enabled": "Off: every shop delivers its own orders, as before. Cash-on-delivery orders always stay with the shop.",
+    "help_delivery_offer_timeout_min": "After this many minutes an unanswered offer goes back to the queue.",
+    "help_delivery_max_active_jobs": "An agent with this many jobs is not suggested for more.",
+    "help_delivery_photos_required": "A photo at pickup, at delivery and with a failed delivery.",
+    "help_delivery_max_attempts": "2 means one free retry; after that the parcel goes back to the shop.",
+    "help_delivery_invite_hours": "The sign-in link sent by email and WhatsApp stops working after this.",
+    "help_delivery_document_retention_days": "PAN, licence and RC are deleted this many days after an agent leaves, unless a dispute is open.",
+    "help_delivery_max_load_bike_kg": "Orders heavier than this are not offered to motorcycles.",
+    "help_delivery_max_load_scooter_kg": "Orders heavier than this are not offered to scooters.",
+    "help_delivery_max_load_three_wheeler_kg": "Orders heavier than this are not offered to three-wheelers.",
+    "help_delivery_max_load_goods_vehicle_kg": "Orders heavier than this are not offered to goods vehicles.",
+    "help_delivery_rank_rating_weight_pct": "0 ignores ratings; 100 ranks by rating first among agents who can carry the order.",
+    "help_delivery_low_rating_alert_x10": "Staff get one alert when an agent drops below it.",
+    "help_delivery_low_rating_min_count": "A few early ratings do not trigger an alert."
   },
   "roadside": {
     "eyebrow": "Roadside help",
@@ -9041,5 +9171,184 @@
     "switch_approved": "Customers you approve",
     "switch_ustaad": "Verified Ustaad mechanics",
     "results": "{count, plural, =0 {No requests shown} one {# request shown} other {# requests shown}}"
+  },
+  "delivery": {
+    "orderStatus": {
+      "ready_for_pickup": "Ready for pickup",
+      "returned": "Returned"
+    },
+    "jobStatus": {
+      "needs_agent": "Needs an agent",
+      "offered": "Offered",
+      "accepted": "Accepted",
+      "picked_up": "Picked up",
+      "delivered": "Delivered",
+      "failed": "Delivery failed",
+      "returning": "Coming back to the shop",
+      "returned": "Returned",
+      "cancelled": "Cancelled"
+    },
+    "offerStatus": {
+      "offered": "Waiting for the agent",
+      "accepted": "Accepted",
+      "declined": "Declined",
+      "expired": "Expired",
+      "withdrawn": "Taken back",
+      "given_up": "Given up"
+    },
+    "agentStatus": {
+      "onboarding": "Onboarding",
+      "active": "Active",
+      "paused": "Paused",
+      "suspended": "Suspended",
+      "offboarded": "Offboarded"
+    },
+    "agentStatusReason": {
+      "documents_expired": "Documents expired",
+      "documents_invalid": "Documents not valid",
+      "customer_complaint": "Customer complaint",
+      "repeated_declines": "Declines too many offers",
+      "repeated_failures": "Too many failed deliveries",
+      "safety_incident": "Safety incident",
+      "fraud_suspected": "Suspected fraud",
+      "agent_request": "Agent asked for it",
+      "inactive": "Inactive",
+      "other": "Other"
+    },
+    "vehicle": {
+      "bike": "Motorcycle",
+      "scooter": "Scooter",
+      "three_wheeler": "Three-wheeler",
+      "goods_vehicle": "Goods vehicle"
+    },
+    "loadClass": {
+      "light": "Light (two-wheeler)",
+      "heavy": "Heavy (three-wheeler or bigger)",
+      "bulky": "Bulky (goods vehicle)"
+    },
+    "failReason": {
+      "customer_unreachable": "Customer not reachable",
+      "customer_refused": "Customer refused the parcel",
+      "wrong_address": "Wrong or incomplete address",
+      "unsafe_location": "Location not safe",
+      "vehicle_issue": "Vehicle problem",
+      "other": "Other"
+    },
+    "declineReason": {
+      "too_far": "Too far",
+      "vehicle_unsuitable": "My vehicle can't carry it",
+      "busy": "Busy with another job",
+      "going_offline": "Going offline",
+      "other": "Other"
+    },
+    "giveUpReason": {
+      "vehicle_issue": "Vehicle problem",
+      "emergency": "Emergency",
+      "shop_closed": "Shop is closed",
+      "parcel_not_ready": "Parcel not ready",
+      "other": "Other"
+    },
+    "withdrawReason": {
+      "agent_unresponsive": "Agent not responding",
+      "reassigning": "Giving it to another agent",
+      "order_changed": "The order changed",
+      "other": "Other"
+    },
+    "document": {
+      "kind": {
+        "pan": "PAN card",
+        "driving_licence": "Driving licence",
+        "vehicle_rc": "Vehicle registration (RC)"
+      },
+      "status": {
+        "submitted": "Waiting for review",
+        "verified": "Verified",
+        "rejected": "Not accepted"
+      },
+      "rejectReason": {
+        "unreadable": "Photo not readable",
+        "name_mismatch": "Name does not match",
+        "expired": "Expired",
+        "wrong_document": "Wrong document",
+        "number_mismatch": "Number does not match the photo",
+        "other": "Other"
+      }
+    },
+    "switchReason": {
+      "no_vehicle_for_load": "No agent vehicle can carry it",
+      "no_agent_available": "No agent available",
+      "repeated_failures": "Delivery failed more than once",
+      "customer_request": "Customer asked",
+      "other": "Other"
+    },
+    "switchDeclineReason": {
+      "no_rider": "We have no one to deliver it",
+      "too_far": "Too far for us",
+      "too_busy": "Too busy right now",
+      "other": "Other"
+    },
+    "shopMode": {
+      "agents": "MechDost delivery agents",
+      "self": "We deliver ourselves"
+    },
+    "shopModeRequestReason": {
+      "own_riders": "We have our own delivery staff",
+      "faster_local_delivery": "We can deliver faster nearby",
+      "customer_relationship": "We want to meet our customers",
+      "agents_unreliable": "Agent deliveries were not reliable",
+      "other": "Other"
+    },
+    "shopModeRejectReason": {
+      "agents_cover_area": "Agents already cover your area well",
+      "service_quality": "Delivery quality concerns",
+      "incomplete_request": "Request incomplete",
+      "other": "Other"
+    },
+    "shopModeRequestStatus": {
+      "pending": "Waiting for MechDost",
+      "approved": "Approved",
+      "rejected": "Not approved",
+      "withdrawn": "Withdrawn"
+    },
+    "customerStage": {
+      "finding_agent": "Finding a delivery partner",
+      "agent_assigned": "{name} will pick up your order",
+      "picked_up": "Picked up by {name} ({vehicle})",
+      "attempt_failed": "We couldn't deliver today",
+      "retrying": "We'll try delivering again",
+      "returning": "Your order is going back",
+      "delivered": "Delivered",
+      "returned": "Returned, refund on its way"
+    },
+    "deliveryPartner": "MechDost delivery partner",
+    "errors": {
+      "AGENTS_DISABLED": "Delivery agents are not switched on in this city.",
+      "JOB_CHANGED": "This job changed meanwhile. Refresh and try again.",
+      "OFFER_EXPIRED": "This offer has expired.",
+      "TOO_MANY_ACTIVE_JOBS": "You already have the most jobs you can hold.",
+      "AGENT_NOT_ACTIVE": "Your account is not active for deliveries yet.",
+      "PHOTO_REQUIRED": "Take a photo first.",
+      "WRONG_CODE": "That code is not right. {attemptsLeft} tries left.",
+      "CODE_LOCKED": "Too many wrong codes. Call MechDost support.",
+      "RETRY_LIMIT": "No more attempts left; send it back to the shop.",
+      "VEHICLE_CANNOT_CARRY": "This agent's vehicle can't carry this order.",
+      "COD_STAYS_WITH_SHOP": "Cash-on-delivery orders are delivered by the shop.",
+      "INVITE_PHONE_MISMATCH": "This invite is for a different phone number.",
+      "INVITE_EXPIRED": "This invite has expired. Ask MechDost for a new one.",
+      "DOCUMENT_AADHAAR": "Do not enter an Aadhaar number here.",
+      "DOCUMENT_FORMAT": "Check the number and try again.",
+      "RATING_CLOSED": "This rating can no longer be changed.",
+      "NOT_RATEABLE": "Only a delivered order can be rated."
+    },
+    "ratingReason": {
+      "on_time": "On time",
+      "polite": "Polite",
+      "careful_with_parcel": "Careful with the parcel",
+      "late": "Late",
+      "rude": "Rude",
+      "damaged": "Parcel damaged",
+      "other": "Other"
+    },
+    "rateAgent": "Rate {name}"
   }
 }

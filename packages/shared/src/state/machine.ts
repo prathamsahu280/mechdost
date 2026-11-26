@@ -4,8 +4,11 @@
  * docs/specs/14-data-integrity.md. The machine decides *whether* a move is legal and *who* may make it.
  */
 
-/** `member` = an Ustaad Network member acting in the network (spec 23 § 7). */
-export type Actor = 'customer' | 'shop' | 'workshop' | 'admin' | 'system' | 'member';
+/**
+ * `member` = an Ustaad Network member acting in the network (spec 23 § 7). `delivery_agent` = a MechDost delivery
+ * agent moving their own delivery job (spec 24).
+ */
+export type Actor = 'customer' | 'shop' | 'workshop' | 'admin' | 'system' | 'member' | 'delivery_agent';
 
 export interface TransitionDef<S extends string> {
   from: S;

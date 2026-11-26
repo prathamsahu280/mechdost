@@ -7,6 +7,8 @@ import { ORDER_CANCEL_REASONS } from './state';
 import { VEHICLE_SEGMENTS } from './vehicle-segments';
 import { RECO_ALGOS, RECO_SURFACES } from './recommendation-limits';
 import { USTAAD_CLIENT_EVENT_SCHEMAS, type UstaadServerEventProps } from './ustaad/analytics';
+import type { DeliveryServerEventProps } from './delivery/analytics';
+import { DELIVERY_CLIENT_EVENT_SCHEMAS } from './delivery/client-events';
 
 /**
  * Server-side analytics events (spec 12; hard rules 9 and 16). Emitted by the API inside the same transaction
@@ -14,7 +16,7 @@ import { USTAAD_CLIENT_EVENT_SCHEMAS, type UstaadServerEventProps } from './usta
  * integer paise only — never names, phone numbers, emails, addresses or free text. The Ustaad Network's events
  * (spec 23 § 16) live in `ustaad/analytics.ts` and are merged here.
  */
-export interface ServerEventProps extends UstaadServerEventProps {
+export interface ServerEventProps extends UstaadServerEventProps, DeliveryServerEventProps {
   purchase: {
     orderCode: string;
     subOrders: number;
@@ -59,7 +61,7 @@ export interface ServerEventProps extends UstaadServerEventProps {
   order_fulfilment_step: {
     orderCode: string;
     shopId: string;
-    step: 'packed' | 'shipped' | 'out_for_delivery';
+    step: 'packed' | 'ready_for_pickup' | 'shipped' | 'out_for_delivery';
   };
   admin_customer_blocked: { customerId: string; level: string; reasonCode: string };
   /** Cash-on-delivery requests (founder ruling 2026-11-26, spec 03): ids and codes only, never the note. */
@@ -627,6 +629,8 @@ const EMAIL_ACTION_MODES = ['verifyEmail', 'resetPassword', 'recoverEmail', 'ver
 export const CLIENT_EVENT_SCHEMAS = {
   // Ustaad Network (spec 23 § 16), kept in their own file.
   ...USTAAD_CLIENT_EVENT_SCHEMAS,
+  // Delivery agents (spec 24), kept in their own file.
+  ...DELIVERY_CLIENT_EVENT_SCHEMAS,
   page_view: z.object({ path, locale: z.enum(['en', 'hi']) }).strict(),
   click: z.object({ id, path }).strict(),
   // A phone-code send or check failed (2026-11-16): the Firebase error code only, never the phone number.

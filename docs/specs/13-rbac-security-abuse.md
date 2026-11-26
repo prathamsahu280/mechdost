@@ -201,3 +201,23 @@ The pencil link on cards and the product page is convenience only; authority sta
   foreign request id is a 404. The quote reads a bearer token only to make the COD answer personal (`no-store`); an
   invalid token falls back to the guest answer. Tests: `apps/api/test/cod-requests.test.ts` (role leaks, scope, limit).
 - Needs `pnpm db:seed` (RBAC catalogue sync) at merge so the new permission reaches `role_permissions`.
+
+## Delivery agents (2026-11-26, spec 24)
+
+- **Role** `delivery_agent` (self scope) holds `deliveries:read|respond|fulfil` only, never `orders:*`. Staff:
+  `delivery_agents:manage`, `delivery_jobs:assign` (ops_manager, city_manager), `delivery_payouts:manage` (finance);
+  super_admin has all.
+- **`cityScopeFrom` hardening:** known non-staff roles (including `delivery_agent`) never yield a staff city scope; test
+  in `packages/db/test/delivery-agents.test.ts`.
+- **Standing:** every agent job action needs status `active`; paused may only finish parcels already picked up;
+  suspended and offboarded can do nothing (spec 24 § 5). Replacing a document unverifies it.
+- **Documents:** PAN, licence, RC numbers encrypted with a blind index; photos private (media owner kind
+  `agent_document`); staff view audited; **no Aadhaar** (12-digit numbers refused by Zod and the repository).
+  Delivery photos (owner kind `delivery_photo`) served only to staff by signed URL.
+- **RLS:** deny-all on every new table (no policies); the API is the only reader (actor-scoped repositories, 404 for
+  foreign ids).
+- **Limits:** apply 5/h per IP + 3/day per phone with Turnstile; invite preview 30/h per IP; pickup, deliver, return
+  code steps 20 per 10 min per user and 5 tries per code; agent photos 30 per 10 min; rating 10/h per user; payouts
+  CSV under the existing CSV export budget.
+- **Invite token:** single use, phone-bound, 72 h, sent in the email link only. The WhatsApp message carries no token
+  (lock screens, chat backups); signing in with the invite's phone finds the open invite.

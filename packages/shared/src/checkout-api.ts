@@ -4,6 +4,7 @@
  * screens (dynamic imports), never by the demo pages.
  */
 import { z } from 'zod';
+import { CustomerDeliveryBlock } from './delivery/views';
 import { SavingsEstimateDto } from './savings-api';
 import { CustomerRefundDto } from './refunds-api';
 import { QuoteCodDto } from './cod-api';
@@ -90,6 +91,8 @@ const TrackedOrder = z.object({
   canCancel: z.boolean(),
   /** Refunds on this part (spec 05); optional so answers from an older API still parse. */
   refunds: z.array(CustomerRefundDto).optional(),
+  /** Agent-delivered parts (spec 24): stage, agent first name + vehicle, rating; never the shop or a phone. */
+  delivery: CustomerDeliveryBlock.nullable().optional(),
 });
 export type TrackedOrder = z.infer<typeof TrackedOrder>;
 
