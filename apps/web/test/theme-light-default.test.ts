@@ -38,7 +38,12 @@ function withObserver(saved: () => string | null) {
     },
     addEventListener: noop,
   });
-  return { root, fire: () => fire() };
+  return {
+    root,
+    fire: () => {
+      fire();
+    },
+  };
 }
 
 describe('the pre-paint guard keeps the choice made on this page', () => {

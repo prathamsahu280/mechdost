@@ -166,7 +166,11 @@ export function rowName(
   const own = typeof row[field] === 'string' ? row[field] : '';
   if (!hiField) return { text: own, localized: false };
   const hi = row[hiField];
-  return { text: locale === 'hi' && typeof hi === 'string' && hi.trim() !== '' ? hi : own, localized: true };
+  if (locale !== 'hi') return { text: own, localized: true };
+  // On /hi an English fallback (no Hindi text yet) is staff text in another language: marked as user content.
+  return typeof hi === 'string' && hi.trim() !== ''
+    ? { text: hi, localized: true }
+    : { text: own, localized: false };
 }
 
 /**

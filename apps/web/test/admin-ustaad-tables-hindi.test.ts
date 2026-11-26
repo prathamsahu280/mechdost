@@ -25,7 +25,11 @@ describe('rowName', () => {
   });
   it('uses the English text in English, and the typed text when there is no Hindi', () => {
     expect(rowName(TABLES.promotions, promo, 'en')).toEqual({ text: 'Exide batteries', localized: true });
-    expect(rowName(TABLES.promotions, { titleEn: 'Exide', titleHi: '' }, 'hi').text).toBe('Exide');
+    // i18n review: an English fallback on /hi is staff text, so it is marked as user content.
+    expect(rowName(TABLES.promotions, { titleEn: 'Exide', titleHi: '' }, 'hi')).toEqual({
+      text: 'Exide',
+      localized: false,
+    });
     expect(rowName(wordsTable('scam_phrase'), { phrase: 'registration fee' }, 'hi')).toEqual({
       text: 'registration fee',
       localized: false,

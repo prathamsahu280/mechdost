@@ -56,7 +56,7 @@ describe('a sideways-scrolling box contains its screen-reader text (API-ADM-USTA
   const boxClass = (file: string, marker: RegExp) => {
     const s = src(file);
     const at = s.search(marker);
-    return s.slice(at, at + 600).match(/className=\{?[`"]([^`"]*overflow-x-auto[^`"]*)/)?.[1] ?? '';
+    return /className=\{?[`"]([^`"]*overflow-x-auto[^`"]*)/.exec(s.slice(at, at + 600))?.[1] ?? '';
   };
   it('AdminTable is positioned', () => {
     expect(boxClass('components/portal/admin-ui.tsx', /export function AdminTable/).split(/\s+/)).toContain(
