@@ -160,6 +160,8 @@ const BYTE_UNITS = [
 ] as const;
 const oneDecimal = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 1 });
 const whole = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 });
+/** No-break space between a number and its unit, so "7.2 GB" never wraps (web interface guidelines). */
+export const UNIT_SPACE = String.fromCharCode(0xa0);
 
 /**
  * A value for people: bytes in decimal units (1 GB = 10^9, like the limits), counts with Indian grouping. Digits stay
@@ -168,8 +170,8 @@ const whole = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 });
 export function formatUsageValue(value: number, unit: 'bytes' | 'count'): string {
   if (unit === 'count') return whole.format(value);
   for (const [name, size] of BYTE_UNITS)
-    if (value >= size) return `${oneDecimal.format(value / size)} ${name}`;
-  return `${whole.format(value)} B`;
+    if (value >= size) return `${oneDecimal.format(value / size)}${UNIT_SPACE}${name}`;
+  return `${whole.format(value)}${UNIT_SPACE}B`;
 }
 
 /** The alert period: one alert per metric and level per UTC calendar month. */

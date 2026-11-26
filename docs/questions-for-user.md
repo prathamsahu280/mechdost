@@ -443,3 +443,14 @@ meanwhile: unset, so Discover shows no distance bands.
 - **Q-U-D2 (2026-11-26, Ustaad share links, Input):** set `USTAAD_SHARE_SECRET` on the server (`openssl rand -hex 24`,
   `docs/runbooks/deploy.md`). **Default meanwhile:** unset, so "Share on WhatsApp" answers "not available right now"
   (503); everything else in the feed works.
+
+- **Q-USAGE-1 (2026-11-26, Usage & limits, Check):** confirm the free-plan numbers used as defaults (R2 10 GB, 1M
+  Class A, 10M Class B a month; Supabase 500 MB database, 1 GB storage; Resend 3,000 a month, 100 a day). If a plan
+  is paid, change the limit on Admin → Usage & limits. **Default meanwhile:** those numbers (sources in
+  `docs/runbooks/monitoring.md`).
+- **Q-USAGE-2 (2026-11-26, Usage & limits, Decision):** who may edit limits and recipients? Built: super admin only
+  (`settings:write`); operations managers read and press Check now; a city manager gets 404 like Admin → Errors.
+  **Default meanwhile:** as built.
+- **Q-USAGE-3 (2026-11-26, Usage & limits, Input, optional):** for exact R2 operation counts, create a Cloudflare API
+  token with Account Analytics: Read and set `CLOUDFLARE_ANALYTICS_TOKEN` (`deploy/set-env.sh`). **Default
+  meanwhile:** MechDost's own estimate, labelled "Estimated".

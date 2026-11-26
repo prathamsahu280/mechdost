@@ -284,3 +284,13 @@ submitted search or filter change, never per keystroke) and `ustaad_tag_opened {
 sent (`{ kind, held }`) and Discover pages served are counted server-side (D2 events, spec 23 § 21d). Not added yet
 (the client catalogue is shared and outside this task): a thread-opened and a network-tab event; the server events
 cover the writes. Never text, names, handles, phones or locations.
+
+## Usage & limits (2026-11-26)
+
+Server (same transaction; codes and counts, never an address or a key): `usage_check_run { runId, trigger
+schedule|manual|cli, metrics, alerts, r2, supabase, server, resend }` (provider statuses `ok|not_configured|failed|
+partial`; `userId` = the staff member for Check now), `usage_alert_raised { metric, level warn|critical, percentBp,
+period YYYY-MM }`, `admin_usage_limit_saved { metric, limit|null, alerts }`, `admin_usage_alerts_saved { warnPct,
+criticalPct, recipients (count), emailLocale }`. Client clicks (`data-track`): `admin_usage_check_now`,
+`admin_usage_limit_edit`, `admin_usage_limit_save`, `admin_usage_alerts_save`. The measurements themselves are in
+`usage_snapshots` (append-only, metric code with unit, bigint value, limit, source, UTC time, run id).

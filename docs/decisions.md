@@ -2394,3 +2394,35 @@ Spec 23 § 21f. Rulings made while building (lead brief + security review of the
   4W → car_suv) so "fits my vehicle" keeps working. Q-segments answered.
 - "fix the test failures": the pre-existing qa-regressions failures (B1 Hindi rejection, theme with full storage,
   QA 13 free-delivery line) are fixed at their root cause.
+
+## 2026-11-26 — Usage & free-limit monitoring (founder: "list the storage and stuff … give me warnings when we are about to exceed the free limits")
+
+Approved plan: a daily check, alerts at 70 % and 90 %, an admin page. Build rulings:
+
+- **Own tables, not the `settings` registry:** limits per metric (`usage_limits`) and one row of alert settings
+  (`usage_alert_config`: thresholds, up to 10 recipients, email language) are edited only on Admin → Usage & limits,
+  versioned and audited (hard rule 8). `settings` holds only ints and booleans and renders on Admin → Settings.
+- **Defaults are the published free plans (checked 2026-11-26):** R2 10 GB, 1M Class A and 10M Class B a month;
+  Supabase 500 MB database and 1 GB storage (we stay on the free plan, line "Supabase plan" above); Resend 3,000 a
+  month and 100 a day; disk and memory = the measured total. Decimal units (1 GB = 10^9). Sources in
+  `docs/runbooks/monitoring.md`.
+- **Estimated vs exact:** R2 Class A/B and email counts are MechDost's own (a counting wrapper around the R2 media host,
+  flushed every minute with `count + n`; sent rows of the email outbox) and labelled "estimated"; a presigned URL
+  counts as one operation whether used or not, so the estimate errs high. `CLOUDFLARE_ANALYTICS_TOKEN` (optional)
+  switches R2 operations to Cloudflare's GraphQL numbers. Upstash and Resend's own counters are not read (other keys
+  needed).
+- **Access:** read and Check now = all-cities `settings:read` (super admin, operations manager); edit = `settings:write`
+  (super admin). City manager 404 as on Admin → Errors (the founder's brief said "others 403": the 404 is the existing
+  platform-wide convention; Q-USAGE-2).
+- **Alert rule:** one bell notice + one email per metric, level and UTC month; crossing both thresholds sends only
+  critical; a warning after the month's critical sends nothing; a failed provider stores nothing and alerts nothing.
+  Memory alerts are off by default (a moment's reading). No recovery note (optional in the brief; later).
+- **Daily schedule:** the worker checks hourly and runs when the last daily check is older than 23 h (a deploy restart
+  never skips a day); measuring is outside any transaction; storing + alerting is one short transaction under an
+  advisory lock.
+- **Migration 0103** (`0103_usage_monitoring`, hand-numbered: 0101–0102 are reserved for other streams). Six tables,
+  the notice entity type `platform` (CHECK swapped NOT VALID then validated) and the partial index
+  `outbox_email_sent_idx`. **Apply order:** 0101 and 0102 must be applied before 0103 or carry an earlier journal
+  `when` (L106); the 0103 entry's `when` is 1795701392744.
+- **New optional env:** `CLOUDFLARE_ANALYTICS_TOKEN`, `USAGE_DISK_PATH` (default `/`). `pnpm usage:check` prints only;
+  `--record` stores and alerts.

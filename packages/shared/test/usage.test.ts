@@ -5,6 +5,7 @@ import {
   UsageAlertConfigInput,
   UsageLimitInput,
   alertLevelFor,
+  UNIT_SPACE,
   formatUsageValue,
   usageMonth,
   usagePercent,
@@ -70,10 +71,10 @@ describe('alertLevelFor', () => {
 
 describe('formatUsageValue', () => {
   it('bytes in decimal units with Latin digits', () => {
-    expect(formatUsageValue(7_200_000_000, 'bytes')).toBe('7.2 GB');
-    expect(formatUsageValue(512_000_000, 'bytes')).toBe('512 MB');
-    expect(formatUsageValue(900, 'bytes')).toBe('900 B');
-    expect(formatUsageValue(1_500_000_000_000, 'bytes')).toBe('1.5 TB');
+    expect(formatUsageValue(7_200_000_000, 'bytes')).toBe(`7.2${UNIT_SPACE}GB`);
+    expect(formatUsageValue(512_000_000, 'bytes')).toBe(`512${UNIT_SPACE}MB`);
+    expect(formatUsageValue(900, 'bytes')).toBe(`900${UNIT_SPACE}B`);
+    expect(formatUsageValue(1_500_000_000_000, 'bytes')).toBe(`1.5${UNIT_SPACE}TB`);
   });
   it('counts with Indian grouping', () => {
     expect(formatUsageValue(1_000_000, 'count')).toBe('10,00,000');

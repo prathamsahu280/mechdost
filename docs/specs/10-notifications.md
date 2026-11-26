@@ -284,3 +284,14 @@ Decision record: `docs/decisions.md` 2026-11-25 "Notification inbox". Migration 
 **Empty state:** "You’re all caught up" (hi "सब कुछ देख लिया गया है") with the one next action per role (Browse products, or Back to your portal).
 
 **Tests:** `packages/db/test/notice-inbox.test.ts` (order, cursor ties and group boundary, index plan, remove/clear/undo, scoping, pings, queueNotice priority, clean-up), `packages/db/test/notice-resolve-more.test.ts` (new resolve hooks), `apps/api/test/notices.test.ts` (routes, 401/404/400, foreign undo token), `packages/shared/test/notice-priority.test.ts` (map covers the catalogue), `apps/web/test/notices-view.test.ts` (priority look). State-audit rows `API-BELL`, `API-NOTICE-CENTRE` (model-api).
+
+## Usage & free-limit alerts (2026-11-26)
+
+- Bell kind `staff.usage_alert` (entity type `platform`, new in migration 0103; priority urgent; link
+  `/admin/usage`; text `{metric}`, `{percent}`) to staff with an all-cities `settings:read` grant.
+- Email `usage_limit_alert` (purpose system, audience **staff**: Admin → Notifications → Emails shows a third group
+  "Emails to the MechDost team"; text `{metric} {percent} {value} {limit}`; en + hi; can be switched off or reworded
+  there like any template). To the addresses typed on the Usage page (in the chosen language) or else every active
+  super admin with a confirmed email (their own language).
+- One alert per metric, level and UTC month (`usage_alerts` unique row, written in the same transaction as the bell
+  and the outbox rows); crossing both thresholds at once sends only critical. Details: runbook `monitoring.md`.

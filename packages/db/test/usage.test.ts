@@ -5,6 +5,7 @@
  */
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { and, eq, sql } from 'drizzle-orm';
+import { UNIT_SPACE } from '@mechdost/shared/usage';
 import { createTestDb, type TestDb } from '../src/testing';
 import * as s from '../src/schema';
 import {
@@ -138,7 +139,11 @@ describe('recordUsageRun', () => {
     const m = await mails();
     expect(m.map((x) => x.recipient).sort()).toEqual(['super-en@example.com', 'super-hi@example.com']);
     expect(m.find((x) => x.recipient === 'super-hi@example.com')?.locale).toBe('hi');
-    expect(m[0]?.payload).toMatchObject({ percent: '75', value: '7.5 GB', limit: '10 GB' });
+    expect(m[0]?.payload).toMatchObject({
+      percent: '75',
+      value: `7.5${UNIT_SPACE}GB`,
+      limit: `10${UNIT_SPACE}GB`,
+    });
   });
 
   it('the same level twice in a month alerts once', async () => {
