@@ -455,3 +455,7 @@ meanwhile: unset, so Discover shows no distance bands.
   as built.
 - **Q-P23-3 (Check, P2) — screenshots.** Recently viewed, Similar options and the fitting link at 390 px (light and
   Hindi) are in the agent report; please confirm the look before it ships. Default meanwhile: as built.
+- **Q-P23-4 (Check, P2, for the lead) — `recentCards` server action has no rate limit of its own.** It is a public
+  POST (like the shop's `loadMoreCards`); it accepts at most 10 valid slugs and reads only the cached public catalogue
+  (60 s fetch cache), so it adds no API load, but nothing caps calls per IP at the web tier. Default: as built; add a
+  Caddy/edge rate rule for server-action POSTs if abuse shows up.
