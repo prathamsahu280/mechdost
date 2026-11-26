@@ -4312,7 +4312,7 @@
     },
     "ustaad_follow": {
       "title": "New followers",
-      "body": "{count} mechanics started following you."
+      "body": "New followers: {count}. See who is following you."
     },
     "ustaad_connect_request": {
       "title": "Connection request",
@@ -7169,6 +7169,10 @@
       "help_limits_new_threads_per_day": "How many new conversations one member can start in a day.",
       "lbl_limits_follows_per_day": "Follows a day",
       "help_limits_follows_per_day": "How many people one member can follow in a day.",
+      "lbl_limits_connect_requests_per_day": "Connection requests a day",
+      "help_limits_connect_requests_per_day": "How many people one member can ask to connect with in a day.",
+      "lbl_limits_connect_cooldown_days": "Wait before asking again",
+      "help_limits_connect_cooldown_days": "Days a member waits after a request was declined or withdrawn before asking the same person again.",
       "lbl_limits_joins_per_day": "Join attempts a day",
       "help_limits_joins_per_day": "Tries to join from one account in a day.",
       "lbl_dm_default_mode": "Who can message a new member",

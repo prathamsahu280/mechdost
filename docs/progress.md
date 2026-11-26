@@ -24,6 +24,16 @@ stories,comments,reactions,tags,previews,feed}.ts`; API `routes/ustaad/feed.ts` 
   Q-U-D1 queued. **Next:** feed web UI (composer, post card, stories, Saved, tag page, teaser page) with en + hi
   strings; og:image pipeline; separate preview process; warning page for outbound links; real-Postgres race suite.
 - **2026-11-26 (midday): Ustaad workstream B round 2** (branch worktree-agent-a08ecec98c37890df, not pushed). Apply-as-a-mechanic follows `ustaad.access` (old form unless `open`), level-rule Coins guard, `/ustaad/welcome` guide, coach-mark, `/ustaad/me` card + ladder + badges, `/partners/status` progress, `GET /ustaad/me/card`. Left: QR, profile/choices routes, reserved names, SR-2 freeze, non-partner attest link, badge award job, counter reconcile, screenshots.
+- **2026-11-26: Ustaad workstream D2 (follow, connect, block/mute, request-only messages, Discover, promotion serving)
+  API built on branch worktree-agent-a366fd157782bbb79 (not pushed, migration `0097_ustaad_social` written and NOT
+  applied; D1 may use 0095, F2 0096).** Repositories `repo/ustaad/{graph-common,follows,connections,blocks,messages,
+discover,promotions}.ts`, routes `routes/ustaad/{social,messages,discover,promotions}.ts` + staff
+  `routes/admin-ustaad-threads.ts` (DM read only via an open report, audited), DTOs `shared/ustaad/dto/{social,messages,
+discover,promotions}.ts`, Zod-free rules `shared/ustaad/social-rules.ts`, settings `limits.connect_requests_per_day`
+  / `limits.connect_cooldown_days`, config `USTAAD_LOCATION_SECRET`, 11 server events. Security review fixes in
+  (atomic daily caps, restricted members cannot connect, connect cooldown, deduped connect notice). Tests: shared 12,
+  db 31, api 11. Spec 23 § 21d, decisions 2026-11-26 "workstream D2", Q-U-D2a. **Next:** web screens (My network,
+  messages, thread, Discover), mentorship routes, real-Postgres concurrency run, feed promotion spacing in D1's feed.
 - **2026-11-26 (morning): Ustaad Network workstream B (identity) partial** (branch worktree-agent-a08ecec98c37890df, not pushed, migration **0094_ustaad_identity_seed** data only, not applied). Engines, Izzat, levels, verification with staff final approval, vouches, workshop attestations, ring check, tutorial progress API, staff/workshop verification routes, 410 for old mechanic applications, invite mapping script, 5-step join UI. Security review fixes in. Not built: tutorial UI, ID card/Me UI, /partners/status, profile/choices routes, reserved names, SR-2 freeze, non-partner attest link (spec 23 § 21b).
 - **2026-11-26 (midday): Ustaad C + E web screens built (worktree branch worktree-agent-aeb70f803004d8abf on main
   d06c6ba5; not pushed, no migration).** `/ustaad/ask`, `/ustaad/ask/new` (composer sheet: hold-to-talk + tap,

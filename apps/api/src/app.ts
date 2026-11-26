@@ -74,6 +74,7 @@ import { pincodeWaitlistRoutes } from './routes/pincode-waitlist';
 import { adminUstaadModerationRoutes } from './routes/admin-ustaad-moderation';
 import { adminUstaadSettingsRoutes } from './routes/admin-ustaad-settings';
 import { adminUstaadVerificationRoutes } from './routes/admin-ustaad-verification';
+import { adminUstaadThreadRoutes } from './routes/admin-ustaad-threads';
 import { workshopUstaadRoutes } from './routes/workshop-ustaad';
 import { ustaadRoutes } from './routes/ustaad/index';
 import { ustaadAccessCache } from './middleware/ustaad-member';
@@ -190,6 +191,7 @@ export function createApp(deps: AppDeps) {
   v1.route('/', adminUstaadSettingsRoutes(deps, sessions, ustaadAccess));
   v1.route('/', adminUstaadModerationRoutes(deps, sessions));
   v1.route('/', adminUstaadVerificationRoutes(deps, sessions));
+  v1.route('/', adminUstaadThreadRoutes(deps, sessions));
   v1.route('/', workshopUstaadRoutes(deps, sessions));
   app.route('/v1', v1);
 

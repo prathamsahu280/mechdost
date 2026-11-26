@@ -29,7 +29,14 @@ export * from './tags';
 export * from './previews';
 export * from './feed';
 export { visibleUstaadPost } from './feed-common';
-// D part 2: export * from './graph'; export * from './threads'; …
+// D2: graph, messages, Discover, promotions (serve side).
+export * from './graph-common';
+export * from './follows';
+export * from './connections';
+export * from './blocks';
+export * from './messages';
+export * from './discover';
+export * from './promotions';
 export * from './location';
 export * from './zones';
 export * from './jobs';

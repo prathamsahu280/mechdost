@@ -4,7 +4,14 @@ import { HTTPException } from 'hono/http-exception';
 import { routePath } from 'hono/route';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { ZodError } from 'zod';
-import { ConflictError, ForbiddenError, NotFoundError, pgCode, ValidationError } from '@mechdost/db/repo';
+import {
+  ConflictError,
+  DailyCapError,
+  ForbiddenError,
+  NotFoundError,
+  pgCode,
+  ValidationError,
+} from '@mechdost/db/repo';
 import { ActorNotAllowedError, IllegalTransitionError } from '@mechdost/shared/state';
 import { log, safeError } from './logger';
 import { reportException } from './monitoring/sentry';
@@ -53,6 +60,10 @@ export function handleError(err: Error, c: Context<AppEnv>): Response {
     return c.json(errorBody(c, err.code, err.message, err.details), err.status);
   if (err instanceof ForbiddenError) return c.json(errorBody(c, err.code, err.message), 403);
   if (err instanceof ConflictError) return c.json(errorBody(c, err.code, err.message), err.status);
+  if (err instanceof DailyCapError) {
+    c.header('Retry-After', '3600');
+    return c.json(errorBody(c, err.code, err.message), 429);
+  }
   // A move the state machine forbids is the caller's mistake, not a server fault (review B5).
   if (err instanceof IllegalTransitionError || err instanceof ActorNotAllowedError)
     return c.json(errorBody(c, err.code, err.message), 409);

@@ -88,6 +88,10 @@ const SPEC_TABLES = [
   'ustaad_link_previews',
   'ustaad_pin_changes',
   'ustaad_reserved_names',
+  // D2 (migration ustaad_social): read receipts + per-thread mute, daily caps, promotion hides
+  'ustaad_thread_members',
+  'ustaad_daily_counters',
+  'ustaad_promo_hides',
 ];
 
 async function rejects(p: Promise<unknown>, code?: string): Promise<void> {

@@ -2270,3 +2270,22 @@ Spec 23 § 21f. Rulings made while building (lead brief + security review of the
 - **Screen the original** (lead security review): posts, comments and story captions send every readable text,
   including the client's pre-correction original, to `screenUstaadContent` (`ustaadScreenText`); the original is
   stored only when a correction was used (`ustaadStoredOriginal`).
+
+## 2026-11-26 - Ustaad workstream D2 (graph, messages, Discover, promotions): build rulings
+
+- **Promotion CRUD is G1's** (`/admin/ustaad/promotions`, `ustaad:promotions`, audited in `repo/ustaad/admin.ts`);
+  D2 builds only the serve side. No redirect endpoint: a click answers the internal path and the client navigates, so
+  nothing can become an open redirect; every served link is built on the server and re-checked by `isSafeInternalPath`.
+- **Connections keep A's full unique pair index** (one row per pair, stronger than "one pending per pair"); re-asking
+  is a conditional UPDATE. Crossed requests become a connection. A requester waits `limits.connect_cooldown_days`
+  (default 7) after a decline or withdraw; the member who declined may ask at once.
+- **Daily caps are one conditional upsert** on `ustaad_daily_counters` (security review 2026-11-26: count-then-insert
+  let parallel follows pass the cap). Caps count actions, not current rows: unfollowing does not give a follow back.
+- **"Account younger than 7 days" means time on the network** (`ustaad_members.joined_at`), not the MechDost account.
+- **A request is masked, not refused, for phone/email/UPI;** a link in a request is refused (AT-DM-1). After the
+  receiver accepts, members may share their own number; scam signals still hold any message.
+- **Unblock restores the thread's earlier status** (`blocked_from`), never `open` for a request.
+- **Discover "Top this week"** is a Discover section built on read-only post queries; § 9.5's "no trending tab" is about
+  the feed. Queued as Q-U-D2a (default: keep it in Discover only).
+- **`USTAAD_LOCATION_SECRET`** (config, `.env.example`) feeds E's distance bands; unset = no bands in Discover.
+- Migration `0097_ustaad_social` (not applied); numbering left to the lead (D1 0095, F2 0096).

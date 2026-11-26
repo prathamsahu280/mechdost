@@ -363,6 +363,19 @@ promotions from Network settings → Promotions.
   media ids) to learning resources? **Default meanwhile:** videos play without captions (MechDost training carries its
   words on screen).
 
+#### Q-U-D2a: "Top this week" posts in Discover (Decision, P3, default: Discover only, never a feed tab)
+
+Spec 23 § 9.5 says the feed has no trending tab. Workstream D2 built a read-only "Top this week" list (most saved and
+liked member posts in the member's city over 7 days, `GET /ustaad/discover/top-posts`) for the Discover screen. Keep it
+in Discover, drop it, or rank it by saves only (helpfulness) instead of saves and likes? Default meanwhile: Discover
+only, saves × 2 + likes, never in the feed.
+
+#### Q-U-D2b: set `USTAAD_LOCATION_SECRET` on the server (Input, P2, default: unset, no distance bands)
+
+Discover can show a rough distance band ("under 2 km", "2–5 km"…) to other mechanics, never a number (SR-29). It needs
+one random server key of 32+ characters in the API's `.env` (`openssl rand -hex 24`), kept stable afterwards. Default
+meanwhile: unset, so Discover shows no distance bands.
+
 - **Q-U-C1 (2026-11-26, Ustaad Learn):** should hosted training videos have their own daily completion limit, separate
   from "Lessons a member can mark done a day" (`learn.self_mark_daily_cap`, default 5)? **Default meanwhile:** one
   shared limit for both (videos are also wall-clock checked, so a jump to the end never counts).

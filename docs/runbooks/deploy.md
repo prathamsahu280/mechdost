@@ -155,6 +155,7 @@ ssh -t ubuntu@13.207.157.3 'chmod 600 /opt/mechdost/.env && nano /opt/mechdost/.
 **Ustaad Network share teasers:** `USTAAD_SHARE_SECRET` (32 or more random characters, `openssl rand -hex 24`, API
 only). It signs the WhatsApp teaser links `/ustaad/s/{token}` (spec 23 § 10 step 7). Unset = the Share button answers
 503 `SHARE_UNAVAILABLE`. Rotating it breaks every teaser link already sent.
+**Optional, Ustaad Network:** `USTAAD_LOCATION_SECRET` (32 or more random characters, API only) turns on distance bands in Ustaad Discover. Set it once and keep it: a new key changes every member pair's noise, and repeated reads across keys could average the noise away (spec 23 SR-29). Unset = no distance bands.
 
 The checks are in `apps/api/src/config.ts`. No service-account key file goes on the server: the API verifies sign-in tokens with the project id. When all of these are filled in, uncomment `COMPOSE_PROFILES=api` and deploy (§ 5).
 

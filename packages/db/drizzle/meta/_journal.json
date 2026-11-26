@@ -659,6 +659,13 @@
       "when": 1795672912358,
       "tag": "0096_ustaad_moderation_f2",
       "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1795673891619,
+      "tag": "0097_ustaad_social",
+      "breakpoints": true
     }
   ]
 }

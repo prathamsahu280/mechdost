@@ -432,3 +432,14 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
   body (lead security review): use `ustaadScreenText` / `ustaadStoredOriginal`. (4) Python edits on Windows write CRLF:
   run prettier on every python-edited file before committing. (5) Fixture members exceed `posts.per_day` quickly in
   repository tests: raise the cap in `beforeEach` and test the cap with a fresh member.
+- L-UD1 · 2026-11-26 · ustaad/graph · Security review: daily caps written as count-then-insert (follows, new threads)
+  let parallel requests pass the cap, and a connect notice keyed on the row version re-notified on every
+  request → withdraw → request loop. → Every per-member daily cap is one conditional upsert on a counter row
+  (`n + k where n < cap`) that counts actions, not current rows; notices that a member can re-trigger are keyed on
+  the actor (`req-${memberId}`), not on a version. · active
+- L-UD2 · 2026-11-26 · tests/triggers · Setting `updated_at` back in a test did nothing: the `touch_updated_at` trigger
+  rewrites it on every UPDATE. → Shorten a time window through its admin setting (or insert the row with the old
+  time), never by updating `updated_at`. · active
+- L-UD3 · 2026-11-26 · hono/middleware · A `use('/ustaad/*', guard)` in one route module also guards every other
+  module's `/ustaad/*` routes (L171/L190). → Bind a module's member guard to its own path prefixes
+  (`onUstaadPaths` in `routes/ustaad/social.ts`). · active

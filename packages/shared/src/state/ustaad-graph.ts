@@ -48,6 +48,11 @@ export const ustaadThreadMachine = /* @__PURE__ */ defineMachine(
     { from: 'requested', to: 'blocked', by: ['member', 'system'] },
     { from: 'open', to: 'blocked', by: ['member', 'system'] },
     { from: 'declined', to: 'requested', by: ['member'] },
+    { from: 'declined', to: 'blocked', by: ['member', 'system'] },
+    // Unblock restores the status the thread had before the block (`blocked_from`, D2): a request never becomes
+    // `open` without the receiver accepting.
     { from: 'blocked', to: 'open', by: ['member'] },
+    { from: 'blocked', to: 'requested', by: ['member'] },
+    { from: 'blocked', to: 'declined', by: ['member'] },
   ],
 );

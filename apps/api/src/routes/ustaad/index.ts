@@ -25,6 +25,10 @@ import { ustaadMemberRoutes } from './members';
 import { ustaadVerificationRoutes } from './verification';
 import { ustaadQaRoutes } from './qa';
 import { ustaadReportRoutes } from './reports';
+import { ustaadSocialRoutes } from './social';
+import { ustaadMessageRoutes } from './messages';
+import { ustaadDiscoverRoutes } from './discover';
+import { ustaadPromotionRoutes } from './promotions';
 
 const accessRoute = createRoute({
   method: 'get',
@@ -56,7 +60,11 @@ export function ustaadRoutes(deps: AppDeps, sessions: SessionCache, access: Usta
   // B (later): app.route('/', ustaadProfileRoutes(deps, sessions));
   app.route('/', ustaadQaRoutes(deps));
   app.route('/', ustaadFeedRoutes(deps)); // D part 1: feed, posts, stories, comments, tags
-  // D part 2: graph, threads, Discover, promotions …
+  // D2: graph, messages, Discover, promotions (each guards only its own path prefixes).
+  app.route('/', ustaadSocialRoutes(deps));
+  app.route('/', ustaadMessageRoutes(deps));
+  app.route('/', ustaadDiscoverRoutes(deps));
+  app.route('/', ustaadPromotionRoutes(deps));
   app.route('/', ustaadLocalRoutes(deps));
   app.route('/', ustaadCorrectRoutes(deps));
   app.route('/', ustaadReportRoutes(deps));
