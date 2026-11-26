@@ -2412,3 +2412,23 @@ Spec 23 § 21f. Rulings made while building (lead brief + security review of the
   observer now restores only a missing or invalid `data-theme` (unit test). (3) QA 13 desktop + mobile — the test
   expected the city free-delivery amount at a demo checkout, removed on purpose by Q196 (2026-11-16, 69f077f0): test
   re-pointed to the ruling (neutral delivery line shown while a fee is charged, no city amount).
+
+## 2026-11-26 — Admin Ustaad lists at 320 / 768 px and in Hindi (state audit API-ADM-USTAAD)
+
+- **Root cause of the sideways page (320 px, 12 px, later 43 px):** not the tables themselves — `AdminTable` already
+  scrolls inside its own box — but the `.sr-only` text inside them (the "Actions" column header and the row-action
+  names). `.sr-only` is `position: absolute`; with no positioned ancestor its containing block is the page, so the
+  scroll box did not clip it and the page widened. **Fix:** `AdminTable` and `ScrollRegion` are `relative` (one class,
+  every admin table and scroll region benefits). Kept the existing pattern (a wide table scrolls inside its named,
+  focusable box; design-system § Tables) instead of a card layout: the tables specialist confirmed it meets 1.4.10;
+  a stacked/card layout under 640 px stays a possible product improvement (not built).
+- **Hindi (rule 10):** row actions were read with the English column (`titleEn`, `nameEn`, `labelEn`) — "batteries",
+  "Spam", "Something else" on /hi. Rows now speak their Hindi text on /hi; a name staff typed in one language only
+  (word-list phrases, hashtag slugs, an English fallback) is wrapped as user content around the name only
+  (`splitAroundName` keeps each language's word order). Edit buttons moved from `aria-label` to visible "Edit" +
+  screen-reader name (label-in-name kept). No allowlist widened, no fixture rewritten.
+- **Accessibility review (aria, keyboard, tables, i18n specialists, 2026-11-26):** no critical or serious finding;
+  applied the i18n one (English fallback marked as user content). Open, pre-existing, minor: `position` is the row
+  header in the tutorial-card and coach-mark tables; the merged-into note sits in the row header; no table
+  `<caption>`; the segment chip row has no top padding for focus rings; Latin user content has no `lang` (left
+  unset on purpose: it may be Hinglish).
