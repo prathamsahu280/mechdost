@@ -11,6 +11,8 @@ import { supabaseMediaHost } from './ustaad/media/supabase';
 import { createAnthropicProvider } from './assistant/provider';
 import { createAnthropicCorrection } from './ustaad/correction/anthropic';
 import { memoryCorrectionCache, redisCorrectionCache } from './ustaad/correction/cache';
+import { memoryFeedSnapshots, redisFeedSnapshots } from './ustaad/feed/snapshot';
+import { defaultPreviewDeps } from './ustaad/link-preview';
 import { createGeminiCorrection } from './ustaad/correction/gemini';
 import { createFirebaseEmailActionLinks } from './auth/email-actions';
 import { createFirebaseVerifier } from './auth/firebase-verifier';
@@ -100,6 +102,8 @@ const app = createApp({
       ? createAnthropicCorrection(config.smartCorrection)
       : createGeminiCorrection(config.smartCorrection),
   correctionCache: redis ? redisCorrectionCache(redis) : memoryCorrectionCache(),
+  feedSnapshots: redis ? redisFeedSnapshots(redis) : memoryFeedSnapshots(),
+  linkPreview: defaultPreviewDeps(),
   passwordAuth: config.firebaseApiKey
     ? createFirebasePasswordAuthority({
         projectId: config.firebaseProjectId,

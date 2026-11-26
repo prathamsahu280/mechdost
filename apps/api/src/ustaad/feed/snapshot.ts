@@ -9,7 +9,7 @@ import { randomBytes } from 'node:crypto';
 import type { FeedPage } from '@mechdost/shared/ustaad/dto/feed';
 import { ustaadForYouIds, ustaadPostsByIds, type Tx } from '@mechdost/db/repo';
 import { ApiError } from '../../errors';
-import { log } from '../../log';
+import { log } from '../../logger';
 import { TtlCache } from '../../ttl-cache';
 import type { RedisKv } from '../correction/cache';
 

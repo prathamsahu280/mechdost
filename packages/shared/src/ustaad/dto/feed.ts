@@ -83,7 +83,9 @@ export const CreatePostDto = z
   })
   .strict()
   .superRefine((p, ctx) => {
-    const issue = (path: string, message: string) => ctx.addIssue({ code: 'custom', path: [path], message });
+    const issue = (path: string, message: string) => {
+      ctx.addIssue({ code: 'custom', path: [path], message });
+    };
     const hasMedia = p.media.length > 0;
     if (MEDIA_KINDS_OF_POST.includes(p.kind) !== hasMedia)
       issue('media', hasMedia ? 'This kind of post has no media' : 'Add a photo, voice note, video or file');

@@ -398,3 +398,10 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
   script digits) and must not rely on "not followed by ." to tell UPI ids from emails (sentence-ending full stops) →
   match a known PSP list first, then the generic rule; screen every member-visible free-text field, not just the body.
 - L-B2 · 2026-11-26 · ustaad/ui a11y · Specialist review of the new Ustaad screens found the same misses three times: status shown only by aria-hidden glyphs, live regions mounted together with their text, focus lost when the focused control unmounts (dismiss, retry, disabled submit), field errors not focused → for every new client screen: always-mounted role=status, sr-only state words beside glyphs, focus moved before unmounting, aria-disabled instead of disabled on a focused submit, focus the first invalid control after a failed step.
+- L-D1 · 2026-11-26 · Ustaad feed API · (1) Node's `net.BlockList` matches IPv4 addresses against IPv6 rules too, so
+  one list holding `::ffff:0:0/96` blocks every IPv4 address → keep separate v4 and v6 lists. (2) A public route under
+  a gated prefix must be registered (`app.route`) before the gate's `app.use`: Hono runs matched handlers in
+  registration order. (3) A client-supplied "original" text that other members can open must be screened like the
+  body (lead security review): use `ustaadScreenText` / `ustaadStoredOriginal`. (4) Python edits on Windows write CRLF:
+  run prettier on every python-edited file before committing. (5) Fixture members exceed `posts.per_day` quickly in
+  repository tests: raise the cap in `beforeEach` and test the cap with a fresh member.

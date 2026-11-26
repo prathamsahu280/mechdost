@@ -48,7 +48,7 @@ import * as s from '../src/schema';
 import { createTestDb, type TestDb } from '../src/testing';
 import { seedServiceFixture, type Fixture } from './service-fixture';
 
-const screen = vi.hoisted(() => ({ outcome: 'ok' as 'ok' | 'hold' | 'block' }));
+const screen = vi.hoisted((): { outcome: 'ok' | 'hold' | 'block' } => ({ outcome: 'ok' }));
 vi.mock('../src/repo/ustaad/moderation', () => ({
   // Holds any text with the test word, so tests prove which fields reach the screen.
   screenUstaadContent: (_tx: unknown, input: { text: string | null }) =>

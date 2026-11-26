@@ -122,7 +122,7 @@ export async function ownUnusedMedia(
   for (const id of ids) {
     const r = byId.get(id);
     const bucketOk = r?.kind === 'document' ? r.bucket === 'docs' : r?.bucket === 'media';
-    if (!r || r.owner !== memberId || r.status !== 'verified' || !bucketOk)
+    if (r?.owner !== memberId || r.status !== 'verified' || !bucketOk)
       throw new ValidationError('That file cannot be used', 'USTAAD_MEDIA_INVALID');
     out.push({
       id: r.id,
@@ -151,6 +151,9 @@ export async function ownUnusedMedia(
     throw new ValidationError('That file cannot be used', 'USTAAD_MEDIA_INVALID');
   return out;
 }
+
+/** A boolean from raw SQL (`true`, or `'t'` from some drivers). */
+export const sqlTrue = (v: unknown): boolean => v === true || v === 't';
 
 /** Today's date in India (`YYYY-MM-DD`), for daily notice grouping. */
 export function istDay(now = new Date()): string {

@@ -2197,3 +2197,31 @@ Spec `docs/specs/23-ustaad-network.md`, design `docs/superpowers/specs/2026-11-2
 - Job codes use RFC 4648 base32 to satisfy the existing `ustaad_jobs_code_format` CHECK; the lead may instead align
   the CHECK with Crockford `publicCode` at merge.
 - The `jobs.enabled` kill switch hides every job surface (404) but never blocks an applicant's withdraw.
+
+## 2026-11-26 — Ustaad workstream D part 1 (feed): build rulings
+
+- **Tags are optional on a post.** The spec's "≥ 1 curated" is read as "every tag is curated" (members cannot create
+  tags; unknown text is refused). No migration seeds tags yet, so a mandatory tag would block all posting; the
+  composer suggests one from the vehicle. Queued as Q-U-D1 (default: optional).
+- **One media object, one place.** Media attached to a post, comment, question, answer or message cannot be attached
+  again (`USTAAD_MEDIA_INVALID`), so the story purge can never delete a normal post's file.
+- **Restricted authors' content leaves every surface** for others (status ≠ `active` or `restricted_mode` ≠ `none`);
+  they still see their own. Restricted members read, save and unsave, but cannot post, comment, like, vote, follow
+  tags or share (C's `assertUstaadMemberCanWrite`).
+- **Share teaser tokens are stateless** (HMAC-SHA256 of the post id with the new `USTAAD_SHARE_SECRET`, no table);
+  the teaser re-reads the post on every open (removed → 404) and is mounted before the gate, answering only while
+  `ustaad.access = open`.
+- **For you snapshot store** behind `FeedSnapshotStore` (Upstash when configured, else per-instance memory); a
+  cursor whose snapshot is gone answers 410 `USTAAD_FEED_EXPIRED` and the app reloads page 1. Following, Saved and
+  tag pages use plain keyset cursors.
+- **Notices:** `ustaad.reply` and `ustaad.likes_digest` are deduplicated per post per IST day (first event of the day;
+  the digest count is the total at that moment). A real daily digest job is a next step. The `ustaad.reply` link now
+  opens `/ustaad/p/{postId}` when the post id is given.
+- **Link previews in the API process for v1** with the full SSRF rule set (pinned connection, every address checked,
+  3 redirects, 3 s, 512 KB); the separate worker process and the og:image pipeline are next steps. A failed or
+  blocked fetch is stored and never shown; the post never waits for it.
+- **Post views are not counted yet**: the feed's helpful term uses max(views, likes + saves) as n (story views are
+  counted). New server event `ustaad_comment_posted`.
+- **Screen the original** (lead security review): posts, comments and story captions send every readable text,
+  including the client's pre-correction original, to `screenUstaadContent` (`ustaadScreenText`); the original is
+  stored only when a correction was used (`ustaadStoredOriginal`).

@@ -19,6 +19,7 @@ import { errorResponses } from '../schemas';
 import { json } from '../service-schemas';
 import { ustaadMediaRoutes } from './media';
 import { ustaadCorrectRoutes } from './correct';
+import { ustaadFeedRoutes, ustaadShareTeaserRoutes } from './feed';
 import { ustaadLocalRoutes } from './local';
 import { ustaadMemberRoutes } from './members';
 import { ustaadVerificationRoutes } from './verification';
@@ -41,6 +42,8 @@ export function ustaadRoutes(deps: AppDeps, sessions: SessionCache, access: Usta
     '/ustaad-access',
     rateLimit(deps.rateLimiter, RATE_RULES.apiPerIp, (c) => c.get('clientIp')),
   );
+  // D1: the public share teaser answers before the gate (generic card only, SR-44).
+  app.route('/', ustaadShareTeaserRoutes(deps));
   app.use('/ustaad/*', ustaadGate(deps, sessions, access));
   app.openapi(accessRoute, async (c) => {
     c.header('Cache-Control', 'public, max-age=30');
@@ -51,7 +54,8 @@ export function ustaadRoutes(deps: AppDeps, sessions: SessionCache, access: Usta
   app.route('/', ustaadVerificationRoutes(deps));
   // B (later): app.route('/', ustaadProfileRoutes(deps, sessions));
   app.route('/', ustaadQaRoutes(deps));
-  // D: app.route('/', ustaadPostRoutes(deps)); app.route('/', ustaadFeedRoutes(deps)); …
+  app.route('/', ustaadFeedRoutes(deps)); // D part 1: feed, posts, stories, comments, tags
+  // D part 2: graph, threads, Discover, promotions …
   app.route('/', ustaadLocalRoutes(deps));
   app.route('/', ustaadCorrectRoutes(deps));
   // F: app.route('/', ustaadReportRoutes(deps));

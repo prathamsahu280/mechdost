@@ -18,7 +18,7 @@ import {
 import { decodeCursor, encodeCursor } from '../cursor';
 import { NotFoundError, ValidationError } from '../errors';
 import type { Tx } from '../orders';
-import { feedMember, feedWriter, notMuted, postVisibleTo, type UstaadActor } from './feed-common';
+import { feedMember, feedWriter, notMuted, postVisibleTo, sqlTrue, type UstaadActor } from './feed-common';
 import { ustaadPostsByIds } from './posts';
 
 const norm = (v: string) => v.normalize('NFC').toLowerCase();
@@ -109,7 +109,7 @@ export async function searchUstaadTags(
     )
     .orderBy(asc(ustaadTags.slug))
     .limit(100);
-  return rows.map((r) => ({ ...r, followed: r.followed === true || (r.followed as unknown) === 't' }));
+  return rows.map((r) => ({ ...r, followed: sqlTrue(r.followed) }));
 }
 
 async function liveTag(tx: Tx, slug: string) {

@@ -1069,7 +1069,7 @@ are superseded by the admin page above. "Decide later" items shown greyed in adm
 Server (event store, forwarded to PostHog): `ustaad_joined {track, via}`, `ustaad_left`, `ustaad_verification_requested
 {proofs}`, `ustaad_verification_decided {outcome, reason}`, `ustaad_vouch_given`, `ustaad_attestation_decided
 {outcome}`, `ustaad_level_reached {level}`, `ustaad_badge_earned {badge}`, `ustaad_post_created {kind, template,
-media_count, tag_count, correction}`, `ustaad_story_created {kind}`, `ustaad_question_asked {input, segment, work,
+media_count, tag_count, correction}`, `ustaad_story_created {kind}`, `ustaad_comment_posted {input, reply}` (D1), `ustaad_question_asked {input, segment, work,
 correction}`, `ustaad_answer_posted {input}`, `ustaad_answer_helpful`, `ustaad_best_answer_chosen`,
 `ustaad_followed`, `ustaad_connected`, `ustaad_mentorship_changed {to}`, `ustaad_message_thread_started`,
 `ustaad_job_posted {role}`, `ustaad_job_applied`, `ustaad_application_moved {to}`, `ustaad_report_created {reason,
@@ -1284,6 +1284,74 @@ members at the next run. Data dictionary: this § 6.
   `qa.widen_after_h` and auto-close after `qa.auto_close_days` (worker), admin CRUD for courses/resources, the seed
   "How to use Ustaad Network" course, vehicle-model picker data, and a Hindi `topic` placeholder for
   `question_waiting` (today the notice receives the work/segment **code**; it must be the localized label).
+
+## 21d. Workstream D part 1 (feed) as built (2026-11-26, branch `worktree-agent-af781c8d402431a61`, no migration, no UI)
+
+- **Shared:** `ustaad/dto/feed.ts` (strict `CreatePostDto` with the shape of every kind and template: text needs a
+  body or a fix log; voice/photo/video/document/mixed need media; poll 2–4 options only on a poll; link only on a link
+  and only a `safeLinkUrl`; fix log = symptom + fix (cause optional); before/after = photo post with a before and an
+  after role; roles only there; no duplicate media or tags; `bodyOriginal` only with a correction; `status`,
+  `authorId`, `contentType`, counters never accepted), `CreateStoryDto`, `CommentDto`, `ShareDto`, `PollVoteDto`,
+  feed/page/tag queries and the views); `ustaad/links.ts` (`safeLinkUrl`: http/https, ports 80/443, no user-info, no IP
+  literal or local names; `linkDisplayHost`: registrable domain in punycode from a small multi-part suffix list,
+  AT-SSRF-3); `ustaad/feed-score.ts` (`feedScore`, `wilsonLowerBound`, `rankFeed`, § 9.5; post views are not counted
+  yet, so the helpful term is Wilson of likes + saves over max(views, likes + saves)).
+- **Repositories** `repo/ustaad/{feed-common,posts,stories,comments,reactions,tags,previews,feed}.ts`. One
+  visibility rule (`postVisibleTo` / `visibleUstaadPost`) for every by-id read and write: own `visible|held`, else
+  `visible`, author active with no restricted mode, no block either way (SR-35), stories only until `expires_at` on
+  the DB clock; mutes hide authors in lists only. Create post: member row locked, `posts.types.*`, `posts.per_day`
+  (IST day, stories excluded; API answers 429 `USTAAD_DAILY_CAP`), links only after `mod.links_min_account_days`
+  (`USTAAD_LINKS_LOCKED`) and not on the admin `link_domain` list incl. parent domains (`USTAAD_LINK_BLOCKED`), media
+  own + verified + live bucket + **not attached anywhere else** (`USTAAD_MEDIA_INVALID`; a story purge can never
+  delete a post's file), kind shape and caps (`USTAAD_MEDIA_LIMIT`, `USTAAD_MEDIA_TOO_LONG` against
+  `posts.video_max_s` / `media.voice_max_s`; video may carry one poster image), curated tags (slug, Hindi name or
+  alias; merged → target; inactive/unknown → `USTAAD_TAG_UNKNOWN`; distinct > `tags.max_per_post` →
+  `USTAAD_TAG_LIMIT`), `screenUstaadContent` on every readable text **including the pre-correction original**
+  (`ustaadScreenText`; the original is stored only with a correction, `ustaadStoredOriginal`) → `held` / refused
+  `USTAAD_CONTENT_BLOCKED`; post + media + counter row + poll + tags + `ustaad_events` + `ustaad_post_created`.
+  Members post `ugc` only. Delete = author `→ hidden_author` (machine, conditional UPDATE with version).
+  Likes / saves / poll votes / story views are rows with `ON CONFLICT DO NOTHING RETURNING` and conditional
+  counters (`> 0` guard down); likes never touch Izzat or levels; `feed.show_like_counts` off → `likes: null`; the
+  save count is shown to the author only. Comments: text / voice / photo (own unused media), one level of replies
+  (`USTAAD_REPLY_DEPTH`), idempotent, screened, not on stories, author hides (`→ hidden_author`, counter back).
+  Stories: one photo / voice / video (+ poster), `stories.hours`, `stories.min_account_days` (`USTAAD_STORIES_LOCKED`),
+  rings = mine, followed, my city; "Seen by N" for the owner only; `expireUstaadStories` (worker every 5 min) moves
+  `visible → expired` and sets the media `purge_after = expires_at + stories.purge_grace_hours`.
+  Feed: For you candidates (window `feed.window_days`; followed, followed tag or own speciality segment, my city,
+  mine; not muted; ≤ 1000) ranked with the admin weights (≤ 300 ids); Following keyset `(created_at, id)`; Saved and
+  tag pages keyset; hydration re-checks visibility per page. Tags: search (slug prefix, names, alias), tag page,
+  follow / unfollow, suggestions. Previews: one row per sha256(URL), refreshed after 7 days, only `ok` shown.
+- **API** `routes/ustaad/feed.ts`: `GET /ustaad/feed?tab=for_you|following`, `POST /ustaad/posts`,
+  `GET|DELETE /ustaad/posts/{id}`, `POST|DELETE …/like`, `…/save`, `POST …/share` (channel → teaser token),
+  `GET|POST …/comments`, `DELETE /ustaad/comments/{id}`, `POST /ustaad/polls/{id}/vote`, `GET /ustaad/saved`,
+  `GET|POST /ustaad/stories`, `POST /ustaad/stories/{id}/view`, `GET /ustaad/tags`, `GET /ustaad/tags/{slug}`,
+  `PUT|DELETE /ustaad/tags/{slug}/follow`, `POST /ustaad/tag-suggestions`, `GET /ustaad/shares/{token}` (member →
+  post id) and the **public** `GET /ustaad/s/{token}` mounted before the gate (rate limited per IP, `noindex`,
+  `{ kind: 'ustaad_post' }` only, 404 unless `ustaad.access = open`, the HMAC token is genuine and the post is live).
+  Share tokens: `{post id}.{HMAC-SHA256/128}` base64url with `USTAAD_SHARE_SECRET` (unset → 503
+  `SHARE_UNAVAILABLE`). For you snapshot: `FeedSnapshotStore` (Upstash, else memory), 10 min, key per member, cursor
+  = position; an expired snapshot answers 410 `USTAAD_FEED_EXPIRED`. Link previews:
+  `apps/api/src/ustaad/link-preview/` (no DB access): `safeLinkUrl` per hop, one DNS resolution, every address
+  checked (`BlockList`: private, loopback, link-local/metadata, CGNAT, documentation, multicast, ULA, 6to4, NAT64,
+  Teredo, every IPv4-mapped IPv6), the socket's `lookup` pinned to the checked address, ≤ 3 redirects, 3 s total,
+  512 KB, `text/html` only, og:title / og:description (or `<title>`) as plain text; started after the post commits,
+  failures stored as `failed` / `blocked` and never shown.
+- **Notices:** `ustaad.reply` to the post author and the parent comment's author (grouped per post per IST day,
+  link `/ustaad/p/{postId}`); `ustaad.likes_digest` on the first like of the day per post (count at that moment).
+  Never for one's own action or for held content. **Analytics:** `ustaad_post_created`, `ustaad_story_created`,
+  new `ustaad_comment_posted {commentId, postId, input, reply}`; likes, saves, shares and story views stay client
+  events and write `ustaad_events` rows.
+- **Tests:** `packages/shared/test/ustaad-feed.test.ts` (14), `packages/db/test/ustaad-feed.test.ts` (31),
+  `apps/api/test/ustaad-link-preview.test.ts` (8: AT-SSRF-1, AT-SSRF-2, parsing, pinned connector on a local
+  server), `apps/api/test/ustaad-feed-api.test.ts` (role leak in staff preview and open, flow, snapshot cursor,
+  daily cap 429, link preview after commit, stories gate, teaser, SR-34 sweep).
+- **Not done (next):** web UI (composer, post card, story ring/viewer, players, Saved, tag page, teaser page) with en
+  - hi strings; the og:image through the image pipeline; the preview fetcher as a separate process; the HMAC-signed
+    "leaving MechDost" warning page (SR-23: today the post view carries the URL and its registrable domain); the
+    real-Postgres race suite for double like / like–unlike (PGlite runs them sequentially); a DB trigger for ≤ 5 tags
+    (the repository enforces it; tags are only written in the create transaction); post view counting; the nightly
+    `ustaad_counter_reconcile` job; a true daily likes digest job; promotions in the feed, follow/connect, blocks/mutes
+    writes, messages and Discover (workstream D part 2).
 
 ## 21e. Workstream E as built (2026-11-26, branch `worktree-agent-a53f6c8fce669739a`, no migration)
 

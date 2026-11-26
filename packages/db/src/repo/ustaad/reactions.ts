@@ -28,6 +28,7 @@ import {
   feedMember,
   feedWriter,
   istDay,
+  sqlTrue,
   visibleUstaadPost,
   type UstaadActor,
 } from './feed-common';
@@ -298,8 +299,7 @@ export async function voteUstaadPoll(
       .where(and(eq(ustaadPollOptions.id, optionId), eq(ustaadPollOptions.pollId, poll.id)))
       .limit(1);
     if (!option) throw new NotFoundError('Option not found');
-    if (!(poll.open === true || (poll.open as unknown) === 't'))
-      throw new ConflictError('This poll is closed', 'USTAAD_POLL_CLOSED');
+    if (!sqlTrue(poll.open)) throw new ConflictError('This poll is closed', 'USTAAD_POLL_CLOSED');
     const inserted = await tx
       .insert(ustaadPollVotes)
       .values({ pollId: poll.id, optionId: option.id, memberId: me.id })

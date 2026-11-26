@@ -36,6 +36,7 @@ import {
   memberAgeDays,
   ownUnusedMedia,
   postVisibleTo,
+  sqlTrue,
   visibleUstaadPost,
   type FeedMediaRow,
   type UstaadActor,
@@ -490,7 +491,7 @@ async function ustaadPollViews(tx: Tx, viewer: string, postIds: readonly string[
     out.set(p.postId, {
       id: p.id,
       closesAt: p.closesAt.toISOString(),
-      closed: p.closed === true || (p.closed as unknown) === 't',
+      closed: sqlTrue(p.closed),
       options: options
         .filter((o) => o.pollId === p.id)
         .map((o) => ({ id: o.id, label: o.label, votes: o.votes })),
