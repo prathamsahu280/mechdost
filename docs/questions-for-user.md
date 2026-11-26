@@ -309,6 +309,23 @@ advise). A Google Web Risk / Safe Browsing key would let us check links. Default
 every account and all media and PDFs from accounts younger than 30 days are held for a community manager; links from
 accounts younger than 7 days are refused; an admin domain deny list applies.
 
+#### Q-UB1: Ustaad identity, round 3 open points (Decision + Input, P2, defaults as built 2026-11-26)
+
+1. **New-device sign-in on Pakka+ (SR-2).** The freeze runs on a phone, email or password change. There is no device
+   record (the `sessions` table is never written), so "new device → re-OTP" is not built. Default: no device signal;
+   a password sign-in of a Pakka+ member is not asked for an extra phone code. Option: record a device id at sign-in
+   and ask for a phone code on a new one for Pakka+ members (like staff).
+2. **Garage owner link delivery.** The member never sees the owner's link; staff issue it in Admin and call the owner
+   (the API shows staff the owner's number once, audited). Default: staff call until a WhatsApp/SMS template
+   "confirm a mechanic" is approved. Please confirm staff may see the owner's number for this call (it is the
+   member's evidence, not a customer's number).
+3. **Shop photo for owners not on MechDost (SR-6).** Built: GSTIN/Udyam + the owner's position at the shop within
+   200 m of the member's garage pin. Not built: the shop photo (needs a public upload path for a signed-out owner).
+   Default: no photo; staff final approval stays.
+4. **Reserved names.** Seeded: MechDost (Latin and Devanagari), staff role words, "Ustaad Network/Official/Team",
+   "Shourya Integrated". A staff member's own full name is refused for members. Add any partner brands or names in
+   Admin › Network settings › reserved names (API ready; the screen comes with G2).
+
 #### Q-UC1 to Q-UC7: questions for counsel (Authorization/Input, P0 before launch)
 
 Defaults meanwhile: build to the strictest reading; nothing goes live before counsel has seen these.

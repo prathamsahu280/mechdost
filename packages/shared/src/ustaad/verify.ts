@@ -2,16 +2,26 @@
  * Verification evidence rules (spec 23 § 4 flow 2, SR-6, SR-7; plan task B4). Pure: the repository counts in SQL and
  * passes the numbers here; a refusal is a stable code the API maps to 422.
  */
-import type { UstaadLevel } from './codes';
+import type { UstaadLevel, UstaadMemberStatus, UstaadVerificationState } from './codes';
 import { levelAtLeast } from './levels';
 
 const DAY_MS = 86_400_000;
 
-export type VouchRefusal = 'VOUCH_LEVEL' | 'VOUCH_ACCOUNT_AGE' | 'VOUCH_RECIPROCAL' | 'VOUCH_MONTHLY_CAP';
+export type VouchRefusal =
+  'VOUCH_NOT_TRUSTED' | 'VOUCH_LEVEL' | 'VOUCH_ACCOUNT_AGE' | 'VOUCH_RECIPROCAL' | 'VOUCH_MONTHLY_CAP';
 
-/** SR-7: voucher ≥ `verify.vouch_min_level`, account ≥ `verify.vouch_min_account_days`, not reciprocal, ≤ cap a month. */
+/**
+ * SR-7: the voucher is verified and active (security review 2026-11-26: a restricted, banned, revoked or unverified
+ * member who kept a level must not vouch), level ≥ `verify.vouch_min_level`, account ≥
+ * `verify.vouch_min_account_days`, not reciprocal, ≤ cap a month.
+ */
 export function vouchRefusal(i: {
-  voucher: { level: UstaadLevel; accountCreatedAt: Date };
+  voucher: {
+    level: UstaadLevel;
+    accountCreatedAt: Date;
+    verificationState: UstaadVerificationState;
+    status: UstaadMemberStatus;
+  };
   /** The vouchee already vouched for the voucher (given or requested). */
   reciprocal: boolean;
   vouchesThisMonth: number;
@@ -20,6 +30,7 @@ export function vouchRefusal(i: {
   minAccountDays: number;
   perMonth: number;
 }): VouchRefusal | null {
+  if (i.voucher.verificationState !== 'verified' || i.voucher.status !== 'active') return 'VOUCH_NOT_TRUSTED';
   if (!levelAtLeast(i.voucher.level, i.minLevel) || i.voucher.level === 'ustaad_pending')
     return 'VOUCH_LEVEL';
   if (i.now.getTime() - i.voucher.accountCreatedAt.getTime() < i.minAccountDays * DAY_MS)

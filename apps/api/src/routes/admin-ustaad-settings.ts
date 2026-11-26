@@ -1,6 +1,7 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import type { Context, MiddlewareHandler } from 'hono';
 import {
+  addUstaadReservedName,
   createUstaadBadge,
   createUstaadCoachmark,
   createUstaadLevelRule,
@@ -11,6 +12,7 @@ import {
   createUstaadWord,
   listUstaadBadges,
   listUstaadCoachmarks,
+  listUstaadReservedNames,
   listUstaadLevelRules,
   listUstaadPromotions,
   listUstaadReachCities,
@@ -23,6 +25,7 @@ import {
   readUstaadSettings,
   saveUstaadSettings,
   setUstaadReachCity,
+  setUstaadReservedNameActive,
   updateUstaadBadge,
   updateUstaadCoachmark,
   updateUstaadLevelRule,
@@ -88,9 +91,17 @@ import { body, conflict, json } from './service-schemas';
  * other routers under the same prefix (verification, moderation: workstreams B and F) keep their own guards.
  */
 const OWN =
-  /\/admin\/ustaad\/(settings|levels|badges|tags|words|reasons|reach-cities|promotions|tutorial-cards|coachmarks)(\/|$)/;
+  /\/admin\/ustaad\/(settings|levels|badges|tags|words|reasons|reach-cities|promotions|tutorial-cards|coachmarks|reserved-names)(\/|$)/;
 
 const meta = { tags: ['ustaad-admin'], security: [{ bearerAuth: [] }] };
+const ReservedNameWriteDto = z
+  .object({ name: z.string().trim().min(2).max(60) })
+  .strict()
+  .openapi('UstaadReservedName');
+const ReservedNameUpdateDto = z
+  .object({ active: z.boolean(), version: z.number().int().min(1) })
+  .strict()
+  .openapi('UstaadReservedNameUpdate');
 const Anything = z.any();
 const responses = { 200: json(Anything, 'OK'), ...conflict, ...errorResponses };
 const Id = z.object({ id: z.uuid().openapi({ param: { name: 'id', in: 'path' } }) });
@@ -222,6 +233,10 @@ const R = {
   coachmarks: list('coachmarks', 'coach-marks'),
   coachmarkCreate: create('coachmarks', 'a coach-mark', CoachmarkWriteDto.openapi('UstaadCoachmark')),
   coachmarkUpdate: update('coachmarks', 'a coach-mark', CoachmarkUpdateDto.openapi('UstaadCoachmarkUpdate')),
+  // Reserved names (SR-4): brand, operator, staff and partner names members may not use (look-alikes included).
+  reservedNames: list('reserved-names', 'reserved names'),
+  reservedNameCreate: create('reserved-names', 'a reserved name', ReservedNameWriteDto),
+  reservedNameUpdate: update('reserved-names', 'a reserved name (on or off)', ReservedNameUpdateDto),
 };
 
 /** Any of `permissions`; a staff grant withheld for a missing second step answers STAFF_2FA_REQUIRED (as elsewhere). */
@@ -492,5 +507,21 @@ export function adminUstaadSettingsRoutes(deps: AppDeps, cache: SessionCache, ac
         ),
         200,
       ),
-    );
+    )
+    .openapi(R.reservedNames, async (c) => c.json({ names: await listUstaadReservedNames(deps.db) }, 200))
+    .openapi(R.reservedNameCreate, async (c) =>
+      c.json(await addUstaadReservedName(deps.db, { userId: staffId(c) }, c.req.valid('json').name), 200),
+    )
+    .openapi(R.reservedNameUpdate, async (c) => {
+      const b = c.req.valid('json');
+      return c.json(
+        await setUstaadReservedNameActive(deps.db, {
+          id: c.req.valid('param').id,
+          active: b.active,
+          expectedVersion: b.version,
+          staffUserId: staffId(c),
+        }),
+        200,
+      );
+    });
 }

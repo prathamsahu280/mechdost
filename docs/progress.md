@@ -4,6 +4,15 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-26 (afternoon): Ustaad workstream B round 3** (branch worktree-agent-ab7b78a32bea2c97c, not pushed,
+  migrations **0098_ustaad_identity_b3** (schema) and **0099_ustaad_reserved_names_seed** (data) written, NOT applied).
+  Reserved/look-alike names, `PATCH /ustaad/me`, specialities, choices, SR-2 freeze, garage-owner link (staff-issued)
+  - public `/ustaad-attest/[token]`, evidence purge, counter reconcile, 30-day counters, stored qualified followers,
+    badge awards, voucher trust (lead's security finding), Partners notice, Ustaad copy on Apply as a mechanic, state
+    audit rows. Spec 23 § 21b round 3, decisions 2026-11-26 "B round 3", Q-UB1. **Next:** lead merge + apply 0098/0099;
+    F's ban must call `ustaadVoucherLostTrust`; D2 writes `followed/unfollowed` events per the contract; G2 builds the
+    verification queue screen and the reserved-names list; profile/choices web screens; screenshots.
+
 - **2026-11-26 (midday): Ustaad workstream B round 2** (branch worktree-agent-a08ecec98c37890df, not pushed). Apply-as-a-mechanic follows `ustaad.access` (old form unless `open`), level-rule Coins guard, `/ustaad/welcome` guide, coach-mark, `/ustaad/me` card + ladder + badges, `/partners/status` progress, `GET /ustaad/me/card`. Left: QR, profile/choices routes, reserved names, SR-2 freeze, non-partner attest link, badge award job, counter reconcile, screenshots.
 - **2026-11-26 (morning): Ustaad Network workstream B (identity) partial** (branch worktree-agent-a08ecec98c37890df, not pushed, migration **0094_ustaad_identity_seed** data only, not applied). Engines, Izzat, levels, verification with staff final approval, vouches, workshop attestations, ring check, tutorial progress API, staff/workshop verification routes, 410 for old mechanic applications, invite mapping script, 5-step join UI. Security review fixes in. Not built: tutorial UI, ID card/Me UI, /partners/status, profile/choices routes, reserved names, SR-2 freeze, non-partner attest link (spec 23 § 21b).
 - **2026-11-26 (morning): Ustaad workstream C (Q&A + Learn) partly built on branch worktree-agent-a493031f33b2dd989

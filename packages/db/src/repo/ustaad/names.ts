@@ -8,8 +8,9 @@
 import { and, eq, inArray, isNotNull } from 'drizzle-orm';
 import { ROLES } from '@mechdost/shared/rbac';
 import { displayNameRefusal, isReservedName, nameSkeleton } from '@mechdost/shared/ustaad/names';
-import { roles, userRoles, users, ustaadReservedNames } from '../../schema';
+import { auditLog, roles, userRoles, users, ustaadReservedNames } from '../../schema';
 import { ConflictError, NotFoundError, ValidationError } from '../errors';
+import { recordServerEvent } from '../events';
 import type { Tx } from '../orders';
 
 const STAFF_ROLE_KEYS = Object.entries(ROLES)
@@ -60,6 +61,30 @@ export async function assertUstaadNameAllowed(
 
 // ── Admin list (spec 15 "admin control"; `ustaad:settings`) ───────────────────────────────────────────────────
 
+/** Every admin change: an `audit_log` row and the `admin_ustaad_table_saved` event (never the name itself). */
+async function audited(
+  tx: Tx,
+  staffUserId: string | null,
+  id: string,
+  action: 'create' | 'update',
+  before: unknown,
+  after: unknown,
+): Promise<void> {
+  await tx.insert(auditLog).values({
+    actorUserId: staffUserId,
+    actorRole: 'staff',
+    action: `ustaad.reserved_name.${action === 'create' ? 'created' : 'updated'}`,
+    entity: 'ustaad_reserved_name',
+    entityId: id,
+    before: before ?? null,
+    after: after ?? null,
+  });
+  await recordServerEvent(tx, 'admin_ustaad_table_saved', {
+    userId: staffUserId,
+    props: { table: 'reserved_names', action },
+  });
+}
+
 export interface ReservedNameView {
   id: string;
   name: string;
@@ -95,13 +120,14 @@ export async function addUstaadReservedName(
     .onConflictDoNothing()
     .returning();
   if (!row) throw new ConflictError('This name (or a look-alike) is already reserved', 'NAME_EXISTS');
+  await audited(tx, actor.userId, row.id, 'create', null, { active: true });
   return { id: row.id, name: row.name, active: row.active, version: row.version };
 }
 
 /** Switch a reserved name on or off (conditional on its version). */
 export async function setUstaadReservedNameActive(
   tx: Tx,
-  input: { id: string; active: boolean; expectedVersion: number },
+  input: { id: string; active: boolean; expectedVersion: number; staffUserId?: string | null },
 ): Promise<ReservedNameView> {
   const [row] = await tx
     .update(ustaadReservedNames)
@@ -116,5 +142,6 @@ export async function setUstaadReservedNameActive(
     if (!exists) throw new NotFoundError('Not found');
     throw new ConflictError('This name changed meanwhile', 'STALE_RESERVED_NAME');
   }
+  await audited(tx, input.staffUserId ?? null, row.id, 'update', null, { active: row.active });
   return { id: row.id, name: row.name, active: row.active, version: row.version };
 }

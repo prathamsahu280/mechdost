@@ -266,6 +266,29 @@ export async function runUstaadRingDetect(tx: Tx, now: Date = new Date()): Promi
   return { flagged: r.flaggedMembers.length, uncounted };
 }
 
+/** Qualified followers of one member now (SR-9), with the admin settings; the job stores it on the counters row. */
+export async function ustaadQualifiedFollowerCount(
+  tx: Tx,
+  memberId: string,
+  now: Date = new Date(),
+): Promise<number> {
+  const s = await readUstaadSettingValues(tx, [
+    'ustaad.levels.follower_min_age_days',
+    'ustaad.levels.follower_exclude_same_garage',
+  ]);
+  const [m] = await tx
+    .select({ workshopId: ustaadMembers.workshopId })
+    .from(ustaadMembers)
+    .where(eq(ustaadMembers.id, memberId))
+    .limit(1);
+  if (!m) return 0;
+  return qualifiedFollowers(await followerFacts(tx, memberId), now, {
+    minAgeDays: Number(s['ustaad.levels.follower_min_age_days']),
+    excludeSameGarage: s['ustaad.levels.follower_exclude_same_garage'] === true,
+    followeeWorkshopId: m.workshopId,
+  });
+}
+
 /** Members to recompute in the nightly job: active members, oldest check first (bounded batch). */
 export async function ustaadMembersForLevelJob(tx: Tx, limit = 500): Promise<string[]> {
   const rows = await tx

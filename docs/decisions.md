@@ -2197,3 +2197,29 @@ Spec `docs/specs/23-ustaad-network.md`, design `docs/superpowers/specs/2026-11-2
 - Job codes use RFC 4648 base32 to satisfy the existing `ustaad_jobs_code_format` CHECK; the lead may instead align
   the CHECK with Crockford `publicCode` at merge.
 - The `jobs.enabled` kill switch hides every job surface (404) but never blocks an applicant's withdraw.
+
+## 2026-11-26 - Ustaad workstream B round 3 (identity): names, profile, SR-2, owner link, jobs, voucher trust
+
+- **Look-alike names without a dependency:** a curated subset of the UTS #39 confusables (Cyrillic, Greek, Latin
+  letters that do not decompose, `0`/`1`, `rn`) plus NFKC, case fold, accent and nukta removal. Short reserved words
+  match whole words only ("Badmin Singh" is fine), reserved words of 6+ characters match anywhere. A staff member's
+  own full name is reserved for everyone else (whole name only). "Ustaad" alone is not reserved.
+- **SR-2 triggers** are the signals we have: a changed phone or email in the verified token (`ensureUser`) and an
+  announced password change (counted from the change time). The freeze only ever extends. No device signal (Q-UB1).
+- **Owner link:** issued by staff, never shown to the member (otherwise the member could confirm themselves); the
+  token is 64 hex characters so log and Sentry scrubbing removes it; GET never consumes it, POST does (conditional
+  UPDATE). Public paths are `/v1/ustaad-attest/{token}` and `/ustaad-attest/[token]` (not under `/ustaad/*`: the
+  member gate and the `/ustaad` shell would hide them from a signed-out owner). The owner's browser position stands
+  in for the SR-6 photo pin; only the distance is stored, and only when the member allowed "use pin for verification".
+- **Evidence retention:** owner phone and GSTIN/Udyam are cleared after `verify.evidence_retention_days`; the keyed
+  blind-index hash stays for the per-quarter cap.
+- **Counters:** reconcile is one `UPDATE … FROM (aggregate)` and leaves `posts` to workstream D; 30-day best answers
+  come from `best_chosen` events; qualified followers are stored on the counters row.
+- **Badges:** a badge staff revoked is never awarded again by the job; a "tag" for tag rules is the question's work or
+  vehicle code.
+- **Voucher trust (lead, security review):** only a `verified` and `active` member may vouch (`VOUCH_NOT_TRUSTED`); when
+  a voucher's verification is revoked (or F bans them), their open vouch requests expire, given vouches are revoked
+  with `voucher_untrusted`, and a verified vouchee left without enough evidence goes back to staff as a new
+  `in_review` re-check row; staff then keep or revoke.
+- **Worker:** these jobs run in the existing hourly worker timer (no pg-boss queue for Ustaad yet); every step is
+  idempotent.

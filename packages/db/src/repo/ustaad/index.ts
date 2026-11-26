@@ -14,6 +14,8 @@ export * from './levels';
 export * from './moderation';
 export * from './notify';
 export * from './verification';
+export * from './attest';
+export * from './maintenance';
 export * from './onboarding';
 export * from './application-links';
 export * from './card';

@@ -204,6 +204,10 @@ export const USTAAD_CLIENT_EVENT_SCHEMAS = {
   ustaad_coachmark_seen: z.object({ target: z.enum(COACHMARK_TARGETS) }).strict(),
   ustaad_coachmark_dismissed: z.object({ target: z.enum(COACHMARK_TARGETS) }).strict(),
   ustaad_help_replayed: z.object({}).strict(),
+  /** The garage owner's page (SR-6): opened, location asked, answer sent (the decision itself is a server event). */
+  ustaad_attest_opened: z.object({ valid: z.boolean() }).strict(),
+  ustaad_attest_location: z.object({ outcome: z.enum(['found', 'denied', 'unavailable']) }).strict(),
+  ustaad_attest_sent: z.object({ decision: z.enum(['confirmed', 'declined']), ok: z.boolean() }).strict(),
   /** Admin → Ustaad (G1): a settings save or a list change; area = `settings` or the list's id; never values. */
   admin_ustaad_change: z
     .object({
