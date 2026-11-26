@@ -221,6 +221,11 @@ Server: `business_application_submitted { kind, signedIn }`, `business_applicati
 - 2026-11-22 (catalogue groups): server events `admin_group_switched` (kind, slug, hidden, reason code, products affected), `admin_products_bulk` (action publish/unpublish/set_mrp, count), `admin_catalogue_v2_imported` (created, updated, packs, MRPs filled); client clicks `admin_group_hide_open`, `admin_group_show_open`, `admin_group_hidden`, `admin_group_shown`, `admin_bulk_publish`, `admin_bulk_unpublish`, `admin_bulk_mrp_saved`, `admin_mrp_saved`.
 
 - **Customer refunds page (2026-11-23, spec 05):** client `my_refunds_viewed {count, inProgress}` (0–50 each; refunds shown and how many are not yet completed or declined; never ids or amounts); clicks `my_refunds_target`, `my_refunds_support`, `my_refunds_more`, `my_refunds_empty_orders`, `order_refunds_all` (order page link), `menu_refunds` (account menu).
+- **"Your savings" (2026-11-26, personalisation phase 4):** client `savings_viewed {surface: order|cart|account,
+state: final|estimate|empty, band: zero|lt_100|lt_500|lt_2000|gte_2000, excluded}` (once per figure shown; the
+  amount is only a rupee band, never the amount, the order code or the period label; `excluded` = lines without a
+  printed MRP, capped at 99); clicks `savings_breakdown` (account card "How it adds up"), `savings_empty_shop`
+  (empty card). The ledger itself (`customer_savings_entries`, spec 14) is the per-order ML record.
 
 - **Admin settings screen (2026-11-24, spec 08):** client `admin_settings_nav {category, via: list|select|search}` (category code), `admin_settings_search {results}` (count only, never the words, sent after a pause in typing), `admin_settings_discard {fields}`, `admin_settings_confirm {outcome: saved|cancelled, risky}`; saves and resets still send `admin_site_change` (area `settings`).
   Product gallery (2026-11-24, client): `product_photo_selected { index, method: thumb|arrow|swipe|key }` when the shown photo changes, `product_photo_viewer_opened { index, count }` when the full view opens. No paths or names.

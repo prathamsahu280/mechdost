@@ -65,6 +65,9 @@ const RefundsSectionDemo = lazy(() =>
   import('./refunds-section').then((m) => ({ default: m.RefundsSection })),
 );
 
+// "Your savings" (decision 2026-11-26): this month / this year vs the maker's printed MRP; API or demo figures, own chunk.
+const SavingsCard = lazy(() => import('./savings-card').then((m) => ({ default: m.SavingsCard })));
+
 // Trade account pill (audience entry design 2026-11-22), real sign-in only.
 const TradeBadge = lazy(() => import('./trade-badge').then((m) => ({ default: m.TradeBadge })));
 
@@ -225,7 +228,14 @@ const CustomerContext = createContext<ReturnType<typeof useSession>>(null);
  * The chosen section's content (spec 01), rendered by the section pages inside `AccountFrame`. `scroll-mt-28` keeps
  * the section's top clear of the sticky header when Next brings a section that is above the viewport into view.
  */
-export function AccountSectionBody({ section }: { section: AccountSection }) {
+export function AccountSectionBody({
+  section,
+  savingsOverride = null,
+}: {
+  section: AccountSection;
+  /** The admin's published "Your savings" account line for this language (null = the locale-file default). */
+  savingsOverride?: string | null;
+}) {
   const t = useTranslations('account');
   const session = useContext(CustomerContext);
   // Always render the section box (empty until the session is known): when a side-bar click rendered nothing at
@@ -250,7 +260,7 @@ export function AccountSectionBody({ section }: { section: AccountSection }) {
           <PrivacySectionApi />
         </Suspense>
       ) : null}
-      {section === 'overview' ? <Overview account={session} /> : null}
+      {section === 'overview' ? <Overview account={session} savingsOverride={savingsOverride} /> : null}
       {section === 'orders' ? <OrdersList /> : null}
       {section === 'refunds' ? (
         <Suspense fallback={sectionFallback}>
@@ -366,7 +376,7 @@ function SectionNav({ current }: { current: AccountSection }) {
   );
 }
 
-function Overview({ account }: { account: DemoAccount }) {
+function Overview({ account, savingsOverride }: { account: DemoAccount; savingsOverride: string | null }) {
   const t = useTranslations('account');
   const locale = useLocale();
   const prefix = usePrefix();
@@ -456,6 +466,10 @@ function Overview({ account }: { account: DemoAccount }) {
           </li>
         ))}
       </ul>
+
+      <Suspense fallback={<div className="skeleton h-44 rounded-card" aria-hidden="true" />}>
+        <SavingsCard override={savingsOverride} />
+      </Suspense>
 
       {vehicle ? (
         <section aria-labelledby="primary-vehicle" className={card}>

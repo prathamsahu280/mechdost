@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { PERSON_CANCEL_REASONS } from '@mechdost/shared/state';
 import { useLocale, useTranslations } from 'next-intl';
-import { useState, type SyntheticEvent } from 'react';
+import { lazy, Suspense, useState, type SyntheticEvent } from 'react';
 import { restoreCoinsForOrder } from '@/demo/coins';
 import { rankShops } from '@/demo/shops';
 import { useSession } from '@/demo/session';
@@ -29,8 +29,20 @@ import { productNameFor } from '@/demo/i18n/localize';
 import { GstInvoiceLine } from '@/components/commerce/gst-invoice-line';
 import { SHOW_DEMO_CONTROLS } from '@/lib/data-mode';
 
+/** "Your savings" (decision 2026-11-26): its own chunk. */
+const OrderSavingsDemo = lazy(() =>
+  import('../savings/order-savings-demo').then((m) => ({ default: m.OrderSavingsDemo })),
+);
+
 /** Order tracking (spec 04): timeline of the real flow — placed → admin routes → shop accepts → … → delivered. */
-export function OrderView({ code }: { code: string }) {
+export function OrderView({
+  code,
+  savingsOverride = null,
+}: {
+  code: string;
+  /** The admin's "Your savings" order line for this language (null = the locale-file default). */
+  savingsOverride?: string | null;
+}) {
   const t = useTranslations('order');
   const cartT = useTranslations('cart');
   const demo = useTranslations('demo');
@@ -146,6 +158,13 @@ export function OrderView({ code }: { code: string }) {
                 ))}
               </ul>
             </section>
+          ) : null}
+          {maySeeCode ? (
+            <div className="mt-5">
+              <Suspense fallback={null}>
+                <OrderSavingsDemo order={order} override={savingsOverride} />
+              </Suspense>
+            </div>
           ) : null}
           {maySeeCode && (isClosed(order) || order.stage === ORDER_STAGES.length - 1) ? (
             <div className="mt-5">

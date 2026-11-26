@@ -89,6 +89,12 @@ export const OPERATIONAL_SETTINGS = {
    * phone OTP is enough (user 2026-11-14). Staff and partners always need both.
    */
   'customers.require_verified_email': { kind: 'boolean', default: false, globalOnly: true },
+  /**
+   * "Your savings" (decision 2026-11-26): the order-page breakdown, the cart estimate and the account card. Off hides
+   * them everywhere (the API returns `enabled: false`); the ledger keeps being written, so turning it back on shows no
+   * gaps. Wording is edited per language in Admin → Content ("Savings").
+   */
+  'customers.savings_enabled': { kind: 'boolean', default: true, globalOnly: true },
   /** Customer messages (the first one included) allowed on one support request in 24 hours (review B9). */
   'support.customer_messages_per_ticket_per_day': {
     kind: 'int',

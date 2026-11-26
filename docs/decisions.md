@@ -2432,3 +2432,29 @@ Spec 23 § 21f. Rulings made while building (lead brief + security review of the
   header in the tutorial-card and coach-mark tables; the merged-into note sits in the row header; no table
   `<caption>`; the segment chip row has no top padding for focus rings; Latin user content has no `lang` (left
   unset on purpose: it may be Hinglish).
+
+## 2026-11-26 — "Your savings" (personalisation phase 4) as built
+
+- **Missing snapshots added, no back-fill from live data:** order lines had no MRP and orders no waived-delivery
+  figure, so migration 0101 adds `order_items.mrp_paise` and `orders.delivery_waived_paise`, written at checkout.
+  Lines placed earlier are "excluded" (counted and shown), never priced from today's MRP (honesty over a bigger
+  number). A negotiated bulk-quote delivery is an agreed price, not a waiver (0).
+- **Periods count by delivery time:** a refund row carries the order's delivery time, so a refund in a later month
+  reduces the month the saving was counted in; no month is ever negative.
+- **Refunds reverse in proportion** to refund / order total per component and per line, telescoping (floor of the
+  cumulative share), because refunds carry no per-line split.
+- **One idempotent writer** (`syncOrderSavings`) on the delivered transition and the refund `afterProcessed` hook,
+  advisory lock taken last, inside a savepoint: a savings bug never undoes a delivery or a settled refund (alert in
+  `audit_log`). Details: spec 14 "Savings ledger".
+- **Consent:** showing a customer the savings on their own orders is part of the service (like order history), so it
+  needs no personalisation consent; the monthly recap message is promotional and needs the marketing consent per
+  channel (QSV1). The founder line above says "personal data only with the personalisation consent", so this
+  reading is queued as QSV3 (default meanwhile: shown without consent). Analytics carry a rupee band only, never the
+  amount.
+- **Admin control:** `customers.savings_enabled` (default on; off hides every surface, the ledger keeps being
+  written so turning it back on shows no gaps) and content keys `savings.order`, `savings.account` (must keep
+  `{amount}`, else the default shows) and `savings.cart`, en + hi.
+- **Daily price history** starts now (`variant_price_daily`, worker, once per IST day) ahead of the 1 Jan 2027
+  E-Commerce amendment; no strike-through "was ₹X" anywhere in this feature.
+- **Migration number:** 0101 (latest was 0100; another agent may take 0102+). Not applied; apply before deploying
+  code that writes the new columns (checkout inserts `mrp_paise` and `delivery_waived_paise`).

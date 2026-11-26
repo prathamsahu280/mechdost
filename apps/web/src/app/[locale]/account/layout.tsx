@@ -36,6 +36,8 @@ export default async function AccountLayout({ children }: { children: ReactNode 
             'storefront',
             'portal',
             'supportThread',
+            // Overview → "Your savings" card (decision 2026-11-26).
+            'savings',
           ]}
         >
           <AccountFrame>{children}</AccountFrame>

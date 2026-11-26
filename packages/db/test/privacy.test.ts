@@ -135,7 +135,7 @@ describe('data export', () => {
     expect(JSON.stringify(data)).not.toContain('Asha Verma');
     expect(JSON.stringify(data)).not.toContain('+919876500002');
     expect(Object.keys(data)).toEqual(
-      expect.arrayContaining(['profile', 'addresses', 'consents', 'orders', 'tickets']),
+      expect.arrayContaining(['profile', 'addresses', 'consents', 'orders', 'tickets', 'savings']),
     );
     const audit = await db.select().from(s.auditLog).where(eq(s.auditLog.entity, 'data_export'));
     expect(audit.map((a) => a.action)).toEqual(

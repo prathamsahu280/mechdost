@@ -212,3 +212,37 @@ No table changes and nothing written. One index: `service_requests_workshop_crea
 State: `rsa_requests` moves only through `rsaMachine` as a conditional UPDATE on (id, status, version); `rsa_offers` has a partial unique index for one `offered|accepted` offer per request; one live request per customer (partial unique index). Money: integer paise; the advance is snapshotted on the request and asserted by every payment fact; `payments_one_success_per_rsa_uq` and `payments_one_open_per_rsa_uq` allow one captured and one open payment per request and purpose; the table CHECK `rsa_requests_balance_maths` keeps balance = max(total − advance, 0). Lock order: request → offer → payment → refund (a cash mark, a balance capture, a cancel and an accept all take the request row first). Refunds: `refunds_one_target` (exactly one of group, bill, request) and an idempotent key per payment and reason, so a double cancel or a late webhook makes one refund request. History: `rsa_events` and `rsa_bill_lines` are append-only by trigger. Arrival code: encrypted, 5 tries, own row. All seven new tables have RLS on and grants revoked.
 
 - **Sizes (2026-11-24):** `product_variants.version` (migration 0084) is the compare-and-set token for staff edits of a size; `order_items.variant_label` is part of the order snapshot (nullable, written once at placement). Cart, inventory, reservation and routing already reference `variant_id`; nothing else changes.
+
+## Savings ledger and price history (migration 0101_shopping_savings, 2026-11-26; decision "Your savings as built")
+
+- **Snapshots at checkout:** `order_items.mrp_paise` (the printed MRP per unit when the order was placed; null on
+  lines placed before 0101, CHECK ≥ 0) and `orders.delivery_waived_paise` (the delivery charge the free-delivery
+  threshold waived on that part; 0 when charged or for a negotiated bulk-quote delivery; CHECK ≥ 0). Old lines are
+  never back-filled from today's MRP: they count as "excluded".
+- **`customer_savings_entries`** (append-only by `forbid_update_delete`): one `delivered` row per sub-order (partial
+  unique index on `order_id where kind = 'delivered'`) and one `refund` row per processed refund (unique `refund_id`),
+  with `mrp_paise`, `coupon_paise`, `coins_paise`, `delivery_paise`, `total_paise` (CHECK total = sum; CHECK signs:
+  delivered ≥ 0, refund ≤ 0 with `refund_paise` > 0), `counted_lines`, `excluded_lines`, `period_at` (the order's
+  delivery time: a later refund reduces the month the saving was counted in, never a negative month) and `city_id`.
+  Index `(user_id, period_at)` serves "this month / this year". **`customer_savings_lines`**: one row per counted line
+  (`order_item_id` FK, unique per entry), append-only.
+- **Writer:** only `syncOrderSavings(tx, orderId)` (repo `savings.ts`), idempotent and derived from facts already on
+  the order. It takes `pg_advisory_xact_lock(hashtext('customer_savings'), hashtext(order_id))` as its **last** lock
+  (the deliver path holds order → group, the refund path group → payment), then inserts what is missing with ON
+  CONFLICT DO NOTHING. Called by `transitionOrder` after `settleGroupPayment` when a part becomes `delivered`, and at
+  the end of the refund `afterProcessed` hook (both refund modes, webhook replays, settle-by-hand), each inside a
+  savepoint (`syncOrderSavingsSafely`): a savings failure writes an `audit_log` alert (`savings.alert.not_written`)
+  and never undoes a delivery or a settled refund; the next sync repairs it. A part delivered before 0101 has no row
+  and shows nothing (never an "estimate" on a delivered order) until QSV2 is decided.
+- **Refund maths:** a refund reverses every component and line in proportion to refund / order total, telescoping:
+  after refunds R1..Rn the reversal is floor(x · ΣR / T) per component and per line, so any split of partial refunds
+  reverses at most what was saved, and refunds adding up to the total reverse exactly all of it (property tests in
+  `packages/shared/test/savings.test.ts`).
+- **`variant_price_daily`** (never updated: an UPDATE trigger refuses it; PK `(day, variant_id, city_id)`; rows go
+  with their pack by FK cascade, so removing demo packs still works): per live pack and live city, the printed
+  MRP and the lowest customer price among live listings (admin city price, else the shop's), written by the worker
+  once per IST day (hourly check, ON CONFLICT DO NOTHING). The record for any future "lowest price in N days" claim.
+- RLS on, grants revoked, deny-all for all three tables (`rls-inventory.ts`); the privacy export includes the
+  person's savings rows. PGlite is one connection: the concurrency test proves idempotency under interleaving, not
+  real contention; run `packages/db/test/savings.test.ts` with `TEST_DATABASE_URL` on real Postgres before relying on
+  the advisory lock under load.

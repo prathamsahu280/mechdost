@@ -21,13 +21,19 @@ import { DEFAULT_PIN, useCartPricing } from '@/lib/use-cart-pricing';
 import { CATEGORY_EMOJI, UI_EMOJI } from '@/lib/emoji';
 import { formatPrice } from '@/lib/format';
 import { track } from '@/lib/analytics';
+import { savingsBand } from '@mechdost/shared/savings-band';
 import { ProductVisualClient } from './product-visual-client';
 import { productNameFor } from '@/demo/i18n/localize';
 
 const prefix = (locale: string) => (locale === 'hi' ? '/hi' : '');
 
 /** Cart (spec 03) on the demo store: quantities 1–99, remove, live totals, a delivery-charges hint, one primary action. */
-export function CartView() {
+export function CartView({
+  savings = null,
+}: {
+  /** "Your savings" estimate label and note, resolved on the server (admin wording); null = not shown. */
+  savings?: { label: string; note: string } | null;
+} = {}) {
   const t = useTranslations('cart');
   const c = useTranslations('catalogue');
   const q = useTranslations('quote');
@@ -42,6 +48,18 @@ export function CartView() {
   const checkoutT = useTranslations('checkout');
   const seller = useIsSeller();
   const base = prefix(locale);
+  const saving = savings ? pricing.savings.totalPaise : 0;
+  const savingExcluded = pricing.savings.excludedLines;
+  // One view event per estimate shown (band, never the amount; decision 2026-11-26).
+  useEffect(() => {
+    if (saving <= 0) return;
+    track('savings_viewed', {
+      surface: 'cart',
+      state: 'estimate',
+      band: savingsBand(saving),
+      excluded: Math.min(savingExcluded, 99),
+    });
+  }, [saving, savingExcluded]);
 
   // Demo data: a line saved by slug only (before sizes, user 2026-11-24) becomes the product's first size.
   useEffect(() => {
@@ -200,7 +218,14 @@ export function CartView() {
             <dt className="font-bold text-ink">{t('total')}</dt>
             <dd className="font-heading text-xl font-extrabold text-ink">{formatPrice(totalPaise)}</dd>
           </div>
+          {savings && saving > 0 ? (
+            <div className="flex justify-between gap-3 rounded-tile bg-success-bg px-3 py-2">
+              <dt className="text-ink">{savings.label}</dt>
+              <dd className="font-bold text-success tabular-nums">{formatPrice(saving)}</dd>
+            </div>
+          ) : null}
         </dl>
+        {savings && saving > 0 ? <p className="mt-1.5 text-xs text-muted">{savings.note}</p> : null}
         {deliveryPaise > 0 ? <p className="mt-3 text-xs text-muted">{t('freeDeliveryHint')}</p> : null}
         {seller ? (
           // Shop accounts never buy (user 2026-11-22): the note instead of checkout; "Continue shopping" stays below.

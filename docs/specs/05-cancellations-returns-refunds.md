@@ -175,3 +175,9 @@ Refund and cancel copy says "if we can't fulfil your order you pay nothing / are
 ## Roadside refunds (2026-11-24, spec 22)
 
 A refund can now belong to a roadside request (`refunds.rsa_request_id`; exactly one of checkout, service bill or roadside request). New sources and reason codes: `rsa_cancelled` (admin cancelled a request nobody accepted: the advance), `rsa_overpaid` (the total came in under the advance: the difference); a capture after the request closed uses `payment_after_close` or `duplicate_payment`. The system raises the request itself, once per payment and reason; it still waits for finance approval (decisions 2026-11-15; user ruling 2026-11-24, Q225: roadside keeps the approval step). The finance queue, the overdue alert and the city scope read the request's city. The customer sees the refund on the roadside tracking page and gets the bell notice `rsa.refunded` when it is processed; the Account → Refunds page does not list roadside refunds yet.
+
+## Refunds and "Your savings" (2026-11-26)
+
+A processed refund on a delivered order (either mode, webhook replay safe) appends one reversal row to the savings
+ledger, in proportion to refund / order total per component and per line (spec 14 "Savings ledger"). The order page
+then says "A refund on this order reduced the saving." Cancelled or rejected orders never had savings.

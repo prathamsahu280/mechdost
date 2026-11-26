@@ -26,5 +26,10 @@ export function priceCart(lines: readonly CartLine[]) {
   const subtotalPaise = priced.reduce((s, l) => s + l.linePaise, 0);
   // Admin-set fee and threshold; placed orders keep the values snapshotted at placement.
   const deliveryPaise = deliveryFeePaise(subtotalPaise, siteSettings());
-  return { priced, subtotalPaise, deliveryPaise, totalPaise: subtotalPaise + deliveryPaise };
+  // "Your savings" estimate (decision 2026-11-26): the printed-MRP saving of the lines that have an MRP.
+  const savingsPaise = priced.reduce((s, l) => {
+    const mrp = l.product.sizes?.find((x) => x.sku === l.sku)?.mrpPaise ?? l.product.mrpPaise;
+    return s + (mrp && mrp > l.unitPaise ? (mrp - l.unitPaise) * l.qty : 0);
+  }, 0);
+  return { priced, subtotalPaise, deliveryPaise, totalPaise: subtotalPaise + deliveryPaise, savingsPaise };
 }

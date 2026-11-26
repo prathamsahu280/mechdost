@@ -27,6 +27,7 @@ import {
   expireDueCoins,
   notifyServedWaitlist,
   recomputeCopurchase,
+  recordDailyPrices,
   buildUstaadZoneCounts,
   expireUstaadJobs,
   purgeUstaadRemovedArchive,
@@ -525,6 +526,23 @@ const copurchaseTimer = setInterval(() => {
   if (istHour === 3) recomputeCopurchaseNow();
 }, 3_600_000);
 copurchaseTimer.unref();
+// Daily price history (decision 2026-11-26 "Your savings"; Consumer Protection E-Commerce amendment from 1 Jan 2027):
+// each live pack's printed MRP and lowest customer price per city, once per IST day. Checked hourly and at start; the
+// insert is ON CONFLICT DO NOTHING, so a repeat (or a second worker) writes nothing and the day's first reading stays.
+const recordPricesNow = () => {
+  const day = new Date(Date.now() + 5.5 * 3_600_000).toISOString().slice(0, 10);
+  void recordDailyPrices(db, day)
+    .then((rows) => {
+      if (rows > 0) log('info', 'price_history_recorded', { day, rows });
+    })
+    .catch((err: unknown) => {
+      log('error', 'price_history_failed', safeError(err));
+    });
+};
+const priceStart = setTimeout(recordPricesNow, 90_000);
+priceStart.unref();
+const priceTimer = setInterval(recordPricesNow, 3_600_000);
+priceTimer.unref();
 // Ustaad Network (spec 23 § 8 worker jobs, plan workstream E):
 // a) `ustaad_zone_counts`: zone counts rebuilt nightly (02:00 IST, checked hourly) under an advisory lock, so two
 //    workers never overlap; the member API bands them (SR-31). Refresh nightly only (no on-demand rebuild).
@@ -732,6 +750,8 @@ function shutdown(signal: string) {
   clearInterval(retentionTimer);
   clearTimeout(copurchaseStart);
   clearInterval(copurchaseTimer);
+  clearInterval(priceTimer);
+  clearTimeout(priceStart);
   clearInterval(exportTimer);
   clearInterval(waitlistTimer);
   clearInterval(ustaadZoneTimer);

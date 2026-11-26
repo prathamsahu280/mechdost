@@ -10,6 +10,7 @@ import { recordShopCouponDiscount, releaseCouponIfOrderDead } from './coupons';
 import { queueOrderStatusEmail } from './email-events';
 import { resolveOrderNotices } from './notice-events';
 import { queueOrderWhatsApp, type OrderWhatsAppEvent } from './order-notifications';
+import { syncOrderSavingsSafely } from './savings';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Tx = PgDatabase<PgQueryResultHKT, any, any>;
@@ -108,6 +109,9 @@ export async function transitionOrder(
     await recordShopCouponDiscount(tx, row.id);
   }
   if (orderMachine.isTerminal(args.to)) await settleGroupPayment(tx, row.groupId);
+  // "Your savings" (decision 2026-11-26): the delivered row, last (its advisory lock comes after the group lock), in a
+  // savepoint so a savings failure never undoes the delivery.
+  if (args.to === 'delivered') await syncOrderSavingsSafely(tx, row.id);
   return row;
 }
 

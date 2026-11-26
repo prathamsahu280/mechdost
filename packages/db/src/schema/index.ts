@@ -24,3 +24,4 @@ export * from './ustaad-graph';
 export * from './ustaad-local';
 export * from './ustaad-jobs';
 export * from './ustaad-moderation';
+export * from './savings';

@@ -40,6 +40,7 @@ import { releaseCouponIfOrderRefunded } from './coupons';
 import { decodeCursor, encodeCursor, pageSize } from './cursor';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
+import { syncOrderSavingsSafely } from './savings';
 import { issueCreditNoteForRefund } from './credit-notes';
 import { queueRefundEmail } from './email-notifications';
 import { paiseText, queueRsaEmail, queueRsaWhatsApp } from './roadside-messages';
@@ -1294,6 +1295,9 @@ async function afterProcessed(
     await cancelPendingOrderRewards(tx, { orderId: r.orderId, reasonCode: 'order_refunded' });
   // 2026-11-16: when every live part of the order is refunded in full, the coupon's use goes back (once, idempotent).
   await releaseCouponIfOrderRefunded(tx, r.orderId);
+  // "Your savings" (decision 2026-11-26): the proportional reversal, last (advisory lock after group and payment), in a
+  // savepoint; a delivered order only, once per refund (unique index), whatever the mode or a webhook replay.
+  await syncOrderSavingsSafely(tx, r.orderId);
 }
 
 /**

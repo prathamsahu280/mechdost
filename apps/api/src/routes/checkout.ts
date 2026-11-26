@@ -3,12 +3,14 @@ import {
   CART_MAX_LINES,
   cancelMyOrder,
   getMyOrder,
+  globalFlagSetting,
   LINE_MAX_QTY,
   listMyOrders,
   placeOrder,
   quoteCheckout,
 } from '@mechdost/db/repo';
 import { CustomerRefundDto } from '@mechdost/shared/refunds-api';
+import { SavingsEstimateDto } from '@mechdost/shared/savings-api';
 import { PERSON_CANCEL_REASONS } from '@mechdost/shared/state';
 import type { SessionCache } from '../auth/session-cache';
 import { ensureRazorpayOrder } from '../payments/service';
@@ -100,6 +102,8 @@ const Quote = z
       reason: z.enum(['over_cap', 'pincode']).nullable(),
       capPaise: z.number().int(),
     }),
+    /** "Your savings" estimate (MRP saving + waived delivery; coupon and Coins not in it); null when switched off. */
+    savingsEstimate: SavingsEstimateDto.nullable(),
   })
   .openapi('CheckoutQuote');
 
@@ -350,7 +354,10 @@ export function checkoutRoutes(deps: AppDeps, cache: SessionCache) {
   return app
     .openapi(quote, async (c) => {
       const body = c.req.valid('json');
-      return c.json(await quoteCheckout(deps.db, body), 200);
+      const q = await quoteCheckout(deps.db, body);
+      // The admin switch hides the estimate (decision 2026-11-26); the quote itself is unchanged.
+      const savingsOn = await globalFlagSetting(deps.db, 'customers.savings_enabled');
+      return c.json({ ...q, savingsEstimate: savingsOn ? q.savingsEstimate : null }, 200);
     })
     .openapi(place, async (c) => {
       const body = c.req.valid('json');

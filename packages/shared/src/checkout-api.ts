@@ -4,6 +4,7 @@
  * screens (dynamic imports), never by the demo pages.
  */
 import { z } from 'zod';
+import { SavingsEstimateDto } from './savings-api';
 import { CustomerRefundDto } from './refunds-api';
 
 export const CheckoutQuoteDto = z.object({
@@ -46,6 +47,8 @@ export const CheckoutQuoteDto = z.object({
     reason: z.enum(['over_cap', 'pincode']).nullable(),
     capPaise: z.number().int(),
   }),
+  /** "Your savings" estimate (decision 2026-11-26); null when switched off, absent from an older API. */
+  savingsEstimate: SavingsEstimateDto.nullable().optional(),
 });
 export type CheckoutQuote = z.infer<typeof CheckoutQuoteDto>;
 

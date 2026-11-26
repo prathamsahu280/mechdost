@@ -497,3 +497,15 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
 - L-FX4 · 2026-11-26 · tests/stale · Three of five "pre-existing" e2e failures were tests left behind by copy rulings
   (2026-11-22 customer copy, Q196) and one was a real regression from "light by default" → for each failure run
   `git log -S '<asserted literal>'` first; a ruling that changes UI must update the e2e that asserted the old UI. · active
+- L-SAV1 · 2026-11-26 · data/snapshots · The savings design assumed "printed-MRP snapshot" existed; `order_items` had
+  no MRP and `orders` no waived-delivery figure (only live `product_variants.mrp_paise`). → Before building a figure
+  "from the order snapshot", grep the order tables for every input; add the snapshot column in the same migration and
+  treat older rows as "not counted" rather than back-filling from live data (honesty rule).
+- L-SAV2 · 2026-11-26 · locks · A ledger written from both the delivered transition (order → group locks) and the
+  refund hook (group → payment locks) cannot lock the order row without inverting the lock order. → Use a
+  transaction-scoped advisory lock keyed on the order, taken LAST in both paths, inside a savepoint so the side ledger
+  can never roll back the money or the delivery.
+- L-SAV3 · 2026-11-26 · ui/a11y · Second time a card swapped its whole section for a skeleton on "Retry" and dropped
+  focus (G2 had it too). → Promote: a retry keeps the button mounted (aria-busy on the region) and focuses the heading
+  after; never return a bare skeleton after the first load. Also: an `md` table cell wider than the column makes
+  prettier realign the whole questions table; keep row cells short and put long drafts in a section below.

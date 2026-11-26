@@ -34,6 +34,11 @@ export interface CartPricing {
   onlineTotalPaise: number;
   /** Real data mode: the API quote behind the numbers (COD eligibility, groups, line issues). */
   quote: CheckoutQuote | null;
+  /**
+   * "Your savings" estimate vs the maker's printed MRP (decision 2026-11-26): computed by the server in real data mode
+   * (0 when the admin switched it off), from the demo catalogue's MRP in the demo. Final only after delivery.
+   */
+  savings: { totalPaise: number; excludedLines: number };
   /** Real data mode: waiting for the first quote, or the API could not price the cart (error code). */
   status: 'ready' | 'loading' | 'error';
   error: string | null;
@@ -70,6 +75,7 @@ function useDemoCartPricing(lines: readonly CartLine[]): CartPricing {
       totalPaise: demo.totalPaise,
       codFeePaise: 0,
       onlineTotalPaise: demo.totalPaise,
+      savings: { totalPaise: demo.savingsPaise, excludedLines: 0 },
       quote: null,
       status: 'ready' as const,
       error: null,
@@ -147,6 +153,10 @@ function useApiCartPricing(lines: readonly CartLine[], pincode: string, locale: 
     totalPaise: quote?.totalPaise ?? 0,
     codFeePaise: quote?.codFeePaise ?? 0,
     onlineTotalPaise: quote?.onlineTotalPaise ?? 0,
+    savings: {
+      totalPaise: quote?.savingsEstimate?.totalPaise ?? 0,
+      excludedLines: quote?.savingsEstimate?.excludedLines ?? 0,
+    },
     // Only a quote for exactly this cart and PIN may be used to place an order.
     quote: current,
     status: apiLines.length === 0 ? 'ready' : fresh && state.error ? 'error' : current ? 'ready' : 'loading',

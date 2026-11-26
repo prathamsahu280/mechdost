@@ -22,6 +22,11 @@ const WriteReviewApi = lazy(() =>
   import('../reviews/write-review-api').then((m) => ({ default: m.WriteReviewApi })),
 );
 
+/** "Your savings" (decision 2026-11-26): its own chunk, fetched once the order is shown. */
+const OrderSavingsApi = lazy(() =>
+  import('../savings/order-savings').then((m) => ({ default: m.OrderSavingsApi })),
+);
+
 /** A stable ref callback: runs on mount only, so the 30 s refresh does not pull the page back to this part. */
 const scrollIntoViewOnce = (el: HTMLElement | null) => {
   el?.scrollIntoView({ block: 'start', behavior: 'smooth' });
@@ -34,7 +39,14 @@ type Load = { kind: 'loading' } | { kind: 'error'; code: string } | { kind: 'ok'
  * every part (one per shop) with its seller, timeline, items, the delivery code while out for delivery, a rejection
  * message, and "cancel" while the API allows it. Refreshes every 30 seconds while open.
  */
-export function OrderViewApi({ code }: { code: string }) {
+export function OrderViewApi({
+  code,
+  savingsOverride = null,
+}: {
+  code: string;
+  /** The admin's published "Your savings" order line for this language (null = the locale-file default). */
+  savingsOverride?: string | null;
+}) {
   const t = useTranslations('order');
   const ts = useTranslations('supportThread');
   const locale = useLocale();
@@ -134,6 +146,13 @@ export function OrderViewApi({ code }: { code: string }) {
           </p>
         ) : null}
       </section>
+      <Suspense fallback={null}>
+        <OrderSavingsApi
+          code={order.code}
+          version={parts.map((p) => p.status).join(',')}
+          override={savingsOverride}
+        />
+      </Suspense>
       {parts.every((p) => p.status === 'delivered' || isClosedStatus(p.status)) ? (
         <OrderAgain code={order.code} source="page" />
       ) : null}

@@ -256,6 +256,14 @@ async function buildExport(tx: Tx, userId: string, now: Date): Promise<Record<st
       sql`select delta, kind, reason_code, created_at from coin_ledger where user_id = ${uid}
         order by created_at, id`,
     ),
+    // "Your savings" ledger (decision 2026-11-26): the person's own rows, amounts in paise.
+    savings: await section(
+      tx,
+      sql`select e.kind, o.code as order_code, e.mrp_paise, e.coupon_paise, e.coins_paise, e.delivery_paise,
+          e.total_paise, e.excluded_lines, e.period_at, e.created_at
+        from customer_savings_entries e join orders o on o.id = e.order_id
+        where e.user_id = ${uid} order by e.created_at, e.id`,
+    ),
   };
   const [profile] = rowsOf<unknown>(
     await tx.execute(
