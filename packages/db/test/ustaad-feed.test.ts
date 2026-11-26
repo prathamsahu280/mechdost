@@ -263,6 +263,22 @@ describe('create post', () => {
     });
   });
 
+  it('a profile photo (or any media already used elsewhere) cannot be posted', async () => {
+    const photo = await media(mohan.memberId, 'image');
+    await db
+      .update(s.ustaadMembers)
+      .set({ photoMediaId: photo })
+      .where(eq(s.ustaadMembers.id, mohan.memberId));
+    await expect(
+      post(mohan, { kind: 'photo', body: undefined, media: [{ mediaId: photo }] }),
+    ).rejects.toMatchObject({
+      code: 'USTAAD_MEDIA_INVALID',
+    });
+    await expect(createUstaadStory(t(), mohan, { mediaId: photo, idemKey: key() })).rejects.toMatchObject({
+      code: 'USTAAD_MEDIA_INVALID',
+    });
+  });
+
   it('voice = one audio; video within posts.video_max_s (+ a poster); document = one PDF; mixed = photo + voice', async () => {
     const a = await media(ramesh.memberId, 'audio');
     expect((await post(ramesh, { kind: 'voice', body: undefined, media: [{ mediaId: a }] })).status).toBe(
@@ -373,13 +389,20 @@ describe('create post', () => {
     expect((await ustaadPostDetail(t(), ramesh, p.id)).status).toBe('held');
   });
 
-  it('the original words are screened too (a clean body cannot carry an abusive "see original")', async () => {
+  it('posts: the original words are screened too (a clean body cannot carry an abusive "see original")', async () => {
     const p = await post(ramesh, {
       body: 'Clean words',
       bodyOriginal: 'PAYFEE to 98xxxx',
       correction: 'auto',
     });
     expect(p.status).toBe('held');
+    // Without a correction the original is never stored, even if a caller skips the DTO.
+    const raw = await post(ramesh, { body: 'Clean', bodyOriginal: 'ignored', correction: 'none' });
+    const [row] = await db.select().from(s.ustaadPosts).where(eq(s.ustaadPosts.id, raw.id));
+    expect(row?.bodyOriginal).toBeNull();
+  });
+
+  it('comments: the original words are screened too and kept only with a correction', async () => {
     const target = await post(ramesh);
     const c = await commentOnUstaadPost(t(), suresh, target.id, {
       body: 'Clean reply',
@@ -388,9 +411,13 @@ describe('create post', () => {
       idemKey: key(),
     });
     expect(c.status).toBe('held');
-    // Without a correction the original is never stored, even if a caller skips the DTO.
-    const raw = await post(ramesh, { body: 'Clean', bodyOriginal: 'ignored', correction: 'none' });
-    const [row] = await db.select().from(s.ustaadPosts).where(eq(s.ustaadPosts.id, raw.id));
+    const plain = await commentOnUstaadPost(t(), suresh, target.id, {
+      body: 'Clean',
+      bodyOriginal: 'ignored',
+      correction: 'none',
+      idemKey: key(),
+    });
+    const [row] = await db.select().from(s.ustaadComments).where(eq(s.ustaadComments.id, plain.id));
     expect(row?.bodyOriginal).toBeNull();
   });
 

@@ -350,3 +350,7 @@ promotions from Network settings → Promotions.
 - **Q-U-D1 (2026-11-26, Ustaad feed):** must every post carry at least one hashtag? The spec says "≤ 5, at least 1
   curated". Members can only pick curated tags, so today a post may have none; the composer suggests one from the
   vehicle. **Default meanwhile:** tags optional (a mandatory tag would also block posting until the admin seeds tags).
+
+- **Q-U-D2 (2026-11-26, Ustaad share links, Input):** set `USTAAD_SHARE_SECRET` on the server (`openssl rand -hex 24`,
+  `docs/runbooks/deploy.md`). **Default meanwhile:** unset, so "Share on WhatsApp" answers "not available right now"
+  (503); everything else in the feed works.

@@ -145,6 +145,9 @@ export async function ownUnusedMedia(
       or exists (select 1 from ${ustaadQuestions} where ${ustaadQuestions.voiceMediaId} in (${list}))
       or exists (select 1 from ${ustaadAnswers} where ${ustaadAnswers.voiceMediaId} in (${list}))
       or exists (select 1 from ${ustaadMessages} where ${ustaadMessages.mediaId} in (${list}))
+      or exists (select 1 from ustaad_members mb where mb.photo_media_id in (${list}))
+      or exists (select 1 from ustaad_locations lo where lo.signboard_media_id in (${list}))
+      or exists (select 1 from ustaad_job_applications ja where ja.voice_intro_media_id in (${list}))
     ) as used`);
   const used = rowsOf<{ used: unknown }>(res)[0];
   if (used?.used === true || used?.used === 't')
