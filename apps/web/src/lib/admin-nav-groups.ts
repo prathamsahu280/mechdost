@@ -25,7 +25,7 @@ export const ADMIN_NAV_GROUPS: readonly AdminNavGroup[] = [
   { id: 'catalogue', heading: 'catalogue', sections: ['catalogue', 'coupons', 'coins', 'reviews'] },
   { id: 'people', heading: 'people', sections: ['customers', 'partners', 'applications', 'staff'] },
   { id: 'content', heading: 'content', sections: ['content', 'layout', 'notifications'] },
-  { id: 'system', heading: 'system', sections: ['settings', 'audit', 'exports', 'errors'] },
+  { id: 'system', heading: 'system', sections: ['settings', 'audit', 'exports', 'errors', 'usage'] },
   // The mechanics-only network (spec 23): settings now; the community manager console (G2) joins this group.
   { id: 'ustaad', heading: 'ustaad', sections: ['ustaad'] },
 ];

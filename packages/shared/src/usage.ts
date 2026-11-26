@@ -245,3 +245,12 @@ export const UsageView = z.object({
   canEdit: z.boolean(),
 });
 export type UsageViewDto = z.infer<typeof UsageView>;
+
+/** `POST /v1/admin/usage/check`: values stored, new alerts, and the page again. */
+export const UsageCheckResult = z.object({
+  stored: z.number().int(),
+  alerts: z.number().int(),
+  usage: UsageView,
+});
+/** A versioned save (limit or alert settings). */
+export const UsageSaved = z.object({ version: z.number().int() });

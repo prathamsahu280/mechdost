@@ -66,6 +66,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             'ustaad.adminAccess',
             // G2: the community manager console (queue, holds, appeals, verify, members, legal, names, own actions).
             'ustaad.console',
+            // Admin → Usage & limits (founder 2026-11-26).
+            'adminUsage',
           ]}
         >
           <AdminFrame>{children}</AdminFrame>

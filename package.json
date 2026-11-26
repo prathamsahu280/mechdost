@@ -20,6 +20,7 @@
     "db:grant-role": "pnpm --filter @mechdost/db grant-role",
     "db:ustaad:map-mechanic-applications": "pnpm --filter @mechdost/db ustaad:map-mechanic-applications",
     "wa:templates": "pnpm --filter @mechdost/api wa:templates",
+    "usage:check": "pnpm --filter @mechdost/api usage:check",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "pnpm format:check && turbo run typecheck lint test --concurrency=1",

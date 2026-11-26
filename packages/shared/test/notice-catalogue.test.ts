@@ -30,6 +30,8 @@ const SAMPLE = {
   reportCode: 'UR-RPR-2026-9F2KQA',
   badge: 'Battery expert',
   count: '12',
+  metric: 'Cloudflare R2 (Ustaad media): Storage',
+  percent: '72',
 };
 
 describe('notice catalogue', () => {

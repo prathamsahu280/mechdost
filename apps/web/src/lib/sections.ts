@@ -62,6 +62,8 @@ export const ALL_ADMIN_SECTIONS = [
   'exports',
   // Latest Sentry issues of the website and the API (decision 2026-11-14); real sign-in only (it reads the API).
   'errors',
+  // Usage and free-plan limits of R2, Supabase, the server and email (founder 2026-11-26); real sign-in only.
+  'usage',
   // Ustaad Network settings and tables (spec 23 § 15, task G1): real sign-in only (it reads the API).
   'ustaad',
 ] as const;
@@ -83,6 +85,7 @@ const reviewsShown = BROWSER_ONLY_FEATURES || AUTH_MODE === 'firebase';
 const REAL_SIGN_IN_ONLY: readonly string[] = [
   'analytics',
   'errors',
+  'usage',
   'refunds',
   'staff',
   'audit',

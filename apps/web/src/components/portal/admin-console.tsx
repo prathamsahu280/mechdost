@@ -15,6 +15,7 @@ import {
   ChartColumn,
   Coins,
   FileDown,
+  Gauge,
   Handshake,
   HardHat,
   Headset,
@@ -112,6 +113,11 @@ const QuoteDeskApi = dynamic(() => import('./admin-quotes-api').then((m) => m.Qu
 
 /** Real sign-in: Admin → Errors (Sentry issues through the API, decision 2026-11-14); demo builds never load it. */
 const AdminErrorsApi = dynamic(() => import('./admin-errors-api').then((m) => m.AdminErrorsApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
+});
+/** Real sign-in: Admin → Usage & limits (founder 2026-11-26); demo builds never load it. */
+const AdminUsageApi = dynamic(() => import('./admin-usage-api').then((m) => m.AdminUsageApi), {
   ssr: false,
   loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
 });
@@ -221,6 +227,7 @@ const SECTION_ICON: Record<AdminSection, LucideIcon> = {
   audit: ScrollText,
   exports: FileDown,
   errors: TriangleAlert,
+  usage: Gauge,
   ustaad: HardHat,
 };
 
@@ -286,6 +293,7 @@ export function AdminConsole({
       {section === 'audit' && AUTH_MODE === 'firebase' ? <AdminAuditApi /> : null}
       {section === 'exports' && AUTH_MODE === 'firebase' ? <AdminExportsApi /> : null}
       {section === 'errors' && AUTH_MODE === 'firebase' ? <AdminErrorsApi /> : null}
+      {section === 'usage' && AUTH_MODE === 'firebase' ? <AdminUsageApi /> : null}
       {section === 'ustaad' && AUTH_MODE === 'firebase' ? <AdminUstaadApi /> : null}
     </div>
   );

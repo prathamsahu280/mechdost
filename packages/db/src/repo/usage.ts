@@ -84,7 +84,7 @@ async function readConfig(tx: Tx): Promise<AlertConfig> {
     : { ...USAGE_DEFAULT_THRESHOLDS, recipients: [], emailLocale: 'en', version: 1 };
 }
 
-async function readLimits(tx: Tx): Promise<Map<UsageMetricCode, LimitRow>> {
+export async function readUsageLimitOverrides(tx: Tx): Promise<Map<UsageMetricCode, LimitRow>> {
   const rows = await tx.select().from(usageLimits);
   const map = new Map<UsageMetricCode, LimitRow>();
   for (const r of rows)
@@ -213,7 +213,7 @@ export async function recordUsageRun(
     if (!runRow) throw new Error('usage run not stored');
     const runId = runRow.id;
     const config = await readConfig(tx);
-    const limits = await readLimits(tx);
+    const limits = await readUsageLimitOverrides(tx);
     const valid = input.measurements.filter(
       (m) => Number.isFinite(m.value) && m.value >= 0 && isUsageMetricCode(m.metric),
     );
@@ -410,7 +410,7 @@ export async function usageView(db: Tx, input: { canEdit: boolean; now?: Date })
     .orderBy(sql`${usageRuns.finishedAt} desc`)
     .limit(1);
   const config = await readConfig(db);
-  const limits = await readLimits(db);
+  const limits = await readUsageLimitOverrides(db);
   const latestBy = new Map(latest.map((r) => [r.metric_code, r]));
   const trendBy = new Map<string, { day: string; value: number }[]>();
   for (const d of daily) {
