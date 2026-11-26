@@ -3340,7 +3340,9 @@
     "api_set_delivery_max_load_goods_vehicle_kg": "मालवाहक गाड़ी पर अधिकतम वज़न (kg)",
     "api_set_delivery_rank_rating_weight_pct": "एजेंट सुझाते समय रेटिंग का महत्व (%)",
     "api_set_delivery_low_rating_alert_x10": "इस औसत से नीचे स्टाफ़ को सूचना (स्टार का दसवाँ भाग, 35 = 3.5)",
-    "api_set_delivery_low_rating_min_count": "कम रेटिंग की सूचना से पहले ज़रूरी रेटिंग"
+    "api_set_delivery_low_rating_min_count": "कम रेटिंग की सूचना से पहले ज़रूरी रेटिंग",
+    "notify_ev_delivery_offer": "एजेंट के लिए नया डिलीवरी काम",
+    "notify_ev_delivery_agent_invite": "डिलीवरी एजेंट बनने का न्योता"
   },
   "shopGiveUp": {
     "action": "यह ऑर्डर पूरा नहीं कर सकते",
@@ -4059,7 +4061,9 @@
     "tpl_rsa_bill_ready": "रोडसाइड बिल तैयार",
     "tpl_rsa_completed": "रोडसाइड अनुरोध पूरा",
     "tpl_rsa_cancelled": "रोडसाइड अनुरोध रद्द",
-    "tpl_rsa_refund_processed": "रोडसाइड रिफंड पूरा"
+    "tpl_rsa_refund_processed": "रोडसाइड रिफंड पूरा",
+    "tpl_delivery_agent_invite": "डिलीवरी एजेंट का न्योता",
+    "tpl_delivery_offer": "एजेंट के लिए नया डिलीवरी काम"
   },
   "reco": {
     "title": "इसके साथ अच्छा चलता है",

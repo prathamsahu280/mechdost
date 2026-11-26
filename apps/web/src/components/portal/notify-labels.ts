@@ -17,6 +17,8 @@ export const EVENT_LABEL = {
   'rsa.bill_ready': 'notify_ev_rsa_bill_ready',
   'rsa.refunded': 'notify_ev_rsa_refunded',
   'rsa.offer': 'notify_ev_rsa_offer',
+  'delivery.offer': 'notify_ev_delivery_offer',
+  'delivery.agent_invite': 'notify_ev_delivery_agent_invite',
 } as const satisfies Record<WhatsAppTemplateKey, string>;
 
 export const PROBLEM_LABEL = {
@@ -36,4 +38,7 @@ export const SAMPLES: Record<string, string> = {
   quoteCode: 'QT-RPR-2026-6K2M9P',
   rsaCode: 'RSA-RPR-2026-6M4QZB',
   acceptMinutes: '15',
+  minutes: '15',
+  name: 'Ravi',
+  hours: '72',
 };

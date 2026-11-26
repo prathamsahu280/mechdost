@@ -3340,7 +3340,9 @@
     "api_set_delivery_max_load_goods_vehicle_kg": "Most a goods vehicle carries (kg)",
     "api_set_delivery_rank_rating_weight_pct": "Weight of ratings when suggesting agents (%)",
     "api_set_delivery_low_rating_alert_x10": "Alert staff below this average (tenths of a star, 35 = 3.5)",
-    "api_set_delivery_low_rating_min_count": "Ratings needed before a low-rating alert"
+    "api_set_delivery_low_rating_min_count": "Ratings needed before a low-rating alert",
+    "notify_ev_delivery_offer": "New delivery job for an agent",
+    "notify_ev_delivery_agent_invite": "Invitation to become a delivery agent"
   },
   "shopGiveUp": {
     "action": "Can't fulfil this order",
@@ -4059,7 +4061,9 @@
     "tpl_rsa_bill_ready": "Roadside bill ready",
     "tpl_rsa_completed": "Roadside request complete",
     "tpl_rsa_cancelled": "Roadside request cancelled",
-    "tpl_rsa_refund_processed": "Roadside refund processed"
+    "tpl_rsa_refund_processed": "Roadside refund processed",
+    "tpl_delivery_agent_invite": "Delivery agent invitation",
+    "tpl_delivery_offer": "New delivery job for an agent"
   },
   "reco": {
     "title": "Goes well with this",
