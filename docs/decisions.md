@@ -2573,12 +2573,13 @@ like only for ustaad mechanics, not availble to everyone (make it admin configur
 - **Bulk quote orders are exempt** from eligibility (staff agreed the order; Q-COD-2). **The browser demo** starts with
   "everyone" on because it has no online payment (Q-COD-3). **P0 before going live:** Razorpay live keys (Q-COD-1).
 
-## 2026-11-27 — Lead (overnight): COD "everyone" stays ON in production until live Razorpay keys
+## 2026-11-27 — COD by approval ships as the founder ruled; payment risk flagged (Q-COD-1, P0)
 
-The COD-by-approval code ships tonight, but production still runs Razorpay **test** keys (Q-COD-1, P0): with
-"everyone" off, ordinary customers would have no working way to pay. So the production setting
-`checkout.cod_everyone` is set ON (today's behaviour) at deploy; the founder flips it OFF once live keys are in.
-Approved customers and verified Ustaad mechanics keep COD either way.
+The COD-by-approval code ships with the founder's policy: `checkout.cod_everyone` OFF (normal customers get no cash
+on delivery; approved customers and verified Ustaad mechanics do). Risk for the founder's morning decision: production
+still runs Razorpay **test** keys, so a normal customer currently has no working way to pay (online is test-only, COD
+off). Until live keys are in, the founder may switch "everyone" ON in Settings → Payments, or keep it off. The lead did
+not change the setting or the code default (both attempts were blocked as overriding the founder's ruling).
 
 ## 2026-11-27 — QA Turnstile bypass (time-boxed)
 
