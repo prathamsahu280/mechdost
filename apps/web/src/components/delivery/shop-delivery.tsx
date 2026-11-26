@@ -67,10 +67,7 @@ export function ShopDeliveryPanel({
     setBusy(true);
     const res = await c.markReady(orderCode, orderVersion);
     setBusy(false);
-    track('click', {
-      id: res.ok ? 'shop_ready_for_pickup' : 'shop_ready_for_pickup_failed',
-      path: window.location.pathname,
-    });
+    if (res.ok) track('delivery_shop_ready_marked', {});
     if (res.ok) say(t('readyFlash'));
     else say(errorText(res.code), 'error');
     onChanged();
@@ -173,10 +170,10 @@ function ReturnEntry({
           label={t('returnCodeLabel')}
           hint={t('returnCodeHint')}
           submitLabel={t('returnConfirm')}
-          kind="shop_return_code"
           locked={locked}
           onCode={async (code) => {
             const res = await client.returnReceived(orderCode, code);
+            track('delivery_shop_return_confirmed', { ok: res.ok });
             if (res.ok) {
               onChanged();
               return null;
@@ -224,7 +221,7 @@ function SwitchCard({
     setBusy(true);
     const res = await client.confirmSwitch(orderCode, request.id, request.version);
     setBusy(false);
-    track('click', { id: 'shop_switch_confirmed', path: window.location.pathname });
+    if (res.ok) track('delivery_shop_switch_answered', { decision: 'confirmed' });
     if (res.ok) say(t('switchConfirmed'));
     else say(errorText(res.code), 'error');
     onChanged();
@@ -242,7 +239,7 @@ function SwitchCard({
       request.version,
     );
     setBusy(false);
-    track('click', { id: 'shop_switch_declined', path: window.location.pathname });
+    if (res.ok) track('delivery_shop_switch_answered', { decision: 'declined' });
     if (res.ok) say(t('switchDeclined'));
     else say(errorText(res.code), 'error');
     onChanged();
@@ -362,7 +359,7 @@ export function ShopDeliveryModeCard({ shopId, isOwner }: { shopId: string; isOw
     setBusy(true);
     const res = await c.requestMode(shopId, target, reason, note.trim() || undefined);
     setBusy(false);
-    track('click', { id: `shop_mode_request_${target}`, path: window.location.pathname });
+    if (res.ok) track('delivery_shop_mode_requested', { mode: target });
     if (res.ok) {
       say(t('requestSent'));
       setOpen(false);

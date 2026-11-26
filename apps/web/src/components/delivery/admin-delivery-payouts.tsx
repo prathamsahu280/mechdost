@@ -121,10 +121,7 @@ export function PayoutsTab({ client, agents }: { client: AdminDeliveryClient; ag
       return;
     }
     const r = await client.correctPayout(id, note.trim());
-    track('click', {
-      id: r.ok ? 'admin_delivery_payout_corrected' : 'admin_delivery_payout_correct_failed',
-      path: window.location.pathname,
-    });
+    if (r.ok) track('delivery_admin_action', { action: 'payout_correct' });
     say(r.ok ? t('payoutCorrected') : t('genericError', { code: r.code }), r.ok ? 'ok' : 'error');
     setCorrecting(null);
     setNote('');
@@ -249,10 +246,7 @@ export function PayoutsTab({ client, agents }: { client: AdminDeliveryClient; ag
         period={period}
         onSave={async (input) => {
           const r = await client.recordPayout(input);
-          track('click', {
-            id: r.ok ? 'admin_delivery_payout_recorded' : 'admin_delivery_payout_failed',
-            path: window.location.pathname,
-          });
+          if (r.ok) track('delivery_admin_action', { action: 'payout' });
           say(r.ok ? t('payoutSaved') : t('genericError', { code: r.code }), r.ok ? 'ok' : 'error');
           reload();
           return r.ok;

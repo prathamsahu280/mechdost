@@ -74,6 +74,14 @@ export function AgentInvite({ token }: { token: string }) {
       live = false;
     };
   }, [token]);
+  // Once per page view, after the invite is known to be valid (no token in the event).
+  const opened = useRef(false);
+  const signedIn = session !== null;
+  useEffect(() => {
+    if (!hydrated || !preview || opened.current) return;
+    opened.current = true;
+    track('delivery_invite_opened', { signedIn });
+  }, [hydrated, preview, signedIn]);
 
   async function accept() {
     if (busy || !session) return;
@@ -91,10 +99,7 @@ export function AgentInvite({ token }: { token: string }) {
       res = r.ok ? { ok: true } : { ok: false, code: r.code };
     }
     setBusy(false);
-    track('click', {
-      id: res.ok ? 'agent_invite_accepted' : 'agent_invite_accept_failed',
-      path: window.location.pathname,
-    });
+    if (res.ok) track('delivery_invite_accepted', { withToken: true });
     if (!res.ok) {
       setError(errorText(res.code));
       return;

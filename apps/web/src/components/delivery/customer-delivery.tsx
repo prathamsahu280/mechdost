@@ -113,10 +113,7 @@ function RatingCard({
     setBusy(true);
     const res = await rate(stars, reasons, note.trim() || undefined);
     setBusy(false);
-    track('click', {
-      id: res.ok ? 'delivery_rated' : 'delivery_rate_failed',
-      path: window.location.pathname,
-    });
+    if (res.ok) track('delivery_rating_submitted', { stars, edited: existing !== null });
     if (res.ok) {
       say(t('rateSaved'));
       setEditing(false);

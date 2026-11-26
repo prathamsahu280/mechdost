@@ -187,7 +187,7 @@ function JobBody({ job, onChanged: reload }: { job: AgentJobDetailView; onChange
           className={`${bigPrimary} w-full`}
           onClick={() => {
             setArrived(true);
-            track('click', { id: 'agent_at_shop', path: window.location.pathname });
+            track('delivery_job_step', { step: 'at_shop', ok: true });
           }}
         >
           {t('atShop')}
@@ -202,7 +202,7 @@ function JobBody({ job, onChanged: reload }: { job: AgentJobDetailView; onChange
           className={`${bigPrimary} w-full`}
           onClick={() => {
             setArrived(true);
-            track('click', { id: 'agent_at_customer', path: window.location.pathname });
+            track('delivery_job_step', { step: 'at_customer', ok: true });
           }}
         >
           {t('atCustomer')}
@@ -275,7 +275,7 @@ function ShopCard({ job }: { job: AgentJobDetailView }) {
           href={`tel:${telNumber(shop.phone)}`}
           className={linkBtn}
           onClick={() => {
-            track('click', { id: 'agent_call_shop', path: window.location.pathname });
+            track('delivery_contact_tapped', { target: 'shop', action: 'call' });
           }}
         >
           <Phone aria-hidden="true" className="size-4" />
@@ -291,7 +291,7 @@ function ShopCard({ job }: { job: AgentJobDetailView }) {
           rel="noopener noreferrer"
           className={linkBtn}
           onClick={() => {
-            track('click', { id: 'agent_map_shop', path: window.location.pathname });
+            track('delivery_contact_tapped', { target: 'shop', action: 'maps' });
           }}
         >
           <MapPin aria-hidden="true" className="size-4" />
@@ -351,7 +351,7 @@ function CustomerCard({ job }: { job: AgentJobDetailView }) {
                 href={`tel:${telNumber(c.phone)}`}
                 className={linkBtn}
                 onClick={() => {
-                  track('click', { id: 'agent_call_customer', path: window.location.pathname });
+                  track('delivery_contact_tapped', { target: 'customer', action: 'call' });
                 }}
               >
                 <Phone aria-hidden="true" className="size-4" />
@@ -364,7 +364,7 @@ function CustomerCard({ job }: { job: AgentJobDetailView }) {
               rel="noopener noreferrer"
               className={linkBtn}
               onClick={() => {
-                track('click', { id: 'agent_map_customer', path: window.location.pathname });
+                track('delivery_contact_tapped', { target: 'customer', action: 'maps' });
               }}
             >
               <MapPin aria-hidden="true" className="size-4" />
@@ -414,7 +414,6 @@ function CodeStep({
         label={pickup ? t('pickupCodeLabel') : t('deliveryCodeLabel')}
         hint={pickup ? t('pickupCodeHint') : t('deliveryCodeHint')}
         submitLabel={pickup ? t('confirmPickup') : t('confirmDelivery')}
-        kind={pickup ? 'agent_pickup_code' : 'agent_delivery_code'}
         ready={!job.photosRequired || photo !== null}
         notReadyText={e('PHOTO_REQUIRED')}
         notReadyFocus={photoId}
@@ -425,13 +424,8 @@ function CodeStep({
             : await client.deliver(job.jobId, code, photo ?? undefined, job.version);
           if (!res.ok) return errorText(res.code);
           onChanged();
-          if (res.data.ok) {
-            track('click', {
-              id: pickup ? 'agent_picked_up' : 'agent_delivered',
-              path: window.location.pathname,
-            });
-            return null;
-          }
+          track('delivery_job_step', { step: pickup ? 'pickup' : 'deliver', ok: res.data.ok });
+          if (res.data.ok) return null;
           return res.data.locked ? e('CODE_LOCKED') : t('wrongCode', { left: res.data.attemptsLeft });
         }}
         before={
@@ -491,7 +485,7 @@ function FailForm({ job, onChanged }: { job: AgentJobDetailView; onChanged: () =
       job.version,
     );
     setBusy(false);
-    track('click', { id: 'agent_delivery_failed', path: window.location.pathname });
+    track('delivery_job_step', { step: 'fail', ok: res.ok, reasonCode: reason });
     if (!res.ok) {
       say(errorText(res.code), 'error');
       return;
@@ -598,7 +592,7 @@ function GiveUp({
     setBusy(true);
     const res = await client.giveUp(job.jobId, reason, note.trim() || undefined, job.version);
     setBusy(false);
-    track('click', { id: 'agent_job_given_up', path: window.location.pathname });
+    track('delivery_job_step', { step: 'give_up', ok: res.ok });
     if (!res.ok) {
       say(errorText(res.code), 'error');
       return;

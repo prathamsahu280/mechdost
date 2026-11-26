@@ -61,7 +61,7 @@ export function AgentApplyForm() {
     const code = REAL ? await sendToApi(input) : await sendToDemo(input);
     setSending(false);
     if (!code) return;
-    track('click', { id: 'partner_application_delivery_agent', path: window.location.pathname });
+    track('delivery_apply_submitted', { vehicleType: input.vehicleType });
     setReceived(code);
     requestAnimationFrame(() => doneRef.current?.focus());
   }

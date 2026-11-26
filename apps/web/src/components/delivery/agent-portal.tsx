@@ -102,7 +102,7 @@ function StatusStrip() {
     setBusy(true);
     const res = await client.setOnline(online, profile.version);
     setBusy(false);
-    track('click', { id: online ? 'agent_go_online' : 'agent_go_offline', path: window.location.pathname });
+    if (res.ok) track('delivery_online_toggled', { online });
     if (res.ok) say(online ? t('onlineSaved') : t('offlineSaved'));
     else say(errorText(res.code), 'error');
     reloadProfile();
@@ -124,7 +124,7 @@ function StatusStrip() {
           href={`tel:${telNumber(site.supportPhone)}`}
           aria-label={t('helpLabel')}
           onClick={() => {
-            track('click', { id: 'agent_help_call', path: window.location.pathname });
+            track('delivery_contact_tapped', { target: 'support', action: 'call' });
           }}
           className="press inline-flex min-h-12 shrink-0 items-center gap-2 rounded-button bg-white px-4 text-sm font-extrabold text-navy focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-white"
         >
@@ -345,6 +345,11 @@ function OfferCard({
   const left = countdown(offer.offerExpiresAt, now);
   const formIdEarly = `decline-${offer.offerId ?? offer.jobId}`;
   useDisclosureFocus(declining ? formIdEarly : null);
+  // Once per offer shown (the list polls; the card keeps its key), never per tick.
+  useEffect(() => {
+    const secondsLeft = countdown(offer.offerExpiresAt, Date.now())?.seconds ?? 0;
+    track('delivery_offer_viewed', { secondsLeft: Math.min(secondsLeft, 3_600) });
+  }, [offer.offerId, offer.offerExpiresAt]);
   if (!ctx || !offer.offerId) return null;
   const { client, errorText } = ctx;
   const offerId = offer.offerId;
@@ -355,10 +360,7 @@ function OfferCard({
     setBusy(true);
     const res = await client.accept(offerId);
     setBusy(false);
-    track('click', {
-      id: res.ok ? 'agent_offer_accepted' : 'agent_offer_accept_failed',
-      path: window.location.pathname,
-    });
+    if (res.ok) track('delivery_offer_answered', { decision: 'accept' });
     if (!res.ok) {
       say(errorText(res.code), 'error');
       onChanged();
@@ -375,7 +377,7 @@ function OfferCard({
     setBusy(true);
     const res = await client.decline(offerId, reason, note.trim() || undefined);
     setBusy(false);
-    track('click', { id: 'agent_offer_declined', path: window.location.pathname });
+    if (res.ok) track('delivery_offer_answered', { decision: 'decline', reasonCode: reason });
     if (res.ok) {
       say(t('declined'));
       onChanged();

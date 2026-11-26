@@ -176,10 +176,7 @@ function DocumentRow({ kind }: { kind: AgentDocumentKind }) {
     setBusy(true);
     const res = await client.saveDocument(kind, number.trim(), mediaId);
     setBusy(false);
-    track('click', {
-      id: res.ok ? `agent_document_saved_${kind}` : `agent_document_refused_${kind}`,
-      path: window.location.pathname,
-    });
+    if (res.ok) track('delivery_document_submitted', { kind });
     if (!res.ok) {
       setError(errorText(res.code));
       setErrorField(res.code.startsWith('DOCUMENT_') ? 'number' : 'form');

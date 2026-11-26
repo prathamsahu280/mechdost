@@ -45,6 +45,7 @@ import type {
   AdminShopModeRequestView,
   AgentApplicationView,
   AgentInviteRowView,
+  DeliveryAdminAction,
   Result,
 } from '@/lib/delivery/types';
 import { countdown, kmText, ratingFromX10 } from '@/lib/delivery/view';
@@ -355,12 +356,12 @@ function JobDetail({
   }, [client, jobId]);
   useLiveReload(client, reload, POLL_MS);
 
-  async function act(id: string, run: () => Promise<Result<null>>, okText: string) {
+  async function act(action: DeliveryAdminAction, run: () => Promise<Result<null>>, okText: string) {
     if (busy) return;
     setBusy(true);
     const res = await run();
     setBusy(false);
-    track('click', { id: res.ok ? id : `${id}_failed`, path: window.location.pathname });
+    if (res.ok) track('delivery_admin_action', { action });
     if (res.ok) say(okText);
     else say(err(res.code), 'error');
     reload();
@@ -423,7 +424,7 @@ function JobDetail({
                       type="button"
                       onClick={() =>
                         void act(
-                          'admin_delivery_offered',
+                          'offer',
                           () => client.offer(jobId, a.agentId, v2),
                           t('offered', { name: a.name }),
                         )
@@ -442,11 +443,7 @@ function JobDetail({
             reasons={DELIVERY_SWITCH_REASONS}
             text={(c) => sr(c)}
             onSend={(r, note) =>
-              void act(
-                'admin_delivery_switch_to_shop',
-                () => client.switchToShop(job.orderCode, r, note),
-                t('switchSent'),
-              )
+              void act('switch', () => client.switchToShop(job.orderCode, r, note), t('switchSent'))
             }
           />
         </div>
@@ -457,9 +454,7 @@ function JobDetail({
           jobId={jobId}
           reasons={DELIVERY_WITHDRAW_REASONS}
           text={(c) => wr(c)}
-          onSend={(r) =>
-            void act('admin_delivery_withdrawn', () => client.withdraw(jobId, r, v2), t('withdrawn'))
-          }
+          onSend={(r) => void act('withdraw', () => client.withdraw(jobId, r, v2), t('withdrawn'))}
         />
       ) : null}
 
@@ -478,7 +473,7 @@ function JobDetail({
                   className={portalQuiet}
                   onClick={() =>
                     void act(
-                      'admin_delivery_retry_same',
+                      'retry_same',
                       () => client.failureDecision(jobId, 'retry', 'same', v2),
                       t('decisionSaved'),
                     )
@@ -491,7 +486,7 @@ function JobDetail({
                   className={portalQuiet}
                   onClick={() =>
                     void act(
-                      'admin_delivery_retry_other',
+                      'retry_other',
                       () => client.failureDecision(jobId, 'retry', 'other', v2),
                       t('decisionSaved'),
                     )
@@ -506,7 +501,7 @@ function JobDetail({
               className={portalPrimary}
               onClick={() =>
                 void act(
-                  'admin_delivery_return_to_shop',
+                  'return',
                   () => client.failureDecision(jobId, 'return_to_shop', undefined, v2),
                   t('decisionSaved'),
                 )
@@ -524,11 +519,7 @@ function JobDetail({
         <OverrideForm
           kind={job.status === 'accepted' ? 'pickup' : job.status === 'picked_up' ? 'delivery' : 'return'}
           onSend={(kind, reason) =>
-            void act(
-              `admin_delivery_override_${kind}`,
-              () => client.override(jobId, kind, reason, v2),
-              t('overrideDone'),
-            )
+            void act(`override_${kind}`, () => client.override(jobId, kind, reason, v2), t('overrideDone'))
           }
         />
       ) : null}
@@ -914,10 +905,7 @@ function ApplicationsTab({ client }: { client: AdminDeliveryClient }) {
 
   async function invite(code: string) {
     const res = await client.invite({ applicationCode: code });
-    track('click', {
-      id: res.ok ? 'admin_delivery_invited' : 'admin_delivery_invite_failed',
-      path: window.location.pathname,
-    });
+    if (res.ok) track('delivery_admin_action', { action: 'invite' });
     if (res.ok) showLink(res.data.token, res.data.expiresAt);
     else say(err(res.code), 'error');
     apps.reload();
@@ -1036,10 +1024,7 @@ function ApplicationsTab({ client }: { client: AdminDeliveryClient }) {
       <InviteNew
         onInvite={async (input) => {
           const res = await client.invite(input);
-          track('click', {
-            id: res.ok ? 'admin_delivery_invited_direct' : 'admin_delivery_invite_failed',
-            path: window.location.pathname,
-          });
+          if (res.ok) track('delivery_admin_action', { action: 'invite' });
           if (res.ok) showLink(res.data.token, res.data.expiresAt);
           else say(err(res.code), 'error');
           invites.reload();
@@ -1408,10 +1393,7 @@ function AgentDetail({
       return;
     }
     const res = await client.setStatus(id, to, a.version, reason || undefined, note.trim() || undefined);
-    track('click', {
-      id: res.ok ? `admin_agent_status_${to}` : 'admin_agent_status_failed',
-      path: window.location.pathname,
-    });
+    if (res.ok) track('delivery_admin_action', { action: 'status' });
     if (res.ok) {
       say(t('statusSaved'));
       setTo('');
@@ -1617,10 +1599,7 @@ function DocumentReview({
       return;
     }
     const r = await client.decideDocument(agentId, kind, verify, verify ? undefined : reason || undefined);
-    track('click', {
-      id: verify ? `admin_agent_document_verified_${kind}` : `admin_agent_document_rejected_${kind}`,
-      path: window.location.pathname,
-    });
+    if (r.ok) track('delivery_admin_action', { action: verify ? 'verify_document' : 'reject_document' });
     say(r.ok ? t('docDone') : err(r.code), r.ok ? 'ok' : 'error');
     setRejecting(false);
     onChanged();
@@ -1745,10 +1724,7 @@ function RequestsTab({ client }: { client: AdminDeliveryClient }) {
       return;
     }
     const res = await client.decideMode(r.id, approve, r.version, approve ? undefined : reason || undefined);
-    track('click', {
-      id: approve ? 'admin_shop_mode_approved' : 'admin_shop_mode_rejected',
-      path: window.location.pathname,
-    });
+    if (res.ok) track('delivery_admin_action', { action: 'shop_mode' });
     say(res.ok ? (approve ? t('approved') : t('requestRejected')) : err(res.code), res.ok ? 'ok' : 'error');
     setRejecting(null);
     reload();

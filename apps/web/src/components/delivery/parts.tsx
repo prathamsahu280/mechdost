@@ -36,7 +36,7 @@ export function CallSupport({ label }: { label: string }) {
     <a
       href={`tel:${telNumber(site.supportPhone)}`}
       onClick={() => {
-        track('click', { id: 'delivery_call_support', path: window.location.pathname });
+        track('delivery_contact_tapped', { target: 'support', action: 'call' });
       }}
       className={`${bigQuiet} mt-2 gap-2`}
     >
@@ -161,7 +161,6 @@ export function CodeEntry({
   label,
   hint,
   submitLabel,
-  kind,
   ready = true,
   notReadyText,
   notReadyFocus,
@@ -173,8 +172,6 @@ export function CodeEntry({
   label: string;
   hint: string;
   submitLabel: string;
-  /** Analytics click id prefix (`agent_pickup_code`, `shop_return_code` …). */
-  kind: string;
   ready?: boolean;
   /** What to say (and where to move focus) when the button is pressed while not ready. */
   notReadyText?: string;
@@ -207,7 +204,6 @@ export function CodeEntry({
     const problem = await onCode(code);
     setBusy(false);
     setError(problem);
-    track('click', { id: `${kind}_${problem ? 'wrong' : 'ok'}`, path: window.location.pathname });
   }
 
   function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
@@ -307,7 +303,7 @@ export function PhotoCapture({
       if (!res.ok) throw new Error(res.code);
       setStatus('ready');
       onMedia(res.data.mediaId);
-      track('click', { id: `agent_photo_${purpose}`, path: window.location.pathname });
+      track('delivery_photo_taken', { purpose });
     } catch {
       setStatus('failed');
       onMedia(null);

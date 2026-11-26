@@ -4,6 +4,7 @@
  * `shop-client.ts`, `admin-client.ts`) implement these against the API; `demo/delivery-clients.ts` against the
  * browser demo store. One set of screens serves both (like the Ustaad messages seam).
  */
+import type { ClientEvents } from '@mechdost/shared/analytics';
 import type {
   AdminAgentDetail,
   AdminAgentRow,
@@ -249,3 +250,6 @@ export interface AdminDeliveryClient extends Live {
   /** Per agent: delivered jobs in the period and what was already paid for it. */
   payoutSummary(from: string, to: string): Promise<Result<{ items: PayoutSummaryRow[] }>>;
 }
+
+/** The staff actions of the typed `delivery_admin_action` event (spec 12, `client-events.ts`). */
+export type DeliveryAdminAction = ClientEvents['delivery_admin_action']['action'];
