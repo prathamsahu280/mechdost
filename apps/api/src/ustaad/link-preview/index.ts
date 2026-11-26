@@ -98,7 +98,7 @@ export function isBlockedAddress(address: string): boolean {
 const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
 function decodeEntities(s: string): string {
   return s.replace(/&(#x[0-9a-f]{1,6}|#\d{1,7}|[a-z]{2,6});/gi, (m, e: string) => {
-    if (e[0] === '#') {
+    if (e.startsWith('#')) {
       const code = e[1] === 'x' || e[1] === 'X' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
       return Number.isFinite(code) && code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : '';
     }
@@ -107,9 +107,9 @@ function decodeEntities(s: string): string {
 }
 const clean = (s: string | undefined, max: number): string | null => {
   if (s === undefined) return null;
-  // eslint-disable-next-line no-control-regex -- strip control characters from page text
+  // Control characters from the page become spaces.
   const v = decodeEntities(s)
-    .replace(/[\u0000-\u001f\u007f]/g, ' ')
+    .replace(/\p{Cc}/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim();
   return v ? v.slice(0, max) : null;
@@ -197,7 +197,7 @@ export function nodePinnedRequest(req: PinnedRequest): Promise<PreviewResponse> 
 
 export function defaultPreviewDeps(): PreviewDeps {
   return {
-    resolve: async (host) => dnsLookup(host, { all: true, verbatim: true }),
+    resolve: async (host) => dnsLookup(host, { all: true, order: 'verbatim' }),
     request: nodePinnedRequest,
   };
 }

@@ -201,7 +201,11 @@ describe('the pinned connector (local server)', () => {
     port = (server.address() as AddressInfo).port;
   });
   afterAll(async () => {
-    await new Promise<void>((r) => server.close(() => r()));
+    await new Promise<void>((r) => {
+      server.close(() => {
+        r();
+      });
+    });
   });
 
   it('connects to the given address (not a new lookup), sends the original Host and cuts the body at 512 KB', async () => {
