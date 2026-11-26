@@ -13,9 +13,14 @@ const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
 const recent = (page: Page) => page.getByRole('region', { name: /^(Recently viewed|हाल में देखे गए)$/ });
 
-async function view(page: Page, slug: string, prefix = '') {
+async function view(page: Page, slug: string, prefix = '', storage = true) {
   await page.goto(`${prefix}/shop/${slug}`);
   await expect(page.locator('h1')).toBeVisible();
+  // The view is recorded at hydration; wait for it before leaving (the next step reads it).
+  if (storage)
+    await expect
+      .poll(() => page.evaluate(() => localStorage.getItem('mechdost-recent') ?? ''), SLOW)
+      .toContain(slug);
 }
 
 test.describe('recently viewed', () => {
@@ -68,8 +73,8 @@ test.describe('recently viewed', () => {
         },
       });
     });
-    await view(page, CASTROL);
-    await view(page, HP);
+    await view(page, CASTROL, '', false);
+    await view(page, HP, '', false);
     await expect(page.getByRole('heading', { name: 'Similar options' })).toBeVisible();
     await expect(recent(page)).toHaveCount(0);
     expect(errors.filter((m) => /recent|storage/i.test(m))).toEqual([]);
@@ -109,8 +114,10 @@ test.describe('Back keeps your place', () => {
     await page.waitForTimeout(300);
     const before = await page.evaluate(() => window.scrollY);
     expect(before).toBeGreaterThan(400);
+    const href = (await target.getAttribute('href')) ?? '';
     await target.click();
-    await expect(page.locator('h1')).toBeVisible();
+    // The shop has an h1 too: wait for the product's address before going back.
+    await expect(page).toHaveURL((url) => url.pathname === href);
     await page.goBack();
     await expect(page).toHaveURL(/\/shop(\?|$)/);
     await expect.poll(() => page.evaluate(() => window.scrollY), SLOW).toBeGreaterThan(before - 150);

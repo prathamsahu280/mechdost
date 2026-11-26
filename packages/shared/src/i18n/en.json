@@ -4126,7 +4126,10 @@
     "chooseProduct": "Choose this product",
     "chosen": "Chosen: {name}",
     "fittingName": "workshop fitting",
-    "err_product": "Choose a product first."
+    "err_product": "Choose a product first.",
+    "tooShort": "Type at least 2 letters.",
+    "searchFailed": "Could not search. Please try again.",
+    "foundCount": "{count, plural, one {1 product found} other {# products found}}"
   },
   "adminDemand": {
     "title": "Waiting for a PIN code",
@@ -8693,8 +8696,6 @@
     "clearName": "Clear your recently viewed products",
     "cleared": "Recently viewed products cleared.",
     "switch": "Remember products I view on this device",
-    "switchHelp": "The list stays in this browser only. To keep it in your account on every device, allow it under Privacy.",
-    "off": "Recently viewed is switched off on this device.",
-    "on": "Recently viewed is switched on."
+    "switchHelp": "The list stays in this browser only. To keep it in your account on every device, allow it under Privacy."
   }
 }

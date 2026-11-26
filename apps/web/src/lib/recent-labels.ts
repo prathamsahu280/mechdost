@@ -11,7 +11,5 @@ export async function recentLabels(): Promise<RecentLabels> {
     cleared: t('cleared'),
     switch: t('switch'),
     switchHelp: t('switchHelp'),
-    off: t('off'),
-    on: t('on'),
   };
 }

@@ -342,3 +342,13 @@ T203 · 2026-11-24 · notifications · the WhatsApp approval gate is per event (
   the publish side effects once (counters, Izzat, notices, thread time). Regression tests: `packages/db/test/
 ustaad-console.test.ts` (held answer/question/comment/post/message, NCII re-hold not double-counted). New class
   "reversal bypasses four-eyes": test the undo path of every four-eyes action (unban suite in the same file + API).
+- T-P23a · 2026-11-26 · e2e/navigation · "Back keeps your place" test went Back to about:blank: it waited for `h1` after
+  clicking a product, but the shop list has an h1 too, so Back ran before the product page loaded · wait for the
+  product URL (`toHaveURL(url => url.pathname === href)`), never for a selector both pages share ·
+  `apps/web/e2e/personalisation.spec.ts`.
+- T-P23b · 2026-11-26 · e2e/lazy islands · Recently viewed e2e was flaky because a view is recorded by a lazy chunk; the test
+  left the page before it loaded · poll the stored key (`localStorage['mechdost-recent']` contains the slug) before
+  navigating; product follow-up: record the view earlier if bounce data shows losses (Q-P23 note).
+- T-P23c · 2026-11-26 · e2e/ports · The consent fixture's origin is `localhost:3100`; running on another port (to avoid
+  other agents' servers) shows the consent banner, which covers element screenshots · seed `mechdost-consent` with
+  `addInitScript` for any port.

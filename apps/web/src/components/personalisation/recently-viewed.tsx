@@ -28,8 +28,6 @@ export interface RecentLabels {
   cleared: string;
   switch: string;
   switchHelp: string;
-  off: string;
-  on: string;
 }
 
 export interface RecentlyViewedProps {
@@ -141,9 +139,10 @@ export default function RecentlyViewed({
   const [cards, setCards] = useState<{ slug: string; node: ReactNode }[]>([]);
   const [off, setOff] = useState(false);
   const [said, setSaid] = useState('');
+  // After "Clear" the section stays (heading + status) so focus has somewhere to land.
+  const [cleared, setCleared] = useState(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const switchRef = useRef<HTMLInputElement>(null);
-  const focusAfter = useRef<'heading' | 'switch' | null>(null);
   const id = useId();
 
   // Record this product page's view and read the device list; signed in (real sign-in), merge with the account's.
@@ -188,11 +187,24 @@ export default function RecentlyViewed({
     };
   }, [key, locale]);
 
+  // a11y review 2026-11-26 (live regions): after Clear, focus first (the switch on the account page, else the heading),
+  // then the polite "cleared" message a moment later so the focus announcement does not swallow it; the message is
+  // emptied after a few seconds so a later Clear is announced again.
   useEffect(() => {
-    const target = focusAfter.current === 'switch' ? switchRef.current : headingRef.current;
-    if (focusAfter.current && target) target.focus();
-    focusAfter.current = null;
-  }, [said]);
+    if (!cleared) return;
+    (showSwitch ? switchRef.current : headingRef.current)?.focus();
+    const say = window.setTimeout(() => {
+      setSaid(labels.cleared);
+    }, 200);
+    const hush = window.setTimeout(() => {
+      setSaid('');
+      setCleared(false);
+    }, 5000);
+    return () => {
+      window.clearTimeout(say);
+      window.clearTimeout(hush);
+    };
+  }, [cleared, showSwitch, labels.cleared]);
 
   useSuggestionTracking(cards.length);
 
@@ -207,8 +219,8 @@ export default function RecentlyViewed({
       void import('@/lib/recently-viewed-sync')
         .then((m) => m.clearServerRecent(locale))
         .catch(() => undefined);
-    focusAfter.current = showSwitch ? 'switch' : 'heading';
-    setSaid(labels.cleared);
+    setSaid('');
+    setCleared(true);
   }
 
   function toggle() {
@@ -219,9 +231,8 @@ export default function RecentlyViewed({
       setList([]);
       setCards([]);
     }
+    // The switch announces its own state (native checkbox, role=switch): no extra status, no focus move.
     track('recently_viewed_toggled', { on: !next });
-    focusAfter.current = 'switch';
-    setSaid(next ? labels.off : labels.on);
   }
 
   const visible = cards.length >= minItems;
@@ -233,7 +244,7 @@ export default function RecentlyViewed({
 
   if (signedInOnly && !signedIn) return null;
   // An empty list renders nothing; right after "Clear" the heading stays (focus lands there) with the status.
-  if (!visible && !showSwitch && !said) return null;
+  if (!visible && !showSwitch && !cleared && !said) return null;
 
   return (
     <section
@@ -277,7 +288,7 @@ export default function RecentlyViewed({
             />
             <span
               aria-hidden="true"
-              className="relative h-7 w-12 shrink-0 rounded-pill bg-line transition-colors peer-checked:bg-accent-button peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-focus after:absolute after:top-1 after:left-1 after:size-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-5 motion-reduce:after:transition-none"
+              className="relative h-7 w-12 shrink-0 rounded-pill border border-input-border bg-line transition-colors forced-colors:border-[ButtonText] forced-colors:peer-checked:bg-[Highlight] peer-checked:bg-accent-button peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-focus after:absolute after:top-1 after:left-1 after:size-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-5 motion-reduce:after:transition-none"
             />
             {labels.switch}
           </label>

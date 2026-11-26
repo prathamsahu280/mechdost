@@ -497,3 +497,8 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
 - L-P23d · 2026-11-26 · tooling · Multi-statement shell edits (node heredocs touching several files, `cd && sed && git`)
   are refused in an isolated worktree as "too complex" → put edit scripts in the scratchpad and run one plain
   `node script.cjs .` per call; never start `python -I -` with an empty heredoc (L-G2c again). · active
+- L-P23e · 2026-11-26 · ui/a11y · Five static a11y specialists on the personalisation UI agreed: a status `<p role=status>`
+  mounted together with its text is often not announced, the same text set twice is silent, and a search picker gives
+  no spoken result → one always-mounted status per widget, clear then set (rAF) for repeats, focus first and announce
+  ~200 ms later, native radios for single choice (not aria-pressed buttons), and a bordered switch track (forced colours,
+  1.4.11 off-state contrast). · active
