@@ -1335,7 +1335,16 @@ members at the next run. Data dictionary: this § 6.
   tap, watch meter, zone text and shade, projection, pin source, pay, copy parity); e2e `apps/web/e2e/ustaad-ce.spec.ts`
   (every screen, axe on `main`, fake-microphone recording, apply dialog focus, post form errors, landmark rule) and the
   Hindi crawl (`hindi-coverage.spec.ts`, ten `/hi/ustaad/*` pages).
-- **Not built (API gaps, queued Q-U-CE1…5):** question **photos** (no field in `AskQuestionDto`, no table) — the
+- **Accessibility review (2026-11-26, aria / keyboard + modal / forms + media specialists):** recorder has one name
+  ("Record voice note") with `aria-pressed`, one always-mounted live region for every outcome, focus kept across the
+  mic ↔ recorded swap, pointer cancel handled and a hold released during the permission prompt cancels the start;
+  vehicle and work choices are radio groups with "Not sure"; field errors sit beside their fields (`aria-invalid` +
+  `aria-describedby`); busy buttons use `aria-disabled` (focus stays); writes refresh the thread without blanking it;
+  close and filled ask first; the arrow buttons place a pin without GPS (keyboard path); map container `role="group"`;
+  live regions use `empty:sr-only` (never `display: none`). Hosted videos have no captions yet (Q-U-CE7).
+- **Membership gate:** every screen is wrapped in `MemberGate` (no membership → "join" card, `ustaad.shell.join*`).
+- **Permissions-Policy:** `microphone=(self)` (decisions 2026-11-26).
+- **Not built (API gaps, queued Q-U-CE1…7):** question **photos** (no field in `AskQuestionDto`, no table) — the
   picker exists and is used for the signboard; the employer's **applicants list** and `GET /ustaad/jobs/mine` (no
   route lists applications; `POST /ustaad/applications/{id}/{action}` exists) — so no applicants screen; "already
   applied" state on a job (not in `JobDto`); posting for a **MechDost workshop** (needs a workshop picker); changing

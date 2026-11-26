@@ -52,6 +52,7 @@ export function VoiceRecorder({
   const mic = useRef<HTMLButtonElement>(null);
   const donePanel = useRef<HTMLDivElement>(null);
   const focusMic = useRef(false);
+  const cancelStart = useRef(false);
   const change = useRef(onChange);
   change.current = onChange;
 
@@ -84,6 +85,16 @@ export function VoiceRecorder({
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
       setState('denied');
+      return;
+    }
+    if (cancelStart.current) {
+      // The finger was lifted while the phone asked for the microphone: nothing is recorded.
+      cancelStart.current = false;
+      pointerStarted.current = false;
+      suppressClick.current = false;
+      stream.getTracks().forEach((tr) => {
+        tr.stop();
+      });
       return;
     }
     const mr = new MediaRecorder(stream, { mimeType: choice.recordAs, audioBitsPerSecond: 24_000 });
@@ -167,7 +178,7 @@ export function VoiceRecorder({
         <div
           ref={donePanel}
           tabIndex={-1}
-          className="grid gap-3 rounded-2xl border border-line-card bg-surface-alt p-4 outline-none"
+          className="grid gap-3 rounded-2xl border border-line-card bg-surface-alt p-4 focus-visible:outline-3 focus-visible:outline-focus"
         >
           <p className="font-bold text-ink">{t('recDone', { time: clockText(rec.durationMs) })}</p>
           {/* Native controls: play, pause and seek with keyboard and screen readers. */}
@@ -193,7 +204,12 @@ export function VoiceRecorder({
             data-track={recording ? 'ustaad_voice_stop' : 'ustaad_voice_start'}
             onPointerDown={(e) => {
               if (recording || e.button !== 0 || state === 'unsupported') return;
-              e.currentTarget.setPointerCapture(e.pointerId);
+              try {
+                e.currentTarget.setPointerCapture(e.pointerId);
+              } catch {
+                // Some browsers refuse capture for a finished pointer; the click path still works.
+              }
+              cancelStart.current = false;
               pressAt.current = Date.now();
               pointerStarted.current = true;
               void start();
@@ -203,7 +219,8 @@ export function VoiceRecorder({
               if (isHold(Date.now() - pressAt.current)) {
                 pointerStarted.current = false;
                 suppressClick.current = true;
-                stop();
+                if (recorder.current?.state === 'recording') stop();
+                else cancelStart.current = true;
               }
             }}
             onPointerCancel={() => {

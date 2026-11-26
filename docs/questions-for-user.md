@@ -356,6 +356,13 @@ promotions from Network settings → Promotions.
 - **Q-U-CE5 (2026-11-26, Learn and area map):** add the video size (bytes) to the Learn view and names (en + hi) for
   zone cells? **Default meanwhile:** duration only; areas numbered "Area 1…".
 
+- **Q-U-CE6 (2026-11-26, Ustaad settings on the web):** the composers use the defaults for `qa.voice_max_s` (90 s) and
+  `loc.gps_max_m` (100 m) because members cannot read network settings. Add a small member-readable settings answer
+  (limits only) to `GET /ustaad/me`? **Default meanwhile:** the defaults in code; the API enforces the real values.
+- **Q-U-CE7 (2026-11-26, Learn captions):** hosted training videos have no caption field. Add `captions_en/hi` (WebVTT
+  media ids) to learning resources? **Default meanwhile:** videos play without captions (MechDost training carries its
+  words on screen).
+
 - **Q-U-C1 (2026-11-26, Ustaad Learn):** should hosted training videos have their own daily completion limit, separate
   from "Lessons a member can mark done a day" (`learn.self_mark_daily_cap`, default 5)? **Default meanwhile:** one
   shared limit for both (videos are also wall-clock checked, so a jump to the end never counts).

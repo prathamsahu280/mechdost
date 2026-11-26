@@ -95,7 +95,7 @@ export function ImagePicker({
   return (
     <div className="grid gap-3">
       <div className="flex flex-wrap items-center gap-3">
-        <label htmlFor={inputId} className={`${quiet} cursor-pointer`}>
+        <label htmlFor={inputId} className={`${quiet} file-pick cursor-pointer`}>
           <Camera aria-hidden="true" className="size-5" />
           {preview ? t('photoChange') : (label ?? t('photoPick'))}
           <input

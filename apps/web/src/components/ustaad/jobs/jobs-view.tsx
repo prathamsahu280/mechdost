@@ -34,6 +34,7 @@ import {
   useTimeAgo,
   useUstaad,
 } from '../common';
+import { useUploadErrorText } from '../media/upload-error';
 
 const VoiceRecorder = dynamic(() => import('../media/voice-recorder').then((m) => m.VoiceRecorder), {
   ssr: false,
@@ -316,7 +317,7 @@ export function JobDetail({ code }: { code: string }) {
         ref={statusRef}
         tabIndex={-1}
         role="status"
-        className="text-[15px] font-bold text-ink outline-none empty:sr-only"
+        className="text-[15px] font-bold text-ink focus-visible:outline-3 focus-visible:outline-focus empty:sr-only"
       >
         {applied ? t('appSent') : (status ?? '')}
       </p>
@@ -434,6 +435,7 @@ function ApplySheet({ code, onClose }: { code: string; onClose: (applied: boolea
   const l = useTranslations('ustaad.labels');
   const locale = useLocale();
   const errorText = useErrorText('jobs');
+  const uploadError = useUploadErrorText('jobs');
   const dialog = useRef<HTMLDialogElement>(null);
   const [sharePhone, setSharePhone] = useState(false);
   const [intro, setIntro] = useState<Recording | null>(null);
@@ -461,7 +463,7 @@ function ApplySheet({ code, onClose }: { code: string; onClose: (applied: boolea
       setPct(null);
       if (!up.ok) {
         setBusy(false);
-        setError(errorText(up.code));
+        setError(uploadError(up.code));
         return;
       }
       voiceIntroMediaId = up.data.mediaId;

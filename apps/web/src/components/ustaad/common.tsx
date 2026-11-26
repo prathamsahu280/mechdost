@@ -1,7 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { localePath } from '@/lib/locale-path';
 import type { ApiResult } from '@/lib/orders-api';
 import { ustaadClient, type UstaadClient } from '@/lib/ustaad/client';
 
@@ -172,4 +174,26 @@ export function useCodeLabel() {
     const s = code as 'two_wheeler';
     return seg.has(s) ? seg(s) : null;
   };
+}
+
+/**
+ * Member screens need a membership (the API answers 404 otherwise, spec 23 § 3). Staff looking at the preview without
+ * joining, and signed-in mechanics who have not joined, see one next action: join. Pages using it load `ustaad.shell`.
+ */
+export function MemberGate({ children }: { children: ReactNode }) {
+  const t = useTranslations('ustaad.shell');
+  const locale = useLocale();
+  const { loaded } = useUstaad((c) => c.me(), 'gate-me');
+  if (loaded.state === 'loading') return <LoadingBlock />;
+  if (loaded.state === 'ok' && loaded.data.member === null)
+    return (
+      <div className={`${card} mx-auto grid max-w-2xl justify-items-center gap-3 text-center`}>
+        <h1 className="font-heading text-xl font-extrabold text-ink">{t('joinTitle')}</h1>
+        <p className="text-[15px] text-muted">{t('joinBody')}</p>
+        <Link href={localePath('/ustaad/join', locale)} className={btnPrimary} data-track="ustaad_gate_join">
+          {t('joinCta')}
+        </Link>
+      </div>
+    );
+  return <>{children}</>;
 }

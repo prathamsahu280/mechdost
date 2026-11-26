@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { ClientMessages } from '@/components/ui/client-messages';
+import { MemberGate } from '@/components/ustaad/common';
 import { AskList } from '@/components/ustaad/qa/ask-list';
 import { parseQuestionFilter } from '@/lib/ustaad/qa-view';
 
@@ -13,8 +14,10 @@ interface Props {
 export default async function UstaadAskPage({ searchParams }: Props) {
   const filter = parseQuestionFilter((await searchParams)?.filter);
   return (
-    <ClientMessages namespaces={['ustaad.qa', 'ustaad.labels', 'segments']}>
-      <AskList filter={filter} />
+    <ClientMessages namespaces={['ustaad.shell', 'ustaad.qa', 'ustaad.labels', 'segments']}>
+      <MemberGate>
+        <AskList filter={filter} />
+      </MemberGate>
     </ClientMessages>
   );
 }

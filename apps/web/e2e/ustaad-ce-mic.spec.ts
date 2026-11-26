@@ -30,7 +30,7 @@ test('tap to start, tap to stop; play back, record again', async ({ page }) => {
   );
   await page.waitForTimeout(1500);
   await page.getByRole('button', { name: 'Record voice note', pressed: true }).click();
-  await expect(page.getByText(/Recorded 0:0[1-2]/)).toBeVisible();
+  await expect(page.getByText(/Recorded 0:0[1-2]/).last()).toBeVisible();
   await expect(page.getByLabel('Voice note')).toBeVisible();
   await page.getByRole('button', { name: 'Record again' }).click();
   await expect(page.getByRole('button', { name: 'Record voice note' })).toBeVisible();

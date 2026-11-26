@@ -116,7 +116,7 @@ export function JobPostForm() {
         <div
           ref={doneRef}
           tabIndex={-1}
-          className={`${card} grid justify-items-center gap-3 text-center outline-none`}
+          className={`${card} grid justify-items-center gap-3 text-center focus-visible:outline-3 focus-visible:outline-focus`}
         >
           <CheckCircle2 aria-hidden="true" className="size-10 text-success" />
           <p className="text-[16px] font-bold text-ink">{t('postedOk')}</p>

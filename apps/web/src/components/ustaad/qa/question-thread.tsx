@@ -27,6 +27,7 @@ import {
   useTimeAgo,
   useUstaad,
 } from '../common';
+import { useUploadErrorText } from '../media/upload-error';
 
 const VoiceRecorder = dynamic(() => import('../media/voice-recorder').then((m) => m.VoiceRecorder), {
   ssr: false,
@@ -296,6 +297,7 @@ function AnswerComposer({ q, onPosted }: { q: QuestionDetail; onPosted: () => vo
   const t = useTranslations('ustaad.qa');
   const locale = useLocale();
   const errorText = useErrorText('qa');
+  const uploadError = useUploadErrorText('qa');
   const [voice, setVoice] = useState<Recording | null>(null);
   const [text, setText] = useState('');
   const [meta, setMeta] = useState<CorrectionMeta>({ correction: 'none', original: null });
@@ -328,7 +330,10 @@ function AnswerComposer({ q, onPosted }: { q: QuestionDetail; onPosted: () => vo
       if (!up.ok) {
         setBusy(false);
         setProgress(null);
-        setMsg({ kind: 'error', text: errorText('USTAAD_MEDIA_INVALID') });
+        setMsg({
+          kind: 'error',
+          text: up.code.startsWith('MEDIA_') ? uploadError(up.code) : errorText('USTAAD_MEDIA_INVALID'),
+        });
         return;
       }
       voiceMediaId = up.data.mediaId;

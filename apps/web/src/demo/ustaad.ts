@@ -513,7 +513,7 @@ export function demoUstaadClient(): UstaadClient {
   const questions = seedQuestions();
   const jobs = seedJobs();
   const learn: LearnView = structuredClone(LEARN);
-  let location: MyLocation | null = null;
+  let pinned: MyLocation | null = null;
   let seq = 0;
   const nextCode = (prefix: 'UQ' | 'UJ') => {
     seq += 1;
@@ -629,9 +629,9 @@ export function demoUstaadClient(): UstaadClient {
       }
       return ok({ watchedSeconds: r.watchedSeconds, completed: r.completed });
     },
-    myLocation: () => ok(location),
+    myLocation: () => ok(pinned),
     saveLocation: (input) => {
-      location = {
+      pinned = {
         lat: input.lat,
         lng: input.lng,
         accuracyM: Math.round(input.accuracyM),
@@ -645,9 +645,9 @@ export function demoUstaadClient(): UstaadClient {
         verified: false,
         confirmedAt: new Date().toISOString(),
       };
-      return ok(location);
+      return ok(pinned);
     },
-    signboard: () => (location ? ok({ ok: true as const }) : fail(422, 'USTAAD_PIN_REQUIRED')),
+    signboard: () => (pinned ? ok({ ok: true as const }) : fail(422, 'USTAAD_PIN_REQUIRED')),
     zones: () => ok(ZONES),
     jobs: (role, cursor) => {
       const list = jobs.filter((j) => (role ? j.roleCode === role : true) && (j.status === 'open' || j.mine));

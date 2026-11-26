@@ -133,7 +133,7 @@ test.describe('Ustaad Q&A (workstream C)', () => {
       .getByLabel('Your question in one line (vehicle + problem)')
       .fill('Pulsar 150 garam hone pe band');
     await page.getByRole('radio', { name: 'Two-wheeler' }).check();
-    await page.getByRole('checkbox', { name: 'Engine' }).check();
+    await page.getByRole('radio', { name: 'Engine' }).check();
     await page.getByRole('button', { name: 'Send question' }).click();
     await expect(page.getByText('Question sent.')).toBeVisible();
     await page.getByRole('link', { name: 'Open my question' }).click();
@@ -153,7 +153,7 @@ test.describe('Ustaad Learn (workstream C)', () => {
     await expect(page.getByRole('switch', { name: 'Data saver' })).toBeChecked();
     await expect(page.locator('video')).toHaveCount(0); // nothing loads before a tap
     await axe(page);
-    await page.getByRole('button', { name: 'Play Pin your garage on the map' }).click();
+    await page.getByRole('button', { name: /Pin your garage on the map/ }).click();
     await expect(page.locator('video')).toHaveCount(1);
     await expect(page.locator('video')).toHaveAttribute('preload', 'none');
     await page.getByRole('button', { name: 'Mark as watched' }).click();
@@ -181,7 +181,10 @@ test.describe('Ustaad local (workstream E)', () => {
       'Show my exact pin to other mechanics',
     ])
       await expect(page.getByRole('switch', { name })).not.toBeChecked();
-    await expect(page.getByRole('button', { name: 'This is my garage' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'This is my garage' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
     await axe(page);
     await page.getByRole('button', { name: 'Use my location' }).click();
     await expect(page.getByText('Found you, accurate to about 18 m.')).toBeVisible();
@@ -190,6 +193,14 @@ test.describe('Ustaad local (workstream E)', () => {
     await page.getByRole('button', { name: 'This is my garage' }).click();
     await expect(page.getByText('Location confirmed. Others see only your area.')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Get "Verified location"' })).toBeVisible();
+    if (SHOTS) {
+      // In place (a reload would drop the sample pin): GPS found, pin confirmed, signboard offered.
+      for (const width of [1440, 390]) {
+        await page.setViewportSize({ width, height: width < 600 ? 844 : 900 });
+        await page.waitForTimeout(300);
+        await page.screenshot({ path: `${SHOTS}/ustaad-pin-confirmed-${String(width)}.png`, fullPage: true });
+      }
+    }
     await shots(page, 'ustaad-pin', '/ustaad/me/location');
   });
 
@@ -278,7 +289,7 @@ test.describe('Ustaad local (workstream E)', () => {
     await page.getByLabel('Pay up to (₹ a month)').fill('18,000');
     await page.getByRole('button', { name: 'Post job' }).click();
     await expect(page.getByText('Job posted.')).toBeVisible();
-    await page.getByRole('link', { name: 'Your job' }).click();
+    await page.getByRole('link', { name: 'Open my job' }).click();
     await expect(page.getByRole('button', { name: 'Pause job' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Apply with my card' })).toHaveCount(0);
   });

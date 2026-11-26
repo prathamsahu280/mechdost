@@ -2178,6 +2178,11 @@ Spec `docs/specs/23-ustaad-network.md`, design `docs/superpowers/specs/2026-11-2
 - Learn's data saver is a per-phone convenience (`localStorage`, on by default) until B mounts member choices.
 - No new colours: zone shades are accent tints, the safety note uses the error tokens, the anti-scam banner the warning
   tokens.
+- **Permissions-Policy `microphone=(self)`** (was `microphone=()`, which blocked every voice note on our own pages; found
+  by the fake-microphone e2e). Our origin only; third-party frames still get no microphone. `camera=()` stays (photos
+  use the file picker, which the policy does not cover).
+- Every C + E screen sits behind a membership gate on the web too: no membership → one "join" card (the API answers 404
+  to non-members, so the screens would otherwise say "not available").
 
 ## 2026-11-26 — Ustaad workstream E (local): build rulings
 

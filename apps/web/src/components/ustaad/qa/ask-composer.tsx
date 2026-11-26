@@ -18,6 +18,7 @@ import { SmartCorrection, correctForSend, type CorrectionMeta } from '../correct
 import type { Recording } from '../media/voice-recorder';
 import { UploadProgress } from '../media/upload-progress';
 import { btnPrimary, card, fieldClass, SampleNote, useCodeLabel, useErrorText, useUstaad } from '../common';
+import { useUploadErrorText } from '../media/upload-error';
 
 /** The recorder (MediaRecorder code) loads only when the composer opens. */
 const VoiceRecorder = dynamic(() => import('../media/voice-recorder').then((m) => m.VoiceRecorder), {
@@ -41,6 +42,7 @@ export function AskComposer() {
   const locale = useLocale();
   const label = useCodeLabel();
   const errorText = useErrorText('qa');
+  const uploadError = useUploadErrorText('qa');
   const { sample } = useUstaad((c) => c.me(), 'me');
   const [voice, setVoice] = useState<Recording | null>(null);
   const [title, setTitle] = useState('');
@@ -88,11 +90,7 @@ export function AskComposer() {
       if (!up.ok) {
         setBusy(false);
         setProgress(null);
-        setError(
-          t.has(`err_${up.code}` as 'err_USTAAD_MEDIA_INVALID')
-            ? errorText(up.code)
-            : errorText('USTAAD_MEDIA_INVALID'),
-        );
+        setError(up.code.startsWith('MEDIA_') ? uploadError(up.code) : errorText('USTAAD_MEDIA_INVALID'));
         return;
       }
       voiceMediaId = up.data.mediaId;
@@ -136,7 +134,7 @@ export function AskComposer() {
           id="ustaad-compose-title"
           ref={heading}
           tabIndex={-1}
-          className="font-heading text-[clamp(22px,4.6vw,28px)] font-extrabold text-ink outline-none"
+          className="font-heading text-[clamp(22px,4.6vw,28px)] font-extrabold text-ink focus-visible:outline-3 focus-visible:outline-focus"
         >
           {t('composeTitle')}
         </h1>
@@ -153,7 +151,11 @@ export function AskComposer() {
       <SampleNote show={sample} />
 
       {sent ? (
-        <div ref={doneRef} tabIndex={-1} className={`${card} grid gap-3 text-center outline-none`}>
+        <div
+          ref={doneRef}
+          tabIndex={-1}
+          className={`${card} grid gap-3 text-center focus-visible:outline-3 focus-visible:outline-focus`}
+        >
           <CheckCircle2 aria-hidden="true" className="mx-auto size-10 text-success" />
           <p className="text-[16px] leading-relaxed font-bold text-ink">{t('sent')}</p>
           <Link

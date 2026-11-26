@@ -30,6 +30,7 @@ import {
   useErrorText,
   useUstaad,
 } from '../common';
+import { useUploadErrorText } from '../media/upload-error';
 
 const PinMap = dynamic(() => import('./pin-map'), {
   ssr: false,
@@ -105,8 +106,10 @@ export function PinGarage() {
 
   const workPlace = me.loaded.data.member?.workPlace ?? 'shop';
   const home = workPlace === 'home_roadside';
-  const source = pin ? pinSource(fix, pin, GPS_MAX_M) : 'manual';
-  const needLandmark = pin !== null && source === 'manual';
+  const unmoved =
+    current !== null && pin !== null && fix === null && pin.lat === current.lat && pin.lng === current.lng;
+  const source = unmoved ? current.source : pin ? pinSource(fix, pin, GPS_MAX_M) : 'manual';
+  const needLandmark = pin !== null && source === 'manual' && !(unmoved && current.landmark);
 
   function locate() {
     if (!('geolocation' in navigator)) {
@@ -114,6 +117,7 @@ export function PinGarage() {
       return;
     }
     setGps('finding');
+    setMoved(0);
     setMsg(null);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -144,7 +148,7 @@ export function PinGarage() {
     ).saveLocation({
       lat: pin.lat,
       lng: pin.lng,
-      accuracyM: fix?.accuracyM ?? 0,
+      accuracyM: unmoved ? current.accuracyM : (fix?.accuracyM ?? 0),
       source,
       landmark: landmark.trim() === '' ? null : landmark.trim(),
       useForVerify: choices.useForVerify,
@@ -389,6 +393,7 @@ function Signboard({ verified }: { verified: boolean }) {
   const t = useTranslations('ustaad.local');
   const locale = useLocale();
   const errorText = useErrorText('local');
+  const uploadError = useUploadErrorText('local');
   const [img, setImg] = useState<PreparedImage | null>(null);
   const [pct, setPct] = useState<number | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -405,7 +410,7 @@ function Signboard({ verified }: { verified: boolean }) {
     );
     if (!up.ok) {
       setPct(null);
-      setMsg({ ok: false, text: errorText(up.code) });
+      setMsg({ ok: false, text: uploadError(up.code) });
       return;
     }
     const r = await client.signboard(up.data.mediaId);
