@@ -343,6 +343,26 @@ page needs `ustaad:read` or `ustaad:settings`, so a marketing account sees "cann
 marketing get the Promotions list alone (a small page in the same group)? Default meanwhile: the super admin runs
 promotions from Network settings → Promotions.
 
+- **Q-U-CE1 (2026-11-26, Ustaad Ask):** questions cannot carry photos yet (no field or table). Build
+  `ustaad_question_media` / `ustaad_answer_media` and a `photoMediaIds` field? **Default meanwhile:** voice and text only;
+  the photo picker is built and used for the signboard.
+- **Q-U-CE2 (2026-11-26, Ustaad Jobs):** the employer's applicants screen needs `GET /ustaad/jobs/mine` and
+  `GET /ustaad/jobs/{code}/applications` (card, status, phone only when shared). **Default meanwhile:** no applicants
+  screen; employers can pause, reopen, fill or close their job.
+- **Q-U-CE3 (2026-11-26, Ustaad Jobs):** posting for a MechDost workshop needs the poster's workshops (ids) in the web;
+  **default meanwhile:** the form posts as a verified trade account (`USTAAD_EMPLOYER_REQUIRED` otherwise).
+- **Q-U-CE4 (2026-11-26, Pin my garage):** changing "shop or garage" / "home or roadside" needs `PATCH /ustaad/me` (B).
+  **Default meanwhile:** shown read-only ("Chosen when you joined").
+- **Q-U-CE5 (2026-11-26, Learn and area map):** add the video size (bytes) to the Learn view and names (en + hi) for
+  zone cells? **Default meanwhile:** duration only; areas numbered "Area 1…".
+
+- **Q-U-CE6 (2026-11-26, Ustaad settings on the web):** the composers use the defaults for `qa.voice_max_s` (90 s) and
+  `loc.gps_max_m` (100 m) because members cannot read network settings. Add a small member-readable settings answer
+  (limits only) to `GET /ustaad/me`? **Default meanwhile:** the defaults in code; the API enforces the real values.
+- **Q-U-CE7 (2026-11-26, Learn captions):** hosted training videos have no caption field. Add `captions_en/hi` (WebVTT
+  media ids) to learning resources? **Default meanwhile:** videos play without captions (MechDost training carries its
+  words on screen).
+
 - **Q-U-C1 (2026-11-26, Ustaad Learn):** should hosted training videos have their own daily completion limit, separate
   from "Lessons a member can mark done a day" (`learn.self_mark_daily_cap`, default 5)? **Default meanwhile:** one
   shared limit for both (videos are also wall-clock checked, so a jump to the end never counts).

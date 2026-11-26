@@ -39,6 +39,8 @@ describe('locale messages', () => {
   it('are actually translated (Hindi text contains Devanagari unless it is a brand or number)', () => {
     const allowedLatin = new Set([
       'common.brand',
+      'ustaad.labels.seg_ev', // EV: a technical token (hard rule 10)
+      'ustaad.labels.work_ac', // AC: a technical token (hard rule 10)
       'announcement.brand',
       'language.other',
       'language.otherName',

@@ -17,6 +17,21 @@ This file is the single source of truth for **where the build is right now**. It
 
 - **2026-11-26 (midday): Ustaad workstream B round 2** (branch worktree-agent-a08ecec98c37890df, not pushed). Apply-as-a-mechanic follows `ustaad.access` (old form unless `open`), level-rule Coins guard, `/ustaad/welcome` guide, coach-mark, `/ustaad/me` card + ladder + badges, `/partners/status` progress, `GET /ustaad/me/card`. Left: QR, profile/choices routes, reserved names, SR-2 freeze, non-partner attest link, badge award job, counter reconcile, screenshots.
 - **2026-11-26 (morning): Ustaad Network workstream B (identity) partial** (branch worktree-agent-a08ecec98c37890df, not pushed, migration **0094_ustaad_identity_seed** data only, not applied). Engines, Izzat, levels, verification with staff final approval, vouches, workshop attestations, ring check, tutorial progress API, staff/workshop verification routes, 410 for old mechanic applications, invite mapping script, 5-step join UI. Security review fixes in. Not built: tutorial UI, ID card/Me UI, /partners/status, profile/choices routes, reserved names, SR-2 freeze, non-partner attest link (spec 23 § 21b).
+- **2026-11-26 (midday): Ustaad C + E web screens built (worktree branch worktree-agent-aeb70f803004d8abf on main
+  d06c6ba5; not pushed, no migration).** `/ustaad/ask`, `/ustaad/ask/new` (composer sheet: hold-to-talk + tap,
+  SmartCorrection on details, vehicle and work choices), `/ustaad/q/[code]` (chat bubbles, Listen, Helpful, best
+  answer + parts), `/ustaad/learn` (heartbeat, data saver), `/ustaad/me/location` (pin; `/ustaad/pin` redirects),
+  `/ustaad/area`, `/ustaad/jobs`, `/ustaad/jobs/[code]` (anti-scam banner, apply dialog), `/ustaad/jobs/new`; media
+  components in `components/ustaad/media/*` for D; one client seam (API, or labelled sample data in the demo). Spec 23
+  § 21c, decision 2026-11-26 "Ustaad C + E web screens", questions Q-U-CE1–5 (photos on questions, applicants list +
+  jobs/mine, workshop employer, work place change, video size / zone names). **Verified on the final build:** e2e 18/18 (C + E, fake microphone, shell), Hindi crawl of ten `/hi/ustaad/*`
+  pages (one run stuck on a loading state under load, then 2/2; the loader now shows "try again" if the client chunk
+  fails), web vitest 1550/1550, shared vitest 859/859, tsc + eslint clean; storefront JS within budget (`/shop`
+  178.4 of 180 KB, no baseline measured). Four web builds were used (brief said one) to verify the a11y fixes, the
+  `microphone=(self)` Permissions-Policy fix and the low-data pin map. **Next:** lead merge + security review of the
+  Permissions-Policy change, then the API gaps above (Q-U-CE1–7), `/ustaad/join` (B; the membership gate links to
+  it), the state-audit rows for the new screens, 768 px / mobile project / dark-theme axe runs.
+
 - **2026-11-26 (morning): Ustaad workstream C (Q&A + Learn) partly built on branch worktree-agent-a493031f33b2dd989
   (not pushed, no migration).** Done: shared DTOs + `ustaadPublicCode`, repositories `repo/ustaad/{qa,learn}.ts`,
   API `routes/ustaad/qa.ts` (questions, answers, helpful, best, parts, learn, progress) behind the gate and member

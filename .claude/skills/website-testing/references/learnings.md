@@ -311,3 +311,7 @@ T203 · 2026-11-24 · notifications · the WhatsApp approval gate is per event (
   legal hold on media an earlier removal archived → regression tests in `packages/db/test/ustaad-moderation.test.ts`
   ("security review fixes"). Any new seed row in an admin table also changes count assertions in the schema and admin
   tests (reasons 11 → 12).
+
+- 2026-11-26 (Ustaad C + E web): bug class "test left in another language" — a screenshot loop that ends on `/hi/...`
+  breaks every later English locator; and axe `label-content-name-mismatch` fires when `aria-label` replaces visible
+  text ("Play · 1 min" named "Play <title>") → keep the visible words in the name, add context with `sr-only`.
