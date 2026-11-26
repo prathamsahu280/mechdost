@@ -45,6 +45,7 @@ import {
   cityScopeFrom,
 } from '../src/repo';
 import * as s from '../src/schema';
+import { MyOrderDto } from '@mechdost/shared/checkout-api';
 import {
   jobOf,
   keyring,
@@ -434,6 +435,9 @@ describe('dispatch and the agent flow', () => {
     const mine = await getMyOrder(w.t(), w.customer, groupCode, { keyring, locale: 'en' });
     const view = JSON.stringify(mine);
     expect(view).not.toContain(A.phone);
+    // The answer keeps the delivery block after the shared DTO parses it (web contract gap G2).
+    const parsed = MyOrderDto.parse(JSON.parse(view));
+    expect(parsed.orders[0]!.delivery).toMatchObject({ stage: 'picked_up', agentFirstName: 'Agent' });
     // Deliver with the customer's code.
     j = await jobOf(w, orderId);
     const custCode = (await customerCode(orderId))!;

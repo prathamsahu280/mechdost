@@ -19,7 +19,9 @@ This file is the single source of truth for **where the build is right now**. It
 - **Later commits (2026-11-27):** 4e9f423e admin label completions; 63caf418 new shops start with agents only where
   agents are on (Lead call 11); ea030d73 review 2 (responses parse with the contract DTOs, photos-required path incl.
   paused finishing, old order deliver-override refuses agent mode, limiter dedupe on shared prefixes, WhatsApp invite
-  behind the channel gate, expired unswept offer shows nothing); 4a84a721 web contract gaps G1–G7 (spec 24 § 16).
+  behind the channel gate, expired unswept offer shows nothing); 4a84a721 web contract gaps G1–G7 (spec 24 § 16); 8d050173 payout replay scope + reserved `rev-` keys
+  (security review); d681a1c3 OpenAPI parameter-name clash fix; then cursor alias on all paged lists + DTO parse of the
+  customer order + replay-scope test with a visible agent.
 - **Gates (2026-11-27):** db full suite 130 files / 1773 tests exit 0 (before review 2; delivery files re-run after:
   31/31 + affected 49/49); shared 1042/1043 (tooling-hooks commit-msg test fails only under PowerShell, 3/3 under
   bash); web tsc 0 + 64 related web unit tests; api tsc 0, delivery API tests 10/10; prettier check clean on the diff.

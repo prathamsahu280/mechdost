@@ -5396,6 +5396,7 @@
     "statusKind_seller": "Seller application",
     "statusKind_garage": "Workshop application",
     "statusKind_mechanic": "Mechanic application",
+    "statusKind_delivery_agent": "Delivery agent application",
     "statusUpdated": "Last updated {date}",
     "stage_new": "Received",
     "stage_in_review": "Being reviewed",

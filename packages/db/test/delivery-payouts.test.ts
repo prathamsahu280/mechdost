@@ -107,6 +107,40 @@ describe('manual agent payouts', () => {
         idempotencyKey: 'payout-key-000000000010',
       }),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    // A visible agent, but the replayed key belongs to a payout of another city: 404 (not 409, not the row).
+    const [home] = await w.db.select().from(s.cities).where(eq(s.cities.id, w.cityId));
+    const [far] = await w.db
+      .insert(s.cities)
+      .values({ stateId: home!.stateId, code: 'BHI', slug: 'bhilai-payouts', name: 'Bhilai', status: 'live' })
+      .returning();
+    const B = await makeAgent(w);
+    const farPay = await w.db
+      .insert(s.deliveryAgentPayouts)
+      .values({
+        agentId: B.agentId,
+        cityId: far!.id,
+        kind: 'payment',
+        amountPaise: 30_000,
+        periodFrom: '2026-11-01',
+        periodTo: '2026-11-15',
+        method: 'upi',
+        idemKey: 'payout-key-far-0000000001',
+        recordedBy: w.staff,
+      })
+      .returning();
+    expect(farPay).toHaveLength(1);
+    await expect(
+      recordAgentPayout(w.t(), {
+        scope: { all: false, cityIds: [w.cityId] },
+        staffUserId: w.staff,
+        agentId: B.agentId,
+        amountPaise: 30_000,
+        periodFrom: '2026-11-01',
+        periodTo: '2026-11-15',
+        method: 'upi',
+        idempotencyKey: 'payout-key-far-0000000001',
+      }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     // A client key in the reserved namespace is refused.
     await expect(pay(A.agentId, `rev-${p.id}`)).rejects.toMatchObject({ code: 'RESERVED_KEY' });
     // A second reversal of the same payment returns the first reversal, once.

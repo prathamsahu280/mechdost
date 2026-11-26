@@ -5396,6 +5396,7 @@
     "statusKind_seller": "विक्रेता आवेदन",
     "statusKind_garage": "वर्कशॉप आवेदन",
     "statusKind_mechanic": "मैकेनिक आवेदन",
+    "statusKind_delivery_agent": "डिलीवरी एजेंट आवेदन",
     "statusUpdated": "अंतिम अपडेट {date}",
     "stage_new": "प्राप्त हुआ",
     "stage_in_review": "समीक्षा में है",

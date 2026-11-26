@@ -398,7 +398,7 @@ export function deliveryAgentRoutes(deps: AppDeps, cache: SessionCache) {
           userId: me(c),
           view: q.view,
           limit: q.limit ?? 30,
-          before: q.before ? new Date(q.before) : null,
+          before: (q.before ?? q.cursor) ? new Date(q.before ?? q.cursor ?? '') : null,
         });
         const last = page.items.at(-1);
         return c.json(
@@ -860,6 +860,7 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
             status: z.enum(['new', 'in_review', 'approved', 'rejected']).default('new'),
             limit: Limit,
             before: Before,
+            cursor: Before,
           }),
         },
       ),
@@ -869,7 +870,7 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
           scope: scope(c, manage),
           status: q.status,
           limit: q.limit ?? 30,
-          before: q.before ? new Date(q.before) : null,
+          before: (q.before ?? q.cursor) ? new Date(q.before ?? q.cursor ?? '') : null,
         });
         const last = page.items.at(-1);
         return c.json(
@@ -1384,6 +1385,7 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
             to: z.iso.date().optional(),
             limit: Limit,
             before: Before,
+            cursor: Before,
           }),
         },
       ),
@@ -1395,7 +1397,7 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
           from: q.from,
           to: q.to,
           limit: q.limit ?? 50,
-          before: q.before ? new Date(q.before) : null,
+          before: (q.before ?? q.cursor) ? new Date(q.before ?? q.cursor ?? '') : null,
         });
         const last = page.items.at(-1);
         return c.json(

@@ -250,3 +250,14 @@ name, cityCode, vehicleType, status, reasonCode, createdAt` (phone masked).
 - **G7** `AdminJobDetail` has `pickupLocked`, `deliveryLocked`, `retryAllowed`.
 - **G8** Not built: the help button stays the company support number. A per-city editable phone needs a text setting
   (the operational settings registry is integer/boolean only); queued as Q-DA5.
+
+**Differences left for the web side (backend kept its shape, 2026-11-27):**
+
+- Job override: API `POST /admin/delivery/jobs/{jobId}/override/{kind}`; the web posts `…/override-{kind}`.
+- Application reject: API `POST /admin/delivery/applications/{code}/reject` with `{ reasonCode, note?, version }`
+  (`version` is on each list row); the web goes through `/admin/partner-applications/{code}` (partners permissions).
+- Record payout: `AgentPayoutInput` requires `idempotencyKey` (8–64 chars, not starting `rev-`; hard rule 3); the
+  web's `PayoutInputView` has none. Correction: `{ note }` only.
+- Earnings: `AgentEarnings` is `{ payouts, totalPaise, deliveredJobs }`; payout rows use `kind` and `corrected`.
+- Agent rating: `ratingAvgX10` + `ratingCount` (no `ratingAvg`).
+- Paging: every paged list accepts `cursor` (alias of `before`); the agents and invites lists are not paged.
