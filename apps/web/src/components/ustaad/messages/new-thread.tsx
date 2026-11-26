@@ -27,7 +27,14 @@ export function NewThread({ handle }: { handle: string | null }) {
       if (!found.ok || !found.data) return found.ok ? { ok: true as const, data: null } : found;
       const rel = await c.relationship(found.data.id);
       if (!rel.ok) return rel;
-      return { ok: true as const, data: { member: found.data, threadId: rel.data.threadId } };
+      let threadId = rel.data.threadId;
+      // A conversation the other member declined is not mine to open (404): asking again starts a new request.
+      if (threadId) {
+        const open = await c.messages(threadId, null);
+        if (!open.ok && open.status === 404) threadId = null;
+        else if (!open.ok) return open;
+      }
+      return { ok: true as const, data: { member: found.data, threadId } };
     },
     `to-${handle ?? ''}`,
   );

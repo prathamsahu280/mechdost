@@ -104,7 +104,7 @@ function Row({ m, children }: { m: MemberCard; children: ReactNode }) {
       <div className="min-w-0 flex-1">
         <MemberLine m={m} />
       </div>
-      <div className="flex flex-wrap gap-2">{children}</div>
+      <div className="flex w-full flex-wrap gap-2 pl-15 sm:w-auto sm:pl-0">{children}</div>
     </li>
   );
 }

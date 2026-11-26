@@ -297,6 +297,16 @@ export function demoSocialClient(): SocialClient {
       if (!other || !visible(memberId)) return fail(404, 'NOT_FOUND');
       if (LINK.test(text)) return fail(422, 'USTAAD_DM_LINK');
       const existing = threads.find((t) => t.view.other.id === memberId);
+      // My request was declined: asking again starts a fresh request on the same conversation (as the API does).
+      if (existing?.view.status === 'declined' && existing.view.mine) {
+        const now = new Date().toISOString();
+        existing.view.status = 'requested';
+        existing.view.lastMessageAt = now;
+        existing.messages.unshift(
+          message(900 + seq, true, text, 0, { id: nextId(600), pending: HOLD.test(text), createdAt: now }),
+        );
+        return ok({ threadId: existing.view.id, status: existing.view.status, pending: HOLD.test(text) });
+      }
       if (existing) return fail(409, 'USTAAD_DM_PENDING');
       const held = HOLD.test(text);
       const view: ThreadView = {
@@ -328,7 +338,7 @@ export function demoSocialClient(): SocialClient {
     },
     messages: (id, cursor) => {
       const t = findThread(id);
-      if (!t || !visible(t.view.other.id) || (t.view.status === 'declined' && !t.view.mine))
+      if (!t || !visible(t.view.other.id) || (t.view.status === 'declined' && t.view.mine))
         return fail(404, 'NOT_FOUND');
       const p = paged(t.messages, cursor, 20);
       return ok({ thread: { ...t.view }, items: p.items, nextCursor: p.nextCursor });

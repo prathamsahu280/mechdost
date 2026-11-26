@@ -268,12 +268,12 @@ action; Hindi default for new members (`general.default_lang`), English switch i
 | `/ustaad/create`                                           | Composer (quick start + any media), draft restore                                                                                                                                                                            |
 | `/ustaad/p/[id]`                                           | Post detail with replies                                                                                                                                                                                                     |
 | `/ustaad/stories/[memberId]`                               | Full-screen story viewer                                                                                                                                                                                                     |
-| `/ustaad/discover`                                         | Search, filters, top helpers, tags                                                                                                                                                                                           |
+| `/ustaad/discover`                                         | Search, work and level filters, top helpers, tags, Top this week (§ 21g)                                                                                                                                                     |
 | `/ustaad/tags/[slug]`                                      | Tag page (posts, questions, follow tag)                                                                                                                                                                                      |
 | `/ustaad/m/[handle]`                                       | Member card and profile (posts, answers, badges, level ladder with "You are here")                                                                                                                                           |
 | `/ustaad/me`                                               | My card (share as image, QR), stats, level ladder, badges, my work, settings and my choices                                                                                                                                  |
 | `/ustaad/me/verify`                                        | Get verified                                                                                                                                                                                                                 |
-| `/ustaad/network`                                          | Requests, near you, mentors / my shagirds, connected                                                                                                                                                                         |
+| `/ustaad/network`                                          | Followers, following, connections, requests, blocked (§ 21g); mentors later                                                                                                                                                  |
 | `/ustaad/messages`, `/ustaad/messages/[id]`                | Message requests and threads; `?to=<handle>` starts a request (§ 21g)                                                                                                                                                        |
 | `/ustaad/jobs`, `/ustaad/jobs/[code]`, `/ustaad/jobs/mine` | Jobs list, detail + apply sheet, employer's jobs and applicants                                                                                                                                                              |
 | `/ustaad/learn`                                            | Courses, short videos, MechDost training                                                                                                                                                                                     |
@@ -1749,6 +1749,14 @@ members/{id}/relationship,connections,blocks,mutes,discover,discover/tags,discov
   `/ustaad/p/<id>`). Following state is not in `DiscoverPersonDto`, so a card starts at "Follow" (PUT is idempotent).
 - **Copy:** `ustaad.messages`, `ustaad.network`, `ustaad.discover` (en + hi, `test/ustaad-dm-view.test.ts` checks key
   parity and every error code in both). **Analytics:** spec 12 § "Ustaad messages, My network and Discover".
+- **Accessibility review (2026-11-26, six specialists: ARIA, keyboard, forms, modal, live regions, contrast +
+  headings):** focus follows every swap (block → Unblock, unblock → More, Accept → message field, Decline → the closed
+  note, Voice/Photo → their panel, removed row or ended list → the list heading, Show older end → the conversation);
+  row buttons carry the member's name (sr-only); the report dialog starts on its title, ties the "pick a reason"
+  error to the group, closes natively so focus returns to Report; one status + one alert per Discover list (not per
+  card) and the result count is announced; the thread `h1` is the name only; busy buttons say "Working…"; Enter-sends
+  is described; the composer panels follow the `data-panel-cancel` contract (Escape closes). Not fixed here (shared
+  `common.tsx`): `LoadingBlock` wraps its status in `aria-busy`, `LoadFailed` mounts its alert with content.
 - **Tests:** `apps/web/test/ustaad-dm-view.test.ts` (box/tab parsing, ticks, order, initials, handle rules, composer
   mode, filters, error keys, copy parity); e2e `apps/web/e2e/ustaad-dm.spec.ts` (tabs, accept a request, ticks and
   held message, send text and photo, mute/report/block/unblock, `?to=` rules and link refusal, network actions and

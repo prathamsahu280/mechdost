@@ -115,6 +115,20 @@ test.describe('Ustaad messages (D2 web)', () => {
     await expect(convo.getByText('Theek hai bhai, kal milte hain')).toBeVisible();
     await expect(field).toHaveValue('');
     await expect(field).toBeFocused();
+    await expect(page.getByText('Message sent.')).toBeAttached();
+
+    // Voice and Photo open a panel in place; Escape closes it and focus is back in the composer.
+    await page.getByRole('button', { name: 'Voice', exact: true }).click();
+    const voicePanel = page.getByRole('group', { name: 'Voice message' });
+    await expect(voicePanel).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(voicePanel).toHaveCount(0);
+    // Focus is back in the composer (its field or the Voice button), never on the page body.
+    await expect(page.locator('main form :focus')).toHaveCount(1);
+    await page.getByRole('button', { name: 'Photo', exact: true }).click();
+    await expect(page.getByRole('group', { name: 'Take or pick a photo' })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('group', { name: 'Take or pick a photo' })).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Photo', exact: true }).click();
     await page
@@ -126,6 +140,15 @@ test.describe('Ustaad messages (D2 web)', () => {
     await expect(convo.getByText('Yeh dekho')).toBeVisible();
     await expect(convo.getByRole('img', { name: 'Photo in the chat' }).last()).toBeVisible();
     await shots(page, 'thread', SURESH_THREAD);
+  });
+
+  test('Decline a request: the conversation closes and its note takes focus', async ({ page }) => {
+    await page.goto('/ustaad/messages/0193a000-0000-7000-8000-000000000303');
+    await expect(page.getByText('wants to talk to you. Accept to reply')).toBeVisible();
+    await page.getByRole('button', { name: 'Decline' }).click();
+    await expect(page.getByText('Declined. They are not told why.')).toBeVisible();
+    await expect(page.getByText('This conversation is closed.')).toBeFocused();
+    await expect(page.getByRole('button', { name: 'Accept' })).toHaveCount(0);
   });
 
   test('More: mute notices, report with a reason, block and unblock', async ({ page }) => {
