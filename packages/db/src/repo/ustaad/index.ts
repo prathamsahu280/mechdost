@@ -27,4 +27,7 @@ export * from './learn';
 export * from './location';
 export * from './zones';
 export * from './jobs';
-// F: export * from './reports'; …
+// F2: reports, moderation (above), strikes, the removed-content archive.
+export * from './reports';
+export * from './strikes';
+export * from './removed-archive';

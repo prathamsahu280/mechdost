@@ -124,7 +124,9 @@ if (!config.firebaseApiKey || !config.turnstileSecret)
     note: 'FIREBASE_API_KEY or TURNSTILE_SECRET_KEY not set — /v1/auth/password returns 503',
   });
 if (!config.assistant)
-  log('warn', 'assistant_disabled', { note: 'ANTHROPIC_API_KEY not set — /v1/assistant returns 503' });
+  log('warn', 'assistant_disabled', {
+    note: 'assistant off (ASSISTANT_ENABLED is not true or ANTHROPIC_API_KEY is unset) — /v1/assistant returns 503',
+  });
 
 const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
   log('info', 'listening', { port: info.port, env: config.env, authEmulator: config.usingAuthEmulator });

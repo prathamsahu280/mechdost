@@ -2229,3 +2229,31 @@ Spec `docs/specs/23-ustaad-network.md`, design `docs/superpowers/specs/2026-11-2
   hash kept after the evidence purge) under transaction advisory locks, and the workshop-portal confirm locks per
   workshop. Residual: until the link closes, a re-opened page still loads after one failed try (the honest owner sees
   "received" and has no reason to retry); staff see every attempt.
+
+## 2026-11-26 — Claude key for Ustaad smart correction; customer assistant off; cost first
+
+- Founder gave an Anthropic key for Ustaad smart correction (Q-U3): `SMART_CORRECTION_PROVIDER=anthropic`, `SMART_CORRECTION_MODEL=claude-haiku-5-5` (cheapest model; only members who gave the smart-correction consent, PII-masked).
+- Founder: "the customer ai assistant chat u can turn it off for now" and "make sure u keep the cost optimized". The key alone no longer switches the assistant on: new `ASSISTANT_ENABLED` (default `false`) must be `true` too (`apps/api/src/config.ts`, test `apps/api/test/assistant-switch.test.ts`). When it is turned back on, set `ASSISTANT_MODEL` to a Haiku model.
+- The key lives in the local `.env` and the server `/opt/mechdost/.env` only (runtime is the server, not GitHub). The founder pasted it in chat; rotating it is advised.
+
+## 2026-11-26 - Ustaad moderation F2 / compliance F3 as built
+
+Spec 23 § 21f. Rulings made while building (lead brief + security review of the branch):
+
+- **Migration 0096** adds the 36 h removal-grievance clock, the `auto_safety` report source, the
+  `ncii_impersonation` reason (2 h), the `safety_block` media reject reason and `ustaad_members.restricted_until`.
+  Reason: A's CHECKs had no code for these duties; papering over them in code would break the analytics codes.
+- **Appeal outcome names:** `upheld` = the decision stands, `overturned` = reversed (spec § 7.6 updated).
+- **Pre-moderation scope:** media posts, stories and comments only; voice notes on questions and answers are never
+  pre-moderated (verification is never a wall, founder ruling).
+- **Blocks vs holds:** only what the author can fix is blocked (phone in public text, plates, links from new accounts,
+  denied domains); every other signal holds silently (no filter oracle).
+- **Security review fixes (2026-11-26):** sanctions never shorten or date a stronger one; an overturned appeal lifts
+  only its own sanction and recomputes the status, never a POCSO freeze; legal removals are reversed only with
+  `ustaad:takedown` and never while on legal hold; a later legal hold covers already-archived media and the purge skips
+  media of held rows; an NCII complaint hides content at once only from a qualified reporter, and dismissed NCII
+  reports count toward the false-report strike.
+- **Staff route prefix** `/v1/admin/ustaad/moderation/*` (own guard, own rate-limit count), so G1's settings router and
+  G2's console never share a guard.
+- **Community Rules** are a policy page `policy.community_rules` at `/policies/community-rules`, admin-editable like
+  `/terms`; the quarterly reminder links there.

@@ -40,6 +40,8 @@ const schema = z
     API_DOCS: z.enum(['on', 'off']).optional(),
     ANTHROPIC_API_KEY: z.string().min(20).optional(),
     ASSISTANT_MODEL: z.string().default('claude-opus-5-5'),
+    /** Customer assistant chat (spec 18). Off unless `true`, even with ANTHROPIC_API_KEY set (founder 2026-11-26: off for now). */
+    ASSISTANT_ENABLED: z.enum(['true', 'false']).default('false'),
     /**
      * Ustaad smart correction (spec 23 § 11, Q-U3): `none` (default) = the word list on our server only. The assistant's
      * ANTHROPIC_API_KEY alone never switches it on: member text goes to an LLM only when this names a provider.
@@ -402,7 +404,10 @@ function toConfig(env: z.infer<typeof schema>) {
       databaseUrl: env.FIREBASE_DATABASE_URL ?? null,
       listenUrl: env.DATABASE_URL && !env.DATABASE_URL.includes('<') ? env.DATABASE_URL : null,
     },
-    assistant: env.ANTHROPIC_API_KEY ? { apiKey: env.ANTHROPIC_API_KEY, model: env.ASSISTANT_MODEL } : null,
+    assistant:
+      env.ANTHROPIC_API_KEY && env.ASSISTANT_ENABLED === 'true'
+        ? { apiKey: env.ANTHROPIC_API_KEY, model: env.ASSISTANT_MODEL }
+        : null,
     /** Smart-correction LLM; null = word list only (no provider named, or its key missing). */
     smartCorrection: smartCorrectionConfig(env),
     /** Error reports to Sentry; null = off (nothing loaded, nothing sent). */

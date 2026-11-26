@@ -6,12 +6,22 @@ This file is the single source of truth for **where the build is right now**. It
 
 - **2026-11-26 (afternoon): Ustaad workstream B round 3** (branch worktree-agent-ab7b78a32bea2c97c, not pushed,
   migrations **0098_ustaad_identity_b3** (schema) and **0099_ustaad_reserved_names_seed** (data) written, NOT applied).
-  Reserved/look-alike names, `PATCH /ustaad/me`, specialities, choices, SR-2 freeze, garage-owner link (staff-issued)
-  - public `/ustaad-attest/[token]`, evidence purge, counter reconcile, 30-day counters, stored qualified followers,
-    badge awards, voucher trust (lead's security finding), Partners notice, Ustaad copy on Apply as a mechanic, state
-    audit rows. Spec 23 § 21b round 3, decisions 2026-11-26 "B round 3", Q-UB1. **Next:** lead merge + apply 0098/0099;
-    F's ban must call `ustaadVoucherLostTrust`; D2 writes `followed/unfollowed` events per the contract; G2 builds the
-    verification queue screen and the reserved-names list; profile/choices web screens; screenshots.
+  Reserved/look-alike names, `PATCH /ustaad/me`, specialities, choices, SR-2 freeze, garage-owner link (staff-issued) and
+  public `/ustaad-attest/[token]`, evidence purge, counter reconcile, 30-day counters, stored qualified followers,
+  badge awards, voucher trust (lead's security finding), Partners notice, Ustaad copy on Apply as a mechanic, state
+  audit rows. Spec 23 § 21b round 3, decisions 2026-11-26 "B round 3", Q-UB1. **Next:** lead merge + apply 0098/0099;
+  F's ban must call `ustaadVoucherLostTrust`; D2 writes `followed/unfollowed` events per the contract; G2 builds the
+  verification queue screen and the reserved-names list; profile/choices web screens; screenshots.
+- **2026-11-26: Ustaad F2 (reports, moderation, appeals, takedown clocks, child safety) + F3 (compliance docs) built**
+  (branch worktree-agent-a65a759c1bdf03b2b on main d06c6ba5 + merge of main with B's 0094; not pushed; migration
+  **0096_ustaad_moderation_f2** generated, not applied; 0095 left free). Spec 23 § 21f, decisions 2026-11-26
+  "Ustaad moderation F2 / compliance F3". Real `screenUstaadContent`; repos reports / moderation / strikes /
+  removed-archive / targets; `POST /v1/ustaad/reports`; `/v1/admin/ustaad/moderation/*` (queue, detail, act, ban
+  confirm, appeal, decide, DM thread, takedowns); classifier adapter + evidence moves in the media verify step; worker
+  timers `ustaad_report_clock`, `ustaad_removed_archive_purge`, `ustaad_rules_reminder`; lead's security-review fixes
+  1–5 done test-first. F3: `docs/runbooks/ustaad.md`, `docs/research/processors.md`, `/policies/community-rules`
+  (en + hi, `policy.community_rules`). Open: Q-UF1 (ICT logs), Q-UF2; consent toggles (B3), `ustaad_grievance` ticket
+  kind, D surfaces in AT-TAKEDOWN-1, G2 console UI; screenshots of the Community Rules page; e2e not run (rules).
 
 - **2026-11-26 (midday): Ustaad workstream B round 2** (branch worktree-agent-a08ecec98c37890df, not pushed). Apply-as-a-mechanic follows `ustaad.access` (old form unless `open`), level-rule Coins guard, `/ustaad/welcome` guide, coach-mark, `/ustaad/me` card + ladder + badges, `/partners/status` progress, `GET /ustaad/me/card`. Left: QR, profile/choices routes, reserved names, SR-2 freeze, non-partner attest link, badge award job, counter reconcile, screenshots.
 - **2026-11-26 (morning): Ustaad Network workstream B (identity) partial** (branch worktree-agent-a08ecec98c37890df, not pushed, migration **0094_ustaad_identity_seed** data only, not applied). Engines, Izzat, levels, verification with staff final approval, vouches, workshop attestations, ring check, tutorial progress API, staff/workshop verification routes, 410 for old mechanic applications, invite mapping script, 5-step join UI. Security review fixes in. Not built: tutorial UI, ID card/Me UI, /partners/status, profile/choices routes, reserved names, SR-2 freeze, non-partner attest link (spec 23 § 21b).

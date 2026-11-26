@@ -25,6 +25,7 @@ import { ustaadProfileRoutes } from './profile';
 import { ustaadAttestRoutes } from './attest';
 import { ustaadVerificationRoutes } from './verification';
 import { ustaadQaRoutes } from './qa';
+import { ustaadReportRoutes } from './reports';
 
 const accessRoute = createRoute({
   method: 'get',
@@ -58,6 +59,6 @@ export function ustaadRoutes(deps: AppDeps, sessions: SessionCache, access: Usta
   // D: app.route('/', ustaadPostRoutes(deps)); app.route('/', ustaadFeedRoutes(deps)); …
   app.route('/', ustaadLocalRoutes(deps));
   app.route('/', ustaadCorrectRoutes(deps));
-  // F: app.route('/', ustaadReportRoutes(deps));
+  app.route('/', ustaadReportRoutes(deps));
   return app;
 }

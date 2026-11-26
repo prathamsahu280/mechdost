@@ -363,3 +363,13 @@ promotions from Network settings → Promotions.
 - **Q-U-C1 (2026-11-26, Ustaad Learn):** should hosted training videos have their own daily completion limit, separate
   from "Lessons a member can mark done a day" (`learn.self_mark_daily_cap`, default 5)? **Default meanwhile:** one
   shared limit for both (videos are also wall-clock checked, so a jump to the end never counts).
+
+- **Q-UF1 (2026-11-26, Ustaad F3, Input + Authorization, P1 before launch):** CERT-In asks for ICT logs kept 180 days
+  in India. Today the Docker containers on the AWS server use the default `json-file` logs, which are lost when a
+  container is recreated. Choose: (a) Docker `log-opts` with enough rotation on the server disk, or (b) ship logs to
+  CloudWatch Logs in Mumbai with 180-day retention (small monthly cost). **Default meanwhile:** nothing changes on the
+  server (an outward change waits for you); `audit_log`, `ustaad_events` and moderation actions in Postgres stay the
+  durable record. Runbook `docs/runbooks/ustaad.md` § 8.
+- **Q-UF2 (2026-11-26, Ustaad F2, Decision, P2):** should a removed job be restorable on an overturned appeal? Spec
+  § 7.7 makes `removed` terminal for jobs. **Default meanwhile:** no; the appeal overturns the strikes and sanctions
+  only, and the employer posts the job again.

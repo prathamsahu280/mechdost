@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import type { Tutorial } from '@mechdost/shared/ustaad/dto/verification';
@@ -30,6 +31,7 @@ type Card = Tutorial['cards'][number];
 export function TutorialCards() {
   const t = useTranslations('ustaad.tutorial');
   const locale = useLocale();
+  const router = useRouter();
   const lang = locale === 'en' ? 'en' : 'hi';
   const [cards, setCards] = useState<Card[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -113,7 +115,7 @@ export function TutorialCards() {
     if (kind === 'skipped') track('tutorial_skipped', { atCard: i + 1 });
     else track('tutorial_completed', {});
     void save(kind, i + 1).finally(() => {
-      window.location.assign(localePath('/ustaad', locale));
+      router.push(localePath('/ustaad', locale));
     });
   }
 
@@ -202,7 +204,7 @@ export function TutorialCards() {
         <h2
           ref={heading}
           tabIndex={-1}
-          className="font-heading text-[clamp(22px,5vw,28px)] font-extrabold outline-none"
+          className="font-heading text-[clamp(22px,5vw,28px)] font-extrabold outline-none focus-visible:ring-2 focus-visible:ring-accent-button"
         >
           {card.title}
         </h2>

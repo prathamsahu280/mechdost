@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { USTAAD_SEGMENT_CODES, USTAAD_WORK_CODES } from '@mechdost/shared/ustaad/codes';
@@ -211,12 +212,12 @@ export function UstaadJoinFlow({
     return (
       <div className="grid gap-4">
         <p className="text-base text-ink">{t('signInFirst')}</p>
-        <a
+        <Link
           href={`${localePath('/login', locale)}?next=${encodeURIComponent(back)}`}
           className="press inline-flex min-h-12 items-center justify-center rounded-button bg-accent-button px-6 text-base font-bold text-white hover:bg-accent-button-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
         >
           {t('signIn')}
-        </a>
+        </Link>
       </div>
     );
   }
@@ -227,17 +228,17 @@ export function UstaadJoinFlow({
         <h2
           ref={heading}
           tabIndex={-1}
-          className="font-heading text-2xl font-extrabold text-ink outline-none"
+          className="font-heading text-2xl font-extrabold text-ink outline-none focus-visible:ring-2 focus-visible:ring-accent-button"
         >
           {t('doneTitle')}
         </h2>
         <p className="text-base text-ink-muted">{t('doneBody')}</p>
-        <a
+        <Link
           href={localePath('/ustaad/welcome', locale)}
           className="press inline-flex min-h-12 items-center justify-center rounded-button bg-accent-button px-6 text-base font-bold text-white hover:bg-accent-button-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
         >
           {t('doneCta')}
-        </a>
+        </Link>
       </div>
     );
 
@@ -328,7 +329,7 @@ export function UstaadJoinFlow({
         <h2
           ref={heading}
           tabIndex={-1}
-          className="mt-4 font-heading text-[clamp(22px,4vw,28px)] font-extrabold text-ink outline-none"
+          className="mt-4 font-heading text-[clamp(22px,4vw,28px)] font-extrabold text-ink outline-none focus-visible:ring-2 focus-visible:ring-accent-button"
         >
           <span className="sr-only">{t('stepHeading', { n: step + 1, total: JOIN_STEPS.length })}</span>
           {t(`step_${key}`)}

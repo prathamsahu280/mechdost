@@ -143,6 +143,7 @@ const PUBLIC_PAGES = [
   '/policies/privacy',
   '/terms',
   '/policies/delivery',
+  '/policies/community-rules',
   '/policies/service-terms',
   '/policies/company',
   '/partners',

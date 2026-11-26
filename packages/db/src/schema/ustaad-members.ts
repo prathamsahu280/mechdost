@@ -73,6 +73,8 @@ export const ustaadMembers = pgTable(
     levelSince: ts().notNull().defaultNow(),
     status: text().notNull().default('active'),
     bannedUntil: ts(),
+    /** F2: end of a moderation restriction (no posting); null with status `restricted` = until staff lift it. */
+    restrictedUntil: ts(),
     verificationState: text().notNull().default('unverified'),
     verifiedAt: ts(),
     /** `none | minor_report | review` (spec 23 § 13): restricted mode turns analytics, suggestions, jobs, DMs off. */
@@ -142,6 +144,7 @@ export const ustaadMembers = pgTable(
     ),
     check('ustaad_members_left_at', sql`(${t.status} = 'left') = (${t.leftAt} is not null)`),
     check('ustaad_members_banned_until', sql`${t.bannedUntil} is null or ${t.status} = 'banned'`),
+    check('ustaad_members_restricted_until', sql`${t.restrictedUntil} is null or ${t.status} = 'restricted'`),
   ],
 );
 

@@ -1,6 +1,6 @@
 {
-  "id": "de77fb97-2fac-45e2-b80e-9c31af019589",
-  "prevId": "39edb60e-a794-4483-b638-57ffbfb22f47",
+  "id": "1e75e45f-5bd5-4bba-953a-c208d03e3994",
+  "prevId": "5c5775e8-45e9-47a1-ac60-f454d4d072ae",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -23567,6 +23567,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "restricted_until": {
+          "name": "restricted_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "verification_state": {
           "name": "verification_state",
           "type": "text",
@@ -24046,6 +24052,10 @@
         "ustaad_members_banned_until": {
           "name": "ustaad_members_banned_until",
           "value": "\"ustaad_members\".\"banned_until\" is null or \"ustaad_members\".\"status\" = 'banned'"
+        },
+        "ustaad_members_restricted_until": {
+          "name": "ustaad_members_restricted_until",
+          "value": "\"ustaad_members\".\"restricted_until\" is null or \"ustaad_members\".\"status\" = 'restricted'"
         }
       },
       "isRLSEnabled": false
@@ -24546,7 +24556,7 @@
         },
         "ustaad_media_reject_reason_valid": {
           "name": "ustaad_media_reject_reason_valid",
-          "value": "\"ustaad_media\".\"reject_reason_code\" is null or \"ustaad_media\".\"reject_reason_code\" in ('size_mismatch','type_mismatch','magic_mismatch','too_long','too_large','location_atom','external_reference','decompression_bomb','expired_upload','unreadable','hash_mismatch')"
+          "value": "\"ustaad_media\".\"reject_reason_code\" is null or \"ustaad_media\".\"reject_reason_code\" in ('size_mismatch','type_mismatch','magic_mismatch','too_long','too_large','location_atom','external_reference','decompression_bomb','expired_upload','unreadable','hash_mismatch','safety_block')"
         },
         "ustaad_media_rejected_reason": {
           "name": "ustaad_media_rejected_reason",
@@ -33161,11 +33171,11 @@
       "checkConstraints": {
         "ustaad_report_reasons_code_valid": {
           "name": "ustaad_report_reasons_code_valid",
-          "value": "\"ustaad_report_reasons\".\"code\" in ('wrong_unsafe','illegal_modification','abuse','spam','privacy','minor','not_work','fake','job_scam','ip','other')"
+          "value": "\"ustaad_report_reasons\".\"code\" in ('wrong_unsafe','illegal_modification','abuse','spam','privacy','minor','not_work','fake','job_scam','ip','ncii_impersonation','other')"
         },
         "ustaad_report_reasons_clock_valid": {
           "name": "ustaad_report_reasons_clock_valid",
-          "value": "\"ustaad_report_reasons\".\"default_clock\" in ('intimate_2h','legal_3h','standard_24h','grievance_7d')"
+          "value": "\"ustaad_report_reasons\".\"default_clock\" in ('intimate_2h','legal_3h','removal_36h','standard_24h','grievance_7d')"
         },
         "ustaad_report_reasons_other_on": {
           "name": "ustaad_report_reasons_other_on",
@@ -33555,15 +33565,15 @@
         },
         "ustaad_reports_source_valid": {
           "name": "ustaad_reports_source_valid",
-          "value": "\"ustaad_reports\".\"source\" in ('member','auto_word','auto_scam','legal_order','grievance')"
+          "value": "\"ustaad_reports\".\"source\" in ('member','auto_word','auto_scam','auto_safety','legal_order','grievance')"
         },
         "ustaad_reports_reason_valid": {
           "name": "ustaad_reports_reason_valid",
-          "value": "\"ustaad_reports\".\"reason_code\" in ('wrong_unsafe','illegal_modification','abuse','spam','privacy','minor','not_work','fake','job_scam','ip','other')"
+          "value": "\"ustaad_reports\".\"reason_code\" in ('wrong_unsafe','illegal_modification','abuse','spam','privacy','minor','not_work','fake','job_scam','ip','ncii_impersonation','other')"
         },
         "ustaad_reports_clock_valid": {
           "name": "ustaad_reports_clock_valid",
-          "value": "\"ustaad_reports\".\"clock\" in ('intimate_2h','legal_3h','standard_24h','grievance_7d')"
+          "value": "\"ustaad_reports\".\"clock\" in ('intimate_2h','legal_3h','removal_36h','standard_24h','grievance_7d')"
         },
         "ustaad_reports_status_valid": {
           "name": "ustaad_reports_status_valid",

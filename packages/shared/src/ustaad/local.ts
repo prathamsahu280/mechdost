@@ -200,6 +200,16 @@ const UPI_KNOWN = new RegExp(`[a-z0-9._-]{2,}@(${UPI_PSPS.join('|')})(?![a-z0-9]
 const UPI_GENERIC = /[a-z0-9._-]{2,}@[a-z]{2,}(?![a-z0-9]|[.][a-z])/i;
 const PAY_APP = /\b(paytm|phonepe|gpay|google\s*pay|bhim)\s*(kar|karo|kare|number|no\.?|pe|par|to)\b/i;
 
+/** A UPI id in already-normalised text (known PSP handles first, then any `handle@word` that is not an e-mail). */
+export function hasUpiId(normalised: string): boolean {
+  return UPI_KNOWN.test(normalised) || UPI_GENERIC.test(normalised);
+}
+
+/** "Pay on PhonePe / Paytm / GPay" asks in already-normalised text. */
+export function hasPayAppAsk(normalised: string): boolean {
+  return PAY_APP.test(normalised);
+}
+
 export type JobScamSignal = 'fee_phrase' | 'upi_id' | 'pay_app';
 
 /**

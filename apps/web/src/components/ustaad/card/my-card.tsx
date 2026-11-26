@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MyCard } from '@mechdost/shared/ustaad/dto/verification';
@@ -176,6 +178,7 @@ function Ladder({ card }: { card: MyCard }) {
 export function MyCardScreen() {
   const t = useTranslations('ustaad.card');
   const locale = useLocale();
+  const router = useRouter();
   const [card, setCard] = useState<MyCard | null>(null);
   const [failed, setFailed] = useState(false);
   const top = useRef<HTMLDivElement>(null);
@@ -200,7 +203,12 @@ export function MyCardScreen() {
 
   if (failed)
     return (
-      <div ref={top} tabIndex={-1} role="alert" className="grid gap-3 outline-none">
+      <div
+        ref={top}
+        tabIndex={-1}
+        role="alert"
+        className="grid gap-3 outline-none focus-visible:ring-2 focus-visible:ring-accent-button"
+      >
         <p className="text-base text-ink">{t('error')}</p>
         <button
           type="button"
@@ -230,14 +238,18 @@ export function MyCardScreen() {
   ];
   const verified = card.member.verificationState === 'verified';
   return (
-    <div ref={top} tabIndex={-1} className="grid gap-6 outline-none">
+    <div
+      ref={top}
+      tabIndex={-1}
+      className="grid gap-6 outline-none focus-visible:ring-2 focus-visible:ring-accent-button"
+    >
       <IdCard card={card} />
-      <a
+      <Link
         href={localePath('/partners/status', locale)}
         className={`${btn} ${verified ? 'border border-line-card text-ink' : 'bg-accent-button text-white hover:bg-accent-button-hover'}`}
       >
         {verified ? t('seeProgress') : t('getVerified')}
-      </a>
+      </Link>
       <section className="grid gap-2">
         <dl className="grid grid-cols-2 gap-3 min-[520px]:grid-cols-4">
           {stats.map(([k, v]) => (
@@ -276,7 +288,7 @@ export function MyCardScreen() {
             void import('@/lib/ustaad/identity-api')
               .then((api) => api.resetOnboarding(locale))
               .finally(() => {
-                window.location.assign(localePath('/ustaad/welcome', locale));
+                router.push(localePath('/ustaad/welcome', locale));
               });
           }}
           className={`${btn} border border-line-card text-ink`}

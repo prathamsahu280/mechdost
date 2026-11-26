@@ -11,10 +11,13 @@
 import { createHash } from 'node:crypto';
 import sharp from 'sharp';
 import {
+  flagUstaadMediaUnsafe,
   markUstaadMediaUploaded,
   markUstaadMediaVerified,
   pendingUstaadMediaOf,
+  readUstaadSettingValues,
   rejectUstaadMedia,
+  sealUstaadMediaEvidence,
   saveUstaadMediaVariants,
   ustaadMediaCaps,
   ustaadObjectKey,
@@ -24,6 +27,8 @@ import {
 } from '@mechdost/db/repo';
 import type { UstaadMediaKind } from '@mechdost/shared/ustaad/codes';
 import { ApiError } from '../../errors';
+import type { ImageSafetyClassifier } from '../safety/classifier';
+import { relocatedKey } from '../safety/evidence';
 import { mp4Check, oggFacts, webmCheck, type ContainerFacts } from './duration';
 import type { MediaHost } from './host';
 import { matchesDeclared, sniff } from './sniff';
@@ -51,6 +56,8 @@ const ERROR_FOR: Partial<Record<Reason, string>> = {
 export interface VerifyDeps {
   db: Tx;
   host: MediaHost;
+  /** Image-safety classifier (F2, SR-18); absent = none (pre-moderation of new accounts' media applies). */
+  classifier?: ImageSafetyClassifier | null;
 }
 
 export async function completeAndVerify(
@@ -89,6 +96,18 @@ export async function completeAndVerify(
 
     if (kind === 'image') {
       const bytes = await deps.host.getRange(q, privateKey, 0, row.declaredBytes - 1);
+      const safety = deps.classifier
+        ? await deps.classifier.check({ bytes, mime: row.declaredMime, sha256: row.sha256 })
+        : null;
+      if (safety?.hashMatch) {
+        // SR-18: never published; sealed in the evidence vault, the account frozen, a POCSO task opened.
+        const evidenceKey = relocatedKey('evidence', row.ownerMemberId, privateKey);
+        await deps.host.copy(q, privateKey, 'evidence', evidenceKey);
+        await deps.host.remove(q, privateKey);
+        copied = false;
+        await sealUstaadMediaEvidence(deps.db, { mediaId: row.id, evidenceKey });
+        throw new ApiError(422, 'MEDIA_MISMATCH', 'This file could not be used');
+      }
       const out = await reencode(Buffer.from(bytes));
       const k1080 = ustaadObjectKey('media', row.ownerMemberId, 'image/webp');
       const k480 = ustaadObjectKey('media', row.ownerMemberId, 'image/webp');
@@ -119,6 +138,11 @@ export async function completeAndVerify(
           height: out.small.height,
         },
       ]);
+      if (safety?.checked && safety.nsfwScorePct !== null) {
+        const s = await readUstaadSettingValues(deps.db, ['ustaad.mod.nsfw_hold_score_pct']);
+        if (safety.nsfwScorePct >= Number(s['ustaad.mod.nsfw_hold_score_pct']))
+          await flagUstaadMediaUnsafe(deps.db, { mediaId: row.id, scorePct: safety.nsfwScorePct });
+      }
       return verified;
     }
 
