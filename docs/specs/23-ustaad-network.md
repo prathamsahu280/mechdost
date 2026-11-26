@@ -1197,6 +1197,51 @@ members at the next run. Data dictionary: this § 6.
   (compress, recorders, trim, blur, upload) and the `ustaad_media_purge` worker job (the repository functions
   `dueUstaadMediaPurges` / `markUstaadMediaPurged` exist), Supabase TUS resumable uploads, the state-audit rows.
 
+## 21b. Workstream C as built (2026-11-26, partial: API done, web UI not started)
+
+- **Shared:** `packages/shared/src/ustaad/dto/qa.ts` (strict `AskQuestionDto` / `AnswerDto` / `BestAnswerDto` /
+  `AnswerPartsDto` / `QuestionListQueryDto` / `LearnProgressDto` and the views), `ustaad/public-code.ts`
+  (`ustaadPublicCode('UQ'|'UJ'|'UR', city)`: RFC 4648 base32, because the DB CHECKs use `[A-Z2-7]`, unlike the
+  Crockford marketplace codes in `ids.ts`). A voice-only question stores the title `…` (`VOICE_ONLY_TITLE`; the column
+  is NOT NULL) and every view returns `title: null` for it.
+- **Repositories** `packages/db/src/repo/ustaad/qa.ts`, `learn.ts`: ask (idempotent on `(asker, idemKey)`, UQ code
+  with retry on collision, `screenUstaadContent` hook, `question_waiting` to ≤ `qa.notify_ustaads` verified Ustaads of
+  the city with a matching speciality, most helpful first, never blocked pairs); voice notes must be the caller's own
+  verified audio in the `media` bucket within `qa.voice_max_s` (`USTAAD_MEDIA_INVALID`); `reach: state` only while
+  `general.all_state` is on (`USTAAD_REGION`); EV questions default to the `ev_hv` safety tag. Answer gate:
+  `USTAAD_CANNOT_ANSWER` for a Chhotu (unless `qa.apprentice_can_answer`), a restricted member or the asker;
+  `counts_for_levels = false` while the author is `apprentice`/`ustaad_pending` (no Izzat until B's back-fill);
+  first visible answer moves `open → answered` (conditional UPDATE with version). Helpful: one row per voter (PK,
+  `ON CONFLICT DO NOTHING`), `USTAAD_SELF_VOTE`, counters by conditional increments, `helpful_received` Izzat only for
+  counting answers. Best answer: asker only (others 404), answer of the same question, `USTAAD_ALREADY_SOLVED` 409 on a
+  second pick or a race, `USTAAD_WEEKLY_CAP` past `qa.best_per_week` in 7 days (counted from `ustaad_events`),
+  `best_answer` Izzat + `recomputeUstaadLevel`, `ustaad.best_answer` notice. Parts: the best answer's author sets ≤ 5
+  live products (`USTAAD_NOT_BEST`, `USTAAD_PART_INVALID`). Reads: removed questions, blocked pairs (either way) and
+  questions outside the viewer's city (unless state-wide) are 404 / not listed; keyset cursor; no phone selected.
+  Learn: courses + resources + my progress; a hosted video completes at ≥ 80 % of `duration_s`, seconds never go down;
+  external links self-marked, `learn.self_mark_daily_cap` a day (IST); a first completion bumps `videos_watched`,
+  records `video_completed` Izzat (idempotent) and recomputes the level once.
+- **Review fixes (2026-11-26, lead review MEDIUM):** one write guard `assertUstaadMemberCanWrite` (status `active`
+  and `restricted_mode = none`, else 403 `USTAAD_RESTRICTED`) on ask, answer, helpful, best answer and parts;
+  restricted members still read. Learn progress for hosted videos is a heartbeat `deltaSeconds` (1–300): the server
+  credits at most the time since the row's `updated_at` on the DB clock (`now() - updated_at`, touched on every
+  write); only the first heartbeat gets a 30 s slack, so the gaps telescope and the total never exceeds the time since
+  the first write + 30 s, however many heartbeats are sent (second review fix); a jump to the end never completes a video (no new column, no migration). First completions of hosted videos and self-marked
+  links share one daily cap, `learn.self_mark_daily_cap` (IST day; Q-U-C1 asks whether videos need their own setting).
+- **API** `apps/api/src/routes/ustaad/qa.ts` (mounted in `routes/ustaad/index.ts`): `GET/POST /ustaad/questions`,
+  `GET /ustaad/questions/{code}`, `POST …/{code}/answers`, `POST …/{code}/best`, `POST /ustaad/answers/{id}/helpful`,
+  `PUT /ustaad/answers/{id}/parts`, `GET /ustaad/learn`, `PUT /ustaad/learn/{id}/progress`; `requireUstaadMember` on
+  every path; rate rules `questions` 10/day, `answers` 30/day, `votes` 100/day, `learn` 120/h, reads `memberReads`.
+- **Tests:** `packages/db/test/ustaad-qa.test.ts` (20), `apps/api/test/ustaad-qa-api.test.ts` (5: role leak,
+  end-to-end flow, strict bodies, 11th question → 429, Learn).
+- **Not built yet (next):** web screens (`/ustaad/ask`, composer sheet with hold-to-talk recorder and photo picker in
+  `components/ustaad/media/*`, `/ustaad/q/[code]` chat-bubble thread with Listen, `/ustaad/learn`), `ustaad.qa.*` /
+  `ustaad.learn.*` locale strings, question **photos** (no table: needs a `ustaad_question_media` /
+  `ustaad_answer_media` migration after 0093 and a host line in `readableUstaadMedia`), the widening job after
+  `qa.widen_after_h` and auto-close after `qa.auto_close_days` (worker), admin CRUD for courses/resources, the seed
+  "How to use Ustaad Network" course, vehicle-model picker data, and a Hindi `topic` placeholder for
+  `question_waiting` (today the notice receives the work/segment **code**; it must be the localized label).
+
 ## 22. Not built / later
 
 Speech-to-text and transcripts (ruled out), voice search, auto-translation, server video/audio transcoding and the

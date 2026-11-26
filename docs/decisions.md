@@ -2158,3 +2158,11 @@ Spec `docs/specs/23-ustaad-network.md`, design `docs/superpowers/specs/2026-11-2
   frame does not ship the whole network namespace.
 - **No new colours, fonts, radii or dependencies;** the screen reuses the admin header, card, badge, table, the
   settings save bar pattern and `ConfirmDialog`.
+
+## 2026-11-26 - Ustaad Q&A and Learn as built (task C, API part)
+
+- Ustaad public codes use RFC 4648 base32 (`ustaadPublicCode`), matching the A schema CHECKs; marketplace codes stay
+  Crockford. A voice-only question stores the title `…` and views return `title: null` (the column stays NOT NULL).
+- The best-answer weekly cap is counted from `ustaad_events` (`best_chosen` by the asker in the last 7 days), so no
+  extra counter table is needed.
+- Learn self-marks count per IST day; a hosted video completes at ≥ 80 % (spec 23 § 9.2). Details in spec 23 § 21b.

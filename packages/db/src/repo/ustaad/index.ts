@@ -15,7 +15,8 @@ export * from './notify';
 // G1 (Admin → Ustaad settings and tables).
 export * from './admin';
 // B: export * from './verification'; export * from './onboarding'; …
-// C: export * from './qa'; export * from './learn';
+export * from './qa';
+export * from './learn';
 // D: export * from './posts'; export * from './feed'; export * from './graph'; export * from './threads'; …
 // E: export * from './location'; export * from './zones'; export * from './jobs';
 // F: export * from './reports'; …
