@@ -11,8 +11,13 @@ This file is the single source of truth for **where the build is right now**. It
   `/ustaad/area`, `/ustaad/jobs`, `/ustaad/jobs/[code]` (anti-scam banner, apply dialog), `/ustaad/jobs/new`; media
   components in `components/ustaad/media/*` for D; one client seam (API, or labelled sample data in the demo). Spec 23
   § 21c, decision 2026-11-26 "Ustaad C + E web screens", questions Q-U-CE1–5 (photos on questions, applicants list +
-  jobs/mine, workshop employer, work place change, video size / zone names). **Next:** lead merge (three web builds were used on this branch to verify the a11y
-  fixes, a deviation from the one-build brief), then the API gaps above and the state-audit rows for the new screens.
+  jobs/mine, workshop employer, work place change, video size / zone names). **Verified on the final build:** e2e 18/18 (C + E, fake microphone, shell), Hindi crawl of ten `/hi/ustaad/*`
+  pages (one run stuck on a loading state under load, then 2/2; the loader now shows "try again" if the client chunk
+  fails), web vitest 1550/1550, shared vitest 859/859, tsc + eslint clean; storefront JS within budget (`/shop`
+  178.4 of 180 KB, no baseline measured). Four web builds were used (brief said one) to verify the a11y fixes, the
+  `microphone=(self)` Permissions-Policy fix and the low-data pin map. **Next:** lead merge + security review of the
+  Permissions-Policy change, then the API gaps above (Q-U-CE1–7), `/ustaad/join` (B; the membership gate links to
+  it), the state-audit rows for the new screens, 768 px / mobile project / dark-theme axe runs.
 
 - **2026-11-26 (morning): Ustaad workstream C (Q&A + Learn) partly built on branch worktree-agent-a493031f33b2dd989
   (not pushed, no migration).** Done: shared DTOs + `ustaadPublicCode`, repositories `repo/ustaad/{qa,learn}.ts`,

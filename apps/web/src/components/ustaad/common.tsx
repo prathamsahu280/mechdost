@@ -47,12 +47,17 @@ export function useUstaad<T>(
     let live = true;
     if (!silent.current) setLoaded({ state: 'loading' });
     silent.current = false;
-    void ustaadClient(locale).then(async (c) => {
-      const r = await run.current(c);
-      if (!live) return;
-      setSample(c.sample);
-      setLoaded(r.ok ? { state: 'ok', data: r.data } : { state: 'error', status: r.status, code: r.code });
-    });
+    ustaadClient(locale)
+      .then(async (c) => {
+        const r = await run.current(c);
+        if (!live) return;
+        setSample(c.sample);
+        setLoaded(r.ok ? { state: 'ok', data: r.data } : { state: 'error', status: r.status, code: r.code });
+      })
+      .catch(() => {
+        // The client chunk failed to load (offline, a new deploy): show "try again", never an endless spinner.
+        if (live) setLoaded({ state: 'error', status: 0, code: 'NETWORK' });
+      });
     return () => {
       live = false;
     };

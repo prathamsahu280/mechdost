@@ -140,6 +140,8 @@ export function ustaadClient(locale: string): Promise<UstaadClient> {
         ? import('./api-client').then((m) => m.apiUstaadClient(locale))
         : import('@/demo/ustaad').then((m) => m.demoUstaadClient());
     cache.set(locale, c);
+    // A failed chunk load is not cached: the next screen (or Try again) loads it afresh.
+    void c.catch(() => cache.delete(locale));
   }
   return c;
 }
