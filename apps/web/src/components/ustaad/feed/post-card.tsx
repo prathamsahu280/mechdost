@@ -5,10 +5,9 @@ import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import type { PostView } from '@mechdost/shared/ustaad/dto/feed';
-import { SPONSORED_LABEL } from '@mechdost/shared/ustaad/social-rules';
 import { track } from '@/lib/analytics';
 import { localePath } from '@/lib/locale-path';
-import { whatsappShareUrl } from '@/lib/ustaad/feed-view';
+import { whatsappShareUrl } from '@/lib/ustaad/feed-format';
 import { EditedText } from '../correction/edited-text';
 import { useCodeLabel, useTimeAgo } from '../common';
 import { UstaadIcon } from '../shell/icons';
@@ -187,7 +186,7 @@ export function PostCard({
 
       {sponsored ? (
         <p className="mx-4 mt-3 inline-block rounded-full bg-warning-bg px-3 py-1 text-xs font-bold text-warning">
-          {SPONSORED_LABEL[locale === 'hi' ? 'hi' : 'en']}
+          {t('sponsored')}
         </p>
       ) : null}
       {post.status === 'held' ? (

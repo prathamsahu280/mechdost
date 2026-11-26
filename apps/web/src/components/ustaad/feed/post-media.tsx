@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import type { PostMediaView, PostView } from '@mechdost/shared/ustaad/dto/feed';
 import { track } from '@/lib/analytics';
-import { durationLabel, pollShares, sizeLabel } from '@/lib/ustaad/feed-view';
+import { durationLabel, pollShares, sizeLabel } from '@/lib/ustaad/feed-format';
 import { socialClient } from '@/lib/ustaad/social-client';
 import { VoiceNote } from '../media/voice-note';
 import { UstaadIcon } from '../shell/icons';

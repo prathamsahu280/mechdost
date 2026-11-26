@@ -446,3 +446,15 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
   module's `/ustaad/*` routes (L171/L190). → Bind a module's member guard to its own path prefixes
   (`onUstaadPaths` in `routes/ustaad/social.ts`). · active
 - L-B5 · 2026-11-26 · migrations/merge · Regenerating an unapplied migration after merging another stream's migration: drizzle-kit numbers the new file and its snapshot by journal count, so the new snapshot overwrote the other stream's `0096_snapshot.json` → after `generate`, rename both the SQL and the snapshot to the reserved number and `git checkout main -- <their snapshot>`; check the new SQL holds only your changes. · active
+- L-UDW1 · 2026-11-26 · ui/a11y · Three static a11y specialists (aria+keyboard, modal+live, forms+media) agreed on one
+  root bug: callers focused the opener in the same handler that closed a native modal `<dialog>`, while the page was
+  still inert, so focus fell to `<body>`; and every step swap inside a sheet unmounted the clicked button → restore
+  focus in the dialog component's own effect cleanup (capture `document.activeElement` before `showModal()`, focus it
+  after `close()`), and on any in-sheet step change focus the new step's first control. · active
+- L-UDW2 · 2026-11-26 · ui/routing · A public page under a gated route segment (`/ustaad/s/[token]` under the
+  `/ustaad` layout gate) cannot opt out of the layout → a small client switch in the layout keyed on the canonical
+  pathname renders it bare; cheaper and merge-safer than moving every sibling into a route group while other
+  workstreams add pages there. · active
+- L-UDW3 · 2026-11-26 · api gaps · "Every API exists" in a brief was wrong for the profile (no read by handle, no
+  member posts) → check each screen's reads against the route files during orientation, add thin composed reads
+  test-first (role leak + block 404), and record them in the spec's as-built section. · active

@@ -3,7 +3,12 @@
  * the first-message rule shown before sending (SR-33: no links, numbers masked), the WhatsApp teaser link, story
  * stepping, media labels, the composer's post body and the For you snapshot expiry.
  */
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import en from '@mechdost/shared/i18n/en.json';
+import hi from '@mechdost/shared/i18n/hi.json';
+import { SPONSORED_LABEL } from '@mechdost/shared/ustaad/social-rules';
 import {
   buildPostInput,
   durationLabel,
@@ -129,5 +134,22 @@ describe('feed snapshot', () => {
   it('410 USTAAD_FEED_EXPIRED means start the list again', () => {
     expect(feedExpired({ ok: false, status: 410, code: 'USTAAD_FEED_EXPIRED' })).toBe(true);
     expect(feedExpired({ ok: false, status: 500, code: 'HTTP_500' })).toBe(false);
+  });
+});
+
+describe('Home stays light (spec 23 § 17)', () => {
+  const src = (p: string) => readFileSync(join(__dirname, '..', 'src', p), 'utf8');
+  it('the cards and lists never import the composer rules or the correction schemas (Zod)', () => {
+    for (const f of ['post-card', 'post-media', 'feed-list', 'story-row', 'story-viewer', 'social-common']) {
+      const s = src(`components/ustaad/feed/${f}.tsx`);
+      expect(s, f).not.toMatch(
+        /lib\/ustaad\/feed-view'|shared\/ustaad\/social-rules'|lib\/ustaad\/correction'/,
+      );
+    }
+    expect(src('components/ustaad/correction/edited-text.tsx')).not.toMatch(/lib\/ustaad\/correction'/);
+  });
+  it('the Sponsored words in the locale files are the locked label (SR-41)', () => {
+    expect(en.ustaad.feed.sponsored).toBe(SPONSORED_LABEL.en);
+    expect(hi.ustaad.feed.sponsored).toBe(SPONSORED_LABEL.hi);
   });
 });

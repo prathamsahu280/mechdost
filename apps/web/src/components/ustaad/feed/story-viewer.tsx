@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { StoryRing } from '@mechdost/shared/ustaad/dto/feed';
 import { track } from '@/lib/analytics';
 import { localePath } from '@/lib/locale-path';
-import { nextStory, type StoryPos } from '@/lib/ustaad/feed-view';
+import { nextStory, type StoryPos } from '@/lib/ustaad/feed-format';
 import { useTimeAgo } from '../common';
 import { VoiceNote } from '../media/voice-note';
 import { UstaadIcon } from '../shell/icons';

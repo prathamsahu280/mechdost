@@ -68,31 +68,9 @@ export function visibleSegments(segments: readonly CorrectionSegmentView[]): Cor
   return segments.filter((s) => s.text !== '' || s.kind === 'same');
 }
 
-/** Which text a reader sees under "Edited · see original" (the corrected text unless they asked for the original). */
-export function shownText(
-  post: { body: string; bodyOriginal: string | null },
-  showOriginal: boolean,
-): string {
-  return showOriginal && post.bodyOriginal !== null ? post.bodyOriginal : post.body;
-}
-
 /** API error code → `ustaad.correction` message key. */
 export function correctionErrorKey(code: string): 'limited' | 'failed' {
   return code === 'RATE_LIMITED' ? 'limited' : 'failed';
 }
 
-/**
- * `lang` attribute for member text: mostly Devanagari → `hi`; Latin text only from the composer's hint (`hinglish` or
- * `cg` → `hi-Latn`, `en` → `en`), else undefined (inherits the page, never a guessed Hinglish voice for English).
- */
-export function textLang(
-  text: string,
-  hint: CorrectionLang | null = null,
-): 'hi' | 'hi-Latn' | 'en' | undefined {
-  const letters = text.match(/\p{L}/gu) ?? [];
-  if (letters.length === 0) return undefined;
-  const deva = letters.filter((c) => /[ऀ-ॿ]/.test(c)).length;
-  if (deva * 2 >= letters.length) return 'hi';
-  if (hint === 'hinglish' || hint === 'cg') return 'hi-Latn';
-  return hint === 'en' ? 'en' : undefined;
-}
+export { shownText, textLang } from './correction-text';

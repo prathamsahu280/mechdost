@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { WandSparkles } from 'lucide-react';
 import { useState } from 'react';
 import type { CorrectionLang } from '@mechdost/shared/ustaad/correction';
-import { shownText, textLang } from '@/lib/ustaad/correction';
+import { shownText, textLang } from '@/lib/ustaad/correction-text';
 
 /**
  * Member text that smart correction changed (spec 23 § 11, auto mode or a used suggestion): shows the corrected text

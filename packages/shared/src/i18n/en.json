@@ -7206,7 +7206,8 @@
       "kindName_mixed": "Photo and voice post",
       "kindName_story": "Story",
       "storyNewMark": "new",
-      "storySeenMark": "seen"
+      "storySeenMark": "seen",
+      "sponsored": "Sponsored"
     },
     "local": {
       "title": "Pin my garage",
