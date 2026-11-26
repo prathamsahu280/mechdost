@@ -3318,8 +3318,8 @@
     "cat_saveSegments": "Save vehicle segments",
     "cat_err_PRODUCT_SEGMENTS": "Unknown vehicle segment.",
     "syn_kind_segment": "Vehicle segment",
-    "nav_ustaad": "Network settings",
-    "adminHeader_ustaad": "Rules, limits and lists of the Ustaad Network, the mechanics-only network.",
+    "nav_ustaad": "Community and settings",
+    "adminHeader_ustaad": "Moderation, verification and settings of the Ustaad Network, the mechanics-only network.",
     "navGroup_ustaad": "Ustaad Network"
   },
   "shopGiveUp": {
@@ -8207,8 +8207,8 @@
       "m_count": "{count, plural, =0 {No members found} one {# member found} other {# members found}}",
       "note_hint": "Up to 500 characters.",
       "note_required": "Required for “Other”: at least 3 characters, up to 500.",
-      "appeal_report_hint": "Starts with UR-, as on the report.",
-      "appeal_ticket_hint": "Starts with REQ-, as on the support ticket.",
+      "appeal_report_hint": "Like UR-RPR-2026-ABC234, as on the report.",
+      "appeal_ticket_hint": "Like REQ-RPR-2026-AB12CD, as on the support ticket.",
       "td_id_hint": "The item’s full id (36 characters), from the report.",
       "td_reference_hint": "At least 3 characters.",
       "n_name_hint": "At least 2 letters.",

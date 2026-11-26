@@ -11,8 +11,9 @@ This file is the single source of truth for **where the build is right now**. It
   members for staff (search, detail, sanction, four-eyes unban per the lead's security review), legal list, own audit
   trail, capabilities. Web: Community group in the `/admin/ustaad` switcher (Queue, Holds, Appeals, Verify, Members,
   Takedowns and legal holds, Reserved names, My actions) beside G1's settings; en + hi; client events. Spec 23 § 21g,
-  spec 08, spec 12, decisions 2026-11-26 "G2". **Next:** lead merge + apply 0100; e2e + state-audit rows
-  `ADM-USTAAD-CONSOLE-*`; zone counts / exact pin view; shared `LoadState` live region.
+  spec 08, spec 12, decisions 2026-11-26 "G2", Q-UG2. E2e `ustaad-console.shots.ts` 16/16 and the state-audit rows
+  `API-ADM-USTAAD` / `API-ADM-USTAAD-CONSOLE` run on the API-mode build. **Next:** lead merge + apply 0100; zone
+  counts / exact pin view; shared `LoadState` live region; queue filters in the URL; 768 px / dark screenshots.
 - **2026-11-26 (afternoon): Ustaad workstream B round 3** (branch worktree-agent-ab7b78a32bea2c97c, not pushed,
   migrations **0098_ustaad_identity_b3** (schema) and **0099_ustaad_reserved_names_seed** (data) written, NOT applied).
   Reserved/look-alike names, `PATCH /ustaad/me`, specialities, choices, SR-2 freeze, garage-owner link (staff-issued) and

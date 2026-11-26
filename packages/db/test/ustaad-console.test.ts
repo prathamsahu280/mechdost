@@ -353,6 +353,25 @@ describe('keep on a held item runs the publish side effects (F2 not-done item)',
     );
     expect(reqs).toHaveLength(0);
   });
+
+  it('keep on a held message in a thread that is no longer open releases nothing and tells nobody', async () => {
+    const a = await member();
+    const b = await member();
+    const th = await startUstaadThread(t(), a, { memberId: b.memberId, text: FEE });
+    await db.update(s.ustaadThreads).set({ status: 'declined' }).where(eq(s.ustaadThreads.id, th.threadId));
+    const r = await reportFor(th.messageId);
+    await actOnUstaadReport(t(), cmA, r.code, {
+      action: 'keep',
+      reasonCode: 'no_violation',
+      version: r.version,
+    });
+    const [msg] = await db.select().from(s.ustaadMessages).where(eq(s.ustaadMessages.id, th.messageId));
+    expect(msg?.heldReasonCode).not.toBeNull();
+    const [thread] = await db.select().from(s.ustaadThreads).where(eq(s.ustaadThreads.id, th.threadId));
+    expect(thread?.lastMessageAt ?? null).toBeNull();
+    expect(await noticesOf(b.userId, 'ustaad.message_request')).toHaveLength(0);
+    expect((await ustaadReportDetail(t(), cmA, r.code)).status).toBe('dismissed');
+  });
 });
 
 describe('queue filters and four-eyes flags', () => {

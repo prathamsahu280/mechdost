@@ -35,6 +35,18 @@ const SCENES: Scene[] = [
     check: async (page) => {
       await expect(page.getByText('Hidden for your protection').first()).toBeVisible();
       await expect(page.getByRole('heading', { name: /Report UR-RPR-2026-NCIAA3/ })).toBeFocused();
+      // The file is fetched only when asked (that request is the audited view, with its reason), then blurred until
+      // "Show clearly".
+      const asked = page.waitForRequest((r) => /\/media\/[^/?]+\?reason=report_review$/.test(r.url()));
+      await page.getByRole('button', { name: 'Show blurred preview' }).first().click();
+      await asked;
+      const img = page.getByRole('img', { name: 'Reported file 1' });
+      await expect(img).toHaveClass(/blur-xl/);
+      const reveal = page.getByRole('button', { name: 'Show clearly' }).first();
+      await expect(reveal).toBeFocused();
+      await reveal.click();
+      await expect(reveal).toHaveAttribute('aria-pressed', 'true');
+      await expect(img).not.toHaveClass(/blur-xl/);
     },
   },
   {

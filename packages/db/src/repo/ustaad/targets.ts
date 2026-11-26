@@ -222,6 +222,15 @@ export async function moveUstaadTarget(tx: Tx, t: UstaadTarget, to: string): Pro
       // Messages have no status machine: removal hides the message for both members (deleted_at), restore clears it;
       // keeping a held message releases it (held_reason_code cleared; G2 publish side effects follow).
       if (t.status === 'held' && to === 'visible') {
+        // Only into a thread that is still open or a request: a declined or blocked thread gets nothing (the report
+        // is dismissed, the message stays held and nobody is told).
+        const [thread] = await tx
+          .select({ status: ustaadThreads.status })
+          .from(ustaadThreads)
+          .innerJoin(ustaadMessages, eq(ustaadMessages.threadId, ustaadThreads.id))
+          .where(eq(ustaadMessages.id, t.id))
+          .limit(1);
+        if (thread?.status !== 'open' && thread?.status !== 'requested') return;
         const released = await tx
           .update(ustaadMessages)
           .set({ heldReasonCode: null })

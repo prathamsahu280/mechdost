@@ -26,6 +26,9 @@ import type { Mock, Reply } from './mock-api.ts';
 type Dto<S extends { parse(value: unknown): unknown }> = ReturnType<S['parse']>;
 const uuid = (n: number) => `00000000-0000-4000-8000-${String(900 + n).padStart(12, '0')}`;
 const few = (c: AuditCase) => (c.state.lists ?? 'few') !== 'empty';
+/** A 1x1 PNG served at the staff media URL (the reveal path). */
+const PIXEL =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 const iso = (minutesFromNow: number) => new Date(Date.now() + minutesFromNow * 60_000).toISOString();
 
 const get = <S extends { parse(value: unknown): unknown }>(
@@ -197,11 +200,16 @@ export function ustaadConsoleMocks(c: AuditCase): Mock[] {
       },
     },
     get(/^\/admin\/ustaad\/moderation\/reports\/[^/]+\/media\/[^/]+$/, StaffMediaUrlDto, () => ({
-      url: 'http://127.0.0.1:4100/v1/audit-photo.webp',
+      url: 'http://127.0.0.1:4100/v1/audit-photo.png',
       expiresAt: iso(2),
       kind: 'image',
-      mime: 'image/webp',
+      mime: 'image/png',
     })),
+    {
+      method: 'GET',
+      path: /^\/audit-photo\.png$/,
+      reply: (): Reply => ({ raw: { contentType: 'image/png', base64: PIXEL } }),
+    },
     get(/^\/admin\/ustaad\/moderation\/reports\/[^/]+\/thread$/, ThreadReadDto, () => ({
       reportCode: 'UR-RPR-2026-HLDBB3',
       messages: [

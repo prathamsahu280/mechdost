@@ -777,7 +777,7 @@ function VideoReason({
 function LaterCard() {
   const t = useTranslations('ustaad.admin');
   return (
-    <div className={`${adminCard} space-y-2 opacity-80`}>
+    <div className={`${adminCard} space-y-2`}>
       <h4 className="font-heading text-base font-extrabold text-ink">{t('later_title')}</h4>
       <p className="text-sm text-muted">{t('later_lead')}</p>
       <ul className="space-y-1">

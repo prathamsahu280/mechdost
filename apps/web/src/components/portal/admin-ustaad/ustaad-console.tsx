@@ -58,7 +58,9 @@ export function AdminUstaadConsole() {
     setLoadError(null);
     setCaps(res.data);
     const q = new URLSearchParams(window.location.search);
-    const p: ConsolePlace = parseConsoleSection(q.get('section'), res.data);
+    // An older settings link (`?sec=mod`, G1) still opens that settings section.
+    const asked = q.get('section') ?? (q.get('sec') ? 'settings' : null);
+    const p: ConsolePlace = parseConsoleSection(asked, res.data);
     if (p === 'settings') {
       setPlace({ kind: 'settings', section: sectionFromQuery(q.get('sec')) });
       setSettingsOpened(true);
