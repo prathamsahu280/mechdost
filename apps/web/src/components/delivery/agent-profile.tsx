@@ -8,6 +8,7 @@ import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
 import type { AgentEarningsView } from '@/lib/delivery/types';
 import { useLiveReload } from '@/lib/delivery/use-delivery-client';
+import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
 import { useAgent } from './agent-portal';
 import { LoadGate, PhotoCapture, bigPrimary, bigQuiet, useStatusLine } from './parts';
 
@@ -146,8 +147,11 @@ function DocumentRow({ kind }: { kind: AgentDocumentKind }) {
   const [number, setNumber] = useState('');
   const [mediaId, setMediaId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** Which field the error is about: only that one is marked invalid (a11y review FORM-ERR-DOC-ASSOC). */
+  const [errorField, setErrorField] = useState<'number' | 'photo' | 'form'>('form');
   const [busy, setBusy] = useState(false);
   const { say, line } = useStatusLine();
+  useDisclosureFocus(open ? `doc-${kind}` : null);
   if (!ctx) return null;
   const { profile, client, reloadProfile, errorText } = ctx;
   const doc = profile.documents.find((d) => d.kind === kind);
@@ -158,11 +162,13 @@ function DocumentRow({ kind }: { kind: AgentDocumentKind }) {
     if (busy) return;
     if (number.trim().length < 5) {
       setError(errorText('DOCUMENT_FORMAT'));
+      setErrorField('number');
       document.getElementById(`${id}-number`)?.focus();
       return;
     }
     if (!mediaId) {
       setError(t('docPhotoRequired'));
+      setErrorField('photo');
       document.getElementById(`${id}-photo`)?.focus();
       return;
     }
@@ -175,6 +181,7 @@ function DocumentRow({ kind }: { kind: AgentDocumentKind }) {
     });
     if (!res.ok) {
       setError(errorText(res.code));
+      setErrorField(res.code.startsWith('DOCUMENT_') ? 'number' : 'form');
       return;
     }
     setError(null);
@@ -223,6 +230,7 @@ function DocumentRow({ kind }: { kind: AgentDocumentKind }) {
             className={bigQuiet}
           >
             {doc ? t('docReplace') : t('docAdd')}
+            <span className="sr-only"> {k(kind)}</span>
           </button>
         )}
       </div>
@@ -235,16 +243,17 @@ function DocumentRow({ kind }: { kind: AgentDocumentKind }) {
         >
           <div>
             <label htmlFor={`${id}-number`} className="text-sm font-bold text-ink">
-              {t('docNumber')}
+              {t('docNumberOf', { doc: k(kind) })}
             </label>
             <input
               id={`${id}-number`}
+              data-disclosure-field={id}
               value={number}
               maxLength={32}
               autoComplete="off"
               autoCapitalize="characters"
-              aria-invalid={error ? true : undefined}
-              aria-describedby={error ? `${id}-error` : undefined}
+              aria-invalid={error && errorField === 'number' ? true : undefined}
+              aria-describedby={error && errorField === 'number' ? `${id}-error` : undefined}
               onChange={(e) => {
                 setNumber(e.target.value);
               }}

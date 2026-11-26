@@ -9161,7 +9161,16 @@
     "method_upi": "UPI",
     "method_bank_transfer": "Bank transfer",
     "method_cash": "Cash",
-    "method_other": "Other"
+    "method_other": "Other",
+    "newOffers": "{count, plural, one {A new delivery offer} other {# new delivery offers}}",
+    "endsAt": "Offer ends at {time}",
+    "hurry": "Hurry",
+    "wrongCode": "{left, plural, one {That code is not right. Only # try left: check it before you try again.} other {That code is not right. # tries left.}}",
+    "codeAutoNote": "It is checked as soon as you type all 4 digits.",
+    "photoFirst": "Take the photo first, then type the code.",
+    "noteRequiredLabel": "Note (needed)",
+    "jobChanged": "This job was updated: {status}",
+    "docNumberOf": "{doc} number"
   },
   "deliveryShop": {
     "markReady": "Mark ready for pickup",
@@ -9179,7 +9188,7 @@
     "returnCodeHint": "Ask for the 4-digit code when the parcel is handed back to you.",
     "returnConfirm": "Confirm parcel received",
     "returnDone": "Parcel received back.",
-    "returnWrong": "That code is not right. {left} tries left.",
+    "returnWrong": "{left, plural, one {That code is not right. Only # try left.} other {That code is not right. # tries left.}}",
     "switchTitle": "Can you deliver this order yourself?",
     "switchBody": "MechDost asks because: {reason}.",
     "switchConfirm": "Yes, we'll deliver",
@@ -9215,7 +9224,7 @@
     "callSupport": "Questions? Call MechDost support",
     "rateTitle": "Rate your delivery",
     "rateLegend": "Stars",
-    "star": "{count, plural, one {# star} other {# stars}}",
+    "star": "{count} of 5 stars",
     "rateReasons": "What stood out? (optional)",
     "reason_on_time": "On time",
     "reason_polite": "Polite",
@@ -9232,7 +9241,9 @@
     "rateYours": "You rated {count, plural, one {# star} other {# stars}}.",
     "rateEditUntil": "You can change it until {time}.",
     "rateEdit": "Change rating",
-    "rateFailed": "Could not save your rating. Try again."
+    "rateFailed": "Could not save your rating. Try again.",
+    "rateKeep": "Keep my rating",
+    "rateNoteRequiredLabel": "Note (needed for Other)"
   },
   "deliveryApply": {
     "title": "Apply as a delivery agent",
@@ -9260,7 +9271,8 @@
     "receivedTitle": "Application sent",
     "receivedBody": "Your reference is {code}. MechDost will call you on your mobile number.",
     "statusLink": "Check application status",
-    "backHome": "Back to home"
+    "backHome": "Back to home",
+    "allRequired": "All fields are needed."
   },
   "deliveryInvite": {
     "title": "Join MechDost as a delivery partner",
@@ -9506,6 +9518,9 @@
     "correctWhy": "Why? (kept with the correction)",
     "payoutCorrected": "A reversing entry was added. Record the right payout again.",
     "correctedBadge": "Corrected",
-    "reversal": "Reversal"
+    "reversal": "Reversal",
+    "newJobs": "{count, plural, one {A new job in this queue} other {# new jobs in this queue}}",
+    "csvDone": "{count, plural, one {File downloaded: # payout} other {File downloaded: # payouts}}",
+    "amountHint": "In rupees, like 1500 or 1500.50"
   }
 }

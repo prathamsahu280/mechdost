@@ -75,16 +75,15 @@ test.describe('delivery agents (demo)', () => {
     await page.getByRole('button', { name: "I'm at the shop" }).click();
     await expect(page.getByRole('heading', { name: 'Pick up' })).toBeVisible();
 
-    // The photo is required: the code alone is refused.
+    // The photo is required: the code waits for it (pressing Confirm says so), then goes by itself.
     await page.getByLabel("Shop's pickup code").fill(PICKUP_CODE_READY);
-    await expect(page.getByRole('alert')).toContainText('Take a photo first.');
+    await page.getByRole('button', { name: 'Confirm pickup' }).click();
+    await expect(page.getByRole('alert').filter({ hasText: 'Take a photo first.' })).toBeVisible();
     await page.locator(`#pickup-photo-${DELIVERY_JOB_IDS.ready}`).setInputFiles({
       name: 'parcel.png',
       mimeType: 'image/png',
       buffer: PNG,
     });
-    await expect(page.getByText('Photo ready')).toBeVisible();
-    await page.getByRole('button', { name: 'Confirm pickup' }).click();
     await expect(page.getByRole('heading', { name: 'Go to the customer' })).toBeVisible();
     await expect(page.getByText('Ravi Sahu')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Call the customer' })).toHaveAttribute(
@@ -109,7 +108,7 @@ test.describe('delivery agents (demo)', () => {
     await expect(page.getByText('Photo ready')).toBeVisible();
     const wrong = code === '0000' ? '1111' : '0000';
     await page.getByLabel("Customer's delivery code").fill(wrong);
-    await expect(page.getByRole('alert')).toContainText('4 tries left');
+    await expect(page.getByRole('alert').filter({ hasText: '4 tries left' })).toBeVisible();
     await page.getByLabel("Customer's delivery code").fill(code);
     await expect(page.getByText('Delivered. Thank you!')).toBeVisible();
     // Delivered: the customer's details are gone from the agent's screen.
@@ -157,7 +156,8 @@ test.describe('delivery agents (demo)', () => {
 
     await as(page, 'demo-agent', `/partner/delivery/jobs/${DELIVERY_JOB_IDS.pickedUp}`);
     await expect(page.getByRole('heading', { name: 'Bring it back to the shop' })).toBeVisible();
-    const returnCode = (await page.locator('#return-code-title + p').textContent())?.trim() ?? '';
+    const returnCode =
+      (await page.locator('#return-code-title + p span[aria-hidden="true"]').textContent())?.trim() ?? '';
     expect(returnCode).toMatch(/^\d{4}$/);
     await expect(page.getByText('Ravi Sahu')).toHaveCount(0);
 

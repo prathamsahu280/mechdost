@@ -19,7 +19,7 @@ import {
 import { APPLICATION_REJECT_REASONS } from '@mechdost/shared/partner-codes';
 import { agentStatusMachine, AGENT_STATUSES } from '@mechdost/shared/state';
 import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useEffect, useState, type ReactNode, type SyntheticEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode, type SyntheticEvent } from 'react';
 import { useNow } from '@/components/portal/use-now';
 import {
   AdminTable,
@@ -49,6 +49,7 @@ import type {
 } from '@/lib/delivery/types';
 import { countdown, kmText } from '@/lib/delivery/view';
 import { PayoutsTab } from './admin-delivery-payouts';
+import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
 import { useStatusLine } from './status-line';
 
 const TABS = ['jobs', 'applications', 'agents', 'payouts', 'requests', 'settings'] as const;
@@ -165,6 +166,8 @@ function ReasonSelect<C extends string>({
       <select
         id={id}
         value={value}
+        // The opened form's first field (`useDisclosureFocus`): the disclosure key is the id without "-reason".
+        data-disclosure-field={id.endsWith('-reason') ? id.slice(0, -'-reason'.length) : id}
         onChange={(e) => {
           onChange(codes.find((c) => c === e.target.value) ?? '');
         }}
@@ -181,6 +184,14 @@ function ReasonSelect<C extends string>({
   );
 }
 
+/** Focuses an element when it mounts (opened detail headings; a11y review 2026-11-27). */
+const focusOnMount = (el: HTMLElement | null) => {
+  if (el && el.dataset.focused !== '1') {
+    el.dataset.focused = '1';
+    el.focus();
+  }
+};
+
 // ── jobs ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 function JobsTab({ client }: { client: AdminDeliveryClient }) {
@@ -192,8 +203,21 @@ function JobsTab({ client }: { client: AdminDeliveryClient }) {
   const now = useNow(1000);
   const load = useCallback(() => client.jobs(view, null), [client, view]);
   const { items, failed, reload } = useList<AdminJobRowView>(client, load);
+  // A job that arrives in the open queue (poll or demo push) is announced once, politely (4.1.3).
+  const { say, line } = useStatusLine();
+  const seen = useRef<{ view: AdminJobsView; ids: Set<string> } | null>(null);
+  useEffect(() => {
+    if (!items) return;
+    const ids = new Set(items.map((j) => j.jobId));
+    const before = seen.current;
+    seen.current = { view, ids };
+    if (before?.view !== view) return;
+    const fresh = [...ids].filter((id) => !before.ids.has(id)).length;
+    if (fresh > 0) say(t('newJobs', { count: fresh }));
+  }, [items, view, say, t]);
   return (
     <div className="space-y-3">
+      {line}
       <div role="group" aria-label={t('viewsLabel')} className="flex flex-wrap gap-2">
         {VIEWS.map((v) => (
           <button
@@ -284,13 +308,14 @@ function JobsTab({ client }: { client: AdminDeliveryClient }) {
                       <button
                         type="button"
                         aria-expanded={open === j.jobId}
-                        aria-controls={`job-${j.jobId}`}
+                        aria-controls={open === j.jobId ? `job-${j.jobId}` : undefined}
                         onClick={() => {
                           setOpen(open === j.jobId ? null : j.jobId);
                         }}
                         className={portalQuiet}
                       >
                         {open === j.jobId ? t('close') : t('open')}
+                        <span className="sr-only"> {j.orderCode}</span>
                       </button>
                     </td>
                   </tr>
@@ -351,7 +376,12 @@ function JobDetail({
       className={adminCard}
       aria-busy={busy || undefined}
     >
-      <h3 id={`job-${jobId}-title`} className="font-heading text-lg font-extrabold text-ink">
+      <h3
+        id={`job-${jobId}-title`}
+        ref={focusOnMount}
+        tabIndex={-1}
+        className="font-heading text-lg font-extrabold text-ink"
+      >
         {t('jobTitle', { code: job.orderCode })}
       </h3>
       <p className="text-sm text-muted">{t('attempt', { n: job.attempt })}</p>
@@ -525,6 +555,7 @@ function SwitchForm({
   const [note, setNote] = useState('');
   const [problem, setProblem] = useState<string | null>(null);
   const id = `switch-${orderCode}`;
+  useDisclosureFocus(open ? id : null);
   if (!open)
     return (
       <button
@@ -546,10 +577,12 @@ function SwitchForm({
         e.preventDefault();
         if (reason === '') {
           setProblem(t('reasonRequired'));
+          document.getElementById(`${id}-reason`)?.focus();
           return;
         }
         if (reason === 'other' && note.trim() === '') {
           setProblem(t('noteRequired'));
+          document.getElementById(`${id}-note`)?.focus();
           return;
         }
         setProblem(null);
@@ -626,6 +659,7 @@ function WithdrawForm({
   const [reason, setReason] = useState<DeliveryWithdrawReason | ''>('');
   const [problem, setProblem] = useState(false);
   const id = `withdraw-${jobId}`;
+  useDisclosureFocus(open ? id : null);
   if (!open)
     return (
       <button
@@ -647,6 +681,7 @@ function WithdrawForm({
         e.preventDefault();
         if (reason === '') {
           setProblem(true);
+          document.getElementById(`${id}-reason`)?.focus();
           return;
         }
         onSend(reason);
@@ -725,7 +760,7 @@ function OverrideForm({
         className={portalField}
       />
       {problem ? (
-        <p id={`override-${kind}-error`} className="text-sm font-bold text-error">
+        <p id={`override-${kind}-error`} role="alert" className="text-sm font-bold text-error">
           {t('overrideReasonError')}
         </p>
       ) : null}
@@ -862,6 +897,7 @@ function ApplicationsTab({ client }: { client: AdminDeliveryClient }) {
   const [link, setLink] = useState<{ url: string; until: string } | null>(null);
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [reason, setReason] = useState<(typeof APPLICATION_REJECT_REASONS)[number] | ''>('');
+  useDisclosureFocus(rejecting ? `reject-${rejecting}` : null);
   const loadApps = useCallback(() => client.applications(null), [client]);
   const loadInvites = useCallback(() => client.invites(null), [client]);
   const apps = useList<AgentApplicationView>(client, loadApps);
@@ -869,6 +905,7 @@ function ApplicationsTab({ client }: { client: AdminDeliveryClient }) {
 
   function showLink(token: string, expiresAt: string) {
     const prefix = locale === 'hi' ? '/hi' : '';
+    say(t('inviteSent', { date: formatDate(expiresAt, locale) }));
     setLink({
       url: `${window.location.origin}${prefix}/partners/delivery-invite/${token}`,
       until: formatDate(expiresAt, locale),
@@ -905,7 +942,7 @@ function ApplicationsTab({ client }: { client: AdminDeliveryClient }) {
     <div className="space-y-4">
       {line}
       {link ? (
-        <div role="status" className={`${adminCard} border-success`}>
+        <div className={`${adminCard} border-success`}>
           <p className="text-sm text-ink">{t('inviteSent', { date: link.until })}</p>
           <p className="mt-1 break-all text-sm font-bold text-ink" lang="en">
             {link.url}
@@ -1068,6 +1105,7 @@ function InviteNew({
   const v = useTranslations('delivery.vehicle');
   const [open, setOpen] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  useDisclosureFocus(open ? 'invite-new' : null);
   if (!open)
     return (
       <button
@@ -1099,14 +1137,17 @@ function InviteNew({
         const vehicle = AGENT_VEHICLE_TYPES.find((x) => x === get('vehicle'));
         if (get('name').length < 2) {
           setProblem(a('errName'));
+          document.getElementById('inv-name')?.focus();
           return;
         }
         if (!/^[6-9]\d{9}$/.test(phone)) {
           setProblem(a('errPhone'));
+          document.getElementById('inv-phone')?.focus();
           return;
         }
         if (!vehicle) {
           setProblem(a('errVehicle'));
+          document.getElementById('inv-vehicle')?.focus();
           return;
         }
         setProblem(null);
@@ -1125,7 +1166,14 @@ function InviteNew({
         {t('inviteNewTitle')}
       </h3>
       <Field id="inv-name" label={t('fieldName')}>
-        <input id="inv-name" name="name" maxLength={80} autoComplete="off" className={portalField} />
+        <input
+          id="inv-name"
+          name="name"
+          maxLength={80}
+          autoComplete="off"
+          data-disclosure-field="invite-new"
+          className={portalField}
+        />
       </Field>
       <Field id="inv-phone" label={t('fieldPhone')}>
         <input
@@ -1133,12 +1181,21 @@ function InviteNew({
           name="phone"
           type="tel"
           inputMode="numeric"
+          autoComplete="off"
           maxLength={14}
           className={portalField}
         />
       </Field>
       <Field id="inv-email" label={t('fieldEmail')}>
-        <input id="inv-email" name="email" type="email" maxLength={120} className={portalField} />
+        <input
+          id="inv-email"
+          name="email"
+          type="email"
+          inputMode="email"
+          autoComplete="off"
+          maxLength={120}
+          className={portalField}
+        />
       </Field>
       <Field id="inv-city" label={t('fieldCity')}>
         <select id="inv-city" name="city" className={`${portalField} block`} defaultValue="RPR">
@@ -1273,13 +1330,14 @@ function AgentsTab({ client }: { client: AdminDeliveryClient }) {
                     <button
                       type="button"
                       aria-expanded={open === a.id}
-                      aria-controls={`agent-${a.id}`}
+                      aria-controls={open === a.id ? `agent-${a.id}` : undefined}
                       className={portalQuiet}
                       onClick={() => {
                         setOpen(open === a.id ? null : a.id);
                       }}
                     >
                       {open === a.id ? t('close') : t('open')}
+                      <span className="sr-only"> {a.name}</span>
                     </button>
                   </td>
                 </tr>
@@ -1297,9 +1355,9 @@ function RatingText({ avg, count }: { avg: number | null; count: number }) {
   const t = useTranslations('deliveryAdmin');
   if (avg === null || count === 0) return <span className="text-muted">{t('noRating')}</span>;
   return (
-    <span aria-label={t('ratingLabel', { avg: avg.toFixed(1), count })}>
-      <span aria-hidden="true">★ </span>
-      {t('rating', { avg: avg.toFixed(1), count })}
+    <span>
+      <span aria-hidden="true">★ {t('rating', { avg: avg.toFixed(1), count })}</span>
+      <span className="sr-only">{t('ratingLabel', { avg: avg.toFixed(1), count })}</span>
     </span>
   );
 }
@@ -1364,7 +1422,12 @@ function AgentDetail({
 
   return (
     <section id={`agent-${id}`} aria-labelledby={`agent-${id}-title`} className={adminCard}>
-      <h3 id={`agent-${id}-title`} className="font-heading text-lg font-extrabold text-ink">
+      <h3
+        id={`agent-${id}-title`}
+        ref={focusOnMount}
+        tabIndex={-1}
+        className="font-heading text-lg font-extrabold text-ink"
+      >
         <span data-user-content>{t('agentTitle', { name: a.name })}</span>
       </h3>
       <p className="text-sm text-muted">
@@ -1537,6 +1600,7 @@ function DocumentReview({
   const [view, setView] = useState<{ number: string; photoUrl: string } | null>(null);
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState<AgentDocumentRejectReason | ''>('');
+  useDisclosureFocus(rejecting ? `docrej-${agentId}-${kind}` : null);
 
   async function open() {
     // Audited read: the API logs every staff view of a document.
@@ -1669,6 +1733,7 @@ function RequestsTab({ client }: { client: AdminDeliveryClient }) {
   const { say, line } = useStatusLine();
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [reason, setReason] = useState<ShopModeRejectReason | ''>('');
+  useDisclosureFocus(rejecting ? `modrej-${rejecting}` : null);
   const load = useCallback(() => client.modeRequests('pending'), [client]);
   const { items, failed, reload } = useList<AdminShopModeRequestView>(client, load);
 

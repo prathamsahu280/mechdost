@@ -15,7 +15,8 @@ import type { ShopDeliveryClient, ShopDeliveryModeViewT, ShopOrderDeliveryView }
 import { wrongCodeLeft } from '@/lib/delivery/view';
 import { portalCard, portalPrimary, portalQuiet } from '@/components/portal/portal-styles';
 import { useDeliveryErrorText } from './error-text';
-import { CodeEntry, ReasonFields, reasonProblem } from './parts';
+import { BigCode, CallSupport, CodeEntry, ReasonFields, reasonProblem } from './parts';
+import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
 import { useStatusLine } from './status-line';
 
 /** Order statuses where the agent hand-over replaces the shop's own delivery buttons (agent-mode sub-orders). */
@@ -53,6 +54,7 @@ export function ShopDeliveryPanel({
 }) {
   const t = useTranslations('deliveryShop');
   const v = useTranslations('delivery.vehicle');
+  const ta = useTranslations('deliveryAgent');
   const client = useShopDeliveryClient(shopSlug);
   const errorText = useDeliveryErrorText();
   const { say, line } = useStatusLine();
@@ -100,28 +102,29 @@ export function ShopDeliveryPanel({
       ) : null}
       {status === 'needs_agent' || status === 'offered' || status === 'accepted' ? (
         <div className="rounded-card border border-accent-button/50 bg-accent-soft p-4">
-          <p className="text-sm font-bold text-accent-soft-text">
+          <p role="status" className="text-base font-bold text-accent-soft-text">
             {status === 'accepted' && delivery.agentFirstName
               ? t('agentComing', { name: delivery.agentFirstName, vehicle })
               : t('waitingAgent')}
           </p>
           {delivery.pickupLocked ? (
-            <p role="alert" className="mt-2 text-sm font-bold text-warning">
-              {t('pickupLocked')}
-            </p>
+            <>
+              <p role="alert" className="mt-2 text-sm font-bold text-warning">
+                {t('pickupLocked')}
+              </p>
+              <CallSupport label={ta('helpLabel')} />
+            </>
           ) : delivery.pickupCode ? (
             <>
-              <h4 className="mt-2 text-xs font-bold text-ink">{t('pickupCodeTitle')}</h4>
-              <p className="font-heading text-4xl font-extrabold tracking-[0.3em] text-ink tabular-nums">
-                {delivery.pickupCode}
-              </p>
-              <p className="text-xs text-ink">{t('pickupCodeHint')}</p>
+              <h4 className="mt-2 text-sm font-bold text-ink">{t('pickupCodeTitle')}</h4>
+              <BigCode code={delivery.pickupCode} />
+              <p className="text-sm text-ink">{t('pickupCodeHint')}</p>
             </>
           ) : null}
         </div>
       ) : null}
       {status === 'picked_up' || status === 'failed' ? (
-        <p className="text-sm font-bold text-ink">
+        <p role="status" className="text-sm font-bold text-ink">
           {delivery.agentFirstName
             ? t('pickedUp', { name: delivery.agentFirstName, vehicle })
             : t('outWithAgent')}
@@ -145,6 +148,7 @@ function ReturnEntry({
   onChanged: () => void;
 }) {
   const t = useTranslations('deliveryShop');
+  const [locked, setLocked] = useState<string | null>(null);
   const e = useTranslations('delivery.errors');
   const errorText = useDeliveryErrorText();
   return (
@@ -162,6 +166,7 @@ function ReturnEntry({
           hint={t('returnCodeHint')}
           submitLabel={t('returnConfirm')}
           kind="shop_return_code"
+          locked={locked}
           onCode={async (code) => {
             const res = await client.returnReceived(orderCode, code);
             if (res.ok) {
@@ -169,7 +174,11 @@ function ReturnEntry({
               return null;
             }
             const left = wrongCodeLeft(res.code);
-            if (left !== null) return left === 0 ? e('CODE_LOCKED') : t('returnWrong', { left });
+            if (left === 0 || res.code === 'CODE_LOCKED') {
+              setLocked(e('CODE_LOCKED'));
+              return null;
+            }
+            if (left !== null) return t('returnWrong', { left });
             return errorText(res.code);
           }}
         />
@@ -200,6 +209,7 @@ function SwitchCard({
   const [busy, setBusy] = useState(false);
   const { say, line } = useStatusLine();
   const id = `switch-${request.id}`;
+  useDisclosureFocus(declining ? id : null);
 
   async function confirm() {
     if (busy) return;
@@ -256,7 +266,12 @@ function SwitchCard({
             error={problem}
           />
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => void decline()} className={`${portalPrimary} min-h-12`}>
+            <button
+              type="button"
+              aria-disabled={busy || undefined}
+              onClick={() => void decline()}
+              className={`${portalPrimary} min-h-12`}
+            >
               {t('switchSendDecline')}
             </button>
             <button
@@ -325,6 +340,7 @@ export function ShopDeliveryModeCard({ shopId, isOwner }: { shopId: string; isOw
     });
   }, [client, shopId]);
   useLiveReload(client, reload, 60_000);
+  useDisclosureFocus(open ? `shop-mode-${shopId}` : null);
   if (!client || !view) return null;
   const c = client;
   const pending = view.requests.find((r) => r.status === 'pending') ?? null;
@@ -348,6 +364,7 @@ export function ShopDeliveryModeCard({ shopId, isOwner }: { shopId: string; isOw
     reload();
   }
   async function withdraw(requestId: string) {
+    if (busy) return;
     setBusy(true);
     const res = await c.withdrawMode(shopId, requestId);
     setBusy(false);

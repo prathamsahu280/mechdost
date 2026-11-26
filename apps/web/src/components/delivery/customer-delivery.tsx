@@ -12,7 +12,8 @@ import {
   type Result,
 } from '@/lib/delivery/types';
 import { site } from '@/lib/site';
-import { telHref } from '@/lib/delivery/view';
+import { telNumber } from '@/lib/delivery/view';
+import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
 import { useStatusLine } from './status-line';
 
 /**
@@ -51,7 +52,10 @@ export function CustomerDeliveryCard({
       <h3 id="customer-delivery-title" className="text-xs font-bold text-muted">
         {t('title')}
       </h3>
-      <p className="mt-1 font-heading text-lg font-extrabold text-ink">{stageText}</p>
+      {/* Polite: a new stage (picked up, delivered…) is read when it arrives on a refresh. */}
+      <p role="status" className="mt-1 font-heading text-lg font-extrabold text-ink">
+        {stageText}
+      </p>
       {view.stage === 'attempt_failed' && view.failReason ? (
         <p className="mt-1 text-sm text-ink">{t('failedBody', { reason: fr(view.failReason) })}</p>
       ) : null}
@@ -65,7 +69,7 @@ export function CustomerDeliveryCard({
       ) : null}
       {view.stage !== 'delivered' ? (
         <a
-          href={telHref(site.supportPhone)}
+          href={`tel:${telNumber(site.supportPhone)}`}
           className="mt-2 inline-flex min-h-11 items-center text-sm font-bold text-ink underline underline-offset-4"
         >
           {t('callSupport')}
@@ -95,6 +99,7 @@ function RatingCard({
   const [problem, setProblem] = useState<'stars' | 'note' | null>(null);
   const [busy, setBusy] = useState(false);
   const { say, line } = useStatusLine();
+  useDisclosureFocus(editing && existing ? 'rate-edit' : null);
 
   async function submit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -115,6 +120,8 @@ function RatingCard({
     if (res.ok) {
       say(t('rateSaved'));
       setEditing(false);
+      // The form leaves the page: focus the saved summary instead of dropping to the page (2.4.3).
+      requestAnimationFrame(() => document.getElementById('rate-summary')?.focus());
     } else say(t('rateFailed'), 'error');
   }
 
@@ -129,12 +136,15 @@ function RatingCard({
   if (!editing && existing) {
     return (
       <div className="mt-3 border-t border-line pt-3">
-        <p className="text-sm font-bold text-ink">{t('rateYours', { count: existing.stars })}</p>
+        <p id="rate-summary" tabIndex={-1} className="text-sm font-bold text-ink">
+          {t('rateYours', { count: existing.stars })}
+        </p>
         {view.canRate && until ? (
           <>
             <p className="text-xs text-muted">{t('rateEditUntil', { time: until })}</p>
             <button
               type="button"
+              data-disclosure-trigger="rate-edit"
               onClick={() => {
                 setEditing(true);
               }}
@@ -159,7 +169,6 @@ function RatingCard({
       <fieldset
         id="rate-stars"
         tabIndex={-1}
-        aria-invalid={problem === 'stars' ? true : undefined}
         aria-describedby={problem === 'stars' ? 'rate-stars-error' : undefined}
       >
         <legend className="text-sm font-bold text-ink">{t('rateLegend')}</legend>
@@ -174,6 +183,8 @@ function RatingCard({
                 name="rate-stars"
                 value={n}
                 checked={stars === n}
+                aria-invalid={problem === 'stars' ? true : undefined}
+                {...(n === 1 ? { 'data-disclosure-field': 'rate-edit' } : {})}
                 onChange={() => {
                   setStars(n);
                   setProblem(null);
@@ -189,7 +200,7 @@ function RatingCard({
           ))}
         </div>
         {problem === 'stars' ? (
-          <p id="rate-stars-error" className="mt-1 text-sm font-bold text-error">
+          <p id="rate-stars-error" role="alert" className="mt-1 text-sm font-bold text-error">
             {t('rateStarsRequired')}
           </p>
         ) : null}
@@ -218,13 +229,14 @@ function RatingCard({
       {reasons.includes('other') ? (
         <div>
           <label htmlFor="rate-note" className="text-sm font-bold text-ink">
-            {t('rateNote')}
+            {t('rateNoteRequiredLabel')}
           </label>
           <textarea
             id="rate-note"
             value={note}
             rows={2}
             maxLength={300}
+            aria-required="true"
             aria-invalid={problem === 'note' ? true : undefined}
             aria-describedby={problem === 'note' ? 'rate-note-error' : undefined}
             onChange={(e) => {
@@ -233,15 +245,29 @@ function RatingCard({
             className={`${portalField} py-2`}
           />
           {problem === 'note' ? (
-            <p id="rate-note-error" className="mt-1 text-sm font-bold text-error">
+            <p id="rate-note-error" role="alert" className="mt-1 text-sm font-bold text-error">
               {t('rateNoteRequired')}
             </p>
           ) : null}
         </div>
       ) : null}
-      <button type="submit" aria-disabled={busy || undefined} className={`${portalPrimary} min-h-12`}>
-        {t('rateSend')}
-      </button>
+      <div className="flex flex-wrap gap-2">
+        <button type="submit" aria-disabled={busy || undefined} className={`${portalPrimary} min-h-12`}>
+          {t('rateSend')}
+        </button>
+        {existing ? (
+          <button
+            type="button"
+            data-panel-cancel="rate-edit"
+            onClick={() => {
+              setEditing(false);
+            }}
+            className={`${portalQuiet} min-h-12`}
+          >
+            {t('rateKeep')}
+          </button>
+        ) : null}
+      </div>
       {line}
     </form>
   );

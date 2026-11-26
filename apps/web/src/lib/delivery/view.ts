@@ -57,10 +57,14 @@ export function wrongCodeLeft(code: string): number | null {
   return m ? Number(m[1]) : null;
 }
 
-/** `tel:` link for an Indian mobile number (10 digits, with or without +91 and spaces). */
+/** +91 and the 10 digits of an Indian mobile number (with or without +91 and spaces), for a `tel:` link. */
+export function telNumber(phone: string): string {
+  return `+91${phone.replace(/\D/g, '').replace(/^91(?=\d{10}$)/, '')}`;
+}
+
+/** `tel:` link for an Indian mobile number. */
 export function telHref(phone: string): string {
-  const digits = phone.replace(/\D/g, '').replace(/^91(?=\d{10}$)/, '');
-  return `tel:+91${digits}`;
+  return `tel:${telNumber(phone)}`;
 }
 
 /** Opens the phone's maps app (Google Maps universal link) at a point or an address. */

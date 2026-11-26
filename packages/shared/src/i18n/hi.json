@@ -9161,7 +9161,16 @@
     "method_upi": "यूपीआई",
     "method_bank_transfer": "बैंक ट्रांसफ़र",
     "method_cash": "नकद",
-    "method_other": "अन्य"
+    "method_other": "अन्य",
+    "newOffers": "{count, plural, one {एक नया डिलीवरी ऑफ़र} other {# नए डिलीवरी ऑफ़र}}",
+    "endsAt": "ऑफ़र {time} पर खत्म होगा",
+    "hurry": "जल्दी करें",
+    "wrongCode": "{left, plural, one {यह कोड सही नहीं है। सिर्फ़ # कोशिश बाकी: दोबारा डालने से पहले जाँच लें।} other {यह कोड सही नहीं है। # कोशिशें बाकी।}}",
+    "codeAutoNote": "चारों अंक डालते ही यह अपने आप जाँचा जाता है।",
+    "photoFirst": "पहले फ़ोटो लें, फिर कोड डालें।",
+    "noteRequiredLabel": "नोट (ज़रूरी)",
+    "jobChanged": "यह काम बदल गया: {status}",
+    "docNumberOf": "{doc} नंबर"
   },
   "deliveryShop": {
     "markReady": "पिकअप के लिए तैयार",
@@ -9179,7 +9188,7 @@
     "returnCodeHint": "पार्सल वापस मिलते समय 4 अंकों का कोड पूछें।",
     "returnConfirm": "पार्सल मिला, पक्का करें",
     "returnDone": "पार्सल वापस मिल गया।",
-    "returnWrong": "यह कोड सही नहीं है। {left} कोशिशें बाकी।",
+    "returnWrong": "{left, plural, one {यह कोड सही नहीं है। सिर्फ़ # कोशिश बाकी।} other {यह कोड सही नहीं है। # कोशिशें बाकी।}}",
     "switchTitle": "क्या यह ऑर्डर आप खुद डिलीवर कर सकते हैं?",
     "switchBody": "MechDost इसलिए पूछ रहा है: {reason}।",
     "switchConfirm": "हाँ, हम डिलीवर करेंगे",
@@ -9215,7 +9224,7 @@
     "callSupport": "सवाल? MechDost सपोर्ट को कॉल करें",
     "rateTitle": "अपनी डिलीवरी को रेटिंग दें",
     "rateLegend": "स्टार",
-    "star": "{count} स्टार",
+    "star": "5 में से {count} स्टार",
     "rateReasons": "क्या खास लगा? (ज़रूरी नहीं)",
     "reason_on_time": "समय पर",
     "reason_polite": "अच्छा व्यवहार",
@@ -9232,7 +9241,9 @@
     "rateYours": "आपने {count} स्टार दिए।",
     "rateEditUntil": "आप इसे {time} तक बदल सकते हैं।",
     "rateEdit": "रेटिंग बदलें",
-    "rateFailed": "रेटिंग सेव नहीं हुई। फिर कोशिश करें।"
+    "rateFailed": "रेटिंग सेव नहीं हुई। फिर कोशिश करें।",
+    "rateKeep": "मेरी रेटिंग रहने दें",
+    "rateNoteRequiredLabel": "नोट (\"अन्य\" के लिए ज़रूरी)"
   },
   "deliveryApply": {
     "title": "डिलीवरी एजेंट के लिए आवेदन",
@@ -9260,7 +9271,8 @@
     "receivedTitle": "आवेदन भेज दिया",
     "receivedBody": "आपका संदर्भ नंबर {code} है। MechDost आपके मोबाइल नंबर पर कॉल करेगा।",
     "statusLink": "आवेदन की स्थिति देखें",
-    "backHome": "होम पर लौटें"
+    "backHome": "होम पर लौटें",
+    "allRequired": "सभी जानकारी ज़रूरी है।"
   },
   "deliveryInvite": {
     "title": "MechDost से डिलीवरी पार्टनर के रूप में जुड़ें",
@@ -9506,6 +9518,9 @@
     "correctWhy": "क्यों? (सुधार के साथ रहेगा)",
     "payoutCorrected": "उलटी एंट्री जोड़ दी गई। सही भुगतान फिर से दर्ज करें।",
     "correctedBadge": "सुधारा गया",
-    "reversal": "उलटी एंट्री"
+    "reversal": "उलटी एंट्री",
+    "newJobs": "{count, plural, one {इस कतार में एक नया काम} other {इस कतार में # नए काम}}",
+    "csvDone": "{count, plural, one {फ़ाइल डाउनलोड हुई: # भुगतान} other {फ़ाइल डाउनलोड हुई: # भुगतान}}",
+    "amountHint": "रुपये में, जैसे 1500 या 1500.50"
   }
 }

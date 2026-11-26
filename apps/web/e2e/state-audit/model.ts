@@ -1489,8 +1489,6 @@ export const COMPONENTS: readonly ComponentDef[] = [
     params: [...env, { name: 'auth', values: ['workshop'] }, world2],
     sweep: 16,
   },
-  // Delivery agents (spec 24, 2026-11-26), demo store + `fixtures/delivery-world.ts` (world `delivery`).
-  ...DELIVERY_COMPONENTS,
   // Roadside help (spec 22, 2026-11-24): the customer's request form (location, vehicle, problem, review). The tracking
   // page needs a request seeded in this browser's demo store, which the harness cannot do yet: its rows are listed and
   // parked as `test.fixme` (`realApi`), like the other pages that need a seeded world.
@@ -1624,6 +1622,9 @@ export const COMPONENTS: readonly ComponentDef[] = [
     align: TABLE_ALIGN,
     sweep: 16,
   },
+  // Delivery agents (spec 24, 2026-11-27), demo store + `fixtures/delivery-world.ts` (world `delivery`); last, so
+  // the regenerated checklist keeps every earlier line in place.
+  ...DELIVERY_COMPONENTS,
 ];
 
 /**

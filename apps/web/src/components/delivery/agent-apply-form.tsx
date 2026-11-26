@@ -88,6 +88,7 @@ export function AgentApplyForm() {
       token = await turnstileToken(TURNSTILE_ID, locale, setChallenge);
     } catch {
       setFormError(t('errSend'));
+      requestAnimationFrame(() => document.getElementById('agent-apply-form-error')?.focus());
       return null;
     }
     const API = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/$/, '');
@@ -117,7 +118,7 @@ export function AgentApplyForm() {
 
   if (received) {
     return (
-      <div role="status" className="space-y-3">
+      <div className="space-y-3">
         <h2 ref={doneRef} tabIndex={-1} className="font-heading text-xl font-extrabold text-ink">
           {t('receivedTitle')}
         </h2>
@@ -143,7 +144,12 @@ export function AgentApplyForm() {
   const aria = (f: Field) => ({
     'aria-invalid': errors[f] ? true : undefined,
     'aria-describedby': errors[f] ? `agent-apply-${f}-error` : undefined,
+    'aria-required': true as const,
   });
+  /** The vehicle group: the error is described on the group, the invalid state on its radios. */
+  const groupAria = {
+    'aria-describedby': errors.vehicle ? 'agent-apply-vehicle-error' : undefined,
+  };
   const err = (f: Field) =>
     errors[f] ? (
       <p id={`agent-apply-${f}-error`} className="mt-1 text-sm font-bold text-error">
@@ -158,7 +164,8 @@ export function AgentApplyForm() {
       className="space-y-5"
       aria-busy={sending || undefined}
     >
-      {Object.keys(errors).length > 0 ? (
+      <p className="text-sm text-muted">{t('allRequired')}</p>
+      {Object.keys(errors).length > 0 && !formError ? (
         <p role="alert" className="rounded-lg bg-warning-bg px-3 py-2 text-sm font-bold text-warning">
           {t('errSummary')}
         </p>
@@ -212,7 +219,7 @@ export function AgentApplyForm() {
           </select>
         </div>
       </div>
-      <fieldset id="agent-apply-vehicle" tabIndex={-1} {...aria('vehicle')}>
+      <fieldset id="agent-apply-vehicle" tabIndex={-1} {...groupAria}>
         <legend className="text-sm font-bold text-ink">{t('vehicle')}</legend>
         <div className="mt-2 grid gap-2 min-[480px]:grid-cols-2">
           {AGENT_VEHICLE_TYPES.map((x) => (
@@ -224,6 +231,7 @@ export function AgentApplyForm() {
                 type="radio"
                 name="vehicle"
                 value={x}
+                aria-invalid={errors.vehicle ? true : undefined}
                 className="size-5 accent-[var(--color-accent-button)]"
               />
               {v(x)}

@@ -24,6 +24,7 @@ import {
   type PayoutMethod,
   type PayoutSummaryRow,
 } from '@/lib/delivery/types';
+import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
 import { useStatusLine } from './status-line';
 
 /** Today and seven days back as IST calendar dates (YYYY-MM-DD), the default period. */
@@ -73,6 +74,7 @@ export function PayoutsTab({ client, agents }: { client: AdminDeliveryClient; ag
   }, []);
 
   function exportCsv() {
+    if (!items?.length) return;
     const rows = [
       [
         'created_at',
@@ -85,7 +87,7 @@ export function PayoutsTab({ client, agents }: { client: AdminDeliveryClient; ag
         'reverses_id',
         'note',
       ],
-      ...(items ?? []).map((p) => [
+      ...items.map((p) => [
         p.createdAt,
         p.agentName,
         p.amountPaise,
@@ -108,6 +110,7 @@ export function PayoutsTab({ client, agents }: { client: AdminDeliveryClient; ag
       URL.revokeObjectURL(a.href);
     }, 1000);
     track('click', { id: 'admin_delivery_payouts_csv', path: window.location.pathname });
+    say(t('csvDone', { count: items.length }));
   }
 
   async function correct(id: string) {
@@ -363,6 +366,7 @@ export function PayoutsTab({ client, agents }: { client: AdminDeliveryClient; ag
                           }}
                         >
                           {t('correct')}
+                          <span className="sr-only"> {p.agentName || name(p.agentId)}</span>
                         </button>
                       )}
                     </td>
@@ -397,6 +401,10 @@ function RecordForm({
   const t = useTranslations('deliveryAdmin');
   const [open, setOpen] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  const [badField, setBadField] = useState<string | null>(null);
+  const invalid = (fid: string) =>
+    badField === fid ? { 'aria-invalid': true as const, 'aria-describedby': 'pay-error' } : {};
+  useDisclosureFocus(open ? 'record-payout' : null);
   const [busy, setBusy] = useState(false);
 
   async function submit(e: SyntheticEvent<HTMLFormElement>) {
@@ -424,6 +432,7 @@ function RecordForm({
             : null;
     if (bad || !agentId || !amount.ok || !method) {
       setProblem(bad?.[1] ?? null);
+      setBadField(bad?.[0] ?? null);
       if (bad) document.getElementById(bad[0] ?? '')?.focus();
       return;
     }
@@ -473,7 +482,14 @@ function RecordForm({
         <label htmlFor="pay-agent" className="text-sm font-bold text-ink">
           {t('col_agent')}
         </label>
-        <select id="pay-agent" name="agent" defaultValue="" className={`${portalField} block`}>
+        <select
+          id="pay-agent"
+          name="agent"
+          defaultValue=""
+          data-disclosure-field="record-payout"
+          {...invalid('pay-agent')}
+          className={`${portalField} block`}
+        >
           <option value="">{t('reasonChoose')}</option>
           {agents.map((a) => (
             <option key={a.id} value={a.id}>
@@ -486,13 +502,30 @@ function RecordForm({
         <label htmlFor="pay-amount" className="text-sm font-bold text-ink">
           {t('amountRupees')}
         </label>
-        <input id="pay-amount" name="amount" inputMode="decimal" autoComplete="off" className={portalField} />
+        <input
+          id="pay-amount"
+          name="amount"
+          inputMode="decimal"
+          autoComplete="off"
+          aria-describedby={badField === 'pay-amount' ? 'pay-error pay-amount-hint' : 'pay-amount-hint'}
+          aria-invalid={badField === 'pay-amount' ? true : undefined}
+          className={portalField}
+        />
+        <p id="pay-amount-hint" className="mt-1 text-sm text-muted">
+          {t('amountHint')}
+        </p>
       </div>
       <div>
         <label htmlFor="pay-method" className="text-sm font-bold text-ink">
           {t('col_method')}
         </label>
-        <select id="pay-method" name="method" defaultValue="" className={`${portalField} block`}>
+        <select
+          id="pay-method"
+          name="method"
+          defaultValue=""
+          {...invalid('pay-method')}
+          className={`${portalField} block`}
+        >
           <option value="">{t('reasonChoose')}</option>
           {PAYOUT_METHODS.map((m) => (
             <option key={m} value={m}>
@@ -507,6 +540,7 @@ function RecordForm({
         </label>
         <input
           id="pay-from"
+          {...invalid('pay-from')}
           name="from"
           type="date"
           defaultValue={period.from}
@@ -519,6 +553,7 @@ function RecordForm({
         </label>
         <input
           id="pay-to"
+          {...invalid('pay-from')}
           name="to"
           type="date"
           defaultValue={period.to}
@@ -544,7 +579,7 @@ function RecordForm({
         <input id="pay-note" name="note" maxLength={300} className={portalField} />
       </div>
       {problem ? (
-        <p role="alert" className="text-sm font-bold text-error tab:col-span-3">
+        <p id="pay-error" role="alert" className="text-sm font-bold text-error tab:col-span-3">
           {problem}
         </p>
       ) : null}

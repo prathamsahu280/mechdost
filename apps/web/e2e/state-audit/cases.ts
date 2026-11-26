@@ -15,7 +15,7 @@ import {
   type ComponentDef,
 } from './model.ts';
 
-export type Role = 'out' | 'customer' | 'shop' | 'workshop' | 'admin';
+export type Role = 'out' | 'customer' | 'shop' | 'workshop' | 'admin' | 'agent' | 'agentshop';
 /** `delivery`: the busy world plus agent-delivered orders and jobs (spec 24). */
 export type World = 'empty' | 'cart' | 'busy' | 'delivery';
 
@@ -149,6 +149,8 @@ const AUTH_TEXT: Readonly<Record<Role, string>> = {
   shop: 'shop partner',
   workshop: 'workshop partner',
   admin: 'admin',
+  agent: 'delivery agent',
+  agentshop: 'agent-mode shop',
 };
 
 /** One-line state description used in test titles, checklist lines and failure reports. */

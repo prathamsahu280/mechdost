@@ -107,7 +107,7 @@ export function AgentInvite({ token }: { token: string }) {
     return <div className="skeleton h-48 rounded-card" aria-hidden="true" />;
   if (done) {
     return (
-      <div role="status" className="space-y-3">
+      <div className="space-y-3">
         <h2 ref={doneRef} tabIndex={-1} className="font-heading text-xl font-extrabold text-ink">
           {t('acceptedTitle')}
         </h2>

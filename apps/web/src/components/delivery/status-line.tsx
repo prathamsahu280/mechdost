@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 
 /**
- * One always-mounted live line per screen (learning L-P23e): cleared, then set a moment later, so a repeated message is
- * read again. `tone` only colours the visible text. No translations here, so admin, customer and shop screens can use
- * it without the agent portal's message bundle.
+ * One always-mounted live pair per screen (learning L-P23e; a11y review 2026-11-27): a polite status for results and
+ * an alert for failures, both mounted from the start. A message is cleared, then set a moment later, so a repeat is
+ * read again. No translations here, so admin, customer and shop screens can use it without the agent portal's bundle.
+ * Place `line` in a part of the screen that stays mounted when the action reloads the list.
  */
 export function useStatusLine() {
   const [msg, setMsg] = useState<{ text: string; tone: 'ok' | 'error' } | null>(null);
@@ -24,12 +25,14 @@ export function useStatusLine() {
     [],
   );
   const line = (
-    <p
-      role="status"
-      className={`text-sm font-bold empty:sr-only ${msg?.tone === 'error' ? 'text-error' : 'text-success'}`}
-    >
-      {msg?.text ?? ''}
-    </p>
+    <>
+      <p role="status" className="text-sm font-bold text-success empty:sr-only">
+        {msg?.tone === 'ok' ? msg.text : ''}
+      </p>
+      <p role="alert" className="text-sm font-bold text-error empty:sr-only">
+        {msg?.tone === 'error' ? msg.text : ''}
+      </p>
+    </>
   );
   const clear = () => {
     setMsg(null);

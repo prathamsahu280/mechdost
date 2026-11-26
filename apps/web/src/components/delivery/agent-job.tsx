@@ -9,13 +9,15 @@ import {
 import { MapPin, Phone } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
 import { LocalLink } from '@/components/ui/local-link';
 import { track } from '@/lib/analytics';
 import { useLiveReload } from '@/lib/delivery/use-delivery-client';
 import type { AgentJobDetailView } from '@/lib/delivery/types';
-import { agentStep, mapsHref, telHref } from '@/lib/delivery/view';
+import { agentStep, mapsHref, telNumber } from '@/lib/delivery/view';
 import { useAgent } from './agent-portal';
 import {
+  BigCode,
   CodeEntry,
   LoadGate,
   PhotoCapture,
@@ -30,13 +32,13 @@ const card = 'rounded-card border border-line-card bg-surface p-4 shadow-card';
 const linkBtn =
   'press inline-flex min-h-12 items-center justify-center gap-2 rounded-button border border-input-border px-4 text-base font-bold text-ink hover:bg-pill focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus';
 
-/** "I'm at the shop / customer" is the agent's own tap: kept on this device for the job only. */
+/** "I'm at the shop / customer" is the agent's own tap: kept on this device (local storage, per job and status). */
 function useArrived(jobId: string, status: string): [boolean, (v: boolean) => void] {
   const key = `mechdost-agent-arrived-${jobId}-${status}`;
   const [arrived, setArrived] = useState(false);
   useEffect(() => {
     try {
-      setArrived(window.sessionStorage.getItem(key) === '1');
+      setArrived(window.localStorage.getItem(key) === '1');
     } catch {
       setArrived(false);
     }
@@ -44,7 +46,7 @@ function useArrived(jobId: string, status: string): [boolean, (v: boolean) => vo
   const set = (v: boolean) => {
     setArrived(v);
     try {
-      window.sessionStorage.setItem(key, v ? '1' : '0');
+      window.localStorage.setItem(key, v ? '1' : '0');
     } catch {
       // Storage blocked: the step still moves on this screen.
     }
@@ -94,23 +96,43 @@ export function AgentJob({ jobId }: { jobId: string }) {
   );
 }
 
-function JobBody({ job, onChanged }: { job: AgentJobDetailView; onChanged: () => void }) {
+function JobBody({ job, onChanged: reload }: { job: AgentJobDetailView; onChanged: () => void }) {
   const t = useTranslations('deliveryAgent');
-  const [arrived, setArrived] = useArrived(job.jobId, job.status);
+  const [arrived, setArrivedRaw] = useArrived(job.jobId, job.status);
   const step = agentStep(job.status, arrived);
   const heading = useRef<HTMLHeadingElement>(null);
-  const firstRender = useRef(true);
-  // The step heading takes focus when the step changes, so a screen reader hears the new step (not on first load).
+  // The step heading takes focus after the rider's own action, or on arrival from Accept (`?accepted=1`); a change
+  // that came from a background refresh is announced instead and leaves focus where the rider is typing (2.4.3).
+  const ownAction = useRef(false);
+  const { say, line } = useStatusLine();
+  const shown = useRef<string | null>(null);
   useEffect(() => {
-    if (firstRender.current) {
-      firstRender.current = false;
+    const key = `${String(step)}|${job.status}`;
+    const before = shown.current;
+    shown.current = key;
+    if (before === null) {
+      if (new URLSearchParams(window.location.search).get('accepted') === '1') heading.current?.focus();
       return;
     }
-    heading.current?.focus();
-  }, [step, job.status]);
+    if (before === key) return;
+    if (ownAction.current) {
+      ownAction.current = false;
+      heading.current?.focus();
+    } else say(t('jobChanged', { status: heading.current?.textContent ?? '' }));
+    // Runs again when `say`/`t` change identity too; the key comparison above makes that a no-op.
+  }, [step, job.status, say, t]);
+  const onChanged = () => {
+    ownAction.current = true;
+    reload();
+  };
+  const setArrived = (v: boolean) => {
+    ownAction.current = true;
+    setArrivedRaw(v);
+  };
 
   return (
     <article aria-labelledby="job-step-title" className="grid gap-4">
+      {line}
       <div>
         <p className="text-sm font-bold text-muted">{t('jobTitle', { code: job.orderCode })}</p>
         {step ? (
@@ -172,7 +194,7 @@ function JobBody({ job, onChanged }: { job: AgentJobDetailView; onChanged: () =>
         </button>
       ) : null}
       {step === 2 ? <PickupStep job={job} onChanged={onChanged} /> : null}
-      {step === 1 || step === 2 ? <GiveUp job={job} onChanged={onChanged} /> : null}
+      {step === 1 || step === 2 ? <GiveUp job={job} onChanged={onChanged} onSay={say} /> : null}
 
       {step === 3 ? (
         <button
@@ -196,9 +218,7 @@ function JobBody({ job, onChanged }: { job: AgentJobDetailView; onChanged: () =>
           <h3 id="return-code-title" className="mt-2 text-sm font-bold text-muted">
             {t('returnCodeLabel')}
           </h3>
-          <p className="font-heading text-4xl font-extrabold tracking-[0.3em] text-ink tabular-nums">
-            {job.returnCode}
-          </p>
+          <BigCode code={job.returnCode} />
         </section>
       ) : null}
       {['delivered', 'returned', 'cancelled'].includes(job.status) || job.contact.stage === 'none' ? (
@@ -229,7 +249,7 @@ function StepBar({ step }: { step: 1 | 2 | 3 | 4 }) {
           <li
             key={n}
             aria-current={i + 1 === step ? 'step' : undefined}
-            className={`h-2 rounded-pill ${i + 1 <= step ? 'bg-accent-button' : 'bg-line'}`}
+            className={`h-2 rounded-pill ${i + 1 <= step ? 'bg-accent-button' : 'border border-input-border bg-surface'}`}
           >
             <span className="sr-only">{t(n)}</span>
           </li>
@@ -252,7 +272,7 @@ function ShopCard({ job }: { job: AgentJobDetailView }) {
       <p className="text-[15px] text-ink">{t('areaPin', { area: shop.addressLine, pin: shop.pincode })}</p>
       <div className="mt-3 grid grid-cols-2 gap-2">
         <a
-          href={telHref(shop.phone)}
+          href={`tel:${telNumber(shop.phone)}`}
           className={linkBtn}
           onClick={() => {
             track('click', { id: 'agent_call_shop', path: window.location.pathname });
@@ -328,7 +348,7 @@ function CustomerCard({ job }: { job: AgentJobDetailView }) {
           <div className="mt-3 grid grid-cols-2 gap-2">
             {c.phone ? (
               <a
-                href={telHref(c.phone)}
+                href={`tel:${telNumber(c.phone)}`}
                 className={linkBtn}
                 onClick={() => {
                   track('click', { id: 'agent_call_customer', path: window.location.pathname });
@@ -364,101 +384,77 @@ function CustomerCard({ job }: { job: AgentJobDetailView }) {
   );
 }
 
-function PickupStep({ job, onChanged }: { job: AgentJobDetailView; onChanged: () => void }) {
+/**
+ * One code step (pickup: the shop's code + a parcel photo; delivery: the customer's code + a handover photo). The photo
+ * comes first and a required one holds the code until it is taken; a locked code keeps the screen with the message
+ * and a call-support link (a11y review 2026-11-27).
+ */
+function CodeStep({
+  job,
+  kind,
+  onChanged,
+}: {
+  job: AgentJobDetailView;
+  kind: 'pickup' | 'delivery';
+  onChanged: () => void;
+}) {
   const t = useTranslations('deliveryAgent');
   const e = useTranslations('delivery.errors');
   const ctx = useAgent();
   const [photo, setPhoto] = useState<string | null>(null);
   if (!ctx) return null;
   const { client, errorText } = ctx;
-  if (job.pickupLocked) {
-    return (
-      <p role="alert" className={`${card} font-bold text-warning`}>
-        {e('CODE_LOCKED')}
-      </p>
-    );
-  }
+  const pickup = kind === 'pickup';
+  const photoId = `${kind}-photo-${job.jobId}`;
+  const locked = pickup ? job.pickupLocked : job.deliveryLocked;
   return (
-    <section aria-label={t('step_pickup')} className={card}>
+    <div className={card}>
       <CodeEntry
-        id={`pickup-code-${job.jobId}`}
-        label={t('pickupCodeLabel')}
-        hint={t('pickupCodeHint')}
-        submitLabel={t('confirmPickup')}
-        kind="agent_pickup_code"
+        id={`${kind}-code-${job.jobId}`}
+        label={pickup ? t('pickupCodeLabel') : t('deliveryCodeLabel')}
+        hint={pickup ? t('pickupCodeHint') : t('deliveryCodeHint')}
+        submitLabel={pickup ? t('confirmPickup') : t('confirmDelivery')}
+        kind={pickup ? 'agent_pickup_code' : 'agent_delivery_code'}
+        ready={!job.photosRequired || photo !== null}
+        notReadyText={e('PHOTO_REQUIRED')}
+        notReadyFocus={photoId}
+        locked={locked ? e('CODE_LOCKED') : null}
         onCode={async (code) => {
-          if (job.photosRequired && !photo) return e('PHOTO_REQUIRED');
-          const res = await client.pickup(job.jobId, code, photo ?? undefined, job.version);
+          const res = pickup
+            ? await client.pickup(job.jobId, code, photo ?? undefined, job.version)
+            : await client.deliver(job.jobId, code, photo ?? undefined, job.version);
           if (!res.ok) return errorText(res.code);
           onChanged();
           if (res.data.ok) {
-            track('click', { id: 'agent_picked_up', path: window.location.pathname });
+            track('click', {
+              id: pickup ? 'agent_picked_up' : 'agent_delivered',
+              path: window.location.pathname,
+            });
             return null;
           }
-          return res.data.locked
-            ? e('CODE_LOCKED')
-            : e('WRONG_CODE', { attemptsLeft: res.data.attemptsLeft });
+          return res.data.locked ? e('CODE_LOCKED') : t('wrongCode', { left: res.data.attemptsLeft });
         }}
-      >
-        <PhotoCapture
-          id={`pickup-photo-${job.jobId}`}
-          label={job.photosRequired ? t('photoPickup') : t('photoOptional')}
-          hint={t('photoPickupHint')}
-          purpose="pickup"
-          upload={client.uploadPhoto}
-          onMedia={setPhoto}
-        />
-      </CodeEntry>
-    </section>
+        before={
+          <PhotoCapture
+            id={photoId}
+            label={job.photosRequired ? (pickup ? t('photoPickup') : t('photoDelivery')) : t('photoOptional')}
+            hint={pickup ? t('photoPickupHint') : t('photoFirst')}
+            purpose={kind}
+            upload={client.uploadPhoto}
+            onMedia={setPhoto}
+          />
+        }
+      />
+    </div>
   );
 }
 
+function PickupStep({ job, onChanged }: { job: AgentJobDetailView; onChanged: () => void }) {
+  return <CodeStep job={job} kind="pickup" onChanged={onChanged} />;
+}
+
 function DeliverStep({ job, onChanged }: { job: AgentJobDetailView; onChanged: () => void }) {
-  const t = useTranslations('deliveryAgent');
-  const e = useTranslations('delivery.errors');
-  const ctx = useAgent();
-  const [photo, setPhoto] = useState<string | null>(null);
-  if (!ctx) return null;
-  const { client, errorText } = ctx;
-  if (job.deliveryLocked) {
-    return (
-      <p role="alert" className={`${card} font-bold text-warning`}>
-        {e('CODE_LOCKED')}
-      </p>
-    );
-  }
-  return (
-    <section aria-label={t('step_deliver')} className={card}>
-      <CodeEntry
-        id={`delivery-code-${job.jobId}`}
-        label={t('deliveryCodeLabel')}
-        hint={t('deliveryCodeHint')}
-        submitLabel={t('confirmDelivery')}
-        kind="agent_delivery_code"
-        onCode={async (code) => {
-          if (job.photosRequired && !photo) return e('PHOTO_REQUIRED');
-          const res = await client.deliver(job.jobId, code, photo ?? undefined, job.version);
-          if (!res.ok) return errorText(res.code);
-          onChanged();
-          if (res.data.ok) {
-            track('click', { id: 'agent_delivered', path: window.location.pathname });
-            return null;
-          }
-          return res.data.locked
-            ? e('CODE_LOCKED')
-            : e('WRONG_CODE', { attemptsLeft: res.data.attemptsLeft });
-        }}
-      >
-        <PhotoCapture
-          id={`delivery-photo-${job.jobId}`}
-          label={job.photosRequired ? t('photoDelivery') : t('photoOptional')}
-          purpose="delivery"
-          upload={client.uploadPhoto}
-          onMedia={setPhoto}
-        />
-      </CodeEntry>
-    </section>
-  );
+  return <CodeStep job={job} kind="delivery" onChanged={onChanged} />;
 }
 
 function FailForm({ job, onChanged }: { job: AgentJobDetailView; onChanged: () => void }) {
@@ -473,6 +469,7 @@ function FailForm({ job, onChanged }: { job: AgentJobDetailView; onChanged: () =
   const [problem, setProblem] = useState<'reason' | 'note' | null>(null);
   const [busy, setBusy] = useState(false);
   const { say, line } = useStatusLine();
+  useDisclosureFocus(open ? `fail-${job.jobId}` : null);
   if (!ctx) return null;
   const { client, errorText } = ctx;
   const id = `fail-${job.jobId}`;
@@ -570,7 +567,16 @@ function FailForm({ job, onChanged }: { job: AgentJobDetailView; onChanged: () =
   );
 }
 
-function GiveUp({ job, onChanged }: { job: AgentJobDetailView; onChanged: () => void }) {
+function GiveUp({
+  job,
+  onChanged,
+  onSay,
+}: {
+  job: AgentJobDetailView;
+  onChanged: () => void;
+  /** The job screen's status line (this form leaves the screen once the job is given up). */
+  onSay: (text: string) => void;
+}) {
   const t = useTranslations('deliveryAgent');
   const gr = useTranslations('delivery.giveUpReason');
   const ctx = useAgent();
@@ -580,6 +586,7 @@ function GiveUp({ job, onChanged }: { job: AgentJobDetailView; onChanged: () => 
   const [problem, setProblem] = useState<'reason' | 'note' | null>(null);
   const [busy, setBusy] = useState(false);
   const { say, line } = useStatusLine();
+  useDisclosureFocus(open ? `giveup-${job.jobId}` : null);
   if (!ctx || job.status !== 'accepted') return null;
   const { client, errorText } = ctx;
   const id = `giveup-${job.jobId}`;
@@ -596,7 +603,7 @@ function GiveUp({ job, onChanged }: { job: AgentJobDetailView; onChanged: () => 
       say(errorText(res.code), 'error');
       return;
     }
-    say(t('gaveUp'));
+    onSay(t('gaveUp'));
     onChanged();
   }
 
@@ -615,7 +622,7 @@ function GiveUp({ job, onChanged }: { job: AgentJobDetailView; onChanged: () => 
     );
   }
   return (
-    <section aria-label={t('giveUp')} className={card} aria-busy={busy || undefined}>
+    <div className={card} aria-busy={busy || undefined}>
       <ReasonFields
         id={id}
         legend={t('giveUpWhy')}
@@ -651,6 +658,6 @@ function GiveUp({ job, onChanged }: { job: AgentJobDetailView; onChanged: () => 
         </button>
       </div>
       <div className="mt-2">{line}</div>
-    </section>
+    </div>
   );
 }

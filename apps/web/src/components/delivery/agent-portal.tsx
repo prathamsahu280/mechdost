@@ -4,7 +4,8 @@ import { DELIVERY_DECLINE_REASONS, type DeliveryDeclineReason } from '@mechdost/
 import { Bike, Phone } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
 import { PortalGuard } from '@/components/portal/portal-guard';
 import { useNow } from '@/components/portal/use-now';
 import { Switch } from '@/components/ui/switch';
@@ -14,7 +15,7 @@ import { localePath } from '@/lib/locale-path';
 import { site } from '@/lib/site';
 import { useAgentClient, useLiveReload } from '@/lib/delivery/use-delivery-client';
 import type { AgentClient, AgentJobCardView, AgentJobsView, AgentProfileView } from '@/lib/delivery/types';
-import { countdown, kmText, telHref } from '@/lib/delivery/view';
+import { countdown, kmText, telNumber } from '@/lib/delivery/view';
 import { useDeliveryErrorText } from './error-text';
 import { LoadGate, ReasonFields, bigPrimary, bigQuiet, reasonProblem, useStatusLine } from './parts';
 
@@ -120,7 +121,7 @@ function StatusStrip() {
           </p>
         </div>
         <a
-          href={telHref(site.supportPhone)}
+          href={`tel:${telNumber(site.supportPhone)}`}
           aria-label={t('helpLabel')}
           onClick={() => {
             track('click', { id: 'agent_help_call', path: window.location.pathname });
@@ -237,16 +238,34 @@ export function AgentOffers() {
   const ctx = useAgent();
   const { items, error, reload } = useAgentJobs('offers');
   const now = useNow(1000);
+  // One list-level status line (stays mounted when a card leaves) announces new offers and the result of a decline.
+  const { say, line } = useStatusLine();
+  const seen = useRef<Set<string> | null>(null);
   useScreenView('offers');
+  useEffect(() => {
+    if (!items) return;
+    const ids = new Set(items.map((o) => o.offerId ?? o.jobId));
+    const before = seen.current;
+    seen.current = ids;
+    if (!before) return;
+    const fresh = [...ids].filter((id) => !before.has(id)).length;
+    if (fresh > 0) say(t('newOffers', { count: fresh }));
+  }, [items]);
   if (!ctx) return null;
   const open = (items ?? []).filter((o) => (countdown(o.offerExpiresAt, now)?.seconds ?? 0) > 0);
+  /** After a card leaves the list, focus the list heading instead of dropping to the page (2.4.3). */
+  const afterRemoval = () => {
+    document.getElementById('agent-offers-title')?.focus();
+    reload();
+  };
   return (
     <section aria-labelledby="agent-offers-title" className="grid gap-3">
-      <h2 id="agent-offers-title" className="font-heading text-xl font-extrabold text-ink">
+      <h2 id="agent-offers-title" tabIndex={-1} className="font-heading text-xl font-extrabold text-ink">
         {t('offersTitle')} {items ? <span className="text-muted tabular-nums">({open.length})</span> : null}
       </h2>
+      {line}
       <LoadGate loading={items === null} error={items ? null : error} onRetry={reload}>
-        {open.length === 0 ? (
+        {(items ?? []).length === 0 ? (
           <div className={card}>
             <p className="text-sm text-muted">
               {ctx.profile.online ? t('offersEmptyOnline') : t('offersEmptyOffline')}
@@ -259,9 +278,11 @@ export function AgentOffers() {
           </div>
         ) : (
           <ul className="grid gap-3">
-            {open.map((o) => (
+            {/* An offer that ran out stays as "Offer ended" until the next refresh, so it never vanishes under the
+                rider's finger (a11y review COG-001). */}
+            {(items ?? []).map((o) => (
               <li key={o.offerId ?? o.jobId}>
-                <OfferCard offer={o} now={now} onChanged={reload} />
+                <OfferCard offer={o} now={now} onChanged={afterRemoval} onSay={say} />
               </li>
             ))}
           </ul>
@@ -302,10 +323,13 @@ function OfferCard({
   offer,
   now,
   onChanged,
+  onSay,
 }: {
   offer: AgentJobCardView;
   now: number;
   onChanged: () => void;
+  /** The list's status line (this card may leave the list after the action). */
+  onSay: (text: string, tone?: 'ok' | 'error') => void;
 }) {
   const t = useTranslations('deliveryAgent');
   const dr = useTranslations('delivery.declineReason');
@@ -317,8 +341,10 @@ function OfferCard({
   const [note, setNote] = useState('');
   const [problem, setProblem] = useState<'reason' | 'note' | null>(null);
   const [busy, setBusy] = useState(false);
-  const { say, line } = useStatusLine();
+  const say = onSay;
   const left = countdown(offer.offerExpiresAt, now);
+  const formIdEarly = `decline-${offer.offerId ?? offer.jobId}`;
+  useDisclosureFocus(declining ? formIdEarly : null);
   if (!ctx || !offer.offerId) return null;
   const { client, errorText } = ctx;
   const offerId = offer.offerId;
@@ -338,7 +364,8 @@ function OfferCard({
       onChanged();
       return;
     }
-    router.push(localePath(`/partner/delivery/jobs/${res.data.jobId}`, locale));
+    // `?accepted=1`: the job page focuses its step heading on arrival (the Accept button is gone).
+    router.push(localePath(`/partner/delivery/jobs/${res.data.jobId}`, locale) + '?accepted=1');
   }
 
   async function decline() {
@@ -355,6 +382,22 @@ function OfferCard({
     } else say(errorText(res.code), 'error');
   }
 
+  const ended = left !== null && left.seconds === 0;
+  const endsAt = offer.offerExpiresAt
+    ? new Intl.DateTimeFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', {
+        timeStyle: 'short',
+        timeZone: 'Asia/Kolkata',
+      }).format(new Date(offer.offerExpiresAt))
+    : null;
+  if (ended) {
+    return (
+      <article className={card}>
+        <p className="font-heading text-lg font-extrabold text-ink">{offer.orderCode}</p>
+        <p className="mt-1 text-[15px] font-bold text-muted">{t('expired')}</p>
+      </article>
+    );
+  }
+
   return (
     <article className={`${card} border-accent-button/60`} aria-busy={busy || undefined}>
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -363,7 +406,12 @@ function OfferCard({
           <p
             className={`rounded-pill px-3 py-1 text-sm font-extrabold tabular-nums ${left.urgent ? 'bg-warning-bg text-warning' : 'bg-pill text-ink'}`}
           >
-            {t('timeLeftShort', { time: left.text })}
+            {/* The ticking time is for the eye; screen readers get the end time once (no per-second chatter). */}
+            <span aria-hidden="true">
+              {left.urgent ? `${t('hurry')} · ` : ''}
+              {t('timeLeftShort', { time: left.text })}
+            </span>
+            {endsAt ? <span className="sr-only">{t('endsAt', { time: endsAt })}</span> : null}
           </p>
         ) : null}
       </div>
@@ -387,7 +435,12 @@ function OfferCard({
             error={problem}
           />
           <div className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => void decline()} className={bigPrimary}>
+            <button
+              type="button"
+              aria-disabled={busy || undefined}
+              onClick={() => void decline()}
+              className={bigPrimary}
+            >
               {t('sendDecline')}
             </button>
             <button
@@ -425,7 +478,6 @@ function OfferCard({
           </button>
         </div>
       )}
-      <div className="mt-2">{line}</div>
     </article>
   );
 }
@@ -444,6 +496,7 @@ function JobLinkCard({ job }: { job: AgentJobCardView }) {
       </div>
       <LocalLink href={`/partner/delivery/jobs/${job.jobId}`} className={`${bigPrimary} mt-3 w-full`}>
         {t('openJob')}
+        <span className="sr-only"> {job.orderCode}</span>
       </LocalLink>
     </article>
   );
