@@ -190,7 +190,12 @@ export function MemberGate({ children }: { children: ReactNode }) {
   const locale = useLocale();
   const { loaded } = useUstaad((c) => c.me(), 'gate-me');
   if (loaded.state === 'loading') return <LoadingBlock />;
-  if (loaded.state === 'ok' && loaded.data.member === null)
+  // Not a member yet: staff previewing (member null) or a signed-in viewer the gate let in (a preview tester, or
+  // anyone once the network is open) answered USTAAD_NOT_MEMBER.
+  const notMember =
+    (loaded.state === 'ok' && loaded.data.member === null) ||
+    (loaded.state === 'error' && loaded.code === 'USTAAD_NOT_MEMBER');
+  if (notMember)
     return (
       <div className={`${card} mx-auto grid max-w-2xl justify-items-center gap-3 text-center`}>
         <h1 className="font-heading text-xl font-extrabold text-ink">{t('joinTitle')}</h1>

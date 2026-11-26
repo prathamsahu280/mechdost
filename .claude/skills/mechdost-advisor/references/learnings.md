@@ -551,3 +551,15 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
   token, no Firebase load).
 - L-COD3 · 2026-11-26 · shell · `node -e` strings containing backticks inside bash double quotes are command-
   substituted silently (comments lost text twice) → write such edits with the Edit tool or a script file.
+- L-QA1 · 2026-11-27 · migrations · `drizzle-kit generate` again named the new file by journal count (0104) and
+  OVERWROTE the existing `0104_snapshot.json`; fixed by moving the new snapshot to `0110_snapshot.json`, restoring 0104
+  from git, renaming the SQL and the journal tag. → After every generate in a busy repo, `git status drizzle/meta`
+  before anything else (third occurrence: promote to the checklist).
+- L-QA2 · 2026-11-27 · security/config · A "refuse to start if the expiry is in the past" rule would take production
+  down on any restart after a time-boxed window. → Time-boxed switches: refuse malformed or too-long values, treat a
+  past expiry as off with a log line, and re-check the window on every use.
+- L-QA3 · 2026-11-27 · access/web · The web gate cannot know server-only lists (testers) from the session; asking the
+  already-gated endpoint and whitelisting only "behind the gate" codes (`USTAAD_NOT_MEMBER`, `USTAAD_BANNED`) avoids a
+  new public field and keeps the API the boundary. Demo/sample answers must never count.
+- L-QA4 · 2026-11-27 · a11y/admin · Inline confirm rows lose focus on open, cancel and remove unless focus targets are
+  set explicitly (a11y forms review); label-in-name: prefer visible text + sr-only suffix over an aria-label override.

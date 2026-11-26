@@ -19,6 +19,18 @@ This file is the single source of truth for **where the build is right now**. It
 - **Needs at merge:** `pnpm db:seed` (new permission), rechain 0109 after 0105–0108, Razorpay live keys before go-live
   (Q-COD-1, P0). Open: Q-COD-1 … 5.
 
+## 2026-11-27 — Ustaad QA prerequisites: preview testers + Turnstile QA bypass (agent branch, not pushed)
+
+- **Preview testers:** migration **0110** `ustaad_preview_testers` (renumbered by hand; journal `when` 1795705665564 =
+  0104 + 6 s, leaving 0105–0109 to the parallel streams; snapshot chains to 0104), repo, admin API
+  `/v1/admin/ustaad/preview-testers` (super admin), gate + web gate honour testers during `staff_preview`, admin card
+  under the access switch (en + hi), `admin_ustaad_change` area `preview_testers`. Spec 23, decisions, spec 12.
+- **Turnstile QA bypass:** `apps/api/src/auth/qa-turnstile-bypass.ts` + one call in `server.ts`; env
+  `QA_TURNSTILE_BYPASS_IDS|KEY|UNTIL` (empty by default); password sign-in + Ustaad join only; audit row per use.
+  Its own commit so it reverts cleanly. Spec 13, decisions, runbook deploy § 7.1, plan § 2.2 updated.
+- **Next (lead):** merge; apply 0110 before deploying; Gate 0 G0-1/G0-2 per the plan; revert the bypass commit within
+  48 h of the run (Q-SIM-3).
+
 ## 2026-11-26 (night) — four fixes agent (branch worktree-agent-a3b1a256dd1a31849, not pushed, no migration)
 
 - **Shop:** the 2W/3W/4W "Vehicle type" select is retired (founder ruling, Q-segments answered); old `?vehicle=` links

@@ -28,6 +28,8 @@ import {
   USTAAD_RESTRICTED_MODES,
   USTAAD_SPECIALITY_CODES,
   USTAAD_SPECIALITY_STEPS,
+  USTAAD_TESTER_ADD_REASONS,
+  USTAAD_TESTER_REMOVE_REASONS,
   USTAAD_TRACKS,
   USTAAD_VERIFICATION_STATES,
   USTAAD_WORK_PLACES,
@@ -251,5 +253,52 @@ export const ustaadReservedNames = pgTable(
     uniqueIndex('ustaad_reserved_names_skeleton_uq').on(t.skeleton),
     index().on(t.createdBy),
     check('ustaad_reserved_names_len', sql`char_length(${t.name}) between 2 and 60`),
+  ],
+);
+
+/**
+ * Preview testers (founder 2026-11-27; spec 23 § 3): named non-staff accounts let into the network while
+ * `ustaad.access = staff_preview`. A removal keeps the row (`removed_at`), so the history stays; one active row per
+ * user (partial unique index). Admin → Ustaad → Network settings, super admin only, every change audited. Testers are
+ * not staff: the row grants no role and no permission.
+ */
+export const ustaadPreviewTesters = pgTable(
+  'ustaad_preview_testers',
+  {
+    id: id(),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    reasonCode: text().notNull(),
+    note: text(),
+    addedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    removedAt: ts(),
+    removedBy: uuid().references(() => users.id, { onDelete: 'set null' }),
+    removeReasonCode: text(),
+    removeNote: text(),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex('ustaad_preview_testers_active_uq')
+      .on(t.userId)
+      .where(sql`${t.removedAt} is null`),
+    index().on(t.addedBy),
+    index().on(t.removedBy),
+    check('ustaad_preview_testers_reason', oneOf(t.reasonCode, USTAAD_TESTER_ADD_REASONS)),
+    check(
+      'ustaad_preview_testers_remove_reason',
+      nullOrOneOf(t.removeReasonCode, USTAAD_TESTER_REMOVE_REASONS),
+    ),
+    check(
+      'ustaad_preview_testers_removed_consistent',
+      sql`(${t.removedAt} is null) = (${t.removeReasonCode} is null)`,
+    ),
+    check('ustaad_preview_testers_note_len', sql`${t.note} is null or char_length(${t.note}) <= 200`),
+    check(
+      'ustaad_preview_testers_remove_note_len',
+      sql`${t.removeNote} is null or char_length(${t.removeNote}) <= 200`,
+    ),
   ],
 );

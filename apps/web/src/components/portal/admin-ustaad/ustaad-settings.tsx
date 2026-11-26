@@ -43,6 +43,7 @@ import { LoadState } from '../admin-site-api';
 import { StatusBadge, adminCard } from '../admin-ui';
 import { PortalNavLink } from '../portal-nav-link';
 import { portalField, portalPrimary, portalQuiet } from '../portal-styles';
+import { PreviewTestersCard } from './preview-testers';
 import { UstaadSectionTables } from './ustaad-tables';
 
 type Row = UstaadSettingsList['settings'][number];
@@ -290,6 +291,9 @@ export function AdminUstaadApi({
           edit(ACCESS_KEY, v);
         }}
       />
+
+      {/* Preview testers (founder 2026-11-27): super admin only, like every settings write. */}
+      {canEdit ? <PreviewTestersCard /> : null}
 
       <div
         className={

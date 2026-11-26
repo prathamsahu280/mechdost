@@ -140,9 +140,16 @@ export function authRoutes(deps: AppDeps) {
         human = (await closed(() => deps.rateLimiter.hit(STAFF_CHALLENGE_ONCE, challenge.nonce))).allowed;
       }
     }
-    if (!human && body.turnstileToken) {
+    if (!human) {
       try {
-        human = await turnstile.verify(body.turnstileToken, ip);
+        // The subject is the normalised typed identifier (server-side), never a client flag.
+        human = await turnstile.verifyFor({
+          token: body.turnstileToken,
+          ip,
+          route: 'auth.password',
+          subject: ident ? { kind: 'identifier', ident } : undefined,
+          requestId: c.get('requestId'),
+        });
       } catch (err) {
         log('error', 'turnstile_unavailable', safeError(err));
         throw unavailable();

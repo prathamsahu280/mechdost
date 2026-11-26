@@ -194,6 +194,7 @@ const USTAAD_NONE = [
   'ustaad_report_reasons',
   'ustaad_reports',
   'ustaad_reserved_names',
+  'ustaad_preview_testers',
   'ustaad_saves',
   'ustaad_story_views',
   'ustaad_strikes',

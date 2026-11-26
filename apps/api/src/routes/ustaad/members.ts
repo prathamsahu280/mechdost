@@ -60,11 +60,17 @@ export function ustaadMemberRoutes(deps: AppDeps, sessions: SessionCache) {
   app.on('POST', '/ustaad/join', rateLimit(deps.rateLimiter, USTAAD_RATE_RULES.join, userKey));
   app.on('POST', '/ustaad/me/leave', requireUstaadMember(deps));
 
-  async function human(c: Context<AppEnv>, token: string) {
+  async function human(c: Context<AppEnv>, token: string | undefined) {
     if (!deps.turnstile) throw new ApiError(503, 'UNAVAILABLE', 'Joining is not available right now');
     let ok: boolean;
     try {
-      ok = await deps.turnstile.verify(token, c.get('clientIp'));
+      ok = await deps.turnstile.verifyFor({
+        token,
+        ip: c.get('clientIp'),
+        route: 'ustaad.join',
+        subject: { kind: 'user', userId: c.get('auth').user.id },
+        requestId: c.get('requestId'),
+      });
     } catch (err) {
       log('error', 'turnstile_unavailable', safeError(err));
       throw new ApiError(503, 'UNAVAILABLE', 'Please try again in a minute');

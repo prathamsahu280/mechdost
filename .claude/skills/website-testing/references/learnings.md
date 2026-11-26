@@ -374,3 +374,4 @@ ustaad-console.test.ts` (held answer/question/comment/post/message, NCII re-hold
 - T-COD2 · 2026-11-26 · i18n · new client components used namespaces (accountPayments, codRequest, adminCod, checkout) that the
   account/admin/checkout ClientMessages lists did not pass, so production would show raw keys; caught by
   `client-messages-coverage.test.ts` · add every new namespace to the page/layout ClientMessages list in the same change.
+- T-QA1 · 2026-11-27 · admin UI guards · A new admin client component failed two repo-wide source guards on the first full web run: its next-intl namespace was not in the admin layout's client bundle (client-messages-coverage) and its inline confirm lacked the data-disclosure-trigger / data-panel-cancel pair (panel-dismiss) · new component wired to neither · test/client-messages-coverage.test.ts, test/panel-dismiss.test.ts (run the full web suite, not only the new test file).

@@ -250,7 +250,7 @@ Since 2026-11-26 the shop's only vehicle filter (the 2W/3W/4W select and its cli
 Server `admin_ustaad_settings_saved { keys }`, `admin_ustaad_invariant_refused { key }`, `admin_ustaad_access_changed
 { from, to }` and `admin_ustaad_table_saved { table, action }` (`levels|badges|tags|words|reasons|reach_cities|
 promotions|tutorial_cards|coachmarks`, `create|update|merge|move`); client `admin_ustaad_change { area, action,
-fields }` from Admin → Network settings. Codes and counts only, never the values or the words of a list.
+fields }` from Admin → Network settings (area `preview_testers`, action `create|remove` added 2026-11-27). Codes and counts only, never the values or the words of a list.
 
 Community console (G2, 2026-11-26): client `admin_ustaad_console_viewed { section }` (`queue|holds|appeals|verify|
 members|legal|names|audit|settings`) and `admin_ustaad_console_action { action, outcome }` (`keep|remove|warn|

@@ -262,8 +262,9 @@ export const USTAAD_CLIENT_EVENT_SCHEMAS = {
         'words_pii_pattern',
         'words_link_domain',
         'words_scam_phrase',
+        'preview_testers',
       ]),
-      action: z.enum(['save', 'create', 'update', 'merge', 'move']),
+      action: z.enum(['save', 'create', 'update', 'merge', 'move', 'remove']),
       fields: count,
     })
     .strict(),

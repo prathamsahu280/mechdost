@@ -58,21 +58,29 @@ describe('distanceBand (SR-29, locked edges)', () => {
   });
 });
 
-describe('ustaadAccessDecision (staff preview switch)', () => {
-  const anon = { signedIn: false, staff: false } as const;
-  const customer = { signedIn: true, staff: false } as const;
-  const staff = { signedIn: true, staff: true } as const;
-  it('off hides the network from everyone, staff included', () => {
-    for (const v of [anon, customer, staff]) expect(ustaadAccessDecision('off', v)).toBe('hidden');
+describe('ustaadAccessDecision (staff preview switch + preview testers)', () => {
+  const anon = { signedIn: false, staff: false, tester: false } as const;
+  const customer = { signedIn: true, staff: false, tester: false } as const;
+  const staff = { signedIn: true, staff: true, tester: false } as const;
+  const tester = { signedIn: true, staff: false, tester: true } as const;
+  // A tester flag without a session never counts (the API only knows testers by their signed-in user id).
+  const anonTester = { signedIn: false, staff: false, tester: true } as const;
+  it('off hides the network from everyone, staff and testers included', () => {
+    for (const v of [anon, customer, staff, tester, anonTester])
+      expect(ustaadAccessDecision('off', v)).toBe('hidden');
   });
-  it('staff_preview: only staff are let in; anonymous and everyone else see "not found"', () => {
+  it('staff_preview: staff and listed testers are let in; anonymous and everyone else see "not found"', () => {
     expect(ustaadAccessDecision('staff_preview', staff)).toBe('allow');
+    expect(ustaadAccessDecision('staff_preview', tester)).toBe('allow');
     expect(ustaadAccessDecision('staff_preview', customer)).toBe('hidden');
     expect(ustaadAccessDecision('staff_preview', anon)).toBe('hidden');
+    expect(ustaadAccessDecision('staff_preview', anonTester)).toBe('hidden');
   });
   it('open: signed-in people go on to the member checks; anonymous must sign in', () => {
     expect(ustaadAccessDecision('open', customer)).toBe('allow');
     expect(ustaadAccessDecision('open', staff)).toBe('allow');
+    expect(ustaadAccessDecision('open', tester)).toBe('allow');
     expect(ustaadAccessDecision('open', anon)).toBe('sign_in');
+    expect(ustaadAccessDecision('open', anonTester)).toBe('sign_in');
   });
 });

@@ -24,6 +24,20 @@ export type UstaadPermission = (typeof USTAAD_PERMISSIONS)[number];
 export const USTAAD_ACCESS_MODES = ['off', 'staff_preview', 'open'] as const;
 export type UstaadAccessMode = (typeof USTAAD_ACCESS_MODES)[number];
 
+/**
+ * Preview testers (founder 2026-11-27): why a named non-staff account may enter during `staff_preview`, and why it was
+ * taken off the list. Codes, not free text (hard rule 16); an optional note rides along.
+ */
+export const USTAAD_TESTER_ADD_REASONS = ['qa_run', 'beta_mechanic', 'founder_request', 'other'] as const;
+export const USTAAD_TESTER_REMOVE_REASONS = [
+  'run_finished',
+  'no_longer_needed',
+  'added_by_mistake',
+  'other',
+] as const;
+/** Most accounts the list may hold at once (a preview, not a launch). */
+export const USTAAD_TESTERS_MAX = 50;
+
 /** Track codes are neutral so the labels ("Chhotu", "Ustaad") can be renamed without a migration. */
 export const USTAAD_TRACKS = ['apprentice', 'ustaad'] as const;
 export type UstaadTrack = (typeof USTAAD_TRACKS)[number];

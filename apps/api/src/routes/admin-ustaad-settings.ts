@@ -1,6 +1,7 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import type { Context, MiddlewareHandler } from 'hono';
 import {
+  addUstaadPreviewTester,
   addUstaadReservedName,
   createUstaadBadge,
   createUstaadCoachmark,
@@ -14,6 +15,7 @@ import {
   listUstaadCoachmarks,
   listUstaadReservedNames,
   listUstaadLevelRules,
+  listUstaadPreviewTesters,
   listUstaadPromotions,
   listUstaadReachCities,
   listUstaadReasons,
@@ -23,6 +25,7 @@ import {
   mergeUstaadTag,
   moveUstaadPromotion,
   readUstaadSettings,
+  removeUstaadPreviewTester,
   saveUstaadSettings,
   setUstaadReachCity,
   setUstaadReservedNameActive,
@@ -47,6 +50,9 @@ import {
   LevelRuleRowDto,
   LevelRuleUpdateDto,
   LevelRuleWriteDto,
+  PreviewTesterAddDto,
+  PreviewTesterRemoveDto,
+  PreviewTesterRowDto,
   PromotionMoveDto,
   PromotionRowDto,
   PromotionUpdateDto,
@@ -85,13 +91,14 @@ import { body, conflict, json } from './service-schemas';
  * session, 300 requests a minute. Reading needs `ustaad:settings` or `ustaad:read` (super admin, community manager,
  * ops); every write needs `ustaad:settings` (super admin) — except promotions, which are `ustaad:promotions`
  * (marketing, super admin) to write and `ustaad:promotions` or `ustaad:read` to read. These routes are never behind
- * the `ustaad.access` switch, so turning the network off cannot lock the admin out.
+ * the `ustaad.access` switch, so turning the network off cannot lock the admin out. Preview testers (founder
+ * 2026-11-27) need `ustaad:settings` to read as well as to write: the list names accounts (masked phone only).
  *
  * The guard below owns only this router's paths under `/admin/ustaad/` (one pattern, so the limit counts once, L54);
  * other routers under the same prefix (verification, moderation: workstreams B and F) keep their own guards.
  */
 const OWN =
-  /\/admin\/ustaad\/(settings|levels|badges|tags|words|reasons|reach-cities|promotions|tutorial-cards|coachmarks|reserved-names)(\/|$)/;
+  /\/admin\/ustaad\/(settings|levels|badges|tags|words|reasons|reach-cities|promotions|tutorial-cards|coachmarks|reserved-names|preview-testers)(\/|$)/;
 
 const meta = { tags: ['ustaad-admin'], security: [{ bearerAuth: [] }] };
 const ReservedNameWriteDto = z
@@ -237,6 +244,19 @@ const R = {
   reservedNames: list('reserved-names', 'reserved names'),
   reservedNameCreate: create('reserved-names', 'a reserved name', ReservedNameWriteDto),
   reservedNameUpdate: update('reserved-names', 'a reserved name (on or off)', ReservedNameUpdateDto),
+  // Preview testers (founder 2026-11-27): named non-staff accounts let in while access = staff_preview.
+  previewTesters: list('preview-testers', 'preview testers (masked phone only; super admin)'),
+  previewTesterAdd: create(
+    'preview-testers',
+    'a preview tester, looked up by phone or email',
+    PreviewTesterAddDto.openapi('UstaadPreviewTesterAdd'),
+  ),
+  previewTesterRemove: action(
+    'post',
+    '/admin/ustaad/preview-testers/{id}/remove',
+    'Take a preview tester off the list (reason code, compare-and-set, audited; the row stays as history)',
+    PreviewTesterRemoveDto.openapi('UstaadPreviewTesterRemove'),
+  ),
 };
 
 /** Any of `permissions`; a staff grant withheld for a missing second step answers STAFF_2FA_REQUIRED (as elsewhere). */
@@ -251,7 +271,8 @@ function requireAny(c: Context<AppEnv>, permissions: readonly Permission[]): voi
 const permissionGuard: MiddlewareHandler<AppEnv> = async (c, next) => {
   const promotions = c.req.path.includes('/admin/ustaad/promotions');
   const write = c.req.method !== 'GET';
-  if (promotions) requireAny(c, write ? ['ustaad:promotions'] : ['ustaad:promotions', 'ustaad:read']);
+  if (c.req.path.includes('/admin/ustaad/preview-testers')) requireAny(c, ['ustaad:settings']);
+  else if (promotions) requireAny(c, write ? ['ustaad:promotions'] : ['ustaad:promotions', 'ustaad:read']);
   else requireAny(c, write ? ['ustaad:settings'] : ['ustaad:settings', 'ustaad:read']);
   await next();
 };
@@ -523,5 +544,35 @@ export function adminUstaadSettingsRoutes(deps: AppDeps, cache: SessionCache, ac
         }),
         200,
       );
+    })
+    .openapi(R.previewTesters, async (c) =>
+      c.json(
+        { testers: (await listUstaadPreviewTesters(deps.db)).map((r) => PreviewTesterRowDto.parse(r)) },
+        200,
+      ),
+    )
+    .openapi(R.previewTesterAdd, async (c) => {
+      const b = c.req.valid('json');
+      const row = await addUstaadPreviewTester(deps.db, {
+        staffUserId: staffId(c),
+        identifier: b.identifier,
+        reasonCode: b.reasonCode,
+        ...(b.note ? { note: b.note } : {}),
+      });
+      // The gate caches the list with the access mode; the change applies on this instance at once.
+      access.clear();
+      return c.json(PreviewTesterRowDto.parse(row), 200);
+    })
+    .openapi(R.previewTesterRemove, async (c) => {
+      const b = c.req.valid('json');
+      await removeUstaadPreviewTester(deps.db, {
+        staffUserId: staffId(c),
+        id: c.req.valid('param').id,
+        expectedVersion: b.version,
+        reasonCode: b.reasonCode,
+        ...(b.note ? { note: b.note } : {}),
+      });
+      access.clear();
+      return c.json({ ok: true }, 200);
     });
 }

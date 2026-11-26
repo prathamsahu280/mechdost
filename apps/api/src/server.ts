@@ -19,6 +19,7 @@ import { createGeminiCorrection } from './ustaad/correction/gemini';
 import { createFirebaseEmailActionLinks } from './auth/email-actions';
 import { createFirebaseVerifier } from './auth/firebase-verifier';
 import { createFirebasePasswordAuthority } from './auth/password-authority';
+import { qaTurnstileBypassFromEnv } from './auth/qa-turnstile-bypass';
 import { createTurnstileVerifier } from './auth/turnstile';
 import { httpRazorpay } from './payments/razorpay';
 import { ConfigError, loadConfig } from './config';
@@ -46,6 +47,8 @@ try {
 const sentry = await startSentry(config.sentry, 'api');
 
 const { db, sql } = createDb(config.databaseUrl, { max: config.databasePoolMax, transactionPooler: true });
+// TEMPORARY QA Turnstile bypass (decision 2026-11-27): throws here (no start) on a bad window; a no-op when unset.
+const withQaBypass = qaTurnstileBypassFromEnv(process.env, db);
 // Open connections at boot and keep two warm: the first request after a pause no longer pays a TLS + SCRAM handshake.
 const stopWarm = keepPoolWarm(() => sql`select 1`, { connections: Math.min(2, config.databasePoolMax) });
 // The server's own Redis behind SRH (or Upstash), spoken to with the Upstash REST client (decision 2026-11-24).
@@ -120,7 +123,7 @@ const app = createApp({
     projectId: config.firebaseProjectId,
     keyFile: config.firebaseKeyFile,
   }),
-  turnstile: config.turnstileSecret ? createTurnstileVerifier(config.turnstileSecret) : null,
+  turnstile: config.turnstileSecret ? withQaBypass(createTurnstileVerifier(config.turnstileSecret)) : null,
   razorpay: config.razorpay ? httpRazorpay(config.razorpay.keyId, config.razorpay.keySecret) : null,
   sentryIssues: config.sentryIssues ? createSentryIssuesClient(config.sentryIssues) : null,
   photoStorage,
