@@ -15,7 +15,7 @@ This file is the single source of truth for **where the build is right now**. It
 - **Agents stopped mid-work (worktrees on disk, resume by merging their branch heads):**
   - G2 community manager console: DONE at 4ea8972f (worktree-agent-a8aee6b650d9ce1e4); merge, apply migration 0100 (hand-written; drizzle snapshots 0096/0097 collide — fix before next generate), run full api suite + state audit after rebuild (G1 table overflow at 320/768 and English fixture labels on /hi are G1-owned). Was: (staff media view, keep side effects, console
     sections; unban four-eyes security fix requested — verify it is in before merging).
-  - Ustaad JS budget + fixes: worktree-agent-a03ea82fa62041d96 (/ustaad 226.8 KB vs 150 KB target; SR-37 profile cap;
+  - Ustaad JS budget + fixes: stopped at 08060c4b (worktree-agent-a03ea82fa62041d96; 255f35ed is WIP e2e, not run). Zod/demo/next-image out of first load, SR-37 cap, comment confirm, share window done + unit-tested; NO after-build numbers yet; measure-js now checks 10 Ustaad routes at 150 KB and WILL FAIL CI until per-route ceilings are set from a build. FLOOR: React+Next+root layout ≈ 160 KB on every page, so 150 needs an Ustaad root layout or a smaller site frame — founder/lead ruling needed (queue it). Was: (/ustaad 226.8 KB vs 150 KB target; SR-37 profile cap;
     comment-delete confirm; Safari WhatsApp share).
 - **Next:** merge G2 + JS-budget branches → full gates (tsc 4 packages with NODE_OPTIONS=--max-old-space-size=4096
   for api, lint, prettier, vitest --maxWorkers=1, web build) → push. Then: R2 keys (uploads), Grievance Officer name,
