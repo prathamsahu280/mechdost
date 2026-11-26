@@ -369,3 +369,10 @@ ustaad-console.test.ts` (held answer/question/comment/post/message, NCII re-hold
   `apps/api/test/admin-usage.test.ts` are 20+ chars; reuse the `token-<area>-0000000NN` shape.
 - T-USAGE2 · 2026-11-26 · notices · a new bell kind with placeholders fails `notice-catalogue.test.ts` until its
   placeholders are in the test's `SAMPLE` (`metric`, `percent` added) · add the sample values in the same change.
+- T-DLV1 · 2026-11-27 · guards · new portal code tripped four guard tests at once: `tel:` links must be template
+  literals (`href={`tel:${…}`}`, no-reload guard), an sr-only file input must sit in a `.file-pick` label, every in-place
+  panel needs `data-disclosure-trigger` + `data-panel-cancel`, and a new admin section must be listed in
+  `model-api.ts` `REAL_ADMIN_SECTIONS` · run `test/{no-reload-navigation,file-picker-focus,panel-dismiss,state-audit-*}`
+  after adding any portal screen.
+- T-DLV2 · 2026-11-27 · e2e · several always-mounted `role=alert`/`status` lines per screen make
+  `getByRole('alert')` ambiguous · filter by text: `getByRole('alert').filter({ hasText: … })`.
