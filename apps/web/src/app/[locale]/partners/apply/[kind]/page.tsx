@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { ApplicationForm } from '@/components/partners/application-form';
 import { SellerApplicationForm } from '@/components/partners/seller-application-form';
+import { UstaadJoinFlow } from '@/components/ustaad/join/join-flow';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { LocalLink } from '@/components/ui/local-link';
 import { Container, PageIntro } from '@/components/ui/page-intro';
@@ -42,9 +43,16 @@ export default async function ApplyPage({ params }: Props) {
       <div className="mt-5 grid gap-8 nav:grid-cols-[1fr_minmax(0,640px)] nav:items-start">
         <PageIntro eyebrow={t('eyebrow')} line1={t(`title_${kind}`)} lead={t('intro')} />
         <div className="rounded-card border border-line-card bg-surface p-6 shadow-card tab:p-8">
-          <ClientMessages namespaces={['apply', 'categories', 'map', 'trust']}>
-            {kind === 'seller' ? <SellerApplicationForm /> : <ApplicationForm kind={kind} />}
-          </ClientMessages>
+          {kind === 'mechanic' ? (
+            // Spec 23 § 4a: "Apply as a mechanic" is the Ustaad Network join (same component as /ustaad/join).
+            <ClientMessages namespaces={['ustaad.join']}>
+              <UstaadJoinFlow via="partners_apply" />
+            </ClientMessages>
+          ) : (
+            <ClientMessages namespaces={['apply', 'categories', 'map', 'trust']}>
+              {kind === 'seller' ? <SellerApplicationForm /> : <ApplicationForm kind={kind} />}
+            </ClientMessages>
+          )}
         </div>
       </div>
     </Container>
