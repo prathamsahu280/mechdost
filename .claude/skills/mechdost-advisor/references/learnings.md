@@ -593,3 +593,9 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
 - L-DLV4 · 2026-11-27 · state audit · New component rows inserted in the middle of `COMPONENTS` made the merged checklist
   disagree with the model (order). → Append new rows at the end of `COMPONENTS`, add new `world`/`auth` values to
   `cases.ts` (`World`, `Role`, `AUTH_TEXT`) and the harness, and add the prefix to a chunk in `CHUNKS`. · active
+- L-DLV5 · 2026-11-27 · web/contract seam · The web stream built against guessed DTOs (local `PayoutView`, `ratingAvg`,
+  rating reason `careful`, `/override-{kind}`) while the backend shipped different shapes; the brief's own numbers can
+  drift from the schema too (§ 16 said idempotency key 8–64, the schema says 16–64). → When a contract lands, derive
+  every web type with `Out<typeof Schema>` (type-only import), delete the local guesses, and add a test that parses the
+  demo store's answers with the shared schemas (`delivery-contract.test.ts`): that keeps demo and API in sync. Check
+  key/format rules against `Schema.safeParse`, never a copied regex. · active

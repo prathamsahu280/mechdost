@@ -251,16 +251,29 @@ name, cityCode, vehicleType, status, reasonCode, createdAt` (phone masked).
 - **G8** Not built: the help button stays the company support number. A per-city editable phone needs a text setting
   (the operational settings registry is integer/boolean only); queued as Q-DA5.
 
-**Differences left for the web side (backend kept its shape, 2026-11-27):**
+**Differences left for the web side — resolved (web alignment, 2026-11-27):**
 
-- Job override: API `POST /admin/delivery/jobs/{jobId}/override/{kind}`; the web posts `…/override-{kind}`.
-- Application reject: API `POST /admin/delivery/applications/{code}/reject` with `{ reasonCode, note?, version }`
-  (`version` is on each list row); the web goes through `/admin/partner-applications/{code}` (partners permissions).
-- Record payout: `AgentPayoutInput` requires `idempotencyKey` (8–64 chars, not starting `rev-`; hard rule 3); the
-  web's `PayoutInputView` has none. Correction: `{ note }` only.
-- Earnings: `AgentEarnings` is `{ payouts, totalPaise, deliveredJobs }`; payout rows use `kind` and `corrected`.
-- Agent rating: `ratingAvgX10` + `ratingCount` (no `ratingAvg`).
-- Paging: every paged list accepts `cursor` (alias of `before`); the agents and invites lists are not paged.
+- Job override: the web posts `/admin/delivery/jobs/{jobId}/override/{kind}`. ✅
+- Application reject: the web posts `/admin/delivery/applications/{code}/reject` with `{ reasonCode, note?, version }`,
+  `version` from the list row (the demo applications carry a version too). ✅
+- Record payout: `idempotencyKey` is a uuid made when the form opens, kept across retries of the same submission and
+  renewed after success (`newPayoutKey` / `nextPayoutKey`, `lib/delivery/view.ts`); the demo store records a key
+  once. **Note:** the schema's `IdemKey` is `[A-Za-z0-9_-]{16,64}` (16–64, not 8–64 as written above); a uuid fits
+  both. "Paid some other way" needs a note (`AgentPayoutInput` refine) — the form says so. Correction: `{ note }`. ✅
+- Earnings and payouts: the web types and parses them with `AgentEarnings`, `AgentPayoutPage` (`kind`,
+  `corrected`, `totalPaise`, `recordedByName`) and `AgentPayoutSummary`; the agent's own rows have `note: null`. ✅
+- Agent rating: `ratingAvgX10` ÷ 10 for display (`ratingFromX10`) + `ratingCount`, on profile, agent rows, detail
+  and job suggestions; the rating reasons are the shared `DELIVERY_RATING_REASONS` (`careful_with_parcel`). ✅
+- Paging: `agents()` and `invites()` send no cursor; the other lists may. ✅
+- G1 copy: the staff "invite sent" line says the email has the link and the WhatsApp message has none. ✅
+- G2/G3/G4/G7: the shop card reads `ShopOrder.deliveryMode` / `delivery`, the customer page `TrackedOrder.delivery`
+  (rating edits send `version`), the status lookup the shared `delivery_agent` kind, the admin order timeline
+  `GET /admin/delivery/jobs?view=all&orderCode=`, and the job detail `pickupLocked` / `deliveryLocked` /
+  `retryAllowed` (now required). ✅
+- G6: the delivery screens send the 16 typed `delivery_*` events (below). ✅
+- Still open: the delivery-application list rows have no shared schema (`api-clients.ts` checks them with a guard
+  that requires `version`); the API's customer block has no refund kind, so a returned parcel is worded generally
+  ("the amount is shown under Refunds") unless the demo knows full / parts only.
 
 # Spec 24 — Delivery agents
 
@@ -283,8 +296,8 @@ picks one; demo screens reload on every demo change, API screens poll (offers 10
   form (Lead's call 10). Confirmation with the `PA-…` reference and a link to the status page.
 - **Partners page** card "Deliver with MechDost" and a footer link. No pay, insurance or uniform words anywhere
   (founder ruling 2026-11-26).
-- **Status lookup** (`/partners/status`) recognises delivery-agent references (demo; the API's status DTO does not
-  list the kind yet — contract gap G3).
+- **Status lookup** (`/partners/status`) recognises delivery-agent references (the shared status kind includes
+  `delivery_agent`, G3).
 - **Invite** — `/partners/delivery-invite/{token}` (noindex, no referrer; token redacted in analytics and in the
   access log): shows name, city, vehicle, the last 4 digits of the invited mobile number and the expiry; signed out →
   sign in (phone OTP) and come back; signed in → **Accept invite** → "Upload documents".
@@ -370,12 +383,21 @@ mode (decision 2026-11-27). Photos are never stored in the browser (a flag only)
 `admin_agent_status_{status}|vehicle_saved|document_viewed_{kind}|document_verified_{kind}|document_rejected_{kind}`,
 `admin_shop_mode_approved|rejected`, `admin_delivery_settings_saved`, `admin_delivery_payouts_viewed|payouts_csv|
 payout_recorded|payout_corrected` (+ `_failed` variants), and `code_submitted {kind:'delivery'}` for every code.
-Typed events in the shared catalogue are a contract gap (G6).
+**Since 2026-11-27 (G6 resolved)** the delivery actions send the typed events of
+`packages/shared/src/delivery/client-events.ts` instead of those click ids: `delivery_apply_submitted`,
+`delivery_invite_opened` (once per page view) / `_accepted`, `delivery_online_toggled`, `delivery_offer_viewed`
+(once per offer, not per poll) / `_answered`, `delivery_job_step` (at_shop, pickup, at_customer, deliver with the
+code outcome; fail with its reason; give_up), `delivery_photo_taken`, `delivery_contact_tapped`,
+`delivery_document_submitted`, `delivery_shop_ready_marked` / `_return_confirmed` / `_switch_answered` /
+`_mode_requested`, `delivery_rating_submitted`, `delivery_admin_action` (on success). Kept as generic clicks (no
+typed event in the catalogue): screen views, admin tabs, payouts viewed / CSV, settings saved, document viewed,
+invite revoked, vehicle edit, application rejected, shop-mode request withdrawn.
 
 ### Tests
 
 Unit: `apps/web/test/demo-delivery.test.ts` (machines, CAS, 404, stage reveal, codes, photo, failed/return,
-switch, shop mode, invite), `demo-delivery-payouts.test.ts`, `delivery-view.test.ts`,
+switch, shop mode, invite), `demo-delivery-payouts.test.ts`, `delivery-view.test.ts`, `delivery-contract.test.ts`
+(the demo store's answers parse with the shared schemas; API client paths and bodies; payout key kept on retry),
 `delivery-invite-redaction.test.ts`, `caddy-secret-paths.test.ts`. E2E `apps/web/e2e/delivery-agents.spec.ts`
 (happy path desktop + mobile, role leak, failed + return, offer expiry at 15 min, shop ready + self-delivery request,
 customer view) on `fixtures/delivery-world.ts`. Hindi gate: apply, invite, agent portal, agent-mode shop, customer and

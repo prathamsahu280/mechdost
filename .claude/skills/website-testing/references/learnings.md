@@ -389,3 +389,6 @@ T-DA2 · 2026-11-27 · API/OpenAPI · a shared path-param schema (.openapi({ par
   after adding any portal screen.
 - T-DLV2 · 2026-11-27 · e2e · several always-mounted `role=alert`/`status` lines per screen make
   `getByRole('alert')` ambiguous · filter by text: `getByRole('alert').filter({ hasText: … })`.
+- T-DLV3 · 2026-11-27 · unit · demo store drifted from the API contract (ratings, payouts, applications without
+  version) and no test caught it · parse every demo client answer with the shared Zod schema and stub `adminApi` to
+  assert the API client's paths and bodies (`apps/web/test/delivery-contract.test.ts`).

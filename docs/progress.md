@@ -2,6 +2,19 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-27 — delivery web aligned with the merged backend (branch worktree-agent-ab5c24bfaec430713, not pushed)
+
+- **Done** (spec 24 § 16 "differences left for the web side" → resolved): override path `/override/{kind}`;
+  application reject on `/admin/delivery/applications/{code}/reject` with the row's `version`; payout
+  `idempotencyKey` per form opening, kept on retry (`newPayoutKey`/`nextPayoutKey`), note required for "other";
+  earnings / payout page / summary typed and parsed with the shared schemas (`kind`, `corrected`, `totalPaise`);
+  `ratingAvgX10` ÷ 10 + `ratingCount`; shared rating reasons; agents/invites lists not paged; G1 invite copy (no
+  WhatsApp link); G2/G3 typed `ShopOrder.delivery`/`deliveryMode` and `TrackedOrder.delivery` (rating edit sends
+  `version`), status kind `delivery_agent`; G6 the 16 typed `delivery_*` events. Demo store shapes = contract
+  (`apps/web/test/delivery-contract.test.ts`).
+- **Open:** no shared schema for delivery-application rows (guard); no refund kind on the API's customer block (generic
+  wording); `IdemKey` is 16–64 chars (§ 16 said 8–64). No build/e2e run here (lead runs the build, CI the browsers).
+
 ## 2026-11-26 (late) — Cash on delivery only on request (branch worktree-agent-a0f97a70e50f22164, not pushed)
 
 - **Founder ruling + addendum** (decisions 2026-11-26 "Cash on delivery only on request"): normal customers get no
