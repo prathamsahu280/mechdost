@@ -34,7 +34,7 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '.
 import type { Tx } from '../orders';
 import { rowsOf } from '../sql-rows';
 import { recordUstaadEvent } from './events';
-import { screenUstaadContent } from './moderation';
+import { openUstaadAutoHoldReport, screenUstaadContent } from './moderation';
 import { readUstaadSettingValues } from './settings';
 
 type JobRole = (typeof JOB_ROLES)[number];
@@ -285,6 +285,14 @@ export async function postUstaadJob(
             props: { jobCode: row.code, role: input.roleCode },
           },
         );
+        // F2: a held job reaches the moderation queue with a clock (auto report, no reporter).
+        if (held)
+          await openUstaadAutoHoldReport(tx, {
+            targetType: 'job',
+            targetId: row.id,
+            authorId: actor.memberId,
+            kind: 'job',
+          });
         return viewOf(row, place.cityCode, actor.memberId);
       } catch (err) {
         await tx.execute(sql`rollback to savepoint ustaad_job_create`);

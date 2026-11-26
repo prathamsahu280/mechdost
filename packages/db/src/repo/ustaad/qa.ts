@@ -38,7 +38,7 @@ import type { Tx } from '../orders';
 import { recordUstaadEvent } from './events';
 import { recordIzzat } from './izzat';
 import { recomputeUstaadLevel } from './levels';
-import { screenUstaadContent } from './moderation';
+import { openUstaadAutoHoldReport, screenUstaadContent } from './moderation';
 import { notifyUstaad } from './notify';
 import { readUstaadSettingValues } from './settings';
 
@@ -175,6 +175,9 @@ export async function askUstaadQuestion(
       mediaIds: input.voiceMediaId ? [input.voiceMediaId] : [],
       authorId: me.id,
     });
+    // F2: a phone number, plate or denied link in public text is refused (the author can fix it).
+    if (screen === 'block')
+      throw new ValidationError('This cannot be posted as it is', 'USTAAD_CONTENT_BLOCKED');
     let row: { id: string; code: string; status: string } | undefined;
     for (let attempt = 0; attempt < 3 && !row; attempt += 1) {
       try {
@@ -229,6 +232,15 @@ export async function askUstaadQuestion(
         },
       },
     );
+    // Questions have no `held` status: a hold keeps the question out of the Ustaads' notices and puts it in the
+    // moderation queue with a clock (F2).
+    if (screen === 'hold')
+      await openUstaadAutoHoldReport(tx, {
+        targetType: 'question',
+        targetId: row.id,
+        authorId: me.id,
+        kind: 'question',
+      });
     if (screen === 'ok') {
       const codes = [input.segmentCode, input.workCode].filter((c): c is UstaadSpecialityCode => Boolean(c));
       const targets = await matchingUstaads(tx, {
@@ -305,6 +317,8 @@ export async function answerUstaadQuestion(
       mediaIds: input.voiceMediaId ? [input.voiceMediaId] : [],
       authorId: me.id,
     });
+    if (screen === 'block')
+      throw new ValidationError('This cannot be posted as it is', 'USTAAD_CONTENT_BLOCKED');
     const counts = me.track === 'ustaad' && !PRE_VERIFIED_LEVELS.includes(me.level);
     const status = screen === 'ok' ? 'visible' : 'held';
     const [row] = await tx
@@ -322,6 +336,13 @@ export async function answerUstaadQuestion(
       })
       .returning({ id: ustaadAnswers.id, status: ustaadAnswers.status });
     if (!row) throw new ConflictError('Could not save the answer');
+    if (status === 'held')
+      await openUstaadAutoHoldReport(tx, {
+        targetType: 'answer',
+        targetId: row.id,
+        authorId: me.id,
+        kind: 'answer',
+      });
     await tx
       .update(ustaadMemberCounters)
       .set({ answers: sql`${ustaadMemberCounters.answers} + 1` })

@@ -189,6 +189,8 @@ export const MEDIA_REJECT_REASONS = [
   'expired_upload',
   'unreadable',
   'hash_mismatch',
+  // F2 (SR-18): a CSAM hash match; the file is sealed in the evidence vault, never shown, never purged by normal jobs.
+  'safety_block',
 ] as const;
 /** Single PUT up to this size; above it resumable 8 MB parts (spec 23 § 10). */
 export const MEDIA_SINGLE_PUT_MAX = 16 * 1024 * 1024;

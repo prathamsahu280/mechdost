@@ -62,6 +62,16 @@ const OTP_ASK =
 /** An Indian mobile number: optional +91 / 0, then 10 digits starting 6–9 (spaces or dashes allowed between). */
 const PHONE = /(?<![0-9])(?:(?:\+|00)?91[\s-]?|0)?[6-9](?:[\s-]?[0-9]){9}(?![0-9])/;
 
+/**
+ * Staff views never show a phone number (SR-38): every phone-like run and e-mail address becomes `[phone]` /
+ * `[email]`. Digits of any script are mapped first, so Devanagari digits are masked too.
+ */
+export function maskContactsInText(text: string): string {
+  return normaliseDigits(text)
+    .replace(new RegExp(PHONE.source, 'g'), '[phone]')
+    .replace(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi, '[email]');
+}
+
 /** A registration plate (CG04AB1234, CG 04 A 1234) or a Bharat-series plate (22 BH 1234 AA). */
 const PLATE =
   /(?<![a-z0-9])(?:[a-z]{2}[\s-]?[0-9]{1,2}[\s-]?[a-z]{1,3}[\s-]?[0-9]{4}|[0-9]{2}[\s-]?bh[\s-]?[0-9]{4}[\s-]?[a-z]{1,2})(?![a-z0-9])/;

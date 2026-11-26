@@ -15,4 +15,6 @@ ALTER TABLE "ustaad_reports" ADD CONSTRAINT "ustaad_reports_reason_valid" CHECK 
 ALTER TABLE "ustaad_reports" ADD CONSTRAINT "ustaad_reports_clock_valid" CHECK ("ustaad_reports"."clock" in ('intimate_2h','legal_3h','removal_36h','standard_24h','grievance_7d'));--> statement-breakpoint
 INSERT INTO public.ustaad_report_reasons (code, label_en, label_hi, default_clock) VALUES
   ('ncii_impersonation', 'Nude, fake or morphed picture of a person', 'किसी व्यक्ति की नग्न, नकली या बदली हुई तस्वीर', 'intimate_2h')
-ON CONFLICT DO NOTHING;
+ON CONFLICT DO NOTHING;--> statement-breakpoint
+ALTER TABLE "ustaad_media" DROP CONSTRAINT "ustaad_media_reject_reason_valid";--> statement-breakpoint
+ALTER TABLE "ustaad_media" ADD CONSTRAINT "ustaad_media_reject_reason_valid" CHECK ("ustaad_media"."reject_reason_code" is null or "ustaad_media"."reject_reason_code" in ('size_mismatch','type_mismatch','magic_mismatch','too_long','too_large','location_atom','external_reference','decompression_bomb','expired_upload','unreadable','hash_mismatch','safety_block'));
