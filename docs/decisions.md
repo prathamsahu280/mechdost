@@ -2563,3 +2563,19 @@ word of the design:
   via ALL). `cityScopeFrom` additionally ignores non-staff grants (defence in depth).
 - **Settings screen:** the `delivery.*` settings are listed under Admin → Settings → Partners until the Delivery
   section has its own screen (web agent).
+
+## 2026-11-26 — Delivery agents: founder rulings (dispatch, offer timer, ratings, insurance, uniform)
+
+1. **Dispatch:** admin assigns from suggested agents (confirmed); no broadcast.
+2. **Offer timer:** default **15 minutes** (was 5), per-city setting `delivery.offer_timeout_min` (1–60, audited like
+   every setting, en + hi label).
+3. **Rider ratings: yes.** After a delivered agent job the customer rates the agent 1–5 with optional reason codes
+   (`on_time, polite, careful_with_parcel, late, rude, damaged, other` + note for `other`). One rating per job,
+   editable for 24 h; the agent row keeps a versioned running sum and count; the dispatch ranking weighs the average by
+   `delivery.rank_rating_weight_pct` (default 20 %); staff get one alert when an agent's average drops below
+   `delivery.low_rating_alert_x10` (default 35 = 3.5) after `delivery.low_rating_min_count` ratings (default 5).
+   Admin sees ratings (never who rated in agent views); the agent sees only their own average and count. Table
+   `delivery_ratings`, route `PUT /v1/me/orders/{code}/delivery-rating`, DTOs `DeliveryRatingInput`,
+   `CustomerDeliveryBlock.rating/canRate`.
+4. **No accident insurance and no uniform or dress requirement** for agents: removed from the "before go-live" list
+   (design doc, research §5–6).

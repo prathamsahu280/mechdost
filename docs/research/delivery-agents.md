@@ -340,7 +340,7 @@ All figures are **[E] estimates** built on the cited benchmarks. Validate them w
 8. **COD:** UPI QR at the door preferred; cash ledger, cap, daily deposit, block when over the cap.
 9. **Payouts:** admin-configured rate cards per city × vehicle tier (base, per km beyond X, heavy-item handling, waiting, incentive); weekly payout statement in integer paise; TDS at 1% once thresholds are crossed (20% if no PAN); export for manual bank transfer (RazorpayX payouts later).
 10. **Ratings and deactivation:** the customer rates the delivery; the agent can rate the shop's handover. Suspension is immediate for safety or fraud; otherwise 7-day notice plus appeal. Rules published on an agent-facing "How dispatch and pay work" page (Telangana s.14 style).
-11. **Compliance basics:** partner agreement (lawyer review), GPA insurance policy, eShram aggregator registration, a written handling SOP for batteries and tyres, a PoSH-style complaints route.
+11. **Compliance basics:** partner agreement (lawyer review), eShram aggregator registration (founder 2026-11-26: no GPA insurance, no uniform), a written handling SOP for batteries and tyres, a PoSH-style complaints route.
 
 **Phase 2 (30–100 agents, or a second city)**
 
@@ -363,7 +363,7 @@ All figures are **[E] estimates** built on the cited benchmarks. Validate them w
 1. **Who holds COD cash: shop, or MechDost through the agent?** Default: the agent collects and deposits to MechDost; the shop's payout is unchanged. Needs a decisions entry because it changes the "One shop money model" entry (`docs/decisions.md` ~line 603).
 2. **Heavy items (more than 20 kg, or truck sizes):** own 3W agents, or Porter from day 1? Default: Porter or shop self-delivery for heavy items in Phase 1; own agents for ≤20 kg.
 3. **GST model for the delivery fee (s.9(5) ECO vs own supply):** default: ask the CA before charging a separate delivery fee from agents' work.
-4. **Insurance:** buy GPA (₹5–10 lakh) for all active agents? Default: yes, before the first live delivery.
+4. **Insurance:** answered by the founder 2026-11-26: **no** accident insurance. (Was: buy GPA (₹5–10 lakh) for all active agents? Default: yes, before the first live delivery.)
 5. **Police verification required for every agent?** Default: yes (reputational safety, MVAG benchmark).
 6. **Rate card numbers for Raipur:** default from section 4, to be confirmed after talking to 5–10 local riders.
 7. **Lawyer review** of the partner agreement, eShram registration and the white-plate bike question with the CG transport department.

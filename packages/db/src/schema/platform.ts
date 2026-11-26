@@ -16,6 +16,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { CUSTOMER_BLOCK_LEVELS, CUSTOMER_BLOCK_REASONS } from '@mechdost/shared/customers';
+import { AGENT_VEHICLE_TYPES } from '@mechdost/shared/delivery/codes';
 import { NOTICE_PRIORITIES } from '@mechdost/shared/notice-api';
 import { GST_STATUSES, LOCATION_SOURCES, PARTNER_STANDING_REASONS } from '@mechdost/shared/partner-codes';
 import { PARTNER_WARNING_REASONS, WARNING_PARTNER_KINDS } from '@mechdost/shared/partner-warnings';
@@ -628,7 +629,11 @@ export const partnerApplications = pgTable(
     business: text(),
     shopName: text(),
     shopNameHi: text(),
-    pincode: text().notNull(),
+    /** Null only for delivery-agent applications (name, phone, city and vehicle; Lead's call 10). */
+    pincode: text(),
+    /** Delivery-agent applications (spec 24): the city and the vehicle they ride. */
+    cityId: uuid().references(() => cities.id, { onDelete: 'restrict' }),
+    vehicleType: text(),
     details: text(),
     /** KYC details (PAN, GSTIN, bank/UPI for payouts) as encrypted JSON (`encryptField(…, 'partner_applications.kyc_enc')`). */
     kycEnc: text(),
@@ -656,9 +661,20 @@ export const partnerApplications = pgTable(
     updatedAt: updatedAt(),
   },
   (t) => [
-    check('partner_applications_kind_valid', sql`${t.kind} in ('seller','garage','mechanic')`),
+    check(
+      'partner_applications_kind_valid',
+      sql`${t.kind} in ('seller','garage','mechanic','delivery_agent')`,
+    ),
+    check(
+      'partner_applications_agent_complete',
+      sql`(${t.kind} = 'delivery_agent') = (${t.cityId} is not null and ${t.vehicleType} is not null) and (${t.vehicleType} is null or ${t.vehicleType} in (${inList(AGENT_VEHICLE_TYPES)}))`,
+    ),
+    check(
+      'partner_applications_pincode_needed',
+      sql`${t.kind} = 'delivery_agent' or ${t.pincode} is not null`,
+    ),
     check('partner_applications_status_valid', sql`${t.status} in (${inList(APPLICATION_STATES)})`),
-    check('partner_applications_pincode', sql`${t.pincode} ~ '^[1-9][0-9]{5}$'`),
+    check('partner_applications_pincode', sql`${t.pincode} is null or ${t.pincode} ~ '^[1-9][0-9]{5}$'`),
     check('partner_applications_kyc_encrypted', encryptedCheck(t.kycEnc)),
     check('partner_applications_source_valid', sql`${t.source} in ('public','invite')`),
     check(
@@ -678,7 +694,11 @@ export const partnerApplications = pgTable(
       'partner_applications_seller_complete',
       sql`${t.kind} <> 'seller' or (${t.gstStatus} is not null and ${t.addressLine} is not null and ${t.location} is not null and ${t.locationSource} is not null)`,
     ),
-    check('partner_applications_details_for_others', sql`${t.kind} = 'seller' or ${t.details} is not null`),
+    check(
+      'partner_applications_details_for_others',
+      sql`${t.kind} in ('seller','delivery_agent') or ${t.details} is not null`,
+    ),
+    index().on(t.cityId),
     index().on(t.status, t.createdAt),
     index().on(t.convertedShopId),
     index().on(t.reviewedBy),

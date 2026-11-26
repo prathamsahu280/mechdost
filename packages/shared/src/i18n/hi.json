@@ -3337,7 +3337,10 @@
     "api_set_delivery_max_load_bike_kg": "मोटरसाइकिल पर अधिकतम वज़न (kg)",
     "api_set_delivery_max_load_scooter_kg": "स्कूटर पर अधिकतम वज़न (kg)",
     "api_set_delivery_max_load_three_wheeler_kg": "तिपहिया पर अधिकतम वज़न (kg)",
-    "api_set_delivery_max_load_goods_vehicle_kg": "मालवाहक गाड़ी पर अधिकतम वज़न (kg)"
+    "api_set_delivery_max_load_goods_vehicle_kg": "मालवाहक गाड़ी पर अधिकतम वज़न (kg)",
+    "api_set_delivery_rank_rating_weight_pct": "एजेंट सुझाते समय रेटिंग का महत्व (%)",
+    "api_set_delivery_low_rating_alert_x10": "इस औसत से नीचे स्टाफ़ को सूचना (स्टार का दसवाँ भाग, 35 = 3.5)",
+    "api_set_delivery_low_rating_min_count": "कम रेटिंग की सूचना से पहले ज़रूरी रेटिंग"
   },
   "shopGiveUp": {
     "action": "यह ऑर्डर पूरा नहीं कर सकते",
@@ -3761,7 +3764,8 @@
     "reason_goodwill": "सद्भावना रिफ़ंड",
     "reason_other": "अन्य",
     "reason_rsa_cancelled": "रोडसाइड अनुरोध रद्द हुआ",
-    "reason_rsa_overpaid": "रोडसाइड कुल राशि अग्रिम से कम"
+    "reason_rsa_overpaid": "रोडसाइड कुल राशि अग्रिम से कम",
+    "reason_delivery_returned": "डिलीवरी दुकान पर वापस आई"
   },
   "refunds": {
     "title": "रिफ़ंड",
@@ -3914,7 +3918,9 @@
     "source_rsa_cancelled": "रोडसाइड अनुरोध रद्द हुआ",
     "source_rsa_overpaid": "रोडसाइड कुल राशि अग्रिम से कम",
     "reason_rsa_cancelled": "रोडसाइड अनुरोध रद्द हुआ",
-    "reason_rsa_overpaid": "रोडसाइड कुल राशि अग्रिम से कम"
+    "reason_rsa_overpaid": "रोडसाइड कुल राशि अग्रिम से कम",
+    "source_delivery_returned": "डिलीवरी वापस आई",
+    "reason_delivery_returned": "डिलीवरी दुकान पर वापस आई"
   },
   "accountApi": {
     "loadError": "यह लोड नहीं हो सका। इंटरनेट जाँचकर फिर कोशिश करें।",
@@ -6459,7 +6465,10 @@
     "help_delivery_max_load_bike_kg": "इससे भारी ऑर्डर मोटरसाइकिल को नहीं दिए जाते।",
     "help_delivery_max_load_scooter_kg": "इससे भारी ऑर्डर स्कूटर को नहीं दिए जाते।",
     "help_delivery_max_load_three_wheeler_kg": "इससे भारी ऑर्डर तिपहिया को नहीं दिए जाते।",
-    "help_delivery_max_load_goods_vehicle_kg": "इससे भारी ऑर्डर मालवाहक गाड़ी को नहीं दिए जाते।"
+    "help_delivery_max_load_goods_vehicle_kg": "इससे भारी ऑर्डर मालवाहक गाड़ी को नहीं दिए जाते।",
+    "help_delivery_rank_rating_weight_pct": "0 पर रेटिंग नहीं गिनी जाती; 100 पर ऑर्डर ले जा सकने वाले एजेंटों में पहले रेटिंग देखी जाती है।",
+    "help_delivery_low_rating_alert_x10": "एजेंट का औसत इससे नीचे जाने पर स्टाफ़ को एक सूचना मिलती है।",
+    "help_delivery_low_rating_min_count": "शुरू की कुछ रेटिंग से सूचना नहीं जाती।"
   },
   "roadside": {
     "eyebrow": "रोडसाइड मदद",
@@ -9005,7 +9014,19 @@
       "INVITE_PHONE_MISMATCH": "यह न्योता किसी दूसरे फ़ोन नंबर के लिए है।",
       "INVITE_EXPIRED": "इस न्योते का समय ख़त्म हो गया। MechDost से नया माँगें।",
       "DOCUMENT_AADHAAR": "यहाँ आधार नंबर न डालें।",
-      "DOCUMENT_FORMAT": "नंबर जाँचकर फिर कोशिश करें।"
-    }
+      "DOCUMENT_FORMAT": "नंबर जाँचकर फिर कोशिश करें।",
+      "RATING_CLOSED": "यह रेटिंग अब बदली नहीं जा सकती।",
+      "NOT_RATEABLE": "सिर्फ़ डिलीवर हुए ऑर्डर को रेटिंग दी जा सकती है।"
+    },
+    "ratingReason": {
+      "on_time": "समय पर",
+      "polite": "विनम्र",
+      "careful_with_parcel": "पार्सल का ध्यान रखा",
+      "late": "देर से",
+      "rude": "बदतमीज़ी",
+      "damaged": "पार्सल ख़राब हुआ",
+      "other": "अन्य"
+    },
+    "rateAgent": "{name} को रेटिंग दें"
   }
 }

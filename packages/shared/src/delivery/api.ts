@@ -17,6 +17,7 @@ import {
   DELIVERY_DECLINE_REASONS,
   DELIVERY_FAILURE_DECISIONS,
   DELIVERY_FAIL_REASONS,
+  DELIVERY_RATING_REASONS,
   DELIVERY_GIVE_UP_REASONS,
   DELIVERY_RETRY_AGENTS,
   DELIVERY_RETURN_OUTCOMES,
@@ -109,6 +110,9 @@ export const AgentProfile = z.object({
   documents: z.array(AgentDocument),
   /** Documents still to upload before admin can verify. */
   missingDocuments: z.array(z.enum(AGENT_DOCUMENT_KINDS)),
+  /** Own average in tenths of a star (43 = 4.3) and count; never who rated (founder 2026-11-26). */
+  ratingAvgX10: z.number().int().nullable(),
+  ratingCount: z.number().int(),
   version: Version,
 });
 export type AgentProfileT = z.infer<typeof AgentProfile>;
@@ -333,6 +337,43 @@ export const CustomerDeliveryBlock = z.object({
   agentFirstName: z.string().nullable(),
   vehicleType: Vehicle.nullable(),
   failReason: z.enum(DELIVERY_FAIL_REASONS).nullable(),
+  /** Delivered by an agent and not yet rated, or rated and still editable. */
+  canRate: z.boolean(),
+  rating: z
+    .object({
+      stars: z.number().int().min(1).max(5),
+      reasons: z.array(z.enum(DELIVERY_RATING_REASONS)),
+      note: z.string().nullable(),
+      editableUntil: Iso,
+      version: Version,
+    })
+    .nullable(),
+});
+
+/**
+ * `PUT /v1/me/orders/{code}/delivery-rating` (customer, own delivered agent sub-order; founder 2026-11-26). One rating
+ * per job; editing within 24 h sends `version`. `other` needs a note. Rate limited per user.
+ */
+export const DeliveryRatingInput = z
+  .object({
+    stars: z.number().int().min(1).max(5),
+    reasons: z
+      .array(z.enum(DELIVERY_RATING_REASONS))
+      .max(DELIVERY_RATING_REASONS.length)
+      .refine((r) => new Set(r).size === r.length, 'duplicate reason')
+      .default([]),
+    note: Note.optional(),
+    version: Version.optional(),
+  })
+  .strict()
+  .refine((v) => !v.reasons.includes('other') || v.note !== undefined, {
+    path: ['note'],
+    message: 'NOTE_REQUIRED',
+  });
+export const DeliveryRatingSaved = z.object({
+  stars: z.number().int(),
+  editableUntil: Iso,
+  version: Version,
 });
 
 // ── admin ─────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -349,6 +390,8 @@ export const AdminAgentRow = z.object({
   online: z.boolean(),
   activeJobs: z.number().int(),
   documentsVerified: z.number().int(),
+  ratingAvgX10: z.number().int().nullable(),
+  ratingCount: z.number().int(),
   createdAt: Iso,
   version: Version,
 });
@@ -356,6 +399,16 @@ export const AdminAgentPage = z.object({ items: z.array(AdminAgentRow), nextCurs
 /** `GET /v1/admin/delivery/agents/{id}`. */
 export const AdminAgentDetail = AdminAgentRow.extend({
   documents: z.array(AgentDocument),
+  /** Latest ratings (stars, reasons, note, when); never the customer. */
+  ratings: z.array(
+    z.object({
+      orderCode: OrderCode,
+      stars: z.number().int(),
+      reasons: z.array(z.enum(DELIVERY_RATING_REASONS)),
+      note: z.string().nullable(),
+      at: Iso,
+    }),
+  ),
   history: z.array(
     z.object({
       at: Iso,
@@ -461,6 +514,8 @@ export const AgentSuggestion = z.object({
   activeJobs: z.number().int(),
   acceptanceRateBp: z.number().int().nullable(),
   carriesLoad: z.boolean(),
+  ratingAvgX10: z.number().int().nullable(),
+  ratingCount: z.number().int(),
 });
 export const AdminJobDetail = AdminJobRow.extend({
   suggestions: z.array(AgentSuggestion),

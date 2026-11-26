@@ -616,6 +616,8 @@ export const REFUND_SOURCES = [
   'rsa_overpaid',
   'duplicate_payment',
   'payment_after_close',
+  // A failed agent delivery came back to the shop (spec 24; Lead's call 13).
+  'delivery_returned',
   'unfulfilled',
   'support_claim',
   'part_refund',
@@ -632,6 +634,7 @@ export const REFUND_REASONS = [
   'rsa_overpaid',
   'duplicate_payment',
   'payment_after_close',
+  'delivery_returned',
   'faulty',
   'damaged_in_transit',
   'wrong_item',

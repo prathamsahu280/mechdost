@@ -6,6 +6,7 @@ import { ORDER_CANCEL_REASONS } from './state';
 import { VEHICLE_SEGMENTS } from './vehicle-segments';
 import { RECO_ALGOS, RECO_SURFACES } from './recommendation-limits';
 import { USTAAD_CLIENT_EVENT_SCHEMAS, type UstaadServerEventProps } from './ustaad/analytics';
+import type { DeliveryServerEventProps } from './delivery/analytics';
 
 /**
  * Server-side analytics events (spec 12; hard rules 9 and 16). Emitted by the API inside the same transaction
@@ -13,7 +14,7 @@ import { USTAAD_CLIENT_EVENT_SCHEMAS, type UstaadServerEventProps } from './usta
  * integer paise only — never names, phone numbers, emails, addresses or free text. The Ustaad Network's events
  * (spec 23 § 16) live in `ustaad/analytics.ts` and are merged here.
  */
-export interface ServerEventProps extends UstaadServerEventProps {
+export interface ServerEventProps extends UstaadServerEventProps, DeliveryServerEventProps {
   purchase: {
     orderCode: string;
     subOrders: number;

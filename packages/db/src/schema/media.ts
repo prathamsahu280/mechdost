@@ -18,6 +18,9 @@ export const MEDIA_OWNER_KINDS = [
   'ticket_message',
   'product_photo',
   'quote_message',
+  // Delivery agents (spec 24): pickup / delivery / failure photos and PAN, licence, RC photos (private).
+  'delivery_photo',
+  'agent_document',
 ] as const;
 
 export const mediaObjects = pgTable(

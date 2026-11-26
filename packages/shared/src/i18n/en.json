@@ -3337,7 +3337,10 @@
     "api_set_delivery_max_load_bike_kg": "Most a motorcycle carries (kg)",
     "api_set_delivery_max_load_scooter_kg": "Most a scooter carries (kg)",
     "api_set_delivery_max_load_three_wheeler_kg": "Most a three-wheeler carries (kg)",
-    "api_set_delivery_max_load_goods_vehicle_kg": "Most a goods vehicle carries (kg)"
+    "api_set_delivery_max_load_goods_vehicle_kg": "Most a goods vehicle carries (kg)",
+    "api_set_delivery_rank_rating_weight_pct": "Weight of ratings when suggesting agents (%)",
+    "api_set_delivery_low_rating_alert_x10": "Alert staff below this average (tenths of a star, 35 = 3.5)",
+    "api_set_delivery_low_rating_min_count": "Ratings needed before a low-rating alert"
   },
   "shopGiveUp": {
     "action": "Can't fulfil this order",
@@ -3761,7 +3764,8 @@
     "reason_goodwill": "Goodwill refund",
     "reason_other": "Other",
     "reason_rsa_cancelled": "Roadside request cancelled",
-    "reason_rsa_overpaid": "Roadside total below the advance"
+    "reason_rsa_overpaid": "Roadside total below the advance",
+    "reason_delivery_returned": "Delivery came back to the shop"
   },
   "refunds": {
     "title": "Refunds",
@@ -3914,7 +3918,9 @@
     "source_rsa_cancelled": "Roadside request cancelled",
     "source_rsa_overpaid": "Roadside total below the advance",
     "reason_rsa_cancelled": "Roadside request cancelled",
-    "reason_rsa_overpaid": "Roadside total below the advance"
+    "reason_rsa_overpaid": "Roadside total below the advance",
+    "source_delivery_returned": "Delivery came back",
+    "reason_delivery_returned": "Delivery came back to the shop"
   },
   "accountApi": {
     "loadError": "We couldn't load this. Check your connection and try again.",
@@ -6459,7 +6465,10 @@
     "help_delivery_max_load_bike_kg": "Orders heavier than this are not offered to motorcycles.",
     "help_delivery_max_load_scooter_kg": "Orders heavier than this are not offered to scooters.",
     "help_delivery_max_load_three_wheeler_kg": "Orders heavier than this are not offered to three-wheelers.",
-    "help_delivery_max_load_goods_vehicle_kg": "Orders heavier than this are not offered to goods vehicles."
+    "help_delivery_max_load_goods_vehicle_kg": "Orders heavier than this are not offered to goods vehicles.",
+    "help_delivery_rank_rating_weight_pct": "0 ignores ratings; 100 ranks by rating first among agents who can carry the order.",
+    "help_delivery_low_rating_alert_x10": "Staff get one alert when an agent drops below it.",
+    "help_delivery_low_rating_min_count": "A few early ratings do not trigger an alert."
   },
   "roadside": {
     "eyebrow": "Roadside help",
@@ -9005,7 +9014,19 @@
       "INVITE_PHONE_MISMATCH": "This invite is for a different phone number.",
       "INVITE_EXPIRED": "This invite has expired. Ask MechDost for a new one.",
       "DOCUMENT_AADHAAR": "Do not enter an Aadhaar number here.",
-      "DOCUMENT_FORMAT": "Check the number and try again."
-    }
+      "DOCUMENT_FORMAT": "Check the number and try again.",
+      "RATING_CLOSED": "This rating can no longer be changed.",
+      "NOT_RATEABLE": "Only a delivered order can be rated."
+    },
+    "ratingReason": {
+      "on_time": "On time",
+      "polite": "Polite",
+      "careful_with_parcel": "Careful with the parcel",
+      "late": "Late",
+      "rude": "Rude",
+      "damaged": "Parcel damaged",
+      "other": "Other"
+    },
+    "rateAgent": "Rate {name}"
   }
 }

@@ -49,7 +49,7 @@ shops freed from delivery, and MechDost control of the last mile (proof, timing,
 ## Lead's calls (defaults, each changeable)
 
 1. **Dispatch = admin assigns** from ranked suggestions (online, vehicle fits the load, nearest to the shop, fewest
-   active jobs, acceptance rate); offer timer (city setting, default 5 min) → accept / decline (reason) / expire →
+   active jobs, acceptance rate, rating); offer timer (city setting, default **15 min**, founder 2026-11-26) → accept / decline (reason) / expire →
    back to admin. Same pattern as shop routing and roadside. A reserved city setting `delivery.dispatch_mode`
    (`admin` only for now; `broadcast` later).
 2. **Cash:** agents take **prepaid orders only** (online, or UPI collected by the platform). **COD sub-orders go to a
@@ -173,7 +173,8 @@ status; "Earnings" placeholder ("pay details coming soon") until money is decide
 
 ## Compliance before the first live delivery (founder actions, queued)
 
-Accident insurance for agents; eShram registration as an aggregator; a lawyer-reviewed agent agreement (independent
+Founder ruling 2026-11-26: **no accident insurance and no uniform or dress requirement** (removed from this list).
+eShram registration as an aggregator; a lawyer-reviewed agent agreement (independent
 partner: can decline offers, no fixed shifts); battery/tyre handling procedure (sealed new batteries only, upright and
 strapped); check Chhattisgarh's position on private two-wheelers for paid delivery; CA advice on TDS (PAN mandatory)
 and GST on the delivery fee.
@@ -269,4 +270,6 @@ packed`. Staff cancel `ready_for_pickup → cancelled`. Actor `delivery_agent` a
 | GET `/admin/delivery/kpis`                                                              | `delivery_jobs:assign`     | → `DeliveryKpis`                                          |                                                            |
 
 Customer order view: agent-mode sub-orders gain `delivery: CustomerDeliveryBlock` (first name + vehicle; never the shop
-or the agent's phone). Settings: `delivery.*` keys in `OPERATIONAL_SETTINGS` (Admin → Settings → Partners for now).
+or the agent's phone; `canRate` + `rating`). Rating (founder 2026-11-26): `PUT /v1/me/orders/{code}/delivery-rating`
+(signed-in customer, own delivered agent sub-order) `DeliveryRatingInput` → `DeliveryRatingSaved`; 10 per hour per user;
+editable 24 h with `version`. Settings: `delivery.*` keys in `OPERATIONAL_SETTINGS` (Admin → Settings → Partners for now).

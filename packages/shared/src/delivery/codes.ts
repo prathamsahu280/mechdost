@@ -219,6 +219,28 @@ export type ShopModeRequestStatus = (typeof SHOP_MODE_REQUEST_STATES)[number];
 export const AGENT_INVITE_STATES = ['sent', 'used', 'expired', 'revoked'] as const;
 export type AgentInviteStatus = (typeof AGENT_INVITE_STATES)[number];
 
+/**
+ * Rider ratings (founder 2026-11-26): after a delivered job the customer rates the agent 1–5 with optional reason
+ * codes (`other` needs a note). One rating per job, editable for `RATING_EDIT_HOURS`; the agent sees only their own
+ * average and count, never who rated.
+ */
+export const DELIVERY_RATING_REASONS = [
+  'on_time',
+  'polite',
+  'careful_with_parcel',
+  'late',
+  'rude',
+  'damaged',
+  'other',
+] as const;
+export type DeliveryRatingReason = (typeof DELIVERY_RATING_REASONS)[number];
+export const RATING_EDIT_HOURS = 24;
+
+/** The agent's average in tenths (4.3 → 43), or null before the first rating. Integer maths only. */
+export function ratingAverageX10(sum: number, count: number): number | null {
+  return count > 0 ? Math.round((sum * 10) / count) : null;
+}
+
 /** Four digits, like the customer's delivery code (decision 2026-11-01 "Proof of delivery"). */
 export const HANDOVER_CODE_RE = /^[0-9]{4}$/;
 /** Tries per pickup or return code before it locks (the admin override remains). */

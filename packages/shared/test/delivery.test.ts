@@ -6,6 +6,9 @@ import {
   DELIVERY_FAIL_REASONS,
   agentMayReceiveOffers,
   contactStage,
+  DELIVERY_RATING_REASONS,
+  RATING_EDIT_HOURS,
+  ratingAverageX10,
   documentNumberProblem,
   maskDocumentNumber,
   normaliseDocumentNumber,
@@ -25,6 +28,8 @@ import {
   DeliverInput,
   FailInput,
   FailureDecisionInput,
+  DeliveryRatingInput,
+  AgentProfile,
 } from '../src/delivery/api';
 import {
   DELIVERY_JOB_STATES,
@@ -348,10 +353,45 @@ describe('role and settings', () => {
   });
   it('switches agents off by default in every city and keeps the design defaults', () => {
     expect(OPERATIONAL_SETTINGS['delivery.agents_enabled'].default).toBe(false);
-    expect(OPERATIONAL_SETTINGS['delivery.offer_timeout_min'].default).toBe(5);
+    expect(OPERATIONAL_SETTINGS['delivery.offer_timeout_min'].default).toBe(15);
+    expect(OPERATIONAL_SETTINGS['delivery.rank_rating_weight_pct'].default).toBe(20);
+    expect(OPERATIONAL_SETTINGS['delivery.low_rating_alert_x10'].default).toBe(35);
     expect(OPERATIONAL_SETTINGS['delivery.photos_required'].default).toBe(true);
     expect(OPERATIONAL_SETTINGS['delivery.max_attempts'].default).toBe(2);
     expect(OPERATIONAL_SETTINGS['delivery.invite_hours'].default).toBe(72);
     expect(OPERATIONAL_SETTINGS['delivery.max_load_bike_kg'].default).toBe(20);
+  });
+});
+
+describe('rider ratings (founder 2026-11-26)', () => {
+  it('takes 1?5 stars with optional reason codes; other needs a note', () => {
+    expect(DELIVERY_RATING_REASONS).toEqual([
+      'on_time',
+      'polite',
+      'careful_with_parcel',
+      'late',
+      'rude',
+      'damaged',
+      'other',
+    ]);
+    expect(DeliveryRatingInput.safeParse({ stars: 5, reasons: ['on_time', 'polite'] }).success).toBe(true);
+    expect(DeliveryRatingInput.safeParse({ stars: 0 }).success).toBe(false);
+    expect(DeliveryRatingInput.safeParse({ stars: 6 }).success).toBe(false);
+    expect(DeliveryRatingInput.safeParse({ stars: 2, reasons: ['other'] }).success).toBe(false);
+    expect(
+      DeliveryRatingInput.safeParse({ stars: 2, reasons: ['other'], note: 'Left at the gate' }).success,
+    ).toBe(true);
+    expect(DeliveryRatingInput.safeParse({ stars: 4, reasons: ['late', 'late'] }).success).toBe(false);
+    expect(RATING_EDIT_HOURS).toBe(24);
+  });
+  it('keeps the average in tenths with integer maths', () => {
+    expect(ratingAverageX10(0, 0)).toBeNull();
+    expect(ratingAverageX10(13, 3)).toBe(43);
+    expect(ratingAverageX10(9, 2)).toBe(45);
+  });
+  it('the agent profile shows only the own average and count', () => {
+    const keys = Object.keys(AgentProfile.shape);
+    expect(keys).toEqual(expect.arrayContaining(['ratingAvgX10', 'ratingCount']));
+    expect(keys.join(' ')).not.toMatch(/rater|customer/i);
   });
 });

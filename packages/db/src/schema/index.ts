@@ -27,3 +27,5 @@ export * from './ustaad-moderation';
 export * from './savings';
 // Usage and free-limit monitoring (founder 2026-11-26, migration 0103).
 export * from './usage';
+// Delivery agents (spec 24, migration 0105).
+export * from './delivery';

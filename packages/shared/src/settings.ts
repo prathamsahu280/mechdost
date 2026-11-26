@@ -197,8 +197,14 @@ export const OPERATIONAL_SETTINGS = {
   /** MechDost agents deliver prepaid orders of `agents`-mode shops in this city. Off until the founder confirms the
    *  compliance items (Lead's call 11). Off: every sub-order is delivered by its shop, as before. */
   'delivery.agents_enabled': { kind: 'boolean', default: false },
-  /** How long an agent has to accept an offered job (minutes). */
-  'delivery.offer_timeout_min': { kind: 'int', min: 1, max: 30, default: 5 },
+  /** How long an agent has to accept an offered job (minutes; founder 2026-11-26: 15). */
+  'delivery.offer_timeout_min': { kind: 'int', min: 1, max: 60, default: 15 },
+  /** Weight of the agent's rating in the dispatch ranking, 0–100 % (0 = ratings ignored; founder 2026-11-26). */
+  'delivery.rank_rating_weight_pct': { kind: 'int', min: 0, max: 100, default: 20 },
+  /** Staff are alerted when an agent's average falls below this, in tenths of a star (35 = 3.5). */
+  'delivery.low_rating_alert_x10': { kind: 'int', min: 10, max: 50, default: 35 },
+  /** Ratings an agent needs before the low-rating alert can fire. */
+  'delivery.low_rating_min_count': { kind: 'int', min: 1, max: 100, default: 5 },
   /** Jobs an agent may hold at once (accepted, picked up, failed or returning). */
   'delivery.max_active_jobs': { kind: 'int', min: 1, max: 10, default: 3 },
   /** A photo is required at pickup, at delivery and with a failed delivery (founder 2026-11-26). */
