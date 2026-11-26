@@ -37,7 +37,7 @@ export class DeletionBlockedError extends ConflictError {
   }
 }
 
-const ORDER_DONE = ['delivered', 'cancelled', 'rejected'];
+const ORDER_DONE = ['delivered', 'cancelled', 'rejected', 'returned'];
 const SERVICE_DONE = ['completed', 'cancelled', 'rejected'];
 /** A refund is still owed while it is asked for, approved, being paid or being reconciled. */
 const REFUND_OPEN = ['requested', 'approved', 'initiated', 'needs_reconciliation'];

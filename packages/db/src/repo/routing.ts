@@ -1,6 +1,7 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { OrderRejectReason, OrderStatus } from '@mechdost/shared/state';
 import { OPERATIONAL_SETTINGS } from '@mechdost/shared/settings';
+import { ROLES, isRoleKey } from '@mechdost/shared/rbac';
 import {
   DEFAULT_SHOP_HOURS,
   acceptanceDeadline,
@@ -10,6 +11,7 @@ import {
 import { ORDER_REJECT_REASONS } from '@mechdost/shared/state';
 import { auditLog, orderAssignments, orders, reservations, shipments, shopInventory, shops } from '../schema';
 import { overrideShipmentInTx } from './delivery';
+import { deliveryModeFor } from './delivery-common';
 import { expireAssignment, offerOrderToShop } from './assignments';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
@@ -31,6 +33,7 @@ export type CityScope = { all: true } | { all: false; cityIds: string[] };
 /** City scope of the grants holding `permission` (staff grants only; shop/workshop grants never count). */
 export function cityScopeFrom(
   grants: readonly {
+    role?: string;
     permissions: readonly string[];
     cityId: string | null;
     shopId: string | null;
@@ -38,8 +41,14 @@ export function cityScopeFrom(
   }[],
   permission: string,
 ): CityScope {
+  // A known non-staff role (delivery agent, mechanic, customer) never yields a staff city scope, whatever permissions
+  // its row carries (defence in depth, spec 24: agents hold `deliveries:*` only).
   const relevant = grants.filter(
-    (g) => g.permissions.includes(permission) && g.shopId === null && g.workshopId === null,
+    (g) =>
+      g.permissions.includes(permission) &&
+      g.shopId === null &&
+      g.workshopId === null &&
+      !(g.role !== undefined && isRoleKey(g.role) && !ROLES[g.role].staff),
   );
   if (relevant.some((g) => g.cityId === null)) return { all: true };
   return { all: false, cityIds: relevant.map((g) => g.cityId).filter((c): c is string => c !== null) };
@@ -84,8 +93,8 @@ export type QueueView = 'needs_routing' | 'awaiting_shop' | 'in_progress' | 'clo
 const VIEW_STATUSES: Record<QueueView, readonly OrderStatus[]> = {
   needs_routing: ['placed', 'needs_rerouting'],
   awaiting_shop: ['awaiting_shop'],
-  in_progress: ['confirmed', 'packed', 'shipped', 'out_for_delivery'],
-  closed: ['delivered', 'cancelled', 'rejected'],
+  in_progress: ['confirmed', 'packed', 'ready_for_pickup', 'shipped', 'out_for_delivery'],
+  closed: ['delivered', 'cancelled', 'rejected', 'returned'],
 };
 
 export interface QueueItem {
@@ -498,10 +507,19 @@ export async function routeOrder(
       Math.ceil((deadline.expiresAt.getTime() - now.getTime()) / 60_000) + timeout,
     );
     await moveReservations(tx, o.id, input.shopId, holdMinutes);
+    // Who delivers this sub-order (spec 24): fixed now from the shop's mode; COD always stays with the shop.
+    let orderVersion = o.version;
+    const mode = await deliveryModeFor(tx, { orderId: o.id, shopId: input.shopId, cityId: o.cityId });
+    const [moded] = await tx
+      .update(orders)
+      .set({ deliveryMode: mode })
+      .where(and(eq(orders.id, o.id), eq(orders.version, o.version), sql`${orders.deliveryMode} <> ${mode}`))
+      .returning({ version: orders.version });
+    if (moded) orderVersion = moded.version;
     const assignment = await offerOrderToShop(tx, {
       orderId: o.id,
       shopId: input.shopId,
-      expectedOrderVersion: o.version,
+      expectedOrderVersion: orderVersion,
       timeoutMinutes: timeout,
       expiresAt: deadline.closed ? deadline.expiresAt : null,
       actor: { type: 'admin', userId: input.staffUserId },

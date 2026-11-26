@@ -4459,6 +4459,94 @@
     "staff_ustaad_verification": {
       "title": "Verification waiting",
       "body": "A mechanic verification is ready for review."
+    },
+    "delivery_offer": {
+      "title": "New delivery job",
+      "body": "Order {orderCode} is offered to you. Accept within {minutes} minutes."
+    },
+    "delivery_job_withdrawn": {
+      "title": "Job taken back",
+      "body": "MechDost took back the job for order {orderCode}."
+    },
+    "delivery_retry": {
+      "title": "Try the delivery again",
+      "body": "Please try delivering order {orderCode} again."
+    },
+    "delivery_return_to_shop": {
+      "title": "Take the parcel back",
+      "body": "Take order {orderCode} back to the shop and show your return code."
+    },
+    "delivery_document_decided": {
+      "title": "Document checked",
+      "body": "MechDost checked one of your documents. Open your profile to see it."
+    },
+    "delivery_status_changed": {
+      "title": "Account updated",
+      "body": "Your delivery account status changed. Open your profile to see it."
+    },
+    "shop_delivery_agent_assigned": {
+      "title": "Agent on the way",
+      "body": "A delivery agent is coming to pick up order {orderCode}. Keep the pickup code ready."
+    },
+    "shop_delivery_switch": {
+      "title": "Please deliver this order",
+      "body": "MechDost asks you to deliver order {orderCode} yourselves. Confirm or decline."
+    },
+    "shop_delivery_returning": {
+      "title": "Parcel coming back",
+      "body": "Order {orderCode} could not be delivered. The agent is bringing it back."
+    },
+    "shop_delivery_mode_decided": {
+      "title": "Delivery setting decided",
+      "body": "MechDost decided on your delivery request. Open your portal to see it."
+    },
+    "order_picked_up": {
+      "title": "Order picked up",
+      "body": "Your order {orderCode} is on its way."
+    },
+    "order_delivery_failed": {
+      "title": "Delivery could not be completed",
+      "body": "We couldn't deliver order {orderCode}. We'll update you soon."
+    },
+    "order_returned": {
+      "title": "Order returned",
+      "body": "Order {orderCode} went back. Your refund is being processed."
+    },
+    "staff_delivery_agent_application": {
+      "title": "New delivery agent application",
+      "body": "A new application is waiting for review."
+    },
+    "staff_delivery_documents": {
+      "title": "Agent documents to check",
+      "body": "A delivery agent uploaded a document."
+    },
+    "staff_delivery_needs_agent": {
+      "title": "Needs a delivery agent",
+      "body": "Order {orderCode} is ready for pickup and needs an agent."
+    },
+    "staff_delivery_offer_expired": {
+      "title": "Agent did not answer",
+      "body": "The offer for order {orderCode} expired. Pick another agent."
+    },
+    "staff_delivery_declined": {
+      "title": "Agent declined",
+      "body": "An agent declined order {orderCode}. Pick another agent."
+    },
+    "staff_delivery_failed": {
+      "title": "Delivery failed",
+      "body": "Order {orderCode} could not be delivered. Retry or send it back."
+    },
+    "staff_delivery_switch_declined": {
+      "title": "Shop will not deliver",
+      "body": "The shop declined to deliver order {orderCode} itself."
+    },
+    "staff_shop_delivery_mode_request": {
+      "title": "Shop delivery request",
+      "body": "A shop asked to change who delivers its orders."
+    },
+    "staff_delivery_low_rating": {
+      "title": "Low agent rating",
+      "body": "A delivery agent's average rating fell below the alert level."
     }
   },
   "adminNotices": {

@@ -27,6 +27,8 @@ import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { releaseReservation } from './inventory';
 import { localized } from './localized';
 import { transitionOrder, type Tx } from './orders';
+import { cancelActiveDeliveryJob, customerDeliveryBlock } from './delivery-jobs';
+import { ratingForJob } from './delivery-ratings';
 import type { ActorContext } from './actor';
 import type { CatalogueLocale } from './catalogue';
 
@@ -140,6 +142,24 @@ export interface TrackedOrder {
   message: string | null;
   /** Out for delivery: the code to give the delivery person. */
   deliveryCode: string | null;
+  /**
+   * Agent-mode sub-orders (spec 24): the stage, the agent's first name and vehicle, the failure reason and the rating.
+   * Never the shop, never the agent's phone (decisions 2026-11-22, Lead's call 7).
+   */
+  delivery: {
+    stage: string;
+    agentFirstName: string | null;
+    vehicleType: string | null;
+    failReason: string | null;
+    canRate: boolean;
+    rating: {
+      stars: number;
+      reasons: string[];
+      note: string | null;
+      editableUntil: string;
+      version: number;
+    } | null;
+  } | null;
   canCancel: boolean;
   /** Refunds on this part, as the customer sees them (spec 05: asked, processing, refunded). */
   refunds: CustomerRefund[];
@@ -211,6 +231,30 @@ export async function getMyOrder(
         .limit(1);
       if (ship) deliveryCode = await deliveryCodeFor(db, opts.keyring, ship.id);
     }
+    let delivery: TrackedOrder['delivery'] = null;
+    if (order.deliveryMode === 'agent') {
+      const block = await customerDeliveryBlock(db, order.id);
+      if (block) {
+        const rating = block.stage === 'delivered' ? await ratingForJob(db, block.jobId) : null;
+        delivery = {
+          stage: block.stage,
+          agentFirstName: block.agentFirstName,
+          vehicleType: block.vehicleType,
+          failReason: block.failReason,
+          canRate:
+            block.stage === 'delivered' && block.agentId !== null && (rating === null || rating.editable),
+          rating: rating
+            ? {
+                stars: rating.stars,
+                reasons: rating.reasons,
+                note: rating.note,
+                editableUntil: rating.editableUntil,
+                version: rating.version,
+              }
+            : null,
+        };
+      }
+    }
     tracked.push({
       code: order.code,
       status: order.status,
@@ -230,6 +274,7 @@ export async function getMyOrder(
       timeline: events.filter((e) => e.orderId === order.id).map((e) => ({ status: e.status, at: e.at })),
       message: order.status === 'rejected' ? order.customerMessage : null,
       deliveryCode,
+      delivery,
       canCancel: customerMayCancel(order.status, order.cancellableUntilStatus),
       refunds: refundsByOrder.get(order.id) ?? [],
     });
@@ -267,6 +312,13 @@ export async function cancelInTx(
     expectedVersion: input.expectedVersion,
     actor: input.actor,
     patch: { statusReasonCode: input.reasonCode },
+  });
+  // An agent-mode sub-order cancelled before pickup: its delivery job (and any open offer) closes too (spec 24).
+  await cancelActiveDeliveryJob(tx, {
+    orderId: input.order.id,
+    reason: 'order_cancelled',
+    actor: input.actor.type === 'admin' ? 'admin' : 'system',
+    actorId: input.actor.userId ?? null,
   });
   await tx
     .update(orderAssignments)

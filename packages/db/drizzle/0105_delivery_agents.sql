@@ -397,7 +397,9 @@ ALTER TABLE "delivery_ratings" ADD CONSTRAINT "delivery_ratings_user_id_users_id
 CREATE INDEX "delivery_ratings_agent_idx" ON "delivery_ratings" USING btree ("agent_id","created_at");--> statement-breakpoint
 CREATE INDEX "delivery_ratings_order_id_index" ON "delivery_ratings" USING btree ("order_id");--> statement-breakpoint
 CREATE INDEX "delivery_ratings_user_id_index" ON "delivery_ratings" USING btree ("user_id");--> statement-breakpoint
-ALTER TABLE "delivery_agents" ADD CONSTRAINT "delivery_agents_rating_range" CHECK ("delivery_agents"."rating_count" >= 0 and "delivery_agents"."rating_sum" between "delivery_agents"."rating_count" and "delivery_agents"."rating_count" * 5);
+ALTER TABLE "delivery_agents" ADD CONSTRAINT "delivery_agents_rating_range" CHECK ("delivery_agents"."rating_count" >= 0 and "delivery_agents"."rating_sum" between "delivery_agents"."rating_count" and "delivery_agents"."rating_count" * 5);--> statement-breakpoint
+ALTER TABLE "delivery_jobs" ADD COLUMN "return_intent" text;--> statement-breakpoint
+ALTER TABLE "delivery_jobs" ADD CONSTRAINT "delivery_jobs_return_intent" CHECK (("delivery_jobs"."return_intent" is null or "delivery_jobs"."return_intent" in ('retry','close')) and ("delivery_jobs"."status" <> 'returning' or "delivery_jobs"."return_intent" is not null));
 --> statement-breakpoint
 -- Hand-written (spec 24): RLS deny-all, version and updated_at triggers, append-only timelines.
 ALTER TABLE public.delivery_agent_documents ENABLE ROW LEVEL SECURITY;--> statement-breakpoint

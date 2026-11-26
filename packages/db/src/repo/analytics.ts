@@ -36,7 +36,7 @@ const PAID = sql.raw(`('paid', 'partially_refunded', 'refunded')`);
 /** The checkout is an order (same rule as the routing queue in `routing.ts`). */
 const isOrder = (alias: string) =>
   sql`(${sql.raw(alias)}.payment_method = 'cod' or ${sql.raw(alias)}.payment_status in ${PAID})`;
-const LIVE_PART = sql.raw(`not in ('cancelled', 'rejected')`);
+const LIVE_PART = sql.raw(`not in ('cancelled', 'rejected', 'returned')`);
 const PRODUCT_PATH = '^/shop/[^/]+$';
 const IST = sql.raw(`'Asia/Kolkata'`);
 /**

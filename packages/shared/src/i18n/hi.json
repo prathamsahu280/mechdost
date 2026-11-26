@@ -4459,6 +4459,94 @@
     "staff_ustaad_verification": {
       "title": "जाँच इंतज़ार में",
       "body": "एक मिस्त्री की जाँच देखने के लिए तैयार है।"
+    },
+    "delivery_offer": {
+      "title": "नया डिलीवरी काम",
+      "body": "ऑर्डर {orderCode} आपको दिया गया है। {minutes} मिनट में स्वीकार करें।"
+    },
+    "delivery_job_withdrawn": {
+      "title": "काम वापस लिया गया",
+      "body": "MechDost ने ऑर्डर {orderCode} का काम वापस ले लिया।"
+    },
+    "delivery_retry": {
+      "title": "डिलीवरी फिर से करें",
+      "body": "कृपया ऑर्डर {orderCode} की डिलीवरी फिर से करें।"
+    },
+    "delivery_return_to_shop": {
+      "title": "पार्सल वापस ले जाएँ",
+      "body": "ऑर्डर {orderCode} दुकान पर वापस ले जाएँ और अपना वापसी कोड दिखाएँ।"
+    },
+    "delivery_document_decided": {
+      "title": "दस्तावेज़ की जाँच हुई",
+      "body": "MechDost ने आपका एक दस्तावेज़ जाँचा। देखने के लिए अपनी प्रोफ़ाइल खोलें।"
+    },
+    "delivery_status_changed": {
+      "title": "खाते में बदलाव",
+      "body": "आपके डिलीवरी खाते की स्थिति बदली है। देखने के लिए अपनी प्रोफ़ाइल खोलें।"
+    },
+    "shop_delivery_agent_assigned": {
+      "title": "एजेंट आ रहा है",
+      "body": "ऑर्डर {orderCode} पिकअप करने डिलीवरी एजेंट आ रहा है। पिकअप कोड तैयार रखें।"
+    },
+    "shop_delivery_switch": {
+      "title": "यह ऑर्डर ख़ुद पहुँचाएँ",
+      "body": "MechDost चाहता है कि आप ऑर्डर {orderCode} ख़ुद पहुँचाएँ। हाँ या ना बताएँ।"
+    },
+    "shop_delivery_returning": {
+      "title": "पार्सल वापस आ रहा है",
+      "body": "ऑर्डर {orderCode} डिलीवर नहीं हो पाया। एजेंट उसे वापस ला रहा है।"
+    },
+    "shop_delivery_mode_decided": {
+      "title": "डिलीवरी अनुरोध पर फ़ैसला",
+      "body": "MechDost ने आपके डिलीवरी अनुरोध पर फ़ैसला किया। देखने के लिए पोर्टल खोलें।"
+    },
+    "order_picked_up": {
+      "title": "ऑर्डर पिकअप हुआ",
+      "body": "आपका ऑर्डर {orderCode} रास्ते में है।"
+    },
+    "order_delivery_failed": {
+      "title": "डिलीवरी पूरी नहीं हुई",
+      "body": "हम ऑर्डर {orderCode} डिलीवर नहीं कर पाए। जल्द ही बताएँगे।"
+    },
+    "order_returned": {
+      "title": "ऑर्डर वापस गया",
+      "body": "ऑर्डर {orderCode} वापस चला गया। आपका रिफ़ंड प्रोसेस हो रहा है।"
+    },
+    "staff_delivery_agent_application": {
+      "title": "डिलीवरी एजेंट का नया आवेदन",
+      "body": "?? ??? ????? ???? ?? ??????? ?? ??? ???"
+    },
+    "staff_delivery_documents": {
+      "title": "एजेंट के दस्तावेज़ जाँचें",
+      "body": "एक डिलीवरी एजेंट ने दस्तावेज़ अपलोड किया।"
+    },
+    "staff_delivery_needs_agent": {
+      "title": "डिलीवरी एजेंट चाहिए",
+      "body": "ऑर्डर {orderCode} पिकअप के लिए तैयार है, एजेंट चाहिए।"
+    },
+    "staff_delivery_offer_expired": {
+      "title": "एजेंट ने जवाब नहीं दिया",
+      "body": "ऑर्डर {orderCode} के ऑफ़र का समय ख़त्म हो गया। दूसरा एजेंट चुनें।"
+    },
+    "staff_delivery_declined": {
+      "title": "एजेंट ने मना किया",
+      "body": "एक एजेंट ने ऑर्डर {orderCode} मना किया। दूसरा एजेंट चुनें।"
+    },
+    "staff_delivery_failed": {
+      "title": "डिलीवरी नहीं हुई",
+      "body": "ऑर्डर {orderCode} डिलीवर नहीं हुआ। फिर कोशिश करें या वापस भेजें।"
+    },
+    "staff_delivery_switch_declined": {
+      "title": "दुकान डिलीवर नहीं करेगी",
+      "body": "दुकान ने ऑर्डर {orderCode} ख़ुद पहुँचाने से मना किया।"
+    },
+    "staff_shop_delivery_mode_request": {
+      "title": "दुकान का डिलीवरी अनुरोध",
+      "body": "एक दुकान ने अपने ऑर्डर कौन पहुँचाए, यह बदलने को कहा है।"
+    },
+    "staff_delivery_low_rating": {
+      "title": "एजेंट की कम रेटिंग",
+      "body": "एक डिलीवरी एजेंट की औसत रेटिंग सूचना स्तर से नीचे आ गई।"
     }
   },
   "adminNotices": {

@@ -244,6 +244,16 @@ const STAFF_PERMISSION = {
   'staff.rsa_cash': 'roadside:read',
   // Usage and free limits (2026-11-26): staff with an all-cities settings read (super admin, operations manager).
   'staff.usage_alert': 'settings:read',
+  // Delivery agents (spec 24).
+  'staff.delivery_agent_application': 'delivery_agents:manage',
+  'staff.delivery_documents': 'delivery_agents:manage',
+  'staff.shop_delivery_mode_request': 'delivery_agents:manage',
+  'staff.delivery_low_rating': 'delivery_agents:manage',
+  'staff.delivery_needs_agent': 'delivery_jobs:assign',
+  'staff.delivery_offer_expired': 'delivery_jobs:assign',
+  'staff.delivery_declined': 'delivery_jobs:assign',
+  'staff.delivery_failed': 'delivery_jobs:assign',
+  'staff.delivery_switch_declined': 'delivery_jobs:assign',
 } as const satisfies Partial<Record<NoticeKind, Permission>>;
 
 export type StaffNoticeKind = keyof typeof STAFF_PERMISSION;

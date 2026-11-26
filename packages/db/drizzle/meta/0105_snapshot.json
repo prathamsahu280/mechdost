@@ -1,5 +1,5 @@
 {
-  "id": "979911c7-f9b2-426c-8828-1439ddca95e3",
+  "id": "aa113a69-e54e-45f1-a088-abaa3a3118be",
   "prevId": "968a20f6-a4d9-4abb-b53b-9e633a0143f0",
   "version": "7",
   "dialect": "postgresql",
@@ -37770,6 +37770,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "return_intent": {
+          "name": "return_intent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "cancel_reason": {
           "name": "cancel_reason",
           "type": "text",
@@ -38157,6 +38163,10 @@
         "delivery_jobs_return_outcome": {
           "name": "delivery_jobs_return_outcome",
           "value": "(\"delivery_jobs\".\"status\" = 'returned') = (\"delivery_jobs\".\"return_outcome\" is not null) and (\"delivery_jobs\".\"return_outcome\" is null or \"delivery_jobs\".\"return_outcome\" in ('retry','close'))"
+        },
+        "delivery_jobs_return_intent": {
+          "name": "delivery_jobs_return_intent",
+          "value": "(\"delivery_jobs\".\"return_intent\" is null or \"delivery_jobs\".\"return_intent\" in ('retry','close')) and (\"delivery_jobs\".\"status\" <> 'returning' or \"delivery_jobs\".\"return_intent\" is not null)"
         },
         "delivery_jobs_override": {
           "name": "delivery_jobs_override",

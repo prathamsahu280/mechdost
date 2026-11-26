@@ -166,7 +166,7 @@ function couponSelect(userId: string) {
           select array_agg(d.id::text) from d) end as category_ids,
         coalesce((select u.uses from coupon_user_usage u where u.coupon_id = c.id and u.user_id = ${userId}), 0) as my_uses,
         exists (select 1 from order_groups g where g.user_id = ${userId}
-          and exists (select 1 from orders o where o.group_id = g.id and o.status not in ('cancelled','rejected'))) as had_order
+          and exists (select 1 from orders o where o.group_id = g.id and o.status not in ('cancelled','rejected','returned'))) as had_order
       from coupons c
       left join coupon_shop_terms st on st.coupon_id = c.id
       left join shops sh on sh.id = c.shop_id`;
@@ -305,7 +305,7 @@ export async function releaseCouponIfOrderDead(tx: Tx, groupId: string): Promise
   const alive = await tx
     .select({ id: orders.id })
     .from(orders)
-    .where(and(eq(orders.groupId, groupId), sql`${orders.status} not in ('cancelled','rejected')`))
+    .where(and(eq(orders.groupId, groupId), sql`${orders.status} not in ('cancelled','rejected','returned')`))
     .limit(1);
   if (alive.length > 0) return false;
   return giveUseBack(tx, {
@@ -335,14 +335,14 @@ export async function releaseCouponIfOrderRefunded(tx: Tx, orderId: string): Pro
   const [open] = rowsOf<{ open: unknown }>(
     await tx.execute(sql`
       select count(*) as open from orders o
-      where o.group_id = ${o.groupId} and o.status not in ('cancelled','rejected')
+      where o.group_id = ${o.groupId} and o.status not in ('cancelled','rejected','returned')
         and coalesce((select sum(r.amount_paise) from refunds r where r.order_id = o.id and r.status = 'processed'), 0)
           < o.total_paise`),
   );
   if (num(open?.open ?? 0) > 0) return false;
   const [live] = rowsOf<{ live: unknown }>(
     await tx.execute(
-      sql`select count(*) as live from orders o where o.group_id = ${o.groupId} and o.status not in ('cancelled','rejected')`,
+      sql`select count(*) as live from orders o where o.group_id = ${o.groupId} and o.status not in ('cancelled','rejected','returned')`,
     ),
   );
   // Every part cancelled or rejected is the other rule's case (`releaseCouponIfOrderDead`); nothing refunded yet either.

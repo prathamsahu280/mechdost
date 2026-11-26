@@ -294,6 +294,8 @@ export const deliveryJobs = pgTable(
     failNote: text(),
     /** Why the job ended `returned`: brought back to send again (`retry`) or to close the sub-order (`close`). */
     returnOutcome: text(),
+    /** Staff's choice when a failed parcel goes back: send it out again with another agent, or close the sub-order. */
+    returnIntent: text(),
     cancelReason: text(),
     acceptedAt: ts(),
     pickedUpAt: ts(),
@@ -328,6 +330,10 @@ export const deliveryJobs = pgTable(
     check(
       'delivery_jobs_return_outcome',
       sql`(${t.status} = 'returned') = (${t.returnOutcome} is not null) and (${t.returnOutcome} is null or ${t.returnOutcome} in ('retry','close'))`,
+    ),
+    check(
+      'delivery_jobs_return_intent',
+      sql`(${t.returnIntent} is null or ${t.returnIntent} in ('retry','close')) and (${t.status} <> 'returning' or ${t.returnIntent} is not null)`,
     ),
     check(
       'delivery_jobs_override',

@@ -59,7 +59,7 @@ export interface ServerEventProps extends UstaadServerEventProps, DeliveryServer
   order_fulfilment_step: {
     orderCode: string;
     shopId: string;
-    step: 'packed' | 'shipped' | 'out_for_delivery';
+    step: 'packed' | 'ready_for_pickup' | 'shipped' | 'out_for_delivery';
   };
   admin_customer_blocked: { customerId: string; level: string; reasonCode: string };
   admin_customer_unblocked: { customerId: string; level: string };
