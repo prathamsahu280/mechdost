@@ -17,6 +17,7 @@ import {
   findOpenInvite,
   openInvite,
   publishAgreement,
+  readUstaadAccess,
   rejectApplication,
   revokeInvite,
   shopAgreementStatus,
@@ -137,6 +138,17 @@ export async function human(deps: AppDeps, c: Context<AppEnv>, token: string) {
   if (!ok) throw new ApiError(400, 'TURNSTILE_FAILED', 'Complete the check and try again');
 }
 
+/**
+ * Spec 23 § 4a: once the Ustaad Network is open to everyone (`ustaad.access` = `open`), a mechanic application is the
+ * network join and old clients get a stable 410. While it is `off` or `staff_preview` the public form behaves exactly
+ * as before and never mentions the network (lead 2026-11-26).
+ */
+async function refuseMechanicWhenOpen(deps: AppDeps, raw: unknown): Promise<void> {
+  if (typeof raw !== 'object' || raw === null || (raw as { kind?: unknown }).kind !== 'mechanic') return;
+  if ((await readUstaadAccess(deps.db)) === 'open')
+    throw new ApiError(410, 'MOVED_TO_USTAAD', 'Mechanics now join the Ustaad Network at /ustaad/join');
+}
+
 function parseApplication(raw: unknown) {
   const parsed = SellerApplicationSchema.safeParse(raw);
   if (!parsed.success)
@@ -172,6 +184,7 @@ export function partnerPublicRoutes(deps: AppDeps) {
     }),
     async (c) => {
       const b = c.req.valid('json');
+      await refuseMechanicWhenOpen(deps, b.application);
       const application = parseApplication(b.application);
       await human(deps, c, b.turnstileToken);
       await enforceRate(c, deps.rateLimiter, APPLY_PER_PHONE, phoneKey(application.phone), 1);

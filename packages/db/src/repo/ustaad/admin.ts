@@ -66,6 +66,8 @@ import type { Tx } from '../orders';
 
 const SETTINGS_LOCK = sql`select pg_advisory_xact_lock(hashtextextended('ustaad:settings', 0))`;
 
+/** 1× (no extra Coins) while PENDING #19 is open; `levelRuleRefusal()` in shared uses the same limit. */
+const COIN_MULTIPLIER_MAX_BP = 10_000;
 const invariant = (key: string) =>
   new ValidationError(`${key} breaks a network rule`, 'SETTING_INVARIANT', { key });
 const stale = () => new ConflictError('Someone else changed this; reload and try again', 'STALE');
@@ -269,6 +271,11 @@ function checkVersion<R extends { version: number }>(row: R | undefined, version
 const staffReviewLocked = (r: LevelRuleWrite) => {
   if ((r.level === 'bada' || r.level === 'master') && !r.needsStaffReview)
     throw invariant('needsStaffReview');
+  // Spec 23 § 9.2 / spec 20: a Coins multiplier above 1× is money; refused until the order-reward guard (PENDING #19).
+  if (r.coinMultiplierBp > COIN_MULTIPLIER_MAX_BP)
+    throw new ValidationError('Coin multipliers stay off for now', 'COIN_GUARD_REQUIRED', {
+      key: 'coinMultiplierBp',
+    });
 };
 
 export async function listUstaadLevelRules(db: Tx) {

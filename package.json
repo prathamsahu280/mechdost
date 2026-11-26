@@ -18,6 +18,7 @@
     "db:seed:demo": "pnpm --filter @mechdost/db seed:demo",
     "db:seed:pincodes": "pnpm --filter @mechdost/db seed:pincodes",
     "db:grant-role": "pnpm --filter @mechdost/db grant-role",
+    "db:ustaad:map-mechanic-applications": "pnpm --filter @mechdost/db ustaad:map-mechanic-applications",
     "wa:templates": "pnpm --filter @mechdost/api wa:templates",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

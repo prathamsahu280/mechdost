@@ -33,6 +33,7 @@ import {
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../errors';
 import type { Tx } from '../orders';
 import { insertUserRole } from '../rbac';
+import { markUstaadInviteJoined, ustaadInviteFor } from './application-links';
 import { recordUstaadEvent } from './events';
 import { assertUstaadNameAllowed } from './names';
 import { readUstaadSettingValues } from './settings';
@@ -201,9 +202,12 @@ export async function joinUstaad(
   } as const;
   for (const m of input.verifyMethods)
     if (!methodOn[m]) throw new ValidationError(`The ${m} proof is not available`, 'USTAAD_METHOD_OFF');
-  // `invite_only` is refused outright until workstream B checks `fromApplication` against `ustaad_application_links`
-  // (a code alone proves nothing; review 2026-11-26).
-  if (s['ustaad.general.join_mode'] === 'invite_only')
+  // `fromApplication` counts only when the invite row matches this user's verified phone (a code alone proves nothing;
+  // review 2026-11-26). `invite_only` lets in only such invites.
+  const invite = input.fromApplication
+    ? await ustaadInviteFor(db, actor.userId, input.fromApplication)
+    : null;
+  if (s['ustaad.general.join_mode'] === 'invite_only' && !invite)
     throw new ValidationError('Joining is by invite right now', 'USTAAD_JOIN_CLOSED');
   await assertUstaadNameAllowed(db, input.displayName);
 
@@ -226,6 +230,7 @@ export async function joinUstaad(
       garageName: input.garageName ?? null,
       showGarage: input.showGarage,
       yearsClaimed: input.yearsClaimed,
+      ...(invite ? { sourceApplicationId: invite.applicationId } : {}),
     };
     let row: MemberRow | undefined;
     if (existing) {
@@ -294,6 +299,7 @@ export async function joinUstaad(
         .values({ memberId: member.id, proofKinds: [...new Set(input.verifyMethods)] })
         .onConflictDoNothing();
     }
+    if (invite) await markUstaadInviteJoined(tx, invite, member.id);
     await grantMechanic(tx, actor.userId);
     await recordUstaadEvent(
       tx,

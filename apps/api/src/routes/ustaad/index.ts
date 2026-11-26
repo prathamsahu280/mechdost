@@ -21,6 +21,7 @@ import { ustaadMediaRoutes } from './media';
 import { ustaadCorrectRoutes } from './correct';
 import { ustaadLocalRoutes } from './local';
 import { ustaadMemberRoutes } from './members';
+import { ustaadVerificationRoutes } from './verification';
 import { ustaadQaRoutes } from './qa';
 
 const accessRoute = createRoute({
@@ -47,7 +48,8 @@ export function ustaadRoutes(deps: AppDeps, sessions: SessionCache, access: Usta
   });
   app.route('/', ustaadMemberRoutes(deps, sessions));
   app.route('/', ustaadMediaRoutes(deps));
-  // B: app.route('/', ustaadProfileRoutes(deps, sessions)); app.route('/', ustaadVerificationRoutes(deps));
+  app.route('/', ustaadVerificationRoutes(deps));
+  // B (later): app.route('/', ustaadProfileRoutes(deps, sessions));
   app.route('/', ustaadQaRoutes(deps));
   // D: app.route('/', ustaadPostRoutes(deps)); app.route('/', ustaadFeedRoutes(deps)); …
   app.route('/', ustaadLocalRoutes(deps));
