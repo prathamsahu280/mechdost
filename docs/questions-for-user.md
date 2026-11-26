@@ -249,6 +249,8 @@ Status values: `open` · `answered` · `withdrawn`. Priority: P0 blocks a featur
 
 The shop now has the new vehicle chips ("Kind of vehicle": two-wheeler, three-wheeler, car & SUV, light commercial, truck & bus, tractor & farm, construction & OTR, not a vehicle) and still the older "Vehicle type" dropdown (bikes 2W / autos 3W / cars 4W). They overlap for bikes and cars. Default used meanwhile: keep both (the dropdown also drives saved-vehicle fit). Decide whether to remove the dropdown once the chips are live and staff have tagged the untagged general products.
 
+**ANSWERED 2026-11-26 (founder): "yes we can replace the old vehicle type drop down".** Built: the select is gone, old `?vehicle=` links redirect to the matching chip (2W → two-wheeler, 3W → three-wheeler, 4W → car & SUV). Correction to the note above: the dropdown never drove saved-vehicle fit — "Fits your vehicle" on multi-size products compares the saved vehicle's type, make and model with each size's fitment and is unchanged (spec 02 "Vehicle type select retired").
+
 ### Q-segments-2: who tags the general-category products? (2026-11-25, default: untagged until staff do it)
 
 Greases, gear oils, coolants, filters, bearings, accessories and similar categories are not mapped to a segment on purpose; their products take a segment only from their vehicle types and otherwise stay untagged (they show in "All vehicles" only). Staff can tag them one by one in the product editor (Fit & specs, "Vehicle segments") or you can send a category-to-segment ruling to add to the mapping table.

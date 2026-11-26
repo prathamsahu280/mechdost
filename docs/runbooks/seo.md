@@ -87,7 +87,7 @@ Next steps, queued in `docs/questions-for-user.md` (Q199-Q200):
 - City landing pages `/raipur`, `/raipur/car-service`, `/raipur/bike-service`, `/raipur/battery-replacement` (and Hindi),
   each with real workshops/products, a live price table and city FAQs. Only where there is real inventory (thin
   doorway pages get demoted). Needs the city selector (spec 15) or a city route segment.
-- Vehicle-fitment listings (`/shop?vehicle=…` landing pages, e.g. "batteries for Honda Activa") once fitment data is
+- Vehicle-fitment listings (`/shop?segment=…` landing pages; `?vehicle=` now redirects to `?segment=`, 2026-11-26, e.g. "batteries for Honda Activa") once fitment data is
   in the catalogue.
 - A sitemap index split by type when the catalogue passes ~2,000 products (`MAX_PRODUCT_PAGES` in
   `sitemap-entries.ts`).

@@ -238,7 +238,7 @@ Storefront edit shortcut (2026-11-25): client `admin_storefront_edit_clicked { s
 
 ## Vehicle segments (2026-11-25)
 
-Client `shop_segment_filtered { segments: VehicleSegment[], count }` (the shop's chips changed; codes and a count, no text) and `home_segment_tile_clicked { segment }` (a "Shop by vehicle" tile). `admin_site_change` gains `area: 'segments'` (the segment panel saved). Registered in `CLIENT_EVENT_SCHEMAS` (strict), tested in `packages/shared/test/vehicle-segments.test.ts`.
+Since 2026-11-26 the shop's only vehicle filter (the 2W/3W/4W select and its click ids `shop_vehicle_<type>` are retired; old `?vehicle=` links redirect to the segment, spec 02). Client `shop_segment_filtered { segments: VehicleSegment[], count }` (the shop's chips changed; codes and a count, no text) and `home_segment_tile_clicked { segment }` (a "Shop by vehicle" tile). `admin_site_change` gains `area: 'segments'` (the segment panel saved). Registered in `CLIENT_EVENT_SCHEMAS` (strict), tested in `packages/shared/test/vehicle-segments.test.ts`.
 
 ## Ustaad Network admin (2026-11-26, spec 23 task G1)
 

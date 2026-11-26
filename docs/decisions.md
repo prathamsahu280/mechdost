@@ -2394,3 +2394,21 @@ Spec 23 § 21f. Rulings made while building (lead brief + security review of the
   4W → car_suv) so "fits my vehicle" keeps working. Q-segments answered.
 - "fix the test failures": the pre-existing qa-regressions failures (B1 Hindi rejection, theme with full storage,
   QA 13 free-delivery line) are fixed at their root cause.
+
+## 2026-11-26 — Vehicle type select retired (as built); qa-regressions root causes
+
+- **Shop (founder ruling above, Q-segments):** the 2W/3W/4W select, its `?vehicle=` URL state and click ids
+  `shop_vehicle_<type>` are gone from the web; the "Kind of vehicle" chips are the only vehicle filter. Old
+  `/shop?vehicle=2W|3W|4W` links answer 308 to `?segment=two_wheeler|three_wheeler|car_suv` (merged with chosen
+  segments, other parameters kept). The catalogue API keeps `?vehicle=` for other clients. Spec 02 "Vehicle type select
+  retired". **Correction to the ruling's wording:** "fits my vehicle" never used the select (the per-size fit matches the
+  saved vehicle's type, make and model against each size's fitment), so nothing had to move; results under a chip
+  differ slightly from the old type filter because the category decides first (a CV battery tagged 4W is truck & bus).
+- **qa-regressions (five failures, three causes):** (1) B1 desktop + mobile — the test asserted the Hindi rejection
+  sentence that named "a nearby shop", reworded by the 2026-11-22 ruling "customers never see the shop" (8559dfec):
+  test re-pointed to the current sentence, every assertion kept. (2) Theme with full storage (desktop; mobile skips by
+  design) — **product bug:** "light by default" (3b54a77c, 2026-11-23) made the pre-paint guard's MutationObserver
+  re-apply "saved or light" on every change, so a dark choice that could not be saved was reverted at once; the
+  observer now restores only a missing or invalid `data-theme` (unit test). (3) QA 13 desktop + mobile — the test
+  expected the city free-delivery amount at a demo checkout, removed on purpose by Q196 (2026-11-16, 69f077f0): test
+  re-pointed to the ruling (neutral delivery line shown while a fee is charged, no city amount).
