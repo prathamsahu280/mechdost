@@ -73,6 +73,7 @@ export function demoAgentClient(accountId: string, locale: string): AgentClient 
       const r = d.saveAgentDocument(agentId(), kind, number);
       return Promise.resolve(r.ok ? me() : done(r));
     },
+    earnings: () => Promise.resolve({ ok: true, data: d.agentEarnings(agentId()) }),
   };
 }
 
@@ -185,5 +186,15 @@ export function demoAdminDeliveryClient(locale: string): AdminDeliveryClient {
       ),
     decideMode: (id, approve, version, reason) =>
       Promise.resolve(done(d.decideShopMode(id, approve, version, reason))),
+    payouts: (filter) => Promise.resolve(page(d.adminPayouts(filter))),
+    recordPayout: (input) => {
+      const r = d.recordPayout(input);
+      return Promise.resolve(r.ok ? { ok: true, data: null } : done(r));
+    },
+    correctPayout: (id, note) => {
+      const r = d.correctPayout(id, note);
+      return Promise.resolve(r.ok ? { ok: true, data: null } : done(r));
+    },
+    payoutSummary: (from, to) => Promise.resolve({ ok: true, data: { items: d.payoutSummary(from, to) } }),
   };
 }

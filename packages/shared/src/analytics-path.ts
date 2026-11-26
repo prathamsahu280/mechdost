@@ -4,7 +4,9 @@
  * analytics keeps the route shape and drops the token.
  * Dependency-free so the browser `track()` can use it without the Zod registry.
  */
-const SECRET_SEGMENTS = /^((?:\/hi)?\/(?:partners\/invite|ustaad-attest|ustaad\/s))\/[^/?#]+(?:\/[^?#]*)?/u;
+// The delivery-agent invite `/partners/delivery-invite/<token>` too (spec 24, 2026-11-26).
+const SECRET_SEGMENTS =
+  /^((?:\/hi)?\/(?:partners\/invite|partners\/delivery-invite|ustaad-attest|ustaad\/s))\/[^/?#]+(?:\/[^?#]*)?/u;
 
 export function redactPath(path: string): string {
   return path.replace(SECRET_SEGMENTS, '$1/:token');

@@ -1,6 +1,6 @@
 'use client';
 
-import type { ApplicationStatusView } from '@mechdost/shared/shop-tools';
+import type { ApplicationStatusView as SharedStatusView } from '@mechdost/shared/shop-tools';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState, type SyntheticEvent } from 'react';
 import { useApplications } from '@/demo/partner-store';
@@ -19,6 +19,13 @@ const primary =
 const quiet =
   'press inline-flex min-h-11 items-center justify-center rounded-button border border-input-border px-4 text-sm font-bold text-ink hover:bg-pill';
 const RECAPTCHA_ID = 'status-recaptcha';
+/**
+ * Delivery-agent applications (spec 24) share the lookup; the shared status schema does not list that kind yet
+ * (contract gap), so the screen widens it here.
+ */
+type ApplicationStatusView = Omit<SharedStatusView, 'kind'> & {
+  kind: SharedStatusView['kind'] | 'delivery_agent';
+};
 
 const e164 = (raw: string) => {
   const digits = raw.replace(/[\s-]/g, '');
@@ -310,9 +317,23 @@ function DemoStatus() {
   const [view, setView] = useState<ApplicationStatusView | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
+  async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     const digits = phone.replace(/\D/g, '').slice(-10);
+    // Delivery-agent applications live in the demo delivery store (loaded only for this lookup).
+    const { agentApplication } = await import('@/demo/delivery-store');
+    const agentApp = agentApplication(normaliseRef(ref));
+    if (agentApp?.phone.replace(/\D/g, '').slice(-10) === digits) {
+      setError(null);
+      setView({
+        code: agentApp.code,
+        kind: 'delivery_agent',
+        stage:
+          agentApp.status === 'rejected' ? 'rejected' : agentApp.status === 'invited' ? 'approved' : 'new',
+        updatedAt: agentApp.createdAt,
+      });
+      return;
+    }
     const found = apps.find(
       (a) => a.code === normaliseRef(ref) && a.phone.replace(/\D/g, '').slice(-10) === digits,
     );
@@ -341,7 +362,7 @@ function DemoStatus() {
   return (
     <div className="max-w-xl rounded-card border border-line-card bg-surface p-6 shadow-card">
       <p className="text-sm text-muted">{t('statusLead')}</p>
-      <form onSubmit={onSubmit} className="mt-4 space-y-4">
+      <form onSubmit={(e) => void onSubmit(e)} className="mt-4 space-y-4">
         <div>
           <label htmlFor="status-ref" className="text-sm font-bold text-ink">
             {t('statusRef')}

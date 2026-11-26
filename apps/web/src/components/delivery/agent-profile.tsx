@@ -1,12 +1,15 @@
 'use client';
 
 import { AGENT_DOCUMENT_KINDS, type AgentDocumentKind } from '@mechdost/shared/delivery/codes';
-import { useTranslations } from 'next-intl';
-import { useEffect, useState, type SyntheticEvent } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useCallback, useEffect, useState, type SyntheticEvent } from 'react';
 import { portalField } from '@/components/portal/portal-styles';
 import { track } from '@/lib/analytics';
+import { formatDate, formatPrice } from '@/lib/format';
+import type { AgentEarningsView } from '@/lib/delivery/types';
+import { useLiveReload } from '@/lib/delivery/use-delivery-client';
 import { useAgent } from './agent-portal';
-import { PhotoCapture, bigPrimary, bigQuiet, useStatusLine } from './parts';
+import { LoadGate, PhotoCapture, bigPrimary, bigQuiet, useStatusLine } from './parts';
 
 const card = 'rounded-card border border-line-card bg-surface p-4 shadow-card';
 
@@ -55,13 +58,81 @@ export function AgentProfileScreen() {
         </ul>
       </section>
 
-      <section aria-labelledby="agent-earnings-title" className={card}>
-        <h2 id="agent-earnings-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('earningsTitle')}
-        </h2>
-        <p className="mt-1 text-sm text-muted">{t('earningsBody')}</p>
-      </section>
+      <Earnings />
     </div>
+  );
+}
+
+/**
+ * Earnings (founder ruling 2026-11-26: payouts are manual for now): the agent's own payouts as MechDost recorded them
+ * (date, period, amount, method, reference; a correction shows as a minus line) and their delivered jobs.
+ */
+function Earnings() {
+  const t = useTranslations('deliveryAgent');
+  const locale = useLocale();
+  const ctx = useAgent();
+  const [data, setData] = useState<AgentEarningsView | null>(null);
+  const [failed, setFailed] = useState(false);
+  const client = ctx?.client ?? null;
+  const reload = useCallback(() => {
+    if (!client) return;
+    void client.earnings().then((r) => {
+      if (r.ok) {
+        setData(r.data);
+        setFailed(false);
+      } else setFailed(true);
+    });
+  }, [client]);
+  useLiveReload(client, reload, 60_000);
+  return (
+    <section aria-labelledby="agent-earnings-title" className={card}>
+      <h2 id="agent-earnings-title" className="font-heading text-xl font-extrabold text-ink">
+        {t('earningsTitle')}
+      </h2>
+      <LoadGate loading={!data && !failed} error={!data && failed ? t('loadError') : null} onRetry={reload}>
+        {data ? (
+          <>
+            <p className="mt-1 text-[15px] font-bold text-ink">
+              {t('deliveredCount', { count: data.deliveredJobs })}
+            </p>
+            {data.payouts.length === 0 ? (
+              <p className="mt-2 text-sm text-muted">{t('earningsEmpty')}</p>
+            ) : (
+              <ul className="mt-2 divide-y divide-line">
+                {data.payouts.map((p) => (
+                  <li key={p.id} className="flex flex-wrap items-start justify-between gap-2 py-2">
+                    <span className="text-sm text-ink">
+                      <span className="block font-bold">{formatDate(p.createdAt, locale)}</span>
+                      <span className="block text-muted">
+                        {t('payoutPeriod', {
+                          from: formatDate(p.periodFrom, locale),
+                          to: formatDate(p.periodTo, locale),
+                        })}
+                      </span>
+                      <span className="block text-muted">
+                        {t(`method_${p.method}`)}
+                        {p.reference ? (
+                          <>
+                            {' · '}
+                            <span lang="en">{p.reference}</span>
+                          </>
+                        ) : null}
+                        {p.reversesId ? ` · ${t('payoutCorrection')}` : ''}
+                      </span>
+                    </span>
+                    <span
+                      className={`font-heading text-lg font-extrabold tabular-nums ${p.amountPaise < 0 ? 'text-error' : 'text-ink'}`}
+                    >
+                      {p.amountPaise < 0 ? `− ${formatPrice(-p.amountPaise)}` : formatPrice(p.amountPaise)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        ) : null}
+      </LoadGate>
+    </section>
   );
 }
 

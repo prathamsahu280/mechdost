@@ -149,6 +149,48 @@ export interface AgentClient extends Live {
   /** A property, not a method: screens pass it on as `upload={client.uploadPhoto}`. */
   uploadPhoto: (file: Blob, purpose: PhotoPurpose) => Promise<Result<{ mediaId: string }>>;
   saveDocument(kind: AgentDocumentKind, number: string, mediaId: string): Promise<Result<AgentProfileView>>;
+  /** Own payouts and delivered jobs (founder ruling 2026-11-26: manual payouts). */
+  earnings(): Promise<Result<AgentEarningsView>>;
+}
+
+/**
+ * Manual payouts (founder ruling 2026-11-26): staff record what they paid an agent; a correction is a reversing entry.
+ * The contract DTOs come in a later backend commit; the web builds against this shape meanwhile (report: contract gap).
+ */
+export const PAYOUT_METHODS = ['upi', 'bank_transfer', 'cash', 'other'] as const;
+export type PayoutMethod = (typeof PAYOUT_METHODS)[number];
+export interface PayoutView {
+  id: string;
+  agentId: string;
+  amountPaise: number;
+  periodFrom: string;
+  periodTo: string;
+  method: PayoutMethod;
+  reference: string | null;
+  note: string | null;
+  createdAt: string;
+  reversesId: string | null;
+  corrected: boolean;
+}
+export type AdminPayoutView = PayoutView & { agentName: string };
+export interface PayoutInputView {
+  agentId: string;
+  amountPaise: number;
+  periodFrom: string;
+  periodTo: string;
+  method: PayoutMethod;
+  reference?: string;
+  note?: string;
+}
+export interface PayoutSummaryRow {
+  agentId: string;
+  name: string;
+  delivered: number;
+  paidPaise: number;
+}
+export interface AgentEarningsView {
+  payouts: PayoutView[];
+  deliveredJobs: number;
 }
 
 export interface ShopDeliveryClient extends Live {
@@ -225,4 +267,9 @@ export interface AdminDeliveryClient extends Live {
     version: number,
     reasonCode?: ShopModeRejectReason,
   ): Promise<Result<null>>;
+  payouts(filter: { agentId?: string; from?: string; to?: string }): Promise<Result<Page<AdminPayoutView>>>;
+  recordPayout(input: PayoutInputView): Promise<Result<null>>;
+  correctPayout(id: string, note: string): Promise<Result<null>>;
+  /** Per agent: delivered jobs in the period and what was already paid for it. */
+  payoutSummary(from: string, to: string): Promise<Result<{ items: PayoutSummaryRow[] }>>;
 }

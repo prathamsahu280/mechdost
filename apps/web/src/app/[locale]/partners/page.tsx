@@ -34,6 +34,8 @@ const KINDS = [
   { kind: 'seller', emoji: '🏪' },
   { kind: 'garage', emoji: '🔧' },
   { kind: 'mechanic', emoji: '🛠️' },
+  // Delivery agents (spec 24, 2026-11-26).
+  { kind: 'delivery_agent', emoji: '🛵' },
 ] as const;
 const POINTS = [1, 2, 3] as const;
 const STEPS = [
@@ -54,7 +56,7 @@ export default async function PartnersPage() {
   return (
     <Container className="py-12 tab:py-16">
       <PageIntro eyebrow={t('eyebrow')} line1={t('titleLine1')} line2={t('titleLine2')} lead={t('lead')} />
-      <ul className="mt-10 grid gap-4 nav:grid-cols-3">
+      <ul className="mt-10 grid gap-4 nav:grid-cols-2 min-[1280px]:grid-cols-4">
         {KINDS.map(({ kind, emoji }) => (
           <li
             key={kind}

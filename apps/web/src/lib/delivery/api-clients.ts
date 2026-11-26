@@ -20,10 +20,15 @@ import type {
   AdminDeliveryClient,
   AgentApplicationView,
   AgentClient,
+  AdminPayoutView,
+  AgentEarningsView,
   Page,
+  PayoutSummaryRow,
+  PayoutView,
   Result,
   ShopDeliveryClient,
 } from './types';
+import { PAYOUT_METHODS } from './types';
 
 /**
  * The delivery-agent clients on the API (spec 24 route table; real sign-in builds only). Loaded with `import()` by
@@ -81,6 +86,7 @@ export function apiAgentClient(locale: string): AgentClient {
         method: 'PUT',
         body: { kind, number, mediaId },
       }),
+    earnings: () => adminApi(locale, '/agent/me/earnings', Earnings),
   };
 }
 
@@ -201,6 +207,63 @@ const JobList: ResponseSchema<{ items: { jobId: string }[] }> = {
   },
 };
 
+// Manual payouts (founder ruling 2026-11-26): no shared DTO yet (contract gap), so these guards check the shape.
+const num = (v: unknown) => typeof v === 'number' && Number.isInteger(v);
+const isPayout = (v: unknown): v is PayoutView =>
+  isRec(v) &&
+  typeof v.id === 'string' &&
+  typeof v.agentId === 'string' &&
+  num(v.amountPaise) &&
+  typeof v.periodFrom === 'string' &&
+  typeof v.periodTo === 'string' &&
+  typeof v.method === 'string' &&
+  (PAYOUT_METHODS as readonly string[]).includes(v.method) &&
+  typeof v.createdAt === 'string' &&
+  (v.corrected === undefined || typeof v.corrected === 'boolean');
+const PayoutPage: ResponseSchema<Page<AdminPayoutView>> = {
+  safeParse: (v) =>
+    isRec(v) && Array.isArray(v.items) && v.items.every(isPayout)
+      ? {
+          success: true,
+          data: {
+            items: v.items.map((x) => ({
+              ...x,
+              agentName:
+                typeof (x as unknown as Rec).agentName === 'string'
+                  ? String((x as unknown as Rec).agentName)
+                  : '',
+              reference: x.reference ?? null,
+              note: x.note ?? null,
+              reversesId: x.reversesId ?? null,
+              corrected: x.corrected,
+            })),
+            nextCursor: strOrNull(v.nextCursor),
+          },
+        }
+      : { success: false },
+};
+const Earnings: ResponseSchema<AgentEarningsView> = {
+  safeParse: (v) =>
+    isRec(v) && Array.isArray(v.payouts) && v.payouts.every(isPayout) && num(v.deliveredJobs)
+      ? { success: true, data: { payouts: v.payouts, deliveredJobs: v.deliveredJobs as number } }
+      : { success: false },
+};
+const SummaryPage: ResponseSchema<{ items: PayoutSummaryRow[] }> = {
+  safeParse: (v) =>
+    isRec(v) &&
+    Array.isArray(v.items) &&
+    v.items.every(
+      (r) =>
+        isRec(r) &&
+        typeof r.agentId === 'string' &&
+        typeof r.name === 'string' &&
+        num(r.delivered) &&
+        num(r.paidPaise),
+    )
+      ? { success: true, data: { items: v.items as PayoutSummaryRow[] } }
+      : { success: false },
+};
+
 export function apiAdminDeliveryClient(locale: string): AdminDeliveryClient {
   const get = <T>(path: string, schema: ResponseSchema<T>) => adminApi(locale, path, schema);
   const post = <T>(path: string, schema: ResponseSchema<T>, body: unknown = {}) =>
@@ -280,5 +343,13 @@ export function apiAdminDeliveryClient(locale: string): AdminDeliveryClient {
         version,
         ...(reasonCode ? { reasonCode } : {}),
       }),
+    payouts: (f) =>
+      get(
+        `/admin/delivery/payouts${qs({ agentId: f.agentId ?? null, from: f.from ?? null, to: f.to ?? null })}`,
+        PayoutPage,
+      ),
+    recordPayout: (input) => post('/admin/delivery/payouts', Empty, input),
+    correctPayout: (id, note) => post(`/admin/delivery/payouts/${enc(id)}/correct`, Empty, { note }),
+    payoutSummary: (from, to) => get(`/admin/delivery/payouts/summary${qs({ from, to })}`, SummaryPage),
   };
 }

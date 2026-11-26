@@ -49,7 +49,7 @@ import {
   type ShopModeRequestStatus,
 } from '@mechdost/shared/delivery/codes';
 import { publicCode } from '@mechdost/shared/ids';
-import type { RatingReason } from '@/lib/delivery/types';
+import { PAYOUT_METHODS, type PayoutMethod, type RatingReason } from '@/lib/delivery/types';
 import { agentStatusMachine, deliveryJobMachine } from '@mechdost/shared/state';
 import { localizeArea, localizeShop, productNameFor } from './i18n/localize';
 import { DEMO_SHOPS, findShop } from './shops';
@@ -208,6 +208,7 @@ interface DeliveryState {
   modeRequests: DemoModeRequest[];
   switches: DemoSwitch[];
   ratings: DemoRating[];
+  payouts: DemoPayout[];
   settings: DemoDeliverySettings;
 }
 
@@ -289,6 +290,7 @@ function seedState(): DeliveryState {
     modeRequests: [],
     switches: [],
     ratings: [],
+    payouts: [],
     settings: {
       agentsEnabled: true,
       // Founder 2026-11-26: 15 minutes by default, per city.
@@ -316,7 +318,12 @@ let seeded: DeliveryState | null = null;
 /** The saved state, or the seed until the first change on this device. Stable between writes (React snapshots). */
 export function deliveryState(): DeliveryState {
   const stored = read(KEYS.delivery, isState)[0];
-  if (stored) return { ...stored, ratings: Array.isArray(stored.ratings) ? stored.ratings : [] };
+  if (stored)
+    return {
+      ...stored,
+      ratings: Array.isArray(stored.ratings) ? stored.ratings : [],
+      payouts: Array.isArray(stored.payouts) ? stored.payouts : [],
+    };
   seeded ??= seedState();
   return seeded;
 }
@@ -1794,3 +1801,128 @@ export function adminDocument(id: string, kind: AgentDocumentKind) {
   return d ? { kind, number: d.number, photoUrl: '', status: d.status } : null;
 }
 export const agentApplications = () => deliveryState().applications;
+
+// ── payouts (founder ruling 2026-11-26: manual for now) ────────────────────────────────────────────────────────────
+
+export { PAYOUT_METHODS };
+export type { PayoutMethod };
+/** One payment staff made to an agent, or the reversing entry of a correction (append-only, integer paise). */
+export interface DemoPayout {
+  id: string;
+  agentId: string;
+  amountPaise: number;
+  /** IST calendar dates (YYYY-MM-DD), inclusive. */
+  periodFrom: string;
+  periodTo: string;
+  method: PayoutMethod;
+  reference: string | null;
+  note: string | null;
+  createdAt: string;
+  /** Set on a correction: the payout it reverses. */
+  reversesId: string | null;
+}
+export interface PayoutInput {
+  agentId: string;
+  amountPaise: number;
+  periodFrom: string;
+  periodTo: string;
+  method: PayoutMethod;
+  reference?: string;
+  note?: string;
+}
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const blankToNull = (v: string | undefined) => (v === undefined || v === '' ? null : v);
+/** ₹10 lakh: a typo guard, not a business limit. */
+const MAX_PAYOUT_PAISE = 100_000_000;
+
+export function recordPayout(input: PayoutInput): Res<{ id: string }> {
+  if (!Number.isInteger(input.amountPaise) || input.amountPaise <= 0 || input.amountPaise > MAX_PAYOUT_PAISE)
+    return fail('BAD_AMOUNT');
+  if (!DATE_RE.test(input.periodFrom) || !DATE_RE.test(input.periodTo) || input.periodFrom > input.periodTo)
+    return fail('BAD_PERIOD');
+  if (!PAYOUT_METHODS.includes(input.method)) return fail('BAD_METHOD');
+  return change((s, now) => {
+    if (!s.agents.some((a) => a.id === input.agentId)) return fail('NOT_FOUND');
+    const row: DemoPayout = {
+      id: newId(),
+      agentId: input.agentId,
+      amountPaise: input.amountPaise,
+      periodFrom: input.periodFrom,
+      periodTo: input.periodTo,
+      method: input.method,
+      reference: blankToNull(input.reference?.trim().slice(0, 60)),
+      note: blankToNull(input.note?.trim().slice(0, 300)),
+      createdAt: now,
+      reversesId: null,
+    };
+    return { state: { ...s, payouts: [...s.payouts, row] }, result: ok({ id: row.id }) };
+  });
+}
+
+/** "Correct this payout": a reversing entry with the negative amount; the original stays (append-only). */
+export function correctPayout(id: string, note: string): Res<{ id: string }> {
+  return change((s, now) => {
+    const original = s.payouts.find((x) => x.id === id);
+    if (!original) return fail('NOT_FOUND');
+    if (original.reversesId !== null || s.payouts.some((x) => x.reversesId === id))
+      return fail('ALREADY_CORRECTED');
+    const row: DemoPayout = {
+      ...original,
+      id: newId(),
+      amountPaise: -original.amountPaise,
+      note: note.trim().slice(0, 300) || null,
+      createdAt: now,
+      reversesId: id,
+    };
+    return { state: { ...s, payouts: [...s.payouts, row] }, result: ok({ id: row.id }) };
+  });
+}
+
+export function adminPayouts(filter: { agentId?: string; from?: string; to?: string }) {
+  const s = deliveryState();
+  const corrected = new Set(s.payouts.flatMap((x) => (x.reversesId ? [x.reversesId] : [])));
+  return s.payouts
+    .filter(
+      (x) =>
+        (!filter.agentId || x.agentId === filter.agentId) &&
+        (!filter.from || x.periodTo >= filter.from) &&
+        (!filter.to || x.periodFrom <= filter.to),
+    )
+    .toSorted((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .map((x) => ({
+      ...x,
+      agentName: s.agents.find((a) => a.id === x.agentId)?.name ?? '',
+      corrected: corrected.has(x.id),
+    }));
+}
+
+/** IST calendar date of an instant. */
+const istDay = (iso: string) => new Date(Date.parse(iso) + 330 * 60_000).toISOString().slice(0, 10);
+
+/** Per agent: delivered jobs in the period (IST dates) and what was paid for periods overlapping it. */
+export function payoutSummary(from: string, to: string) {
+  const s = deliveryState();
+  return s.agents.map((a) => ({
+    agentId: a.id,
+    name: a.name,
+    delivered: s.jobs.filter(
+      (j) =>
+        j.agentId === a.id &&
+        j.status === 'delivered' &&
+        istDay(j.statusAt) >= from &&
+        istDay(j.statusAt) <= to,
+    ).length,
+    paidPaise: s.payouts
+      .filter((x) => x.agentId === a.id && x.periodTo >= from && x.periodFrom <= to)
+      .reduce((n, x) => n + x.amountPaise, 0),
+  }));
+}
+
+/** The agent's own Earnings screen: their payouts (newest first) and delivered jobs. */
+export function agentEarnings(agentId: string) {
+  const s = deliveryState();
+  return {
+    payouts: adminPayouts({ agentId }).map(({ agentName: _n, ...x }) => x),
+    deliveredJobs: s.jobs.filter((j) => j.agentId === agentId && j.status === 'delivered').length,
+  };
+}

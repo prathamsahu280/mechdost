@@ -352,7 +352,13 @@
       "step3Body": "Add your products or services, hours and the PIN codes you cover.",
       "step4Title": "Go live",
       "step4Body": "Start receiving orders and service requests in {region}.",
-      "helpLine": "Questions before you apply? Call us:"
+      "helpLine": "Questions before you apply? Call us:",
+      "delivery_agentTitle": "Deliver with MechDost",
+      "delivery_agentBody": "Pick up parts from nearby shops and deliver them to customers on your own vehicle.",
+      "delivery_agentPoint1": "Go online when it suits you",
+      "delivery_agentPoint2": "See the pickup area and drop PIN before you accept",
+      "delivery_agentPoint3": "Simple pickup and delivery codes, MechDost support one call away in {region}",
+      "delivery_agentAction": "Apply as a delivery agent"
     },
     "account": {
       "eyebrow": "Your MechDost account",
@@ -5344,7 +5350,8 @@
     "staffShow90": "Show 90 days",
     "staffSeeOrders": "See new orders",
     "staffRetry": "Try again",
-    "staffLoadError": "We could not load this. Check your connection and try again."
+    "staffLoadError": "We could not load this. Check your connection and try again.",
+    "statusKind_delivery_agent": "Delivery agent application"
   },
   "shopTier1": {
     "busyTitle": "Availability",
@@ -9146,7 +9153,15 @@
     "retry": "Try again",
     "genericError": "Something went wrong. Try again.",
     "noJob": "This job is not available to you.",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "deliveredCount": "{count, plural, =0 {No deliveries yet} one {# delivery done} other {# deliveries done}}",
+    "earningsEmpty": "No payouts recorded yet. MechDost records each payment here.",
+    "payoutPeriod": "For {from} to {to}",
+    "payoutCorrection": "correction",
+    "method_upi": "UPI",
+    "method_bank_transfer": "Bank transfer",
+    "method_cash": "Cash",
+    "method_other": "Other"
   },
   "deliveryShop": {
     "markReady": "Mark ready for pickup",
@@ -9457,6 +9472,40 @@
     "note": "Note",
     "loadMore": "Show more",
     "on": "On",
-    "off": "Off"
+    "off": "Off",
+    "tab_payouts": "Payouts",
+    "method_upi": "UPI",
+    "method_bank_transfer": "Bank transfer",
+    "method_cash": "Cash",
+    "method_other": "Other",
+    "periodFrom": "From",
+    "periodTo": "To",
+    "periodRange": "{from} to {to}",
+    "exportCsv": "Download CSV",
+    "payoutSummaryTitle": "Delivered jobs in this period",
+    "payoutSummaryNote": "Use the count to work out each payment; pay rates are not set in MechDost yet.",
+    "col_delivered": "Delivered",
+    "col_paid": "Paid for this period",
+    "col_date": "Recorded",
+    "col_period": "Period",
+    "col_amount": "Amount",
+    "col_method": "Method",
+    "col_reference": "Reference",
+    "recordPayout": "Record a payout",
+    "savePayout": "Save payout",
+    "payoutSaved": "Payout recorded.",
+    "amountRupees": "Amount (₹)",
+    "referenceLabel": "Reference or UTR (optional)",
+    "payoutErrAgent": "Choose the agent.",
+    "payoutErrAmount": "Enter the amount in rupees, like 1500.",
+    "payoutErrMethod": "Choose how it was paid.",
+    "payoutErrPeriod": "The period must start on or before its end.",
+    "payoutsTitle": "Payouts",
+    "payoutsEmpty": "No payouts in this period.",
+    "correct": "Correct this payout",
+    "correctWhy": "Why? (kept with the correction)",
+    "payoutCorrected": "A reversing entry was added. Record the right payout again.",
+    "correctedBadge": "Corrected",
+    "reversal": "Reversal"
   }
 }

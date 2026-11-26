@@ -352,7 +352,13 @@
       "step3Body": "अपने प्रोडक्ट या सर्विस, समय और जिन पिन कोड पर आप काम करते हैं, जोड़ें।",
       "step4Title": "शुरू करें",
       "step4Body": "{region} में ऑर्डर और सर्विस रिक्वेस्ट पाना शुरू करें।",
-      "helpLine": "आवेदन से पहले कोई सवाल? हमें कॉल करें:"
+      "helpLine": "आवेदन से पहले कोई सवाल? हमें कॉल करें:",
+      "delivery_agentTitle": "MechDost के साथ डिलीवरी करें",
+      "delivery_agentBody": "अपने वाहन से पास की दुकानों से पार्ट्स उठाकर ग्राहकों तक पहुँचाएँ।",
+      "delivery_agentPoint1": "जब ठीक लगे तब ऑनलाइन हों",
+      "delivery_agentPoint2": "स्वीकार करने से पहले पिकअप का इलाका और ड्रॉप का पिन देखें",
+      "delivery_agentPoint3": "{region} में आसान पिकअप और डिलीवरी कोड, MechDost सपोर्ट बस एक कॉल पर",
+      "delivery_agentAction": "डिलीवरी एजेंट के लिए आवेदन करें"
     },
     "account": {
       "eyebrow": "आपका MechDost अकाउंट",
@@ -5344,7 +5350,8 @@
     "staffShow90": "90 दिन दिखाएँ",
     "staffSeeOrders": "नए ऑर्डर देखें",
     "staffRetry": "फिर कोशिश करें",
-    "staffLoadError": "यह लोड नहीं हो सका। अपना कनेक्शन जाँचकर फिर कोशिश करें।"
+    "staffLoadError": "यह लोड नहीं हो सका। अपना कनेक्शन जाँचकर फिर कोशिश करें।",
+    "statusKind_delivery_agent": "डिलीवरी एजेंट का आवेदन"
   },
   "shopTier1": {
     "busyTitle": "उपलब्धता",
@@ -9146,7 +9153,15 @@
     "retry": "फिर कोशिश करें",
     "genericError": "कुछ गड़बड़ हुई। फिर कोशिश करें।",
     "noJob": "यह काम आपके लिए उपलब्ध नहीं है।",
-    "loading": "लोड हो रहा है…"
+    "loading": "लोड हो रहा है…",
+    "deliveredCount": "{count, plural, =0 {अभी कोई डिलीवरी नहीं} other {# डिलीवरी पूरी}}",
+    "earningsEmpty": "अभी कोई भुगतान दर्ज नहीं। MechDost हर भुगतान यहाँ दर्ज करेगा।",
+    "payoutPeriod": "{from} से {to} तक के लिए",
+    "payoutCorrection": "सुधार",
+    "method_upi": "यूपीआई",
+    "method_bank_transfer": "बैंक ट्रांसफ़र",
+    "method_cash": "नकद",
+    "method_other": "अन्य"
   },
   "deliveryShop": {
     "markReady": "पिकअप के लिए तैयार",
@@ -9457,6 +9472,40 @@
     "note": "नोट",
     "loadMore": "और दिखाएँ",
     "on": "चालू",
-    "off": "बंद"
+    "off": "बंद",
+    "tab_payouts": "भुगतान",
+    "method_upi": "यूपीआई",
+    "method_bank_transfer": "बैंक ट्रांसफ़र",
+    "method_cash": "नकद",
+    "method_other": "अन्य",
+    "periodFrom": "से",
+    "periodTo": "तक",
+    "periodRange": "{from} से {to}",
+    "exportCsv": "CSV डाउनलोड करें",
+    "payoutSummaryTitle": "इस अवधि में पूरी डिलीवरी",
+    "payoutSummaryNote": "हर भुगतान का हिसाब लगाने के लिए गिनती देखें; भुगतान की दरें अभी MechDost में तय नहीं हैं।",
+    "col_delivered": "डिलीवर",
+    "col_paid": "इस अवधि का भुगतान",
+    "col_date": "दर्ज किया",
+    "col_period": "अवधि",
+    "col_amount": "रकम",
+    "col_method": "तरीका",
+    "col_reference": "संदर्भ",
+    "recordPayout": "भुगतान दर्ज करें",
+    "savePayout": "भुगतान सेव करें",
+    "payoutSaved": "भुगतान दर्ज हो गया।",
+    "amountRupees": "रकम (₹)",
+    "referenceLabel": "संदर्भ या UTR (ज़रूरी नहीं)",
+    "payoutErrAgent": "एजेंट चुनें।",
+    "payoutErrAmount": "रकम रुपये में लिखें, जैसे 1500।",
+    "payoutErrMethod": "भुगतान का तरीका चुनें।",
+    "payoutErrPeriod": "अवधि की शुरुआत, अंत से पहले या उसी दिन होनी चाहिए।",
+    "payoutsTitle": "भुगतान",
+    "payoutsEmpty": "इस अवधि में कोई भुगतान नहीं।",
+    "correct": "इस भुगतान को सुधारें",
+    "correctWhy": "क्यों? (सुधार के साथ रहेगा)",
+    "payoutCorrected": "उलटी एंट्री जोड़ दी गई। सही भुगतान फिर से दर्ज करें।",
+    "correctedBadge": "सुधारा गया",
+    "reversal": "उलटी एंट्री"
   }
 }

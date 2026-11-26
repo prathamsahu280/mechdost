@@ -48,9 +48,10 @@ import type {
   Result,
 } from '@/lib/delivery/types';
 import { countdown, kmText } from '@/lib/delivery/view';
+import { PayoutsTab } from './admin-delivery-payouts';
 import { useStatusLine } from './parts';
 
-const TABS = ['jobs', 'applications', 'agents', 'requests', 'settings'] as const;
+const TABS = ['jobs', 'applications', 'agents', 'payouts', 'requests', 'settings'] as const;
 type Tab = (typeof TABS)[number];
 const VIEWS: readonly AdminJobsView[] = ['needs_agent', 'offered', 'active', 'failed', 'returning', 'done'];
 const POLL_MS = 15_000;
@@ -90,6 +91,7 @@ export function AdminDelivery() {
       {client && tab === 'jobs' ? <JobsTab client={client} /> : null}
       {client && tab === 'applications' ? <ApplicationsTab client={client} /> : null}
       {client && tab === 'agents' ? <AgentsTab client={client} /> : null}
+      {client && tab === 'payouts' ? <PayoutsHost client={client} /> : null}
       {client && tab === 'requests' ? <RequestsTab client={client} /> : null}
       {client && tab === 'settings' ? <SettingsTab /> : null}
     </div>
@@ -1645,6 +1647,14 @@ function DocumentReview({
       {line}
     </div>
   );
+}
+
+/** Payouts need the agent list (filter, record form). */
+function PayoutsHost({ client }: { client: AdminDeliveryClient }) {
+  const load = useCallback(() => client.agents(null), [client]);
+  const { items, failed, reload } = useList<AdminAgentRowView>(client, load);
+  if (!items) return <ListState failed={failed} loading={!failed} onRetry={reload} />;
+  return <PayoutsTab client={client} agents={items} />;
 }
 
 // ── shop requests ────────────────────────────────────────────────────────────────────────────────────────────────

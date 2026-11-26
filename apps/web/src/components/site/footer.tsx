@@ -1,4 +1,4 @@
-import { Globe, MessageCircle, Moon, Phone, Store, Sun, UserRound, Wrench } from 'lucide-react';
+import { Bike, Globe, MessageCircle, Moon, Phone, Store, Sun, UserRound, Wrench } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { CATEGORY_SLUGS } from '@/demo/catalogue';
@@ -134,6 +134,12 @@ export function Footer({ roadside = false }: { roadside?: boolean }) {
       label: partners('mechanicAction'),
       track: 'footer_apply_mechanic',
       icon: tile(<UserRound size={15} strokeWidth={1.9} />),
+    },
+    {
+      href: '/partners/apply/delivery_agent',
+      label: partners('delivery_agentAction'),
+      track: 'footer_apply_delivery_agent',
+      icon: tile(<Bike size={15} strokeWidth={1.9} />),
     },
   ];
 
