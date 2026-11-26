@@ -2174,3 +2174,22 @@ Spec `docs/specs/23-ustaad-network.md`, design `docs/superpowers/specs/2026-11-2
 - **Badge rules** use G1's admin DTO shape (`count`), one shape for the admin and the engine.
 - **Open (for the lead):** G1's level-rule CRUD accepts `coin_multiplier_bp` up to 30000; spec 23 § 9.2 says refuse
   above 10000 with `COIN_GUARD_REQUIRED` while PENDING #19 is open (`levelRuleRefusal()` exists for it).
+
+## 2026-11-26 - Ustaad Q&A and Learn as built (task C, API part)
+
+- Ustaad public codes use RFC 4648 base32 (`ustaadPublicCode`), matching the A schema CHECKs; marketplace codes stay
+  Crockford. A voice-only question stores the title `…` and views return `title: null` (the column stays NOT NULL).
+- The best-answer weekly cap is counted from `ustaad_events` (`best_chosen` by the asker in the last 7 days), so no
+  extra counter table is needed.
+- Learn self-marks count per IST day; a hosted video completes at ≥ 80 % (spec 23 § 9.2). Details in spec 23 § 21b.
+
+## 2026-11-26 — Ustaad workstream E (local): build rulings
+
+- Distance noise is ± 25 % of the true distance, seeded per pair by HMAC-SHA256 of the sorted member ids; band codes
+  only (SR-29). Zone complementary suppression hides the next-smallest visible cell while hidden cells hold 1–4
+  members, and rounds the total to 5 (SR-31).
+- A pin with no city centre set is checked against the city's PIN code centres (within 15 km); no centre at all →
+  refused (fail closed).
+- Job codes use RFC 4648 base32 to satisfy the existing `ustaad_jobs_code_format` CHECK; the lead may instead align
+  the CHECK with Crockford `publicCode` at merge.
+- The `jobs.enabled` kill switch hides every job surface (404) but never blocks an applicant's withdraw.

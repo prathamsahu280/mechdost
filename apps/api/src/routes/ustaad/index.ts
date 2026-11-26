@@ -19,8 +19,10 @@ import { errorResponses } from '../schemas';
 import { json } from '../service-schemas';
 import { ustaadMediaRoutes } from './media';
 import { ustaadCorrectRoutes } from './correct';
+import { ustaadLocalRoutes } from './local';
 import { ustaadMemberRoutes } from './members';
 import { ustaadVerificationRoutes } from './verification';
+import { ustaadQaRoutes } from './qa';
 
 const accessRoute = createRoute({
   method: 'get',
@@ -48,9 +50,9 @@ export function ustaadRoutes(deps: AppDeps, sessions: SessionCache, access: Usta
   app.route('/', ustaadMediaRoutes(deps));
   app.route('/', ustaadVerificationRoutes(deps));
   // B (later): app.route('/', ustaadProfileRoutes(deps, sessions));
-  // C: app.route('/', ustaadQaRoutes(deps)); app.route('/', ustaadLearnRoutes(deps));
+  app.route('/', ustaadQaRoutes(deps));
   // D: app.route('/', ustaadPostRoutes(deps)); app.route('/', ustaadFeedRoutes(deps)); …
-  // E: app.route('/', ustaadLocationRoutes(deps)); app.route('/', ustaadJobRoutes(deps));
+  app.route('/', ustaadLocalRoutes(deps));
   app.route('/', ustaadCorrectRoutes(deps));
   // F: app.route('/', ustaadReportRoutes(deps));
   return app;

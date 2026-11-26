@@ -27,6 +27,8 @@ import {
   expireDueCoins,
   notifyServedWaitlist,
   recomputeCopurchase,
+  buildUstaadZoneCounts,
+  expireUstaadJobs,
   releaseDueCoinRewards,
   expireQuotes,
   globalIntSetting,
@@ -529,6 +531,44 @@ const copurchaseTimer = setInterval(() => {
   if (istHour === 3) recomputeCopurchaseNow();
 }, 3_600_000);
 copurchaseTimer.unref();
+// Ustaad Network (spec 23 § 8 worker jobs, plan workstream E):
+// a) `ustaad_zone_counts`: zone counts rebuilt nightly (02:00 IST, checked hourly) under an advisory lock, so two
+//    workers never overlap; the member API bands them (SR-31). Refresh nightly only (no on-demand rebuild).
+let zoning = false;
+const ustaadZoneTimer = setInterval(() => {
+  const istHour = new Date(Date.now() + 5.5 * 3_600_000).getUTCHours();
+  if (istHour !== 2 || zoning) return;
+  zoning = true;
+  void buildUstaadZoneCounts(db)
+    .then((r) => {
+      if (r.ran) log('info', 'ustaad_zone_counts_built', { zones: r.zones });
+    })
+    .catch((err: unknown) => {
+      log('error', 'ustaad_zone_counts_failed', safeError(err));
+    })
+    .finally(() => {
+      zoning = false;
+    });
+}, 3_600_000);
+ustaadZoneTimer.unref();
+// b) `ustaad_jobs_expire`: open/paused jobs past their expiry → expired, live applications closed (every 10 min;
+//    conditional updates on (id, status, version), so overlapping workers are harmless).
+let expiringJobs = false;
+const ustaadJobsTimer = setInterval(() => {
+  if (expiringJobs) return;
+  expiringJobs = true;
+  void expireUstaadJobs(db)
+    .then((n) => {
+      if (n > 0) log('info', 'ustaad_jobs_expired', { count: n });
+    })
+    .catch((err: unknown) => {
+      log('error', 'ustaad_jobs_expire_failed', safeError(err));
+    })
+    .finally(() => {
+      expiringJobs = false;
+    });
+}, 600_000);
+ustaadJobsTimer.unref();
 // 2) Data downloads (Account -> Privacy): build the waiting ones (a few per run, each its own transaction with a row
 //    lock) and clear the files past their 24 hours. Every 30 s.
 let exporting = false;
@@ -635,6 +675,8 @@ function shutdown(signal: string) {
   clearInterval(copurchaseTimer);
   clearInterval(exportTimer);
   clearInterval(waitlistTimer);
+  clearInterval(ustaadZoneTimer);
+  clearInterval(ustaadJobsTimer);
   void Promise.all([relay.stop(), dispatcher.stop(), posthog?.stop()])
     .then(() =>
       Promise.all([

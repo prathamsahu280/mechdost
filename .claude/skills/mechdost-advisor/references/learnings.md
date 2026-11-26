@@ -388,3 +388,12 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
   L314 · 2026-11-26 · parallel streams · the foundations stream created the same route file G1 was told to create (add/add conflict) → before creating a file named in a plan for another stream's interface, re-merge that stream and grep; when both exist, keep one router and route the other's endpoint through the same function.
   L315 · 2026-11-26 · i18n · `ClientMessages` took only top-level namespaces, so a big namespace (`ustaad`) would ship whole to admin → it now takes dotted parts (`ustaad.admin`); the coverage test treats a parent namespace as covering its parts.
 - L-B1 · 2026-11-26 · ustaad/identity · Revoking a vouch freed a monthly slot and cleared reciprocity (security review); G1 and B defined the badge rule shape twice (`count` vs `min`) → count every state that was ever "given" for caps and pair checks, and reuse the admin DTO shape for any rule the engine reads. A seed migration breaks CRUD tests that assume empty admin tables: clear them in those tests' setup.
+  L316 · 2026-11-26 · ustaad codes · A's UQ/UJ/UR CHECKs use `[A-Z2-7]` but `publicCode` (ids.ts) is Crockford (0, 1, 8, 9 fail the CHECK) → use `ustaadPublicCode` from `shared/ustaad/public-code.ts` for every Ustaad code.
+  L317 · 2026-11-26 · api/zod · `.openapi('Name')` on a schema from `@mechdost/shared` crashed at load ("is not a function"; same root as L313) → in Ustaad routes pass shared DTOs to `body()`/`json()` without `.openapi(...)`; repeat of L313, promote to checklist when it happens again.
+  L318 · 2026-11-26 · settings typing · `readUstaadSettingValues` returns `UstaadSettingValue` (string | number | boolean) → wrap with `Number(...)` / `=== true` at the use site, as media.ts does.
+- L-UE1 · 2026-11-26 · ids/schema · Workstream A's `ustaad_jobs_code_format` CHECK expects `[A-Z2-7]{6}` but
+  `publicCode` emits Crockford base32 (digits 0-9 included), so inserts failed ~half the time in tests → before using
+  a shared id generator against a new CHECK, test one insert; align generator and CHECK in the same workstream.
+- L-UE2 · 2026-11-26 · security/filters · Scam filters on user text must normalise first (NFKC, strip \p{Cf}, map all
+  script digits) and must not rely on "not followed by ." to tell UPI ids from emails (sentence-ending full stops) →
+  match a known PSP list first, then the generic rule; screen every member-visible free-text field, not just the body.
