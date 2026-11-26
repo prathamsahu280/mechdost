@@ -1,0 +1,145 @@
+import type { JOB_ROLES } from '@mechdost/shared/ustaad/codes';
+import type { MemberView } from '@mechdost/shared/ustaad/dto/members';
+import type {
+  AnswerInput,
+  AskQuestion,
+  LearnProgress,
+  LearnView,
+  QuestionCard,
+  QuestionDetail,
+  QuestionFilter,
+} from '@mechdost/shared/ustaad/dto/qa';
+import type { LocationBody, PostJobBody } from '@mechdost/shared/ustaad/dto/local';
+import { AUTH_MODE } from '../auth/mode';
+import type { ApiResult } from '../orders-api';
+import type { Banded } from './local-view';
+
+/**
+ * One seam for every Ustaad C + E screen (Q&A, Learn, pin, area, jobs). Real sign-in builds call the API
+ * (`api-client.ts`, every answer checked with the shared schemas); the browser demo (staff preview without an API) loads
+ * labelled sample data (`demo/ustaad.ts`). Both are loaded on demand, so storefront bundles never carry either.
+ */
+
+export type JobRole = (typeof JOB_ROLES)[number];
+
+export interface MyLocation {
+  lat: number;
+  lng: number;
+  accuracyM: number;
+  source: 'gps' | 'manual';
+  landmark: string | null;
+  useForVerify: boolean;
+  countInZone: boolean;
+  shareExact: boolean;
+  exactAudience: 'connections' | 'all_verified';
+  hidden: boolean;
+  verified: boolean;
+  confirmedAt: string;
+}
+
+export interface Zone {
+  zoneCell: string;
+  center: { lat: number; lng: number };
+  total: Banded;
+  segments: Record<string, Banded>;
+}
+
+export interface Job {
+  code: string;
+  roleCode: JobRole;
+  title: string;
+  description: string;
+  areaLabel: string;
+  areaLabelHi: string | null;
+  cityCode: string;
+  payMinPaiseMonth: number;
+  payMaxPaiseMonth: number;
+  timing: string;
+  experienceMinYears: number;
+  segmentCodes: string[];
+  status: string;
+  mine: boolean;
+  underReview: boolean;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface MediaDeclare {
+  kind: 'image' | 'audio';
+  mime: string;
+  durationMs?: number;
+  width?: number;
+  height?: number;
+}
+
+export type AskInput = Omit<AskQuestion, 'correction' | 'reach' | 'hideGarage'> & {
+  correction?: AskQuestion['correction'];
+};
+export type AnswerBody = Omit<AnswerInput, 'correction'> & { correction?: AnswerInput['correction'] };
+export type PostJobInput = Omit<
+  PostJobBody,
+  'areaLabelHi' | 'experienceMinYears' | 'segmentCodes' | 'idemKey'
+> &
+  Partial<Pick<PostJobBody, 'areaLabelHi' | 'experienceMinYears' | 'segmentCodes' | 'idemKey'>>;
+export type LocationInput = Omit<LocationBody, 'landmark' | 'mockSuspected' | 'exactAudience' | 'hidden'> &
+  Partial<Pick<LocationBody, 'landmark' | 'mockSuspected' | 'exactAudience' | 'hidden'>>;
+
+export interface UstaadClient {
+  /** True for the browser demo: screens show the "sample data" note. */
+  readonly sample: boolean;
+  me(): Promise<ApiResult<{ member: MemberView | null; staffPreview: boolean }>>;
+  questions(
+    filter: QuestionFilter,
+    cursor: string | null,
+  ): Promise<ApiResult<{ items: QuestionCard[]; nextCursor: string | null }>>;
+  question(code: string): Promise<ApiResult<QuestionDetail>>;
+  ask(input: AskInput): Promise<ApiResult<{ code: string }>>;
+  answer(code: string, input: AnswerBody): Promise<ApiResult<{ id: string }>>;
+  helpful(answerId: string): Promise<ApiResult<{ helpfulCount: number; voted: boolean }>>;
+  best(code: string, answerId: string): Promise<ApiResult<{ status: 'solved' }>>;
+  learn(): Promise<ApiResult<LearnView>>;
+  progress(
+    resourceId: string,
+    body: LearnProgress,
+  ): Promise<ApiResult<{ watchedSeconds: number; completed: boolean }>>;
+  myLocation(): Promise<ApiResult<MyLocation | null>>;
+  saveLocation(input: LocationInput): Promise<ApiResult<MyLocation>>;
+  signboard(mediaId: string): Promise<ApiResult<{ ok: true }>>;
+  zones(): Promise<ApiResult<Zone[]>>;
+  jobs(
+    role: JobRole | null,
+    cursor: string | null,
+  ): Promise<ApiResult<{ items: Job[]; next: string | null }>>;
+  job(code: string): Promise<ApiResult<Job>>;
+  postJob(input: PostJobInput): Promise<ApiResult<Job>>;
+  apply(
+    code: string,
+    body: { sharePhone: boolean; voiceIntroMediaId: string | null },
+  ): Promise<ApiResult<{ applicationId: string; status: string }>>;
+  moveJob(
+    code: string,
+    action: 'pause' | 'resume' | 'close' | 'fill',
+  ): Promise<ApiResult<{ status: string }>>;
+  /** Declare → upload (progress 0–100) → verify; resolves with the media id once the API accepted the file. */
+  upload(
+    file: Blob,
+    meta: MediaDeclare,
+    onProgress: (pct: number) => void,
+  ): Promise<ApiResult<{ mediaId: string }>>;
+  /** A short-lived signed URL to play or show a media object (≤ 10 minutes). */
+  mediaUrl(mediaId: string): Promise<ApiResult<{ url: string }>>;
+}
+
+const cache = new Map<string, Promise<UstaadClient>>();
+
+export function ustaadClient(locale: string): Promise<UstaadClient> {
+  let c = cache.get(locale);
+  if (!c) {
+    c =
+      AUTH_MODE === 'firebase'
+        ? import('./api-client').then((m) => m.apiUstaadClient(locale))
+        : import('@/demo/ustaad').then((m) => m.demoUstaadClient());
+    cache.set(locale, c);
+  }
+  return c;
+}
