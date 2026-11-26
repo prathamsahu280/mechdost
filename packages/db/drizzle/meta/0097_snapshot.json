@@ -1,6 +1,6 @@
 {
   "id": "57901fce-0844-42ad-b9db-473ed725901f",
-  "prevId": "b1adf595-1151-4602-8e30-617cf21a103d",
+  "prevId": "8366e405-cce5-414b-afc6-46cb63b2a90e",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -23567,6 +23567,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "restricted_until": {
+          "name": "restricted_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "verification_state": {
           "name": "verification_state",
           "type": "text",
@@ -24046,6 +24052,10 @@
         "ustaad_members_banned_until": {
           "name": "ustaad_members_banned_until",
           "value": "\"ustaad_members\".\"banned_until\" is null or \"ustaad_members\".\"status\" = 'banned'"
+        },
+        "ustaad_members_restricted_until": {
+          "name": "ustaad_members_restricted_until",
+          "value": "\"ustaad_members\".\"restricted_until\" is null or \"ustaad_members\".\"status\" = 'restricted'"
         }
       },
       "isRLSEnabled": false
@@ -24546,7 +24556,7 @@
         },
         "ustaad_media_reject_reason_valid": {
           "name": "ustaad_media_reject_reason_valid",
-          "value": "\"ustaad_media\".\"reject_reason_code\" is null or \"ustaad_media\".\"reject_reason_code\" in ('size_mismatch','type_mismatch','magic_mismatch','too_long','too_large','location_atom','external_reference','decompression_bomb','expired_upload','unreadable','hash_mismatch')"
+          "value": "\"ustaad_media\".\"reject_reason_code\" is null or \"ustaad_media\".\"reject_reason_code\" in ('size_mismatch','type_mismatch','magic_mismatch','too_long','too_large','location_atom','external_reference','decompression_bomb','expired_upload','unreadable','hash_mismatch','safety_block')"
         },
         "ustaad_media_rejected_reason": {
           "name": "ustaad_media_rejected_reason",
@@ -30779,99 +30789,6 @@
       },
       "isRLSEnabled": false
     },
-    "public.ustaad_daily_counters": {
-      "name": "ustaad_daily_counters",
-      "schema": "",
-      "columns": {
-        "member_id": {
-          "name": "member_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "kind": {
-          "name": "kind",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "day": {
-          "name": "day",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "n": {
-          "name": "n",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "ustaad_daily_counters_day_index": {
-          "name": "ustaad_daily_counters_day_index",
-          "columns": [
-            {
-              "expression": "day",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "ustaad_daily_counters_member_id_ustaad_members_id_fk": {
-          "name": "ustaad_daily_counters_member_id_ustaad_members_id_fk",
-          "tableFrom": "ustaad_daily_counters",
-          "tableTo": "ustaad_members",
-          "columnsFrom": [
-            "member_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "ustaad_daily_counters_member_id_kind_day_pk": {
-          "name": "ustaad_daily_counters_member_id_kind_day_pk",
-          "columns": [
-            "member_id",
-            "kind",
-            "day"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "ustaad_daily_counters_kind_valid": {
-          "name": "ustaad_daily_counters_kind_valid",
-          "value": "\"ustaad_daily_counters\".\"kind\" in ('promo_served','profiles_served','follows','new_threads','connect_requests')"
-        },
-        "ustaad_daily_counters_n": {
-          "name": "ustaad_daily_counters_n",
-          "value": "\"ustaad_daily_counters\".\"n\" >= 0"
-        }
-      },
-      "isRLSEnabled": false
-    },
     "public.ustaad_follows": {
       "name": "ustaad_follows",
       "schema": "",
@@ -31430,100 +31347,6 @@
       },
       "isRLSEnabled": false
     },
-    "public.ustaad_promo_hides": {
-      "name": "ustaad_promo_hides",
-      "schema": "",
-      "columns": {
-        "member_id": {
-          "name": "member_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "promotion_id": {
-          "name": "promotion_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "reason_code": {
-          "name": "reason_code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "ustaad_promo_hides_promotion_id_index": {
-          "name": "ustaad_promo_hides_promotion_id_index",
-          "columns": [
-            {
-              "expression": "promotion_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "ustaad_promo_hides_member_id_ustaad_members_id_fk": {
-          "name": "ustaad_promo_hides_member_id_ustaad_members_id_fk",
-          "tableFrom": "ustaad_promo_hides",
-          "tableTo": "ustaad_members",
-          "columnsFrom": [
-            "member_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "ustaad_promo_hides_promotion_id_ustaad_promotions_id_fk": {
-          "name": "ustaad_promo_hides_promotion_id_ustaad_promotions_id_fk",
-          "tableFrom": "ustaad_promo_hides",
-          "tableTo": "ustaad_promotions",
-          "columnsFrom": [
-            "promotion_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "ustaad_promo_hides_member_id_promotion_id_pk": {
-          "name": "ustaad_promo_hides_member_id_promotion_id_pk",
-          "columns": [
-            "member_id",
-            "promotion_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "ustaad_promo_hides_reason_valid": {
-          "name": "ustaad_promo_hides_reason_valid",
-          "value": "\"ustaad_promo_hides\".\"reason_code\" in ('not_relevant','seen_too_often','misleading','other')"
-        }
-      },
-      "isRLSEnabled": false
-    },
     "public.ustaad_tag_follows": {
       "name": "ustaad_tag_follows",
       "schema": "",
@@ -31599,109 +31422,6 @@
           "columns": [
             "member_id",
             "tag_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.ustaad_thread_members": {
-      "name": "ustaad_thread_members",
-      "schema": "",
-      "columns": {
-        "thread_id": {
-          "name": "thread_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "member_id": {
-          "name": "member_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "last_read_at": {
-          "name": "last_read_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "muted": {
-          "name": "muted",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "ustaad_thread_members_member_id_index": {
-          "name": "ustaad_thread_members_member_id_index",
-          "columns": [
-            {
-              "expression": "member_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "ustaad_thread_members_thread_id_ustaad_threads_id_fk": {
-          "name": "ustaad_thread_members_thread_id_ustaad_threads_id_fk",
-          "tableFrom": "ustaad_thread_members",
-          "tableTo": "ustaad_threads",
-          "columnsFrom": [
-            "thread_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "ustaad_thread_members_member_id_ustaad_members_id_fk": {
-          "name": "ustaad_thread_members_member_id_ustaad_members_id_fk",
-          "tableFrom": "ustaad_thread_members",
-          "tableTo": "ustaad_members",
-          "columnsFrom": [
-            "member_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "ustaad_thread_members_thread_id_member_id_pk": {
-          "name": "ustaad_thread_members_thread_id_member_id_pk",
-          "columns": [
-            "thread_id",
-            "member_id"
           ]
         }
       },
@@ -33384,11 +33104,11 @@
       "checkConstraints": {
         "ustaad_report_reasons_code_valid": {
           "name": "ustaad_report_reasons_code_valid",
-          "value": "\"ustaad_report_reasons\".\"code\" in ('wrong_unsafe','illegal_modification','abuse','spam','privacy','minor','not_work','fake','job_scam','ip','other')"
+          "value": "\"ustaad_report_reasons\".\"code\" in ('wrong_unsafe','illegal_modification','abuse','spam','privacy','minor','not_work','fake','job_scam','ip','ncii_impersonation','other')"
         },
         "ustaad_report_reasons_clock_valid": {
           "name": "ustaad_report_reasons_clock_valid",
-          "value": "\"ustaad_report_reasons\".\"default_clock\" in ('intimate_2h','legal_3h','standard_24h','grievance_7d')"
+          "value": "\"ustaad_report_reasons\".\"default_clock\" in ('intimate_2h','legal_3h','removal_36h','standard_24h','grievance_7d')"
         },
         "ustaad_report_reasons_other_on": {
           "name": "ustaad_report_reasons_other_on",
@@ -33778,15 +33498,15 @@
         },
         "ustaad_reports_source_valid": {
           "name": "ustaad_reports_source_valid",
-          "value": "\"ustaad_reports\".\"source\" in ('member','auto_word','auto_scam','legal_order','grievance')"
+          "value": "\"ustaad_reports\".\"source\" in ('member','auto_word','auto_scam','auto_safety','legal_order','grievance')"
         },
         "ustaad_reports_reason_valid": {
           "name": "ustaad_reports_reason_valid",
-          "value": "\"ustaad_reports\".\"reason_code\" in ('wrong_unsafe','illegal_modification','abuse','spam','privacy','minor','not_work','fake','job_scam','ip','other')"
+          "value": "\"ustaad_reports\".\"reason_code\" in ('wrong_unsafe','illegal_modification','abuse','spam','privacy','minor','not_work','fake','job_scam','ip','ncii_impersonation','other')"
         },
         "ustaad_reports_clock_valid": {
           "name": "ustaad_reports_clock_valid",
-          "value": "\"ustaad_reports\".\"clock\" in ('intimate_2h','legal_3h','standard_24h','grievance_7d')"
+          "value": "\"ustaad_reports\".\"clock\" in ('intimate_2h','legal_3h','removal_36h','standard_24h','grievance_7d')"
         },
         "ustaad_reports_status_valid": {
           "name": "ustaad_reports_status_valid",
@@ -34165,6 +33885,296 @@
           "value": "(\"ustaad_word_lists\".\"list\" = 'correction') = (\"ustaad_word_lists\".\"replacement\" is not null)"
         }
       },
+      "isRLSEnabled": false
+    },
+    "public.ustaad_daily_counters": {
+      "name": "ustaad_daily_counters",
+      "schema": "",
+      "columns": {
+        "member_id": {
+          "name": "member_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "day": {
+          "name": "day",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "n": {
+          "name": "n",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ustaad_daily_counters_day_index": {
+          "name": "ustaad_daily_counters_day_index",
+          "columns": [
+            {
+              "expression": "day",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "ustaad_daily_counters_member_id_ustaad_members_id_fk": {
+          "name": "ustaad_daily_counters_member_id_ustaad_members_id_fk",
+          "tableFrom": "ustaad_daily_counters",
+          "tableTo": "ustaad_members",
+          "columnsFrom": [
+            "member_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "ustaad_daily_counters_member_id_kind_day_pk": {
+          "name": "ustaad_daily_counters_member_id_kind_day_pk",
+          "columns": [
+            "member_id",
+            "kind",
+            "day"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ustaad_daily_counters_kind_valid": {
+          "name": "ustaad_daily_counters_kind_valid",
+          "value": "\"ustaad_daily_counters\".\"kind\" in ('promo_served','profiles_served','follows','new_threads','connect_requests')"
+        },
+        "ustaad_daily_counters_n": {
+          "name": "ustaad_daily_counters_n",
+          "value": "\"ustaad_daily_counters\".\"n\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.ustaad_promo_hides": {
+      "name": "ustaad_promo_hides",
+      "schema": "",
+      "columns": {
+        "member_id": {
+          "name": "member_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "promotion_id": {
+          "name": "promotion_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason_code": {
+          "name": "reason_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ustaad_promo_hides_promotion_id_index": {
+          "name": "ustaad_promo_hides_promotion_id_index",
+          "columns": [
+            {
+              "expression": "promotion_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "ustaad_promo_hides_member_id_ustaad_members_id_fk": {
+          "name": "ustaad_promo_hides_member_id_ustaad_members_id_fk",
+          "tableFrom": "ustaad_promo_hides",
+          "tableTo": "ustaad_members",
+          "columnsFrom": [
+            "member_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "ustaad_promo_hides_promotion_id_ustaad_promotions_id_fk": {
+          "name": "ustaad_promo_hides_promotion_id_ustaad_promotions_id_fk",
+          "tableFrom": "ustaad_promo_hides",
+          "tableTo": "ustaad_promotions",
+          "columnsFrom": [
+            "promotion_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "ustaad_promo_hides_member_id_promotion_id_pk": {
+          "name": "ustaad_promo_hides_member_id_promotion_id_pk",
+          "columns": [
+            "member_id",
+            "promotion_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ustaad_promo_hides_reason_valid": {
+          "name": "ustaad_promo_hides_reason_valid",
+          "value": "\"ustaad_promo_hides\".\"reason_code\" in ('not_relevant','seen_too_often','misleading','other')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.ustaad_thread_members": {
+      "name": "ustaad_thread_members",
+      "schema": "",
+      "columns": {
+        "thread_id": {
+          "name": "thread_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "member_id": {
+          "name": "member_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_read_at": {
+          "name": "last_read_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "muted": {
+          "name": "muted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ustaad_thread_members_member_id_index": {
+          "name": "ustaad_thread_members_member_id_index",
+          "columns": [
+            {
+              "expression": "member_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "ustaad_thread_members_thread_id_ustaad_threads_id_fk": {
+          "name": "ustaad_thread_members_thread_id_ustaad_threads_id_fk",
+          "tableFrom": "ustaad_thread_members",
+          "tableTo": "ustaad_threads",
+          "columnsFrom": [
+            "thread_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "ustaad_thread_members_member_id_ustaad_members_id_fk": {
+          "name": "ustaad_thread_members_member_id_ustaad_members_id_fk",
+          "tableFrom": "ustaad_thread_members",
+          "tableTo": "ustaad_members",
+          "columnsFrom": [
+            "member_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "ustaad_thread_members_thread_id_member_id_pk": {
+          "name": "ustaad_thread_members_thread_id_member_id_pk",
+          "columns": [
+            "thread_id",
+            "member_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     }
   },

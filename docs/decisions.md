@@ -2381,3 +2381,16 @@ Spec 23 § 21f. Rulings made while building (lead brief + security review of the
   (`?section=` for the console, `?sec=` kept for settings); no new colours, fonts or radii (admin tokens).
 - **Accessibility specialists** (aria, keyboard, forms, live regions) ran as one batch; serious and moderate findings
   fixed in the console; the shared `LoadState` live-region pattern is an admin-wide follow-up.
+
+## 2026-11-26 — Founder: build shopping personalisation phases 2–4; replace the old Vehicle type dropdown
+
+- "yeah go ahead with phase 2 … and build all 2,3,4 aswell": phases 2 (recently viewed + Back keeps your place),
+  3 (Similar options + Goes well with) and 4 (Your savings) of
+  `docs/superpowers/specs/2026-11-25-shopping-personalisation-design.md` are approved as written there (honest
+  savings: delivered orders only, vs the maker's printed MRP, per component, reversed on refund; personal data only
+  with the personalisation consent).
+- "yes we can replace the old vehicle type drop down": the shop's 2W/3W/4W "Vehicle type" select is replaced by the
+  "Kind of vehicle" segment chips; saved-vehicle fit moves to segments (2W → two_wheeler, 3W → three_wheeler,
+  4W → car_suv) so "fits my vehicle" keeps working. Q-segments answered.
+- "fix the test failures": the pre-existing qa-regressions failures (B1 Hindi rejection, theme with full storage,
+  QA 13 free-delivery line) are fixed at their root cause.
