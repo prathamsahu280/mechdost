@@ -59,6 +59,8 @@ export const USTAAD_SETTINGS = {
   'ustaad.verify.evidence_retention_days': int(7, 180, 30),
   'ustaad.verify.attest_per_owner_quarter': int(1, 50, 10),
   'ustaad.verify.attest_photo_max_m': int(50, 1000, 200),
+  // Security review: failed distance checks through one owner link before it closes (no location oracle).
+  'ustaad.verify.attest_distance_tries': int(1, 5, 1),
   'ustaad.verify.vouch_min_account_days': int(30, 365, 60),
   'ustaad.verify.vouch_per_month': int(1, 10, 3),
   'ustaad.verify.fast_track_approved_apps': bool(true),

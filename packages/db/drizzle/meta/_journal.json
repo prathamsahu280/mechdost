@@ -666,6 +666,20 @@
       "when": 1795673891619,
       "tag": "0097_ustaad_social",
       "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1795682001994,
+      "tag": "0098_ustaad_identity_b3",
+      "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1795682018197,
+      "tag": "0099_ustaad_reserved_names_seed",
+      "breakpoints": true
     }
   ]
 }

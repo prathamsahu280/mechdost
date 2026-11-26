@@ -2215,6 +2215,38 @@ Spec `docs/specs/23-ustaad-network.md`, design `docs/superpowers/specs/2026-11-2
   the CHECK with Crockford `publicCode` at merge.
 - The `jobs.enabled` kill switch hides every job surface (404) but never blocks an applicant's withdraw.
 
+## 2026-11-26 - Ustaad workstream B round 3 (identity): names, profile, SR-2, owner link, jobs, voucher trust
+
+- **Look-alike names without a dependency:** a curated subset of the UTS #39 confusables (Cyrillic, Greek, Latin
+  letters that do not decompose, `0`/`1`, `rn`) plus NFKC, case fold, accent and nukta removal. Short reserved words
+  match whole words only ("Badmin Singh" is fine), reserved words of 6+ characters match anywhere. A staff member's
+  own full name is reserved for everyone else (whole name only). "Ustaad" alone is not reserved.
+- **SR-2 triggers** are the signals we have: a changed phone or email in the verified token (`ensureUser`) and an
+  announced password change (counted from the change time). The freeze only ever extends. No device signal (Q-UB1).
+- **Owner link:** issued by staff, never shown to the member (otherwise the member could confirm themselves); the
+  token is 64 hex characters so log and Sentry scrubbing removes it; GET never consumes it, POST does (conditional
+  UPDATE). Public paths are `/v1/ustaad-attest/{token}` and `/ustaad-attest/[token]` (not under `/ustaad/*`: the
+  member gate and the `/ustaad` shell would hide them from a signed-out owner). The owner's browser position stands
+  in for the SR-6 photo pin; only the distance is stored, and only when the member allowed "use pin for verification".
+- **Evidence retention:** owner phone and GSTIN/Udyam are cleared after `verify.evidence_retention_days`; the keyed
+  blind-index hash stays for the per-quarter cap.
+- **Counters:** reconcile is one `UPDATE … FROM (aggregate)` and leaves `posts` to workstream D; 30-day best answers
+  come from `best_chosen` events; qualified followers are stored on the counters row.
+- **Badges:** a badge staff revoked is never awarded again by the job; a "tag" for tag rules is the question's work or
+  vehicle code.
+- **Voucher trust (lead, security review):** only a `verified` and `active` member may vouch (`VOUCH_NOT_TRUSTED`); when
+  a voucher's verification is revoked (or F bans them), their open vouch requests expire, given vouches are revoked
+  with `voucher_untrusted`, and a verified vouchee left without enough evidence goes back to staff as a new
+  `in_review` re-check row; staff then keep or revoke.
+- **Worker:** these jobs run in the existing hourly worker timer (no pg-boss queue for Ustaad yet); every step is
+  idempotent.
+- **Owner link hardening (lead, security review 2026-11-26):** the distance check is never revealed to the public
+  caller (every confirmation answers "received"; a failure is recorded for staff and the link closes after
+  `verify.attest_distance_tries`, default 2, changed to 1 by the lead ruling below); the quarter cap counts per owner phone **and** per GSTIN/Udyam (keyed
+  hash kept after the evidence purge) under transaction advisory locks, and the workshop-portal confirm locks per
+  workshop. Residual: until the link closes, a re-opened page still loads after one failed try (the honest owner sees
+  "received" and has no reason to retry); staff see every attempt.
+
 ## 2026-11-26 — Claude key for Ustaad smart correction; customer assistant off; cost first
 
 - Founder gave an Anthropic key for Ustaad smart correction (Q-U3): `SMART_CORRECTION_PROVIDER=anthropic`, `SMART_CORRECTION_MODEL=claude-haiku-5-5` (cheapest model; only members who gave the smart-correction consent, PII-masked).
@@ -2289,3 +2321,10 @@ Spec 23 § 21f. Rulings made while building (lead brief + security review of the
   the feed. Queued as Q-U-D2a (default: keep it in Discover only).
 - **`USTAAD_LOCATION_SECRET`** (config, `.env.example`) feeds E's distance bands; unset = no bands in Discover.
 - Migration `0097_ustaad_social` (not applied); numbering left to the lead (D1 0095, F2 0096).
+
+## 2026-11-26 — Lead ruling: the owner attest link closes after any confirmation attempt
+
+- B round 3 left a residual: a passed check closed the link but a failed one kept it open, so reopening the page told
+  the two apart (a location oracle). Ruling: `verify.attest_distance_tries` default **1** — any confirmation closes the
+  link; a failed distance check leaves the attestation for staff, who may issue a new link. Admin can raise it (1–5)
+  accepting the oracle. Tests: `packages/db/test/ustaad-identity-jobs.test.ts` (single and parallel attempts).

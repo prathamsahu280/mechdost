@@ -6,6 +6,7 @@ import { ConflictError, pgCode, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import type { Tx } from './orders';
 import { loadGrants } from './rbac';
+import { freezeUstaadPerksAfterCredentialChange } from './ustaad/profile';
 
 /** What a verified Firebase ID token tells us about the caller. Never built from request bodies. */
 export interface VerifiedIdentity {
@@ -58,6 +59,14 @@ function identityPatch(user: UserRecord, id: VerifiedIdentity) {
   return patch;
 }
 
+/** A real change of a credential the account already had (a first email or a re-verification is not one). */
+function credentialChange(user: UserRecord, id: VerifiedIdentity): 'phone_changed' | 'email_changed' | null {
+  if (id.phone !== null && user.phone !== null && id.phone !== user.phone) return 'phone_changed';
+  if (id.email !== null && user.email !== null && user.email.toLowerCase() !== id.email.toLowerCase())
+    return 'email_changed';
+  return null;
+}
+
 function identityInUse(err: unknown): never {
   if (pgCode(err) === '23505') {
     throw new ConflictError('This phone number or email is linked to another account', 'IDENTITY_IN_USE');
@@ -106,6 +115,9 @@ export async function ensureUser(db: Tx, id: VerifiedIdentity): Promise<UserReco
         entityId: row.id,
         after: { fields: Object.keys(patch) },
       });
+      // SR-2 (spec 23): a changed phone or email on a Pakka+ Ustaad member pauses perks and job posting.
+      const change = credentialChange(existing, id);
+      if (change) await freezeUstaadPerksAfterCredentialChange(tx, row.id, change);
       return row;
     });
   } catch (err) {

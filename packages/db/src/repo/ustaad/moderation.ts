@@ -76,6 +76,7 @@ import {
   overturnUstaadStrikes,
 } from './strikes';
 import { keptStatusOf, loadUstaadTarget, moveUstaadTarget, type UstaadTarget } from './targets';
+import { ustaadVoucherLostTrust } from './verification';
 
 export type { ScreenKind, ScreenOutcome } from '@mechdost/shared/ustaad/moderation';
 
@@ -797,6 +798,8 @@ async function applySanction(
     cityId: m.cityId,
     props: { days },
   });
+  // A banned member's vouches stop counting; vouchees left without evidence go back to staff (B round 3).
+  if (kind === 'ban') await ustaadVoucherLostTrust(tx, m.id, 'banned', null);
 }
 
 /**

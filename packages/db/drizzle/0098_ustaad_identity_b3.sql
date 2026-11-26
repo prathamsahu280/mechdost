@@ -1,0 +1,13 @@
+ALTER TABLE "ustaad_member_counters" DROP CONSTRAINT "ustaad_member_counters_non_negative";--> statement-breakpoint
+ALTER TABLE "ustaad_attestations" ADD COLUMN "link_issued_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "ustaad_attestations" ADD COLUMN "owner_distance_m" integer;--> statement-breakpoint
+ALTER TABLE "ustaad_attestations" ADD COLUMN "owner_distance_failures" smallint DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE "ustaad_attestations" ADD COLUMN "owner_business_hash" text;--> statement-breakpoint
+ALTER TABLE "ustaad_attestations" ADD COLUMN "evidence_purged_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "ustaad_member_counters" ADD COLUMN "qualified_followers" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+CREATE INDEX "ustaad_attestations_owner_business_hash_decided_at_index" ON "ustaad_attestations" USING btree ("owner_business_hash","decided_at");--> statement-breakpoint
+CREATE INDEX "ustaad_attestations_purge_idx" ON "ustaad_attestations" USING btree ("decided_at") WHERE "ustaad_attestations"."evidence_purged_at" is null and "ustaad_attestations"."owner_phone_hash" is not null;--> statement-breakpoint
+ALTER TABLE "ustaad_attestations" ADD CONSTRAINT "ustaad_attestations_owner_distance" CHECK ("ustaad_attestations"."owner_distance_m" is null or "ustaad_attestations"."owner_distance_m" >= 0);--> statement-breakpoint
+ALTER TABLE "ustaad_attestations" ADD CONSTRAINT "ustaad_attestations_distance_failures" CHECK ("ustaad_attestations"."owner_distance_failures" between 0 and 20);--> statement-breakpoint
+ALTER TABLE "ustaad_attestations" ADD CONSTRAINT "ustaad_attestations_purged_clear" CHECK ("ustaad_attestations"."evidence_purged_at" is null or ("ustaad_attestations"."owner_phone_enc" is null and "ustaad_attestations"."owner_business_id" is null));--> statement-breakpoint
+ALTER TABLE "ustaad_member_counters" ADD CONSTRAINT "ustaad_member_counters_non_negative" CHECK ("ustaad_member_counters"."followers" >= 0 and "ustaad_member_counters"."following" >= 0 and "ustaad_member_counters"."posts" >= 0 and "ustaad_member_counters"."answers" >= 0 and "ustaad_member_counters"."best_answers" >= 0 and "ustaad_member_counters"."helpful_votes" >= 0 and "ustaad_member_counters"."helpful_answers" >= 0 and "ustaad_member_counters"."videos_watched" >= 0 and "ustaad_member_counters"."recommendations" >= 0 and "ustaad_member_counters"."best_answers30d" >= 0 and "ustaad_member_counters"."helpful30d" >= 0 and "ustaad_member_counters"."qualified_followers" >= 0);

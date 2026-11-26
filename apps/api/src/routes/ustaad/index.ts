@@ -22,6 +22,8 @@ import { ustaadCorrectRoutes } from './correct';
 import { ustaadFeedRoutes, ustaadShareTeaserRoutes } from './feed';
 import { ustaadLocalRoutes } from './local';
 import { ustaadMemberRoutes } from './members';
+import { ustaadProfileRoutes } from './profile';
+import { ustaadAttestRoutes } from './attest';
 import { ustaadVerificationRoutes } from './verification';
 import { ustaadQaRoutes } from './qa';
 import { ustaadReportRoutes } from './reports';
@@ -57,7 +59,9 @@ export function ustaadRoutes(deps: AppDeps, sessions: SessionCache, access: Usta
   app.route('/', ustaadMemberRoutes(deps, sessions));
   app.route('/', ustaadMediaRoutes(deps));
   app.route('/', ustaadVerificationRoutes(deps));
-  // B (later): app.route('/', ustaadProfileRoutes(deps, sessions));
+  app.route('/', ustaadProfileRoutes(deps));
+  // Public owner page `/ustaad-attest/{token}` (outside the gate) and the member's owner request.
+  app.route('/', ustaadAttestRoutes(deps, access));
   app.route('/', ustaadQaRoutes(deps));
   app.route('/', ustaadFeedRoutes(deps)); // D part 1: feed, posts, stories, comments, tags
   // D2: graph, messages, Discover, promotions (each guards only its own path prefixes).

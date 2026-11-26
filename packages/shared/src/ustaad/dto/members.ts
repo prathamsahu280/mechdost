@@ -56,28 +56,74 @@ export const JoinDto = z
   .strict();
 export type Join = z.infer<typeof JoinDto>;
 
-/** `PATCH /ustaad/me`: profile fields only (workstream B adds the reserved-name check). */
+const expectedVersion = z.number().int().min(1);
+
+/**
+ * `PATCH /ustaad/me`: profile fields only, with the version last read (409 `STALE_MEMBER` otherwise). Names pass the
+ * reserved/confusable check (SR-4) in the repository. A new `areaLabel` without `areaLabelHi` clears the old Hindi
+ * label (it would describe the old area).
+ */
 export const PatchMeDto = z
   .object({
+    expectedVersion,
     displayName: name.optional(),
     displayNameHi: z.string().trim().min(2).max(80).nullable().optional(),
     garageName: z.string().trim().min(2).max(80).nullable().optional(),
     showGarage: z.boolean().optional(),
     areaLabel: label.optional(),
+    areaLabelHi: z.string().trim().min(2).max(80).nullable().optional(),
     yearsClaimed: z.number().int().min(0).max(60).optional(),
     workPlace: z.enum(USTAAD_WORK_PLACES).optional(),
     lang: z.enum(USTAAD_LANGS).optional(),
   })
   .strict();
+export type PatchMe = z.infer<typeof PatchMeDto>;
 
+/** `PUT /ustaad/me/specialities`: the full list (codes from the shared list; earned steps are kept). */
+export const SpecialitiesDto = z
+  .object({ codes: z.array(z.enum(USTAAD_SPECIALITY_CODES)).min(1).max(12) })
+  .strict();
+export type Specialities = z.infer<typeof SpecialitiesDto>;
+
+/**
+ * `PUT /ustaad/me/choices`: message mode, suggest-me, smart correction (only when `correction.member_can_change`),
+ * data saver and the three optional join consents (one tap to withdraw). The required profile consent is withdrawn
+ * only by leaving the network (`POST /ustaad/me/leave`).
+ */
 export const ChoicesDto = z
   .object({
+    expectedVersion,
     dmMode: z.enum(USTAAD_DM_MODES).optional(),
     suggestMe: z.boolean().optional(),
     correctionMode: z.enum(USTAAD_CORRECTION_MODES).nullable().optional(),
     dataSaver: z.boolean().optional(),
+    consents: z
+      .object({
+        ustaad_directory: z.boolean().optional(),
+        ustaad_training: z.boolean().optional(),
+        ustaad_offers: z.boolean().optional(),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
+export type Choices = z.infer<typeof ChoicesDto>;
+
+export const ChoicesViewDto = z.object({
+  dmMode: z.enum(USTAAD_DM_MODES),
+  suggestMe: z.boolean(),
+  correctionMode: z.enum(USTAAD_CORRECTION_MODES).nullable(),
+  canChangeCorrection: z.boolean(),
+  dataSaver: z.boolean(),
+  consents: z.object({
+    ustaad_profile: z.boolean(),
+    ustaad_directory: z.boolean(),
+    ustaad_training: z.boolean(),
+    ustaad_offers: z.boolean(),
+  }),
+  version: z.number().int(),
+});
+export type ChoicesView = z.infer<typeof ChoicesViewDto>;
 
 /**
  * What `GET /ustaad/me` returns: never a phone number (SR-34), never ids of other people. `staffPreview` is true when a

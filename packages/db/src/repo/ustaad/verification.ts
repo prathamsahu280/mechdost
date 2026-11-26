@@ -5,8 +5,8 @@
  * `audit_log` row and an `ustaad_events` row in one transaction. Every move is `machine.assert` + a conditional
  * UPDATE on (id, status, version). Bada/Master level reviews ride on the same table (`requested_level` bada/master).
  *
- * Not built yet (report): the non-partner owner path (one-time token link, GSTIN/Udyam + shop photo ≤ 200 m, public
- * attest page) and the evidence-retention purge. `attestationRefusal()` already encodes the SR-6 rules for it.
+ * The non-partner owner path (one-time link issued by staff, public page, evidence purge) lives in `attest.ts`.
+ * A voucher who loses trust (verification revoked, banned) is handled by `ustaadVoucherLostTrust` below.
  */
 import { and, count, desc, eq, gte, inArray, lt, or, sql } from 'drizzle-orm';
 import {
@@ -16,7 +16,7 @@ import {
   ustaadVouchMachine,
   type UstaadVerificationStatus,
 } from '@mechdost/shared/state';
-import type { UstaadLevel } from '@mechdost/shared/ustaad/codes';
+import type { UstaadLevel, UstaadMemberStatus, UstaadVerificationState } from '@mechdost/shared/ustaad/codes';
 import type {
   AttestationView,
   RejectVerification,
@@ -266,6 +266,103 @@ async function recheckEvidence(tx: Tx, memberId: string): Promise<void> {
   });
 }
 
+export type VoucherTrustLoss = 'verification_revoked' | 'banned';
+
+/**
+ * A voucher can no longer be trusted (security review 2026-11-26): their verification was revoked, or they were banned
+ * (workstream F's ban must call this in its transaction). In the caller's transaction:
+ * - their `requested` vouches expire (they can never be given now);
+ * - their `given` vouches are revoked with reason `voucher_untrusted` (the recommendation counter follows), so they
+ *   stop counting as evidence;
+ * - each vouchee is re-checked: an open request in review whose evidence fell short gets `evidence_withdrawn`; a
+ *   **verified** vouchee whose approved verification no longer has enough evidence goes back to staff as a re-check
+ *   (a new `in_review` row at their level; staff keep or revoke it), never staying verified silently.
+ * Returns the vouchees sent back to staff.
+ */
+export async function ustaadVoucherLostTrust(
+  tx: Tx,
+  memberId: string,
+  cause: VoucherTrustLoss,
+  staffUserId: string | null,
+): Promise<string[]> {
+  const now = new Date();
+  ustaadVouchMachine.assert('requested', 'expired', 'system');
+  await tx
+    .update(ustaadVouches)
+    .set({ status: 'expired', decidedAt: now })
+    .where(and(eq(ustaadVouches.voucherId, memberId), eq(ustaadVouches.status, 'requested')));
+  ustaadVouchMachine.assert('given', 'revoked', 'admin');
+  const [voucher] = await tx
+    .select({ level: ustaadMembers.level })
+    .from(ustaadMembers)
+    .where(eq(ustaadMembers.id, memberId));
+  const revoked = await tx
+    .update(ustaadVouches)
+    .set({ status: 'revoked', revokedReasonCode: 'voucher_untrusted' })
+    .where(and(eq(ustaadVouches.voucherId, memberId), eq(ustaadVouches.status, 'given')))
+    .returning({ id: ustaadVouches.id, voucheeId: ustaadVouches.voucheeId });
+  const sentBack: string[] = [];
+  for (const r of revoked) {
+    if (voucher && levelAtLeast(voucher.level as UstaadLevel, 'pakka'))
+      await tx
+        .update(ustaadMemberCounters)
+        .set({ recommendations: sql`${ustaadMemberCounters.recommendations} - 1` })
+        .where(
+          and(
+            eq(ustaadMemberCounters.memberId, r.voucheeId),
+            sql`${ustaadMemberCounters.recommendations} > 0`,
+          ),
+        );
+    await recordUstaadEvent(tx, {
+      entityType: 'vouch',
+      entityId: r.id,
+      kind: 'revoked',
+      fromStatus: 'given',
+      toStatus: 'revoked',
+      reasonCode: 'voucher_untrusted',
+      actorId: staffUserId,
+      actorRole: staffUserId ? 'staff' : 'system',
+      props: { cause },
+    });
+    await recheckEvidence(tx, r.voucheeId);
+    const [vouchee] = await tx.select().from(ustaadMembers).where(eq(ustaadMembers.id, r.voucheeId));
+    if (vouchee?.verificationState !== 'verified') continue;
+    const [approved] = await tx
+      .select({ id: ustaadVerifications.id })
+      .from(ustaadVerifications)
+      .where(and(eq(ustaadVerifications.memberId, vouchee.id), eq(ustaadVerifications.status, 'approved')))
+      .orderBy(desc(ustaadVerifications.decidedAt))
+      .limit(1);
+    if (!approved || (await evidenceComplete(tx, approved.id))) continue;
+    const level = vouchee.level as UstaadLevel;
+    const requestedLevel = (['naya', 'pakka', 'bada', 'master'] as const).find((l) => l === level) ?? 'naya';
+    const [queued] = await tx
+      .insert(ustaadVerifications)
+      .values({ memberId: vouchee.id, requestedLevel, status: 'in_review', proofKinds: [] })
+      .onConflictDoNothing()
+      .returning({ id: ustaadVerifications.id });
+    if (!queued) continue;
+    sentBack.push(vouchee.id);
+    await recordUstaadEvent(tx, {
+      entityType: 'verification',
+      entityId: queued.id,
+      kind: 'recheck_queued',
+      toStatus: 'in_review',
+      reasonCode: 'voucher_untrusted',
+      actorId: null,
+      actorRole: 'system',
+      cityId: vouchee.cityId,
+      props: { cause, approved_id: approved.id },
+    });
+  }
+  return sentBack;
+}
+
+/** Moves the member's open request to review once its evidence is complete (shared with `attest.ts`). */
+export async function ustaadMaybeToReview(tx: Tx, memberId: string): Promise<void> {
+  return maybeToReview(tx, memberId);
+}
+
 async function maybeToReview(tx: Tx, memberId: string): Promise<void> {
   const v = await openVerification(tx, memberId);
   if (v?.status !== 'requested') return;
@@ -377,7 +474,12 @@ export async function giveUstaadVouch(
         ),
       );
     const refusal = vouchRefusal({
-      voucher: { level: me.level as UstaadLevel, accountCreatedAt: acct?.createdAt ?? new Date() },
+      voucher: {
+        level: me.level as UstaadLevel,
+        accountCreatedAt: acct?.createdAt ?? new Date(),
+        verificationState: me.verificationState as UstaadVerificationState,
+        status: me.status as UstaadMemberStatus,
+      },
       reciprocal: reciprocal !== undefined,
       vouchesThisMonth: month?.n ?? 0,
       now: new Date(),
@@ -623,6 +725,10 @@ export async function confirmUstaadAttestation(
         'ustaad.verify.attest_per_owner_quarter',
         'ustaad.verify.attest_photo_max_m',
       ]);
+      // Serialise confirmations of one workshop so the quarter cap cannot be raced (security review 2026-11-26).
+      await tx.execute(
+        sql`select pg_advisory_xact_lock(hashtext(${`ustaad_owner_workshop:${a.workshopId}`}))`,
+      );
       const [q] = await tx
         .select({ n: count() })
         .from(ustaadAttestations)
@@ -1024,6 +1130,8 @@ export async function revokeUstaadVerification(
     if (!row) throw stale();
     await tx.update(ustaadMembers).set({ verificationState: 'revoked' }).where(eq(ustaadMembers.id, m.id));
     await audit(tx, staff.userId, 'ustaad.verification.revoked', v, { status: 'revoked' }, input.reasonCode);
+    // Their vouches stop counting; vouchees who now lack evidence go back to staff (security review 2026-11-26).
+    await ustaadVoucherLostTrust(tx, m.id, 'verification_revoked', staff.userId);
     await recordUstaadEvent(
       tx,
       {
@@ -1049,11 +1157,21 @@ export async function revokeUstaadVerification(
 }
 
 /** Open requests per status (admin overview, `/partners/applications` notice count). */
-export async function countOpenUstaadVerifications(tx: Tx): Promise<number> {
+export async function countOpenUstaadVerifications(
+  tx: Tx,
+  cityIds: readonly string[] | null = null,
+): Promise<number> {
+  if (cityIds !== null && cityIds.length === 0) return 0;
   const [r] = await tx
     .select({ n: count() })
     .from(ustaadVerifications)
-    .where(or(eq(ustaadVerifications.status, 'requested'), eq(ustaadVerifications.status, 'in_review')));
+    .innerJoin(ustaadMembers, eq(ustaadMembers.id, ustaadVerifications.memberId))
+    .where(
+      and(
+        or(eq(ustaadVerifications.status, 'requested'), eq(ustaadVerifications.status, 'in_review')),
+        cityIds === null ? undefined : inArray(ustaadMembers.cityId, [...cityIds]),
+      ),
+    );
   return r?.n ?? 0;
 }
 

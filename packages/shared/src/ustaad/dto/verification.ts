@@ -6,6 +6,7 @@
 import { z } from 'zod';
 import {
   COACHMARK_TARGETS,
+  USTAAD_ACCESS_MODES,
   USTAAD_LEVELS,
   USTAAD_VERIFY_METHODS,
   USTAAD_VERIFY_REJECT_REASONS,
@@ -44,6 +45,55 @@ export const AttestationRequestDto = z
 export const AttestationDecisionDto = z
   .object({ expectedVersion: version, decision: z.enum(['confirmed', 'declined']) })
   .strict();
+
+// ── Garage owner not on MechDost (SR-6; one-time link issued by staff) ───────────────────────────────────────
+
+/** Member: the owner's mobile (+91, 10 digits); stored encrypted, never shown back. */
+export const OwnerAttestationRequestDto = z
+  .object({
+    ownerPhone: z.string().regex(/^\+91[6-9]\d{9}$/),
+    sinceYear: z.number().int().min(1950).max(2100).nullable(),
+  })
+  .strict();
+export const OwnerAttestationViewDto = z.object({
+  id: z.uuid(),
+  status: z.enum(USTAAD_ATTESTATION_STATUSES),
+  sinceYear: z.number().int().nullable(),
+  expiresAt: z.string(),
+  version: z.number().int(),
+});
+/** Staff: the link (shown once) and the owner's number for the call (an audited read). */
+export const OwnerLinkDto = z.object({ url: z.string(), expiresAt: z.string(), ownerPhone: z.string() });
+
+/** Public attest page: the member's display name, area and claimed year only. */
+export const AttestPageDto = z.object({
+  memberName: z.string(),
+  areaLabel: z.string(),
+  areaLabelHi: z.string().nullable(),
+  sinceYear: z.number().int().nullable(),
+  expiresAt: z.string(),
+});
+export type AttestPage = z.infer<typeof AttestPageDto>;
+
+/** Public attest submit: Turnstile always; a confirmation carries GSTIN/Udyam and the owner's position at the shop. */
+export const AttestSubmitDto = z.discriminatedUnion('decision', [
+  z.object({ decision: z.literal('declined'), turnstileToken: z.string().min(10).max(4096) }).strict(),
+  z
+    .object({
+      decision: z.literal('confirmed'),
+      turnstileToken: z.string().min(10).max(4096),
+      businessId: z.string().trim().min(15).max(20),
+      shop: z
+        .object({
+          lat: z.number().min(-90).max(90),
+          lng: z.number().min(-180).max(180),
+          accuracyM: z.number().int().min(0).max(5000),
+        })
+        .strict(),
+    })
+    .strict(),
+]);
+export type AttestSubmit = z.infer<typeof AttestSubmitDto>;
 
 export const ApproveVerificationDto = z
   .object({ expectedVersion: version, grantedLevel: z.enum(REQUESTABLE) })
@@ -185,3 +235,14 @@ export const MyCardDto = z.object({
   current: z.enum(USTAAD_LEVELS),
 });
 export type MyCard = z.infer<typeof MyCardDto>;
+
+/** `GET /admin/ustaad/verifications/open-count` (Partners › Applications notice, spec 23 § 4a): city scoped. */
+export const VerificationOpenCountDto = z.object({
+  open: z.number().int().min(0),
+  access: z.enum(USTAAD_ACCESS_MODES),
+});
+export type VerificationOpenCount = z.infer<typeof VerificationOpenCountDto>;
+
+/** Public attest submit answer. */
+export const AttestOutcomeDto = z.object({ outcome: z.enum(['received', 'declined']) });
+export type AttestOutcome = z.infer<typeof AttestOutcomeDto>;

@@ -29,7 +29,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, kind } = await params;
   if (!isKind(kind)) return {};
   const t = await getTranslations({ locale, namespace: 'apply' });
-  return { title: t(`title_${kind}`), alternates: alternatesFor(`/partners/apply/${kind}`, locale) };
+  // Spec 23 § 4a: while the network is open, the mechanic page is the Ustaad join and says so.
+  const title =
+    kind === 'mechanic' && mechanicApplyView(await publishedUstaadAccess()) === 'ustaad_join'
+      ? (await getTranslations({ locale, namespace: 'ustaad.join' }))('title')
+      : t(`title_${kind}`);
+  return { title, alternates: alternatesFor(`/partners/apply/${kind}`, locale) };
 }
 
 /** Partner application form (spec 07) — replaces the concept's WhatsApp hand-off. */
@@ -39,13 +44,18 @@ export default async function ApplyPage({ params }: Props) {
   const t = await getTranslations('apply');
   const ustaadJoin =
     kind === 'mechanic' && mechanicApplyView(await publishedUstaadAccess()) === 'ustaad_join';
+  const tj = await getTranslations('ustaad.join');
   return (
     <Container className="py-10 tab:py-14">
       <LocalLink href="/partners" className="text-sm font-bold text-ink hover:underline">
         ← {t('back')}
       </LocalLink>
       <div className="mt-5 grid gap-8 nav:grid-cols-[1fr_minmax(0,640px)] nav:items-start">
-        <PageIntro eyebrow={t('eyebrow')} line1={t(`title_${kind}`)} lead={t('intro')} />
+        {ustaadJoin ? (
+          <PageIntro eyebrow={tj('eyebrow')} line1={tj('title')} lead={tj('lead')} />
+        ) : (
+          <PageIntro eyebrow={t('eyebrow')} line1={t(`title_${kind}`)} lead={t('intro')} />
+        )}
         <div className="rounded-card border border-line-card bg-surface p-6 shadow-card tab:p-8">
           {ustaadJoin ? (
             // Spec 23 § 4a: once the network is open, "Apply as a mechanic" is the Ustaad join (same as /ustaad/join).

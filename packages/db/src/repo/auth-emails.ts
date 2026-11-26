@@ -1,10 +1,13 @@
 import { randomUUID } from 'node:crypto';
+import { eq } from 'drizzle-orm';
+import { users } from '../schema';
 import type { SentActionMode } from '@mechdost/shared/email-action-link';
 import type { Keyring } from '../crypto';
 import { recordServerEvent } from './events';
 import { enqueueNotification, type Locale } from './notify';
 import { sealPayloadField } from './order-notifications';
 import type { Tx } from './orders';
+import { freezeUstaadPerksAfterCredentialChange } from './ustaad/profile';
 
 /** The email template each action link kind uses (`packages/shared/src/email-catalogue.ts`). */
 const TEMPLATE: Record<SentActionMode, 'auth_password_reset' | 'auth_verify_email'> = {
@@ -92,6 +95,16 @@ export async function queuePasswordChangedEmail(
     await recordServerEvent(tx, 'auth_password_changed_notified', {
       props: { outcome: queued ? 'queued' : 'duplicate' },
     });
+    // SR-2 (spec 23): a password change on a Pakka+ Ustaad member pauses perks and job posting, counted from the
+    // change itself (a replay never extends it: the freeze only grows to `changedAt + hours`).
+    if (queued) {
+      const [u] = await tx
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.firebaseUid, input.uid))
+        .limit(1);
+      if (u) await freezeUstaadPerksAfterCredentialChange(tx, u.id, 'password_changed', input.changedAt);
+    }
     return queued;
   });
 }

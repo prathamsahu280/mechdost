@@ -44,14 +44,11 @@ import {
   queueQuoteExpiringEmails,
   readForwardableEvents,
   resumeEndedPauses,
-  expireUstaadAttestations,
-  recomputeUstaadLevel,
-  runUstaadRingDetect,
-  ustaadMembersForLevelJob,
   withStatementTimeout,
   type Tx,
 } from '@mechdost/db/repo';
 import { createPosthogSender, startPosthogForwarder } from './analytics/posthog';
+import { runUstaadHourly, runUstaadNightly, type UstaadHourlyState } from './ustaad/identity-jobs';
 import { FailureBackoff } from './backoff';
 import { dispatchDueRefunds, reconcileDueRefunds } from './payments/refunds';
 import { httpRazorpay } from './payments/razorpay';
@@ -378,31 +375,24 @@ const coinTimer = setInterval(() => {
 }, 600_000);
 coinTimer.unref();
 
-// Ustaad Network identity jobs (spec 23 § 8 worker jobs; plan task B5): hourly attestation expiry; nightly ring check
-// (§ 14, SR-10) first, then the level recompute (qualified followers no longer count ring follows). Each step is
+// Ustaad Network identity jobs (spec 23 § 8 worker jobs; plan task B5; `ustaad/identity-jobs.ts`): hourly attestation
+// expiry and qualified followers for members whose followers changed; nightly ring check (§ 14, SR-10), counter
+// reconcile, 30-day counters, qualified followers, level recompute, badge awards and the evidence purge. Each step is
 // idempotent (conditional UPDATEs, unique keys), so several workers may run it; one member failing never stops the rest.
 let ustaadWork = false;
 let ustaadLastNightly = 0;
+const ustaadHourly: UstaadHourlyState = { followCursor: null };
 const ustaadTimer = setInterval(() => {
   if (ustaadWork) return;
   ustaadWork = true;
   void (async () => {
-    const expired = await expireUstaadAttestations(db);
-    if (expired > 0) log('info', 'ustaad_attestations_expired', { count: expired });
+    const hourly = await runUstaadHourly(db, ustaadHourly);
+    if (hourly.expired > 0) log('info', 'ustaad_attestations_expired', { count: hourly.expired });
     if (Date.now() - ustaadLastNightly < 24 * 3_600_000) return;
     ustaadLastNightly = Date.now();
-    const rings = await runUstaadRingDetect(db);
-    if (rings.flagged > 0)
-      log('info', 'ustaad_rings_flagged', { members: rings.flagged, follows: rings.uncounted });
-    let failed = 0;
-    for (const id of await ustaadMembersForLevelJob(db)) {
-      try {
-        await db.transaction((tx) => recomputeUstaadLevel(tx, id));
-      } catch {
-        failed += 1;
-      }
-    }
-    if (failed > 0) log('error', 'ustaad_levels_failed', { members: failed });
+    const r = await runUstaadNightly(db, log);
+    log('info', 'ustaad_identity_nightly', { ...r });
+    if (r.failed > 0) log('error', 'ustaad_levels_failed', { members: r.failed });
   })()
     .catch((err: unknown) => {
       log('error', 'ustaad_jobs_failed', safeError(err));

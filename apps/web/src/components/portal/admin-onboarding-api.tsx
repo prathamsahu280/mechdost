@@ -34,6 +34,7 @@ import { parseCoverage } from '@/lib/partner-onboarding-view';
 import { GenuineClauseButton } from './genuine-clause';
 import { portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { adminCard } from './admin-ui';
+import { UstaadMechanicNotice } from './admin-ustaad/ustaad-mechanic-notice';
 
 /**
  * Seller onboarding in the admin console on the API (Stream D, 2026-11-14; spec 07/08): applications (review,
@@ -158,6 +159,7 @@ export function ApplicationsApi() {
       <h2 id="applications-title" className="font-heading text-xl font-extrabold text-ink">
         {t('nav_applications')}
       </h2>
+      <UstaadMechanicNotice />
       <ListState
         loading={list.loading}
         error={list.error}

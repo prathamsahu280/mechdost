@@ -217,7 +217,12 @@ describe('izzatPoints (§ 9.1)', () => {
 
 describe('vouchRefusal / vouchesSufficient (SR-7)', () => {
   const base = {
-    voucher: { level: 'pakka' as const, accountCreatedAt: daysAgo(90) },
+    voucher: {
+      level: 'pakka' as const,
+      accountCreatedAt: daysAgo(90),
+      verificationState: 'verified' as const,
+      status: 'active' as const,
+    },
     reciprocal: false,
     vouchesThisMonth: 0,
     now: NOW,
@@ -235,6 +240,17 @@ describe('vouchRefusal / vouchesSufficient (SR-7)', () => {
     );
     expect(vouchRefusal({ ...base, reciprocal: true })).toBe('VOUCH_RECIPROCAL');
     expect(vouchRefusal({ ...base, vouchesThisMonth: 3 })).toBe('VOUCH_MONTHLY_CAP');
+  });
+  it('a voucher who is not verified or not active is refused even with a high level (security review)', () => {
+    for (const verificationState of ['unverified', 'pending_verification', 'revoked'] as const)
+      expect(
+        vouchRefusal({ ...base, voucher: { ...base.voucher, verificationState } }),
+        verificationState,
+      ).toBe('VOUCH_NOT_TRUSTED');
+    for (const status of ['restricted', 'banned', 'left'] as const)
+      expect(vouchRefusal({ ...base, voucher: { ...base.voucher, status } }), status).toBe(
+        'VOUCH_NOT_TRUSTED',
+      );
   });
   it('vouches need ≥ needed givers from ≥ 2 different garages (no garage = one shared bucket)', () => {
     expect(vouchesSufficient([{ voucherWorkshopId: 'a' }, { voucherWorkshopId: 'b' }], 2)).toBe(true);

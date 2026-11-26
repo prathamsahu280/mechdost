@@ -4,6 +4,14 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-26 (afternoon): Ustaad workstream B round 3** (branch worktree-agent-ab7b78a32bea2c97c, not pushed,
+  migrations **0098_ustaad_identity_b3** (schema) and **0099_ustaad_reserved_names_seed** (data) written, NOT applied).
+  Reserved/look-alike names, `PATCH /ustaad/me`, specialities, choices, SR-2 freeze, garage-owner link (staff-issued) and
+  public `/ustaad-attest/[token]`, evidence purge, counter reconcile, 30-day counters, stored qualified followers,
+  badge awards, voucher trust (lead's security finding), Partners notice, Ustaad copy on Apply as a mechanic, state
+  audit rows. Spec 23 § 21b round 3, decisions 2026-11-26 "B round 3", Q-UB1. **Next:** lead merge + apply 0098/0099;
+  D2 writes `followed/unfollowed` events per the contract; G2 builds the
+  verification queue screen and the reserved-names list; profile/choices web screens; screenshots.
 - **2026-11-26: Ustaad F2 (reports, moderation, appeals, takedown clocks, child safety) + F3 (compliance docs) built**
   (branch worktree-agent-a65a759c1bdf03b2b on main d06c6ba5 + merge of main with B's 0094; not pushed; migration
   **0096_ustaad_moderation_f2** generated, not applied; 0095 left free). Spec 23 § 21f, decisions 2026-11-26
