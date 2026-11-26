@@ -1,0 +1,75 @@
+/**
+ * Pure helpers of the delivery-agent screens (spec 24): countdowns, the agent's 4 steps, call and map links, and the
+ * contract's error codes (`delivery.errors.*`). Zod-free and React-free, unit-tested in `test/delivery-view.test.ts`.
+ */
+import type { DeliveryJobStatus } from '@mechdost/shared/delivery/codes';
+
+/** Under a minute left: the countdown turns to the warning colour and is announced once. */
+const URGENT_S = 60;
+
+export function countdown(
+  expiresAt: string | null,
+  now: number,
+): { seconds: number; text: string; urgent: boolean } | null {
+  if (!expiresAt) return null;
+  const seconds = Math.max(0, Math.floor((Date.parse(expiresAt) - now) / 1000));
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return { seconds, text: `${String(m)}:${String(s).padStart(2, '0')}`, urgent: seconds < URGENT_S };
+}
+
+/**
+ * The step of an accepted or picked-up job: 1 go to the shop, 2 pick up (code + photo), 3 go to the customer, 4 hand
+ * over (code + photo). `arrived` is the agent's own "I'm at the shop / customer" tap (kept on the device only).
+ */
+export function agentStep(status: DeliveryJobStatus, arrived: boolean): 1 | 2 | 3 | 4 | null {
+  if (status === 'accepted') return arrived ? 2 : 1;
+  if (status === 'picked_up') return arrived ? 4 : 3;
+  return null;
+}
+
+/** Error codes the contract has copy for (`delivery.errors.<code>`). */
+export const DELIVERY_ERROR_CODES = [
+  'AGENTS_DISABLED',
+  'JOB_CHANGED',
+  'OFFER_EXPIRED',
+  'TOO_MANY_ACTIVE_JOBS',
+  'AGENT_NOT_ACTIVE',
+  'PHOTO_REQUIRED',
+  'CODE_LOCKED',
+  'RETRY_LIMIT',
+  'VEHICLE_CANNOT_CARRY',
+  'COD_STAYS_WITH_SHOP',
+  'INVITE_PHONE_MISMATCH',
+  'INVITE_EXPIRED',
+  'DOCUMENT_AADHAAR',
+  'DOCUMENT_FORMAT',
+] as const;
+export type DeliveryErrorCode = (typeof DELIVERY_ERROR_CODES)[number];
+
+export function deliveryErrorKey(code: string): DeliveryErrorCode | null {
+  return DELIVERY_ERROR_CODES.find((c) => c === code) ?? null;
+}
+
+/** A wrong hand-back code comes back as `WRONG_CODE:<tries left>` (demo) or the API's code with its count. */
+export function wrongCodeLeft(code: string): number | null {
+  const m = /^(?:WRONG_CODE|CODE_LOCKED):(\d+)$/.exec(code);
+  return m ? Number(m[1]) : null;
+}
+
+/** `tel:` link for an Indian mobile number (10 digits, with or without +91 and spaces). */
+export function telHref(phone: string): string {
+  const digits = phone.replace(/\D/g, '').replace(/^91(?=\d{10}$)/, '');
+  return `tel:+91${digits}`;
+}
+
+/** Opens the phone's maps app (Google Maps universal link) at a point or an address. */
+export function mapsHref(to: { lat: number; lng: number } | { address: string }): string {
+  const query = 'address' in to ? to.address : `${String(to.lat)},${String(to.lng)}`;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
+/** Metres → km with one decimal (at least 0.1). */
+export function kmText(m: number): string {
+  return Math.max(0.1, Math.round(m / 100) / 10).toFixed(1);
+}

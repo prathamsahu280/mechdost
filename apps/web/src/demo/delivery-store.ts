@@ -399,7 +399,6 @@ const withAgent = (s: DeliveryState, a: DemoAgent): DeliveryState => ({
   agents: s.agents.map((x) => (x.id === a.id ? a : x)),
 });
 const openOffer = (j: DemoJob) => j.offers.find((o) => o.status === 'offered') ?? null;
-const acceptedOffer = (j: DemoJob) => j.offers.find((o) => o.status === 'accepted') ?? null;
 /** An agent may see a job offered to them (open offer) or one they hold or held (accepted offer). */
 const agentMaySee = (j: DemoJob, agentId: string) =>
   j.agentId === agentId || j.offers.some((o) => o.agentId === agentId && o.status === 'offered');
@@ -445,11 +444,9 @@ export function orderDeliveryMode(order: DemoOrder): 'agent' | 'shop' {
 export function sweepExpiredOffers(now = Date.now()): void {
   const s = deliveryState();
   const at = new Date(now).toISOString();
-  let changed = false;
   const jobs = s.jobs.map((j) => {
     const offer = openOffer(j);
     if (j.status !== 'offered' || !offer || new Date(offer.expiresAt).getTime() > now) return j;
-    changed = true;
     return {
       ...moveJob(j, 'needs_agent', 'system', at, 'offer_expired'),
       agentId: null,
@@ -458,7 +455,7 @@ export function sweepExpiredOffers(now = Date.now()): void {
       ),
     };
   });
-  if (changed) save({ ...s, jobs });
+  if (jobs.some((j, i) => j !== s.jobs[i])) save({ ...s, jobs });
 }
 
 // ── shop ───────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -535,8 +532,8 @@ function finishReturn(
 ): Res<{ attemptsLeft: number; locked: boolean }> {
   const done = moveJob(j, 'returned', by, now, 'returned', j.returnOutcome);
   const failures = s.jobs
-    .filter((x) => x.orderCode === j.orderCode && x.failReason)
-    .map((x) => x.failReason as DeliveryFailReason);
+    .filter((x) => x.orderCode === j.orderCode)
+    .flatMap((x) => (x.failReason ? [x.failReason] : []));
   if (j.returnOutcome === 'retry') {
     const next: DemoJob = {
       ...done,
@@ -1302,7 +1299,7 @@ export function inviteAgent(
   return change((s, now) => {
     const from =
       'applicationCode' in input ? s.applications.find((a) => a.code === input.applicationCode) : null;
-    if ('applicationCode' in input && (!from || from.status !== 'new')) return fail('NOT_FOUND');
+    if ('applicationCode' in input && from?.status !== 'new') return fail('NOT_FOUND');
     const base = from ?? (input as Exclude<typeof input, { applicationCode: string }>);
     if (s.invites.some((i) => i.phone === base.phone && i.status === 'sent')) return fail('INVITE_OPEN');
     if (s.agents.some((a) => a.phone === base.phone)) return fail('ALREADY_AGENT');
@@ -1405,7 +1402,7 @@ export function acceptInvite(
 function promoteAccount(accountId: string): void {
   const stored = read(KEYS.accounts, isAccount);
   const base = stored.find((a) => a.id === accountId) ?? SEEDED_ACCOUNTS.find((a) => a.id === accountId);
-  if (!base || base.role !== 'customer') return;
+  if (base?.role !== 'customer') return;
   write(KEYS.accounts, [...stored.filter((a) => a.id !== accountId), { ...base, role: 'delivery_agent' }]);
 }
 
@@ -1607,15 +1604,7 @@ export function customerDelivery(orderCode: string) {
     ['agent_assigned', 'picked_up', 'retrying', 'delivered'].includes(stage) && agent && j.agentId;
   const rating = s.ratings.find((r) => r.jobId === j.id) ?? null;
   return {
-    stage: stage as
-      | 'finding_agent'
-      | 'agent_assigned'
-      | 'picked_up'
-      | 'attempt_failed'
-      | 'retrying'
-      | 'returning'
-      | 'delivered'
-      | 'returned',
+    stage,
     agentFirstName: named ? firstName(agent.name) : null,
     vehicleType: named ? agent.vehicleType : null,
     failReason:
