@@ -46,8 +46,9 @@ export function ProfileScreen({ handle }: { handle: string }) {
   const sheetBody = useRef<HTMLDivElement>(null);
   const goneRef = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
-    if (sheet === 'block' || sheet === 'report')
-      sheetBody.current?.querySelector<HTMLElement>('input, button, textarea')?.focus();
+    if (sheet === 'report') sheetBody.current?.querySelector<HTMLElement>('input, button, textarea')?.focus();
+    else if (sheet === 'block')
+      sheetBody.current?.querySelector<HTMLElement>('[data-confirm-cancel]')?.focus();
   }, [sheet]);
   useEffect(() => {
     if (gone) goneRef.current?.focus();
@@ -134,7 +135,9 @@ export function ProfileScreen({ handle }: { handle: string }) {
         if (!rel) return;
         update({ relationship: { ...rel, muted: d.muted } });
         setSheet(null);
-        setStatus(d.muted ? f('muteDone') : '');
+        window.setTimeout(() => {
+          setStatus(d.muted ? f('muteDone') : '');
+        }, 150);
         moreRef.current?.focus();
       },
     );
@@ -349,10 +352,11 @@ export function ProfileScreen({ handle }: { handle: string }) {
                 <p className="text-[16px] leading-relaxed text-ink">{f('blockConfirm', { name: who })}</p>
                 <div className="flex flex-wrap gap-3">
                   <button type="button" className={btnPrimary} onClick={() => void block()}>
-                    {f('confirmYes')}
+                    {f('block', { name: who })}
                   </button>
                   <button
                     type="button"
+                    data-confirm-cancel
                     className={btnQuiet}
                     onClick={() => {
                       setSheet('menu');

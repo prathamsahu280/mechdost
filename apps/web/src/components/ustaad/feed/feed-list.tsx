@@ -126,7 +126,7 @@ export function PostList({
   const statusRef = useRef<HTMLParagraphElement>(null);
   /** A removed card takes the focus with it: put it on the status line that says what happened. */
   const focusStatus = () => {
-    window.setTimeout(() => statusRef.current?.focus(), 0);
+    window.setTimeout(() => statusRef.current?.focus(), 150);
   };
   useEffect(() => {
     if (loaded.state === 'error' && feedExpired({ ok: false, status: loaded.status, code: loaded.code })) {

@@ -5,6 +5,7 @@ import { ClientMessages } from '@/components/ui/client-messages';
 import { Container } from '@/components/ui/page-intro';
 import { ShareTeaser } from '@/components/ustaad/feed/share-teaser';
 import type { Locale } from '@/i18n/routing';
+import { publishedUstaadAccess } from '@/lib/site-config-content';
 
 interface Props {
   params: Promise<{ locale: Locale; token: string }>;
@@ -16,8 +17,11 @@ const TOKEN = /^[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{22}$/;
 /** Never indexed or followed; the link never leaves through the Referer header (SR-44). */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
+  const hidden = { robots: { index: false, follow: false }, referrer: 'no-referrer' } as const;
+  // During the staff preview the page must not name the network to anyone the gate turns away.
+  if ((await publishedUstaadAccess()) !== 'open') return hidden;
   const t = await getTranslations({ locale, namespace: 'ustaad.feed' });
-  return { title: t('teaserTitle'), robots: { index: false, follow: false }, referrer: 'no-referrer' };
+  return { title: t('teaserTitle'), ...hidden };
 }
 
 /**

@@ -143,7 +143,8 @@ export function PostMenu({
   useEffect(() => {
     // The clicked row unmounts with the step: focus the new step's first control (never the page body).
     if (step === 'menu') first.current?.focus();
-    else body.current?.querySelector<HTMLElement>('input, button, textarea')?.focus();
+    else if (step === 'report') body.current?.querySelector<HTMLElement>('input, button, textarea')?.focus();
+    else body.current?.querySelector<HTMLElement>('[data-confirm-cancel]')?.focus();
   }, [step]);
 
   async function run(fn: () => Promise<{ ok: boolean; code?: string }>, gone: PostGone) {
@@ -270,10 +271,11 @@ export function PostMenu({
                     : run(async () => (await client()).deletePost(post.id), 'deleted'))
                 }
               >
-                {t('confirmYes')}
+                {step === 'block' ? t('block', { name }) : t('deletePost')}
               </button>
               <button
                 type="button"
+                data-confirm-cancel
                 className={btnQuiet}
                 onClick={() => {
                   setStep('menu');

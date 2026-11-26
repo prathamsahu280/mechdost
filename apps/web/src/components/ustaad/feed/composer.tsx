@@ -523,6 +523,8 @@ export function Composer({ story }: { story: boolean }) {
                         onClick={() => {
                           URL.revokeObjectURL(p.url);
                           setPhotos((xs) => xs.filter((_, j) => j !== i));
+                          // The pressed button is gone: focus the photo picker (always shown below a removal).
+                          window.setTimeout(() => document.getElementById(ids.photos)?.focus(), 0);
                         }}
                         className="press inline-flex min-h-11 items-center justify-center rounded-lg text-sm font-bold text-error focus-visible:outline-3 focus-visible:outline-focus"
                       >
@@ -723,6 +725,9 @@ export function Composer({ story }: { story: boolean }) {
           {choice && !story ? <TagPicker value={tags} onChange={setTags} /> : null}
 
           {progress !== null ? <UploadProgress pct={progress} /> : null}
+          <p role="status" className="sr-only">
+            {busy ? t('posting') : wantsPhotos && photos.length > 0 ? t('photoN', { n: photos.length }) : ''}
+          </p>
           <p id={ids.err} role="alert" className="text-[15px] font-bold text-error empty:sr-only">
             {error}
           </p>

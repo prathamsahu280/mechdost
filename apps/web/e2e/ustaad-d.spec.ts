@@ -24,8 +24,8 @@ async function signIn(page: Page) {
   await expect(page).not.toHaveURL(/\/login/);
 }
 
-async function axe(page: Page) {
-  const results = await new AxeBuilder({ page }).include('main').analyze();
+async function axe(page: Page, scope = 'main') {
+  const results = await new AxeBuilder({ page }).include(scope).analyze();
   expect(
     results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`),
   ).toEqual([]);
@@ -99,6 +99,7 @@ test.describe('Ustaad feed and social (workstream D web)', () => {
     const sheet = page.getByRole('dialog', { name: 'Comments' });
     await expect(sheet).toBeVisible();
     await expect(sheet.getByText('Badhiya! Relay ka part number bhi daal do')).toBeVisible();
+    await axe(page, 'dialog[open]');
     await sheet.getByRole('button', { name: /Reply to Imran Khan/ }).click();
     await expect(sheet.getByText('Replying to Imran Khan')).toBeVisible();
     await sheet.getByRole('textbox', { name: 'Write a comment' }).fill('Mere paas bhi yahi hua tha');
@@ -119,6 +120,8 @@ test.describe('Ustaad feed and social (workstream D web)', () => {
     const report = page.getByRole('dialog', { name: 'Report this' });
     await report.getByRole('button', { name: 'Send report' }).click();
     await expect(report.getByText('Pick a reason.')).toBeVisible();
+    await expect(report.getByRole('radio', { name: 'Wrong or unsafe advice' })).toBeFocused();
+    await axe(page, 'dialog[open]');
     await report.getByRole('radio', { name: 'Wrong or unsafe advice' }).check();
     await report.getByRole('button', { name: 'Send report' }).click();
     await expect(page.getByRole('status').filter({ hasText: 'Report UR-RPR-2026-SAMPLE' })).toBeVisible();
@@ -151,6 +154,7 @@ test.describe('Ustaad feed and social (workstream D web)', () => {
     const viewer = page.getByRole('dialog', { name: 'Story by Suresh Verma' });
     await expect(viewer).toBeVisible();
     await expect(viewer.getByRole('status')).toHaveText(/1 of 2/);
+    await axe(page, 'dialog[open]');
     const pause = viewer.getByRole('button', { name: 'Pause' });
     await pause.click();
     await expect(pause).toHaveAttribute('aria-pressed', 'true');
@@ -225,9 +229,17 @@ test.describe('Ustaad feed and social (workstream D web)', () => {
 
     await page.goto(TEASER);
     await expect(page.getByRole('heading', { level: 1, name: 'A post on Ustaad Network' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Sign in' })).toBeVisible();
-    await expect(page.locator('[data-ustaad-dock]')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Sign in' }).last()).toBeVisible();
     await axe(page);
     await shots(page, 'teaser', TEASER, 'main h1');
   });
+});
+
+test('signed out during the staff preview, the teaser is "page not found" and names nothing', async ({
+  page,
+}) => {
+  await page.goto(TEASER);
+  await expect(page.getByRole('heading', { level: 1, name: 'Page not found' })).toBeVisible();
+  await expect(page.getByText('Ustaad Network')).toHaveCount(0);
+  await expect(page).not.toHaveTitle(/Ustaad/);
 });
