@@ -117,6 +117,7 @@ Add the map key from your `.env` (public by design, but it lives in `.env`, so y
 
 ```bash
 "/c/Program Files/GitHub CLI/gh.exe" variable set NEXT_PUBLIC_MAPTILER_KEY --body "<value from .env>"
+"/c/Program Files/GitHub CLI/gh.exe" variable set NEXT_PUBLIC_USTAAD_MEDIA_ORIGINS --body "https://<R2 account id>.r2.cloudflarestorage.com"
 ```
 
 These are optional, set them when the service exists:
@@ -388,3 +389,12 @@ Items decided to happen before going public; tick them off here.
    - Run each in English and in Hindi.
 
 Hidden in real mode until their APIs exist: bulk quotes, coins, reviews (decision 2026-11-14).
+
+### Ustaad media on Cloudflare R2 (set 2026-11-26)
+
+Four private buckets (`ustaad-quarantine`, `ustaad-media`, `ustaad-docs`, `ustaad-evidence`), CORS on the first three
+for mechdost.com, www and localhost:3000 (GET, PUT, HEAD; expose ETag). One Account API token, Object Read & Write on
+those four buckets. Server `.env`: `MEDIA_HOST=r2`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` (set with
+`deploy/set-env.sh`); GitHub variable `NEXT_PUBLIC_USTAAD_MEDIA_ORIGINS` (the web CSP, compiled at build time — the web
+image must be rebuilt after changing it). Verified: put/head/delete on all four buckets and the CORS preflight from
+mechdost.com. Free tier: 10 GB-month storage, 1M Class A and 10M Class B operations a month.
