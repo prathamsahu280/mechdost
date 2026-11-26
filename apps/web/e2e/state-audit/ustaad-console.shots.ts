@@ -77,12 +77,13 @@ const SCENES: Scene[] = [
     heading: /^Members$/,
     act: async (page) => {
       await page.getByRole('textbox', { name: 'Handle' }).fill('rame');
-      await page.getByRole('button', { name: 'Search' }).click();
+      await page.getByRole('button', { name: 'Search', exact: true }).click();
       await page.getByRole('button', { name: /Ramesh Sahu/ }).click();
     },
     check: async (page) => {
       await expect(page.getByRole('heading', { name: /Ramesh Sahu/ })).toBeFocused();
-      await expect(page.getByText(/\+91|@/)).toHaveCount(0);
+      // Handles carry "@"; phone numbers and email addresses never appear (SR-38).
+      await expect(page.getByText(/\+91|[0-9]{10}|@[a-z0-9-]+\.[a-z]{2,}/i)).toHaveCount(0);
     },
   },
   { section: 'legal', heading: /^Takedowns and legal holds$/ },
