@@ -7,7 +7,7 @@ import hi from './i18n/hi.json';
 import { USAGE_METRICS, type UsageMetricCode } from './usage';
 
 type Copy = Record<string, string>;
-const tree = (locale: 'en' | 'hi'): Copy => (locale === 'hi' ? hi.adminUsage : en.adminUsage) as Copy;
+const tree = (locale: 'en' | 'hi'): Copy => (locale === 'hi' ? hi.adminUsage : en.adminUsage);
 
 /** "Cloudflare R2 (Ustaad media): Storage" / "Cloudflare R2 (उस्ताद मीडिया): स्टोरेज". */
 export function usageMetricName(code: UsageMetricCode, locale: 'en' | 'hi'): string {

@@ -307,7 +307,7 @@ export async function addUsageCounts(
   deltas: Partial<Record<UsageMetricCode, number>>,
 ): Promise<void> {
   const rows = Object.entries(deltas)
-    .filter((e): e is [UsageMetricCode, number] => isUsageMetricCode(e[0]) && (e[1] ?? 0) > 0)
+    .filter((e): e is [UsageMetricCode, number] => isUsageMetricCode(e[0]) && e[1] > 0)
     .map(([metricCode, count]) => ({ metricCode, period, count: Math.round(count) }));
   if (rows.length === 0) return;
   await db
