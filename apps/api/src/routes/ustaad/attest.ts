@@ -10,6 +10,7 @@
  */
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
+import { createMiddleware } from 'hono/factory';
 import {
   decideUstaadAttestByToken,
   requestUstaadOwnerAttestation,
@@ -81,13 +82,16 @@ export function ustaadAttestRoutes(deps: AppDeps, access: UstaadAccessCache) {
     '/ustaad-attest/*',
     rateLimit(deps.rateLimiter, USTAAD_RATE_RULES.attestPerIp, (c) => c.get('clientIp')),
   );
-  app.use('/ustaad-attest/*', async (c, next) => {
-    c.header('Cache-Control', 'no-store');
-    c.header('X-Robots-Tag', 'noindex, nofollow');
-    c.header('Referrer-Policy', 'no-referrer');
-    if ((await access.get()) === 'off') return handleNotFound(c);
-    await next();
-  });
+  app.use(
+    '/ustaad-attest/*',
+    createMiddleware<AppEnv>(async (c, next) => {
+      c.header('Cache-Control', 'no-store');
+      c.header('X-Robots-Tag', 'noindex, nofollow');
+      c.header('Referrer-Policy', 'no-referrer');
+      if ((await access.get()) === 'off') return handleNotFound(c);
+      await next();
+    }),
+  );
 
   async function human(c: Context<AppEnv>, token: string) {
     if (!deps.turnstile) throw new ApiError(503, 'UNAVAILABLE', 'Please try again later');

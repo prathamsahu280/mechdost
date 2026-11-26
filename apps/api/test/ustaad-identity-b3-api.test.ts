@@ -219,7 +219,7 @@ describe('garage owner not on MechDost (SR-6)', () => {
     const unknown = await call(null, 'GET', `/ustaad-attest/${'a'.repeat(64)}`);
     expect(again.status).toBe(404);
     expect(unknown.status).toBe(404);
-    expect(again.body).toEqual(unknown.body);
+    expect({ ...again.body.error, requestId: null }).toEqual({ ...unknown.body.error, requestId: null });
   });
 
   it('while the network is off the public page is the generic 404', async () => {

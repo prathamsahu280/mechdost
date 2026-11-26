@@ -1270,7 +1270,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
   },
   // ─────────────── Ustaad Network identity (spec 23 § 4 flows 1, 2, 15; § 4a) ───────────────
   {
-    code: 'USTAAD-JOIN',
+    code: 'API-USTAAD-JOIN',
     page: 'Ustaad join (/ustaad/join; the same flow on /partners/apply/mechanic while access is open)',
     component:
       'Five-step join: who are you, what you fix, details, how to verify, choices (one required consent); errors focused',
@@ -1289,7 +1289,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     realApi: true,
   },
   {
-    code: 'USTAAD-WELCOME',
+    code: 'API-USTAAD-WELCOME',
     page: 'Ustaad first-time guide (/ustaad/welcome)',
     component:
       'Guide cards with Listen (staff recording or speech), Next / Back / Skip, the last card, reduced motion',
@@ -1307,7 +1307,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     realApi: true,
   },
   {
-    code: 'USTAAD-ME',
+    code: 'API-USTAAD-ME',
     page: 'Ustaad my card (/ustaad/me)',
     component:
       'ID card (level chip, verified tick, specialities), stats, level ladder with "You are here" and qualified followers, badges held and not, help replay',
@@ -1325,7 +1325,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     realApi: true,
   },
   {
-    code: 'USTAAD-PARTNERS-STATUS',
+    code: 'API-USTAAD-PARTNERS-STATUS',
     page: 'Partner status (/partners/status), signed-in member',
     component:
       'Verification progress: asked → proof → MechDost review → verified, or the reason; nothing for non-members',
@@ -1342,7 +1342,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     realApi: true,
   },
   {
-    code: 'USTAAD-ATTEST',
+    code: 'API-USTAAD-ATTEST',
     page: 'Garage owner confirms a mechanic (/ustaad-attest/[token]), signed out',
     component:
       'One question and two answers; confirm form (GSTIN/Udyam, use my location, security check), decline, done; one message for unknown, used and expired links',
@@ -1364,7 +1364,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     realApi: true,
   },
   {
-    code: 'ADM-USTAAD-NOTICE',
+    code: 'API-ADM-APPS-USTAAD',
     page: 'Admin → Partner applications (/admin/applications), real sign-in',
     component:
       'Notice "Mechanic applications moved to the Ustaad Network" with the open verification count and the queue link (only for verifying staff while access is open)',

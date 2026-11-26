@@ -14,7 +14,11 @@ const quiet =
   'press inline-flex min-h-11 w-full items-center justify-center rounded-button border border-line-card bg-surface px-5 text-base font-bold text-ink aria-disabled:cursor-not-allowed aria-disabled:opacity-60';
 
 type Step = 'loading' | 'gone' | 'ask' | 'confirm' | 'decline' | 'done';
-type Shop = { lat: number; lng: number; accuracyM: number };
+interface Shop {
+  lat: number;
+  lng: number;
+  accuracyM: number;
+}
 type LocState = 'idle' | 'finding' | 'found' | 'denied' | 'unavailable';
 /** Which control an error belongs to (the error sits under it and the control gets focus). */
 type ErrorAt = 'businessId' | 'location' | 'form';
@@ -184,7 +188,7 @@ export function AttestForm({ token }: { token: string }) {
   }
 
   const headingClass =
-    'font-heading text-[clamp(24px,6vw,32px)] font-extrabold leading-tight tracking-[-0.02em] text-ink outline-none';
+    'font-heading text-[clamp(24px,6vw,32px)] font-extrabold leading-tight tracking-[-0.02em] text-ink';
 
   const securityCheck = (
     <div
@@ -199,7 +203,7 @@ export function AttestForm({ token }: { token: string }) {
   );
 
   const formMessage = (
-    <p ref={formError} tabIndex={-1} className="text-sm font-bold text-error outline-none">
+    <p ref={formError} tabIndex={-1} className="text-sm font-bold text-error">
       {error?.at === 'form' ? message(error.code) : ''}
     </p>
   );
@@ -249,10 +253,24 @@ export function AttestForm({ token }: { token: string }) {
             <p className="text-sm text-ink-muted">{t('why')}</p>
           </div>
           <div className="grid gap-3">
-            <button type="button" className={primary} onClick={() => go('confirm')}>
+            <button
+              type="button"
+              data-disclosure-trigger="attest-confirm"
+              className={primary}
+              onClick={() => {
+                go('confirm');
+              }}
+            >
               {t('confirm')}
             </button>
-            <button type="button" className={quiet} onClick={() => go('decline')}>
+            <button
+              type="button"
+              data-disclosure-trigger="attest-decline"
+              className={quiet}
+              onClick={() => {
+                go('decline');
+              }}
+            >
               {t('decline')}
             </button>
           </div>
@@ -340,7 +358,14 @@ export function AttestForm({ token }: { token: string }) {
             <button type="submit" aria-disabled={busy ? true : undefined} className={primary}>
               {t('submit', { name })}
             </button>
-            <button type="button" className={quiet} onClick={() => go('ask')}>
+            <button
+              type="button"
+              data-panel-cancel="attest-confirm"
+              className={quiet}
+              onClick={() => {
+                go('ask');
+              }}
+            >
               {t('back')}
             </button>
           </div>
@@ -359,7 +384,14 @@ export function AttestForm({ token }: { token: string }) {
             <button type="submit" aria-disabled={busy ? true : undefined} className={primary}>
               {t('submitDecline')}
             </button>
-            <button type="button" className={quiet} onClick={() => go('ask')}>
+            <button
+              type="button"
+              data-panel-cancel="attest-decline"
+              className={quiet}
+              onClick={() => {
+                go('ask');
+              }}
+            >
               {t('back')}
             </button>
           </div>

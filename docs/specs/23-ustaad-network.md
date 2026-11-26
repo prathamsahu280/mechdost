@@ -1304,8 +1304,8 @@ reserved_names}`); a look-alike of an existing name is 409 `NAME_EXISTS`. A db t
   - **Web:** Partners › Applications notice (`UstaadMechanicNotice`: count from `GET
 /admin/ustaad/verifications/open-count`, city scoped, shown only to `ustaad:verify` staff while access is `open`,
     link `/admin/ustaad?section=verify` for G2's queue); the "Apply as a mechanic" page title, eyebrow and lead use
-    `ustaad.join` copy while access is `open`. UI state audit rows `USTAAD-JOIN`, `USTAAD-WELCOME`, `USTAAD-ME`,
-    `USTAAD-PARTNERS-STATUS`, `USTAAD-ATTEST`, `ADM-USTAAD-NOTICE` (API mode, `model-api.ts`).
+    `ustaad.join` copy while access is `open`. UI state audit rows `API-USTAAD-JOIN`, `API-USTAAD-WELCOME`, `API-USTAAD-ME`,
+    `API-USTAAD-PARTNERS-STATUS`, `API-USTAAD-ATTEST`, `API-ADM-APPS-USTAAD` (API mode, `model-api.ts`, chunk G).
 - **Not built yet (B):** QR on the card (no new dependency), coach-marks on the other five controls (their screens
   belong to C–E), SR-6 shop photo, link delivery by WhatsApp/SMS, new-device signal and forced re-OTP (Q-UB1), the
   profile/choices web screens (API only), screenshots.
