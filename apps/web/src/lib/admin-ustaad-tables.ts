@@ -149,3 +149,33 @@ export function tableErrorMessage(code: string, details: unknown): string {
   if (code === 'VALIDATION') return 't_err_invalid';
   return 't_err_generic';
 }
+
+/**
+ * The name a row is read out by ("Edit …", "Merge #…"): its Hindi text on /hi when the row has one (`nameEn` →
+ * `nameHi`, `titleEn` → `titleHi`, `labelEn` → `labelHi`, `textEn` → `textHi`; the reach cities' `name` →
+ * `nameHi`), else the text staff typed. `localized` = the row has a text per language; otherwise (word-list phrases,
+ * hashtag slugs, codes) the name is user content and is marked as such (hard rule 10, Hindi gate).
+ */
+export function rowName(
+  config: { nameField: string },
+  row: TableRow,
+  locale: string,
+): { text: string; localized: boolean } {
+  const field = config.nameField;
+  const hiField = field.endsWith('En') ? `${field.slice(0, -2)}Hi` : field === 'name' ? 'nameHi' : null;
+  const own = typeof row[field] === 'string' ? row[field] : '';
+  if (!hiField) return { text: own, localized: false };
+  const hi = row[hiField];
+  return { text: locale === 'hi' && typeof hi === 'string' && hi.trim() !== '' ? hi : own, localized: true };
+}
+
+/**
+ * A translated sentence around a name, split where the name goes so the name alone can be wrapped (as user content)
+ * without changing the language's word order: `splitAroundName((n) => t('t_edit_row', { name: n }))`.
+ */
+export function splitAroundName(message: (name: string) => string): { before: string; after: string } {
+  const mark = '\u0000';
+  const text = message(mark);
+  const at = text.indexOf(mark);
+  return at < 0 ? { before: text, after: '' } : { before: text.slice(0, at), after: text.slice(at + 1) };
+}

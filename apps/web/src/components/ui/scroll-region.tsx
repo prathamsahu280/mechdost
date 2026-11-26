@@ -22,7 +22,7 @@ export function ScrollRegion({
       tabIndex={0}
       aria-label={label}
       aria-labelledby={labelledBy}
-      className={`overflow-x-auto ${className}`.trim()}
+      className={`relative overflow-x-auto ${className}`.trim()}
     >
       {children}
     </div>
