@@ -175,6 +175,7 @@ export function Composer({
               onClick={() => {
                 open('text');
               }}
+              data-panel-cancel="message-voice"
               data-track="ustaad_message_voice_close"
             >
               <X aria-hidden="true" className="size-5" />
@@ -240,6 +241,7 @@ export function Composer({
                 onClick={() => {
                   open('text');
                 }}
+                data-panel-cancel="message-photo"
                 data-track="ustaad_message_photo_close"
               >
                 <X aria-hidden="true" className="size-5" />
@@ -263,6 +265,7 @@ export function Composer({
                 onClick={() => {
                   open('photo');
                 }}
+                data-disclosure-trigger="message-photo"
                 data-track="ustaad_message_photo_open"
               >
                 <Camera aria-hidden="true" className="size-5" />
@@ -285,6 +288,7 @@ export function Composer({
                   onClick={() => {
                     open('voice');
                   }}
+                  data-disclosure-trigger="message-voice"
                   data-track="ustaad_message_voice_open"
                 >
                   <Mic aria-hidden="true" className="size-5" />

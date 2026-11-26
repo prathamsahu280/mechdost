@@ -16,7 +16,9 @@ export default async function UstaadThreadPage({ params }: Props) {
   const { id } = await params;
   if (!ThreadIdParamDto.safeParse({ id }).success) notFound();
   return (
-    <ClientMessages namespaces={['ustaad.shell', 'ustaad.messages', 'ustaad.media', 'ustaad.labels']}>
+    <ClientMessages
+      namespaces={['ustaad.shell', 'ustaad.messages', 'ustaad.media', 'ustaad.labels', 'segments']}
+    >
       <MemberGate>
         <ThreadScreen id={id} />
       </MemberGate>

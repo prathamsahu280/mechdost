@@ -131,7 +131,7 @@ test.describe('Ustaad messages (D2 web)', () => {
   test('More: mute notices, report with a reason, block and unblock', async ({ page }) => {
     await page.goto(ANIL_THREAD);
     await expect(page.getByRole('img', { name: 'Photo in the chat' })).toBeVisible();
-    const more = page.getByRole('button', { name: 'More options' });
+    const more = page.getByRole('button', { name: 'More', exact: true });
     await more.click();
     await expect(more).toHaveAttribute('aria-expanded', 'true');
     await page.getByRole('button', { name: 'Turn on notices' }).click();
@@ -208,7 +208,7 @@ test.describe('Ustaad My network and Discover (D2 web)', () => {
     await axe(page);
     await markDocument(page);
     await page.getByRole('button', { name: 'Show more' }).click();
-    await expect(page.getByRole('link', { name: 'Vikas Dewangan' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Vikas Dewangan', exact: true })).toBeVisible();
     await page
       .getByRole('listitem')
       .filter({ hasText: 'Raju Nishad' })
@@ -231,7 +231,7 @@ test.describe('Ustaad My network and Discover (D2 web)', () => {
     await expect(page.getByText('Request to Vikas Dewangan taken back.')).toBeVisible();
 
     await tabs.getByRole('link', { name: 'Connections' }).click();
-    await expect(page.getByRole('link', { name: 'Raju Nishad' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Raju Nishad', exact: true })).toBeVisible();
 
     await tabs.getByRole('link', { name: 'Blocked' }).click();
     await page.getByRole('button', { name: 'Unblock' }).click();

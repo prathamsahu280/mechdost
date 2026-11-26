@@ -19,7 +19,7 @@ export default async function UstaadMessagesPage({ searchParams }: Props) {
   const sp = (await searchParams) ?? {};
   const to = sp.to === undefined ? undefined : normaliseHandle(sp.to);
   return (
-    <ClientMessages namespaces={['ustaad.shell', 'ustaad.messages', 'ustaad.labels']}>
+    <ClientMessages namespaces={['ustaad.shell', 'ustaad.messages', 'ustaad.labels', 'segments']}>
       <MemberGate>
         {to === undefined ? <ThreadList box={parseThreadBox(sp.box)} /> : <NewThread handle={to} />}
       </MemberGate>

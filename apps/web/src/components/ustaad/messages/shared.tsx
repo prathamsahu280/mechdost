@@ -29,7 +29,12 @@ export function useSocial<T>(
   sample: boolean;
 } {
   const locale = useLocale();
-  const [loaded, setLoaded] = useState<Loaded<T>>({ state: 'loading' });
+  // The answer remembers which key it belongs to: right after the key changes (a new search), the old answer is not
+  // shown or counted as the new one (it reads as loading until the new answer lands).
+  const [result, setResult] = useState<{ key: string; loaded: Loaded<T> }>({
+    key,
+    loaded: { state: 'loading' },
+  });
   const [sample, setSample] = useState(false);
   const [tick, setTick] = useState(0);
   const silent = useRef(false);
@@ -37,22 +42,26 @@ export function useSocial<T>(
   run.current = fn;
   useEffect(() => {
     let live = true;
-    if (!silent.current) setLoaded({ state: 'loading' });
+    if (!silent.current) setResult({ key, loaded: { state: 'loading' } });
     silent.current = false;
     socialClient(locale)
       .then(async (c) => {
         const r = await run.current(c);
         if (!live) return;
         setSample(c.sample);
-        setLoaded(r.ok ? { state: 'ok', data: r.data } : { state: 'error', status: r.status, code: r.code });
+        setResult({
+          key,
+          loaded: r.ok ? { state: 'ok', data: r.data } : { state: 'error', status: r.status, code: r.code },
+        });
       })
       .catch(() => {
-        if (live) setLoaded({ state: 'error', status: 0, code: 'NETWORK' });
+        if (live) setResult({ key, loaded: { state: 'error', status: 0, code: 'NETWORK' } });
       });
     return () => {
       live = false;
     };
   }, [locale, key, tick]);
+  const loaded: Loaded<T> = result.key === key ? result.loaded : { state: 'loading' };
   const reload = useCallback(() => {
     setTick((n) => n + 1);
   }, []);
@@ -222,7 +231,8 @@ export function MemberLine({
 export function Who({ name }: { name: string }) {
   return (
     <span className="sr-only">
-      , <span data-user-content>{name}</span>
+      {' '}
+      <span data-user-content>{name}</span>
     </span>
   );
 }
