@@ -20,7 +20,6 @@ import {
   deliveryAgentEvents,
   deliveryAgentInvites,
   deliveryAgents,
-  deliveryJobOffers,
   deliveryJobs,
   deliveryRatings,
   mediaObjects,
@@ -1117,7 +1116,7 @@ export async function prepareAgentUpload(
     .from(deliveryJobs)
     .where(eq(deliveryJobs.id, input.jobId))
     .limit(1);
-  if (!j || j.agentId !== a.id || !['accepted', 'picked_up'].includes(j.status))
+  if (j?.agentId !== a.id || !['accepted', 'picked_up'].includes(j.status))
     throw new NotFoundError('Delivery job not found');
   return { ownerKind: 'delivery_photo', ownerId: j.id };
 }

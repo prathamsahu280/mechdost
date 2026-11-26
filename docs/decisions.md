@@ -2595,9 +2595,8 @@ Spec 24 § 5. Found in the security review of the delivery repositories; fixed i
 - **Replacing a document** sets it back to `submitted` (unverified), takes the agent offline and withdraws open
   offers. Suggestions and accepts need all three documents verified.
 - `cityScopeFrom` ignores known non-staff roles, so an agent grant never becomes a staff city scope.
-- WhatsApp invite: the lead first accepted a one-time, phone-bound, 72 h token in the button (it only works with the
-  same OTP-proven phone). The builder went further: the WhatsApp message carries **no token** (lock screens, chat
-  backups); it sends the person to the join page and signing in with the invite's phone finds the open invite. The
+- WhatsApp invite (builder's call; the codebase study flagged a token in a WhatsApp URL as needing a security ruling):
+  the WhatsApp message carries **no token** (lock screens, chat backups); it sends the person to the join page and signing in with the invite's phone finds the open invite. The
   email carries the link. The two WhatsApp templates (`partner_delivery_invite`, `partner_delivery_offer`) are **not
   submitted to Meta** (founder's go-ahead needed, Q-DA1).
 - Tests that pin it: `packages/db/test/delivery-agents.test.ts`, block "security review 2026-11-26".

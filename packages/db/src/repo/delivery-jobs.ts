@@ -31,7 +31,6 @@ import {
   products,
   shipments,
   shopUsers,
-  shops,
   users,
 } from '../schema';
 import {
@@ -483,7 +482,7 @@ async function lockOwnOffer(tx: Tx, agentId: string, offerId: string) {
     .innerJoin(deliveryJobs, eq(deliveryJobs.id, deliveryJobOffers.jobId))
     .where(eq(deliveryJobOffers.id, offerId))
     .limit(1);
-  if (!probe || probe.agentId !== agentId) throw new NotFoundError('Offer not found');
+  if (probe?.agentId !== agentId) throw new NotFoundError('Offer not found');
   await lockOrder(tx, probe.orderId);
   const job = await lockJob(tx, probe.jobId);
   const [offer] = await tx
@@ -760,7 +759,7 @@ async function lockOwnJob(tx: Tx, agentId: string, jobId: string) {
     .from(deliveryJobs)
     .where(eq(deliveryJobs.id, jobId))
     .limit(1);
-  if (!probe || probe.agentId !== agentId) throw new NotFoundError('Delivery job not found');
+  if (probe?.agentId !== agentId) throw new NotFoundError('Delivery job not found');
   const o = await lockOrder(tx, probe.orderId);
   const job = await lockJob(tx, jobId);
   if (job.agentId !== agentId) throw new NotFoundError('Delivery job not found');
@@ -1412,7 +1411,7 @@ export async function confirmDeliveryReturn(
     if (!probe?.shopId || !input.shopIds.includes(probe.shopId)) throw new NotFoundError('Order not found');
     const o = await lockOrder(tx, probe.id);
     const job = await activeJobOf(tx, probe.id);
-    if (!job || job.status !== 'returning' || o.status !== 'out_for_delivery')
+    if (job?.status !== 'returning' || o.status !== 'out_for_delivery')
       throw new ConflictError('Nothing is coming back for this order', 'WRONG_STEP');
     const check = await verifyHandoverCode(tx, input.keyring, job.id, 'return', input.returnCode);
     if (!check.ok) {

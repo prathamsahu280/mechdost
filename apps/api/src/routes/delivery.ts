@@ -150,11 +150,10 @@ const requirePhoneVerified = createMiddleware<AppEnv>(async (c, next) => {
 });
 
 type Req = NonNullable<RouteConfig['request']>;
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 function r<
   const M extends 'get' | 'post' | 'put' | 'patch',
   const P extends string,
-  const R extends Req = {},
+  const R extends Req = Record<string, never>,
 >(method: M, path: P, summary: string, tag: string, request?: R) {
   return createRoute({
     method,

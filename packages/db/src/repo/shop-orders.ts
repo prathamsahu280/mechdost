@@ -481,7 +481,7 @@ export async function advanceShopOrder(
       ? [{ to: 'shipped', mode: 'own' }, { to: 'out_for_delivery' }]
       : [step];
     const from = { packed: 'confirmed', shipped: 'packed', out_for_delivery: 'shipped' } as const;
-    const first = moves[0] as Exclude<ShopStep, { to: 'ready_for_pickup' }> | undefined;
+    const first = moves[0];
     if (!first || o.status !== from[first.to]) throw new ConflictError(`Order is ${o.status}`, 'WRONG_STEP');
     const actor = { type: 'shop' as const, userId: input.staffUserId };
     let version = input.expectedVersion;

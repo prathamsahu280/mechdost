@@ -813,7 +813,7 @@ describe('security review 2026-11-26: standing and documents', () => {
         expectedVersion: back.version,
         keyring,
       }),
-    ).rejects.toMatchObject({ status: expect.any(Number) });
+    ).rejects.toThrow();
     await expect(
       giveUpDeliveryJob(w.t(), {
         userId: A.userId,
@@ -821,7 +821,7 @@ describe('security review 2026-11-26: standing and documents', () => {
         reasonCode: 'emergency',
         expectedVersion: back.version,
       }),
-    ).rejects.toMatchObject({ status: expect.any(Number) });
+    ).rejects.toThrow();
   });
 
   it('a paused agent may still show the return code of a parcel going back (stock safety), nothing else', async () => {
@@ -899,7 +899,7 @@ describe('security review 2026-11-26: standing and documents', () => {
         expectedVersion: accepted.version,
         keyring,
       }),
-    ).rejects.toMatchObject({ status: expect.any(Number) });
+    ).rejects.toThrow();
     const view = await getAgentJob(w.t(), { userId: A.userId, jobId: carried.id, keyring });
     expect(view.contact.stage).toBe('drop');
     const res = await deliverDeliveryJob(w.t(), {

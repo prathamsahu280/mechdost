@@ -359,8 +359,8 @@ export async function requestDeliverySwitch(
       .from(orders)
       .where(eq(orders.code, input.orderCode))
       .limit(1);
-    if (!probe || !inScope(input.scope, probe.cityId) || !probe.shopId)
-      throw new NotFoundError('Order not found');
+    const shopId = probe?.shopId;
+    if (!probe || !shopId || !inScope(input.scope, probe.cityId)) throw new NotFoundError('Order not found');
     const o = await lockOrder(tx, probe.id);
     if (probe.mode !== 'agent' || !['confirmed', 'packed', 'ready_for_pickup'].includes(o.status))
       throw new ConflictError('Only an agent-mode order before pickup can be switched', 'NOT_SWITCHABLE');
@@ -371,7 +371,7 @@ export async function requestDeliverySwitch(
           .insert(orderDeliverySwitches)
           .values({
             orderId: probe.id,
-            shopId: probe.shopId as string,
+            shopId,
             reasonCode: input.reasonCode,
             note: input.note ?? null,
             requestedBy: input.staffUserId,
@@ -384,7 +384,7 @@ export async function requestDeliverySwitch(
       throw err;
     }
     if (!row) throw new Error('switch insert returned no row');
-    for (const userId of await members(tx, probe.shopId))
+    for (const userId of await members(tx, shopId))
       await queueNotice(tx, {
         kind: 'shop.delivery_switch',
         userId,
