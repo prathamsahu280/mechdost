@@ -29,6 +29,7 @@ import {
   listAdminJobs,
   listAgentJobs,
   listShopOrders,
+  newShopDeliveryMode,
   offerDeliveryJob,
   pickupDeliveryJob,
   rateDeliveryAgent,
@@ -286,6 +287,15 @@ describe('onboarding', () => {
 });
 
 describe('who delivers', () => {
+  it('a new shop starts with agents only in a city where agents are switched on (Lead call 11)', async () => {
+    expect(await newShopDeliveryMode(w.t(), w.cityId)).toBe('agents');
+    await w.db.insert(s.settings).values({ key: 'delivery.agents_enabled', cityId: w.cityId, value: false });
+    expect(await newShopDeliveryMode(w.t(), w.cityId)).toBe('self');
+    await w.db.execute(
+      sql`delete from settings where key = 'delivery.agents_enabled' and city_id = ${w.cityId}`,
+    );
+  });
+
   it('a prepaid order of an agents-mode shop is agent mode; COD stays with the shop', async () => {
     const online = await packedOnlineOrder(w);
     expect((await orderOf(w, online.code)).deliveryMode).toBe('agent');

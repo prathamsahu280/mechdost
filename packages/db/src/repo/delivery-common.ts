@@ -378,3 +378,8 @@ export async function allDocumentsVerified(tx: Tx, agentId: string): Promise<boo
   );
   return n >= AGENT_DOCUMENT_KINDS.length;
 }
+
+/** A new shop delivers with agents only in a city where agents are switched on (Lead's call 11); else itself. */
+export async function newShopDeliveryMode(tx: Tx, cityId: string): Promise<'agents' | 'self'> {
+  return (await deliverySettings(tx, cityId)).agentsEnabled ? 'agents' : 'self';
+}

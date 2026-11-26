@@ -21,6 +21,7 @@ import {
 } from '../schema';
 import { queueApplicationEmail } from './email-events';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
+import { newShopDeliveryMode } from './delivery-common';
 import { productVisible } from './visibility';
 import { recordServerEvent } from './events';
 import { queueStaffNotice, resolveNotices } from './notices';
@@ -342,6 +343,8 @@ async function createShop(
       stateId: a.state_id,
       location: { lng: num(a.lng), lat: num(a.lat) },
       status: 'pending',
+      // Agents deliver a new shop's prepaid orders only where agents are switched on (spec 24, Lead's call 11).
+      deliveryMode: await newShopDeliveryMode(tx, a.city_id),
     })
     .returning({ id: shops.id });
   if (!shop) throw new Error('shop insert returned no row');
