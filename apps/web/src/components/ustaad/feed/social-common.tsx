@@ -137,7 +137,6 @@ export function SignedImage({
   eager?: boolean;
 }) {
   const locale = useLocale();
-  const t = useTranslations('ustaad.feed');
   const box = useRef<HTMLDivElement>(null);
   const [url, setUrl] = useState<string | null>(null);
   const [near, setNear] = useState(eager);
@@ -176,8 +175,10 @@ export function SignedImage({
     >
       {url ? (
         <Image src={url} alt={alt} width={w} height={h} unoptimized className="size-full object-cover" />
+      ) : alt ? (
+        <span role="img" aria-label={alt} aria-busy="true" className="skeleton absolute inset-0" />
       ) : (
-        <span role="img" aria-label={`${alt}. ${t('photoLoading')}`} className="skeleton absolute inset-0" />
+        <span aria-hidden="true" className="skeleton absolute inset-0" />
       )}
     </div>
   );

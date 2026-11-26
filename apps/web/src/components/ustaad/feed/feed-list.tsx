@@ -25,11 +25,15 @@ const PROMO_AFTER = 3;
  * impression is counted once when the card is shown.
  */
 function PromoCard({ promo, onHidden }: { promo: ServedPromotion; onHidden: () => void }) {
+  const reasons = useRef<HTMLFieldSetElement>(null);
   const t = useTranslations('ustaad.feed');
   const locale = useLocale();
   const client = useSocialAction();
   const [asking, setAsking] = useState(false);
   const seen = useRef(false);
+  useEffect(() => {
+    if (asking) reasons.current?.querySelector('button')?.focus();
+  }, [asking]);
   useEffect(() => {
     if (seen.current) return;
     seen.current = true;
@@ -49,7 +53,7 @@ function PromoCard({ promo, onHidden }: { promo: ServedPromotion; onHidden: () =
       <p className="font-heading text-lg font-extrabold text-ink">{hi ? promo.titleHi : promo.titleEn}</p>
       <p className="text-[15px] leading-relaxed text-muted">{hi ? promo.bodyHi : promo.bodyEn}</p>
       {asking ? (
-        <fieldset className="grid gap-2">
+        <fieldset ref={reasons} className="grid gap-2">
           <legend className="text-[15px] font-bold text-ink">{t('promoWhy')}</legend>
           <div className="flex flex-wrap gap-2">
             {PROMOTION_HIDE_REASONS.map((r) => (
@@ -119,6 +123,11 @@ export function PostList({
   const [more, setMore] = useState(false);
   const [status, setStatus] = useState('');
   const [ad, setAd] = useState<ServedPromotion | null>(null);
+  const statusRef = useRef<HTMLParagraphElement>(null);
+  /** A removed card takes the focus with it: put it on the status line that says what happened. */
+  const focusStatus = () => {
+    window.setTimeout(() => statusRef.current?.focus(), 0);
+  };
   useEffect(() => {
     if (loaded.state === 'error' && feedExpired({ ok: false, status: loaded.status, code: loaded.code })) {
       reload();
@@ -171,6 +180,7 @@ export function PostList({
             ? t('muteDone')
             : t('blockDone'),
     );
+    focusStatus();
   }
 
   if (loaded.state === 'loading') return <LoadingBlock />;
@@ -183,7 +193,12 @@ export function PostList({
   return (
     <div className="grid gap-4">
       <SampleNote show={sample} />
-      <p role="status" className="text-sm font-bold text-ink empty:sr-only">
+      <p
+        ref={statusRef}
+        tabIndex={-1}
+        role="status"
+        className="text-sm font-bold text-ink empty:sr-only focus-visible:outline-3 focus-visible:outline-focus"
+      >
         {status}
       </p>
       {items.length === 0 ? empty : null}
@@ -204,6 +219,7 @@ export function PostList({
                 onHidden={() => {
                   setAd(null);
                   setStatus(t('promoHidden'));
+                  focusStatus();
                 }}
               />
             ) : null}

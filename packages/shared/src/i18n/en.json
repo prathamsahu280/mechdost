@@ -7204,7 +7204,9 @@
       "kindName_poll": "Poll",
       "kindName_link": "Link post",
       "kindName_mixed": "Photo and voice post",
-      "kindName_story": "Story"
+      "kindName_story": "Story",
+      "storyNewMark": "new",
+      "storySeenMark": "seen"
     },
     "local": {
       "title": "Pin my garage",

@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { CommentView, PostView } from '@mechdost/shared/ustaad/dto/feed';
 import { ustaadClient } from '@/lib/ustaad/client';
 import { btnPrimary, fieldClass, LoadFailed, LoadingBlock, SampleNote, useTimeAgo } from '../common';
@@ -126,7 +126,15 @@ export function CommentsPanel({ post, onCount }: { post: PostView; onCount: (n: 
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState('');
   const field = useRef<HTMLTextAreaElement>(null);
+  const focusField = useRef(false);
+  useEffect(() => {
+    if (mode === 'text' && focusField.current) {
+      focusField.current = false;
+      field.current?.focus();
+    }
+  });
   const fieldId = useId();
+  const errId = useId();
   const idem = useRef(`c${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`);
 
   async function send() {
@@ -208,6 +216,8 @@ export function CommentsPanel({ post, onCount }: { post: PostView; onCount: (n: 
     }
     onCount(Math.max(0, post.counts.comments - 1));
     setStatus(t('deleteDone'));
+    setMode('text');
+    focusField.current = true;
     refresh();
   }
 
@@ -229,7 +239,7 @@ export function CommentsPanel({ post, onCount }: { post: PostView; onCount: (n: 
               onReply={(x) => {
                 setReplyTo(x);
                 setMode('text');
-                field.current?.focus();
+                focusField.current = true;
               }}
               onDelete={(x) => void remove(x)}
             />
@@ -297,6 +307,8 @@ export function CommentsPanel({ post, onCount }: { post: PostView; onCount: (n: 
               rows={2}
               maxLength={1000}
               placeholder={t('writeComment')}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? errId : undefined}
               onChange={(e) => {
                 setText(e.target.value);
               }}
@@ -309,7 +321,7 @@ export function CommentsPanel({ post, onCount }: { post: PostView; onCount: (n: 
         ) : null}
         {mode === 'photo' ? <ImagePicker onChange={setPhoto} /> : null}
         {progress !== null ? <UploadProgress pct={progress} /> : null}
-        <p role="alert" className="text-sm font-bold text-error empty:sr-only">
+        <p id={errId} role="alert" className="text-sm font-bold text-error empty:sr-only">
           {error}
         </p>
         <p role="status" className="text-sm text-muted empty:sr-only">

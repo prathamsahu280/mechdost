@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { PostMediaView, PostView } from '@mechdost/shared/ustaad/dto/feed';
 import { track } from '@/lib/analytics';
 import { durationLabel, pollShares, sizeLabel } from '@/lib/ustaad/feed-view';
@@ -21,12 +21,15 @@ export function PhotoGallery({ media, eager = false }: { media: PostMediaView[];
   const t = useTranslations('ustaad.feed');
   const strip = useRef<HTMLUListElement>(null);
   const [index, setIndex] = useState(0);
+  const [said, setSaid] = useState('');
   const total = media.length;
   const go = (i: number) => {
     const next = Math.max(0, Math.min(total - 1, i));
     const el = strip.current?.children[next] as HTMLElement | undefined;
     el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
     setIndex(next);
+    // Announce only when a button moved the strip (a swipe is seen, and scroll ticks would be noisy).
+    setSaid(t('photoOf', { n: next + 1, total }));
   };
   const roleWord = (m: PostMediaView) =>
     m.role === 'before' ? t('before') : m.role === 'after' ? t('after') : null;
@@ -50,7 +53,10 @@ export function PhotoGallery({ media, eager = false }: { media: PostMediaView[];
               alt={[roleWord(m), t('photoOf', { n: i + 1, total })].filter(Boolean).join(', ')}
             />
             {roleWord(m) ? (
-              <span className="absolute top-3 left-3 rounded-full bg-navy/85 px-3 py-1 text-sm font-bold text-white">
+              <span
+                aria-hidden="true"
+                className="absolute top-3 left-3 rounded-full bg-navy/85 px-3 py-1 text-sm font-bold text-white"
+              >
                 {roleWord(m)}
               </span>
             ) : null}
@@ -70,9 +76,12 @@ export function PhotoGallery({ media, eager = false }: { media: PostMediaView[];
           >
             <UstaadIcon name="chevronLeft" />
           </button>
-          <p aria-live="polite" className="text-sm font-bold text-muted tabular-nums">
+          <p aria-hidden="true" className="text-sm font-bold text-muted tabular-nums">
             {t('photoOf', { n: index + 1, total })}
           </p>
+          <span role="status" className="sr-only">
+            {said}
+          </span>
           <button
             type="button"
             onClick={() => {
@@ -101,6 +110,11 @@ export function VideoTile({ video, poster }: { video: PostMediaView; poster: Pos
   const locale = useLocale();
   const [url, setUrl] = useState<string | null>(null);
   const [state, setState] = useState<'idle' | 'loading' | 'failed'>('idle');
+  const player = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    // The cover button is gone once the video is there: move focus to the player's own controls.
+    if (url) player.current?.focus();
+  }, [url]);
   const time = durationLabel(video.durationMs ?? 0);
   const size = sizeLabel(video.bytes);
   async function play() {
@@ -118,6 +132,7 @@ export function VideoTile({ video, poster }: { video: PostMediaView; poster: Pos
   if (url)
     return (
       <video
+        ref={player}
         src={url}
         controls
         autoPlay
@@ -219,8 +234,18 @@ function Poll({ poll, onVote }: { poll: NonNullable<PostView['poll']>; onVote: (
   const t = useTranslations('ustaad.feed');
   const { percents, total } = pollShares(poll.options.map((o) => o.votes));
   const showResults = poll.closed || poll.myOptionId !== null;
+  const box = useRef<HTMLFieldSetElement>(null);
+  const voted = useRef(false);
+  useEffect(() => {
+    // The pressed option turns into a result row: keep focus inside the poll.
+    if (voted.current && poll.myOptionId) box.current?.focus();
+  }, [poll.myOptionId]);
   return (
-    <fieldset className="mx-4 grid gap-2">
+    <fieldset
+      ref={box}
+      tabIndex={-1}
+      className="mx-4 grid gap-2 rounded-xl focus-visible:outline-3 focus-visible:outline-focus"
+    >
       <legend className="sr-only">{t('pollLabel')}</legend>
       {poll.options.map((o, i) =>
         showResults ? (
@@ -245,6 +270,7 @@ function Poll({ poll, onVote }: { poll: NonNullable<PostView['poll']>; onVote: (
             key={o.id}
             type="button"
             onClick={() => {
+              voted.current = true;
               onVote(o.id);
             }}
             aria-label={t('pollVote', { option: o.label })}

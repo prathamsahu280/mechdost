@@ -28,9 +28,12 @@ export function Sheet({
   useEffect(() => {
     const d = ref.current;
     if (!d) return;
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     if (!d.open) d.showModal();
     return () => {
       if (d.open) d.close();
+      // The page is inert while the dialog is open: give focus back only once it is closed.
+      if (opener?.isConnected) opener.focus();
     };
   }, []);
   return (

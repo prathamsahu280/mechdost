@@ -327,7 +327,11 @@ export function PostCard({
           post={post}
           onClose={(msg) => {
             setMenu(false);
-            if (msg) setStatus(msg);
+            // Written after the dialog is gone, so screen readers do not drop it.
+            if (msg)
+              window.setTimeout(() => {
+                setStatus(msg);
+              }, 150);
             moreRef.current?.focus();
           }}
           onGone={(why) => {

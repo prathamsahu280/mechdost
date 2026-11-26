@@ -40,7 +40,8 @@ export function StoryViewer({
   const client = useSocialAction();
   const dialog = useRef<HTMLDialogElement>(null);
   const [pos, setPos] = useState<StoryPos>({ ring: start, story: 0 });
-  const [paused, setPaused] = useState(false);
+  // Reduced motion: stories wait for Next instead of moving on by themselves.
+  const [paused, setPaused] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const [held, setHeld] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const touchY = useRef<number | null>(null);
@@ -52,9 +53,11 @@ export function StoryViewer({
 
   useEffect(() => {
     const d = dialog.current;
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     if (d && !d.open) d.showModal();
     return () => {
       if (d?.open) d.close();
+      if (opener?.isConnected) opener.focus();
     };
   }, []);
 
@@ -243,6 +246,9 @@ export function StoryViewer({
             </Link>
           ) : null}
           <p className="sr-only">{t('storyHint')}</p>
+          <p role="status" className="sr-only">
+            {`${who}, ${t('storyCount', { n: pos.story + 1, total: ring.stories.length })}`}
+          </p>
         </footer>
       </div>
     </dialog>

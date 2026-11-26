@@ -69,7 +69,7 @@ export function StoryRow() {
                   opener.current = e.currentTarget;
                   setOpen(i);
                 }}
-                aria-label={t('storyOpen', { name: r.mine ? t('yourStory') : who })}
+                aria-label={`${t('storyOpen', { name: r.mine ? t('yourStory') : who })}, ${r.allSeen ? t('storySeenMark') : t('storyNewMark')}`}
                 className={ringBtn}
               >
                 <span

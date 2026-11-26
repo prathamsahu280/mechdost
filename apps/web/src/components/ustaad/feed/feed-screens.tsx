@@ -94,17 +94,27 @@ export function TagScreen({ slug }: { slug: string }) {
   const errorText = useSocialError('feed');
   const { loaded, reload, sample, set } = useSocial((c) => c.tag(slug, null), `tag-${slug}`);
   const [status, setStatus] = useState('');
-  if (loaded.state === 'loading') return <LoadingBlock />;
+  if (loaded.state === 'loading')
+    return (
+      <>
+        <h1 className="sr-only">#{slug}</h1>
+        <LoadingBlock />
+      </>
+    );
   if (loaded.state === 'error')
     return loaded.status === 404 ? (
       <div className={`${card} grid justify-items-center gap-3 text-center`}>
+        <h1 className="font-heading text-xl font-extrabold text-ink">#{slug}</h1>
         <p className="text-[16px] text-ink">{t('tagEmpty')}</p>
         <Link href={localePath('/ustaad/discover', locale)} className={btnPrimary}>
           {t('findUstaads')}
         </Link>
       </div>
     ) : (
-      <LoadFailed message={errorText(loaded.code)} onRetry={reload} />
+      <>
+        <h1 className="sr-only">#{slug}</h1>
+        <LoadFailed message={errorText(loaded.code)} onRetry={reload} />
+      </>
     );
   const tag = loaded.data.tag;
   const label = `#${locale === 'hi' ? tag.nameHi : tag.nameEn}`;

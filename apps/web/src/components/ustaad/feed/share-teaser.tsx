@@ -53,9 +53,12 @@ export function ShareTeaser({ token }: { token: string }) {
 
   if (state === 'checking')
     return (
-      <p role="status" className="text-center text-[15px] text-muted">
-        {t('teaserOpening')}
-      </p>
+      <>
+        <h1 className="sr-only">{t('teaserTitle')}</h1>
+        <p role="status" className="text-center text-[15px] text-muted">
+          {t('teaserOpening')}
+        </p>
+      </>
     );
   const here = localePath(`/ustaad/s/${token}`, locale);
   return (

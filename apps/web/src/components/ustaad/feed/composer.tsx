@@ -83,6 +83,7 @@ function TagPicker({ value, onChange }: { value: TagListItem[]; onChange: (tags:
   const [q, setQ] = useState('');
   const [found, setFound] = useState<TagListItem[]>([]);
   const inputId = useId();
+  const search = useRef<HTMLInputElement>(null);
   useEffect(() => {
     let live = true;
     const id = window.setTimeout(() => {
@@ -110,6 +111,7 @@ function TagPicker({ value, onChange }: { value: TagListItem[]; onChange: (tags:
                 type="button"
                 onClick={() => {
                   onChange(value.filter((v) => v.slug !== x.slug));
+                  search.current?.focus();
                 }}
                 aria-label={t('tagRemove', { name: label(x) })}
                 className="press inline-flex min-h-11 items-center gap-1.5 rounded-full bg-navy px-3.5 text-sm font-bold text-white focus-visible:outline-3 focus-visible:outline-focus"
@@ -126,6 +128,7 @@ function TagPicker({ value, onChange }: { value: TagListItem[]; onChange: (tags:
       </label>
       <input
         id={inputId}
+        ref={search}
         type="search"
         value={q}
         placeholder={t('tagSearch')}
@@ -144,7 +147,9 @@ function TagPicker({ value, onChange }: { value: TagListItem[]; onChange: (tags:
                 type="button"
                 aria-disabled={full}
                 onClick={() => {
-                  if (!full) onChange([...value, x]);
+                  if (full) return;
+                  onChange([...value, x]);
+                  search.current?.focus();
                 }}
                 aria-label={t('tagAdd', { name: label(x) })}
                 className="press inline-flex min-h-11 items-center rounded-full bg-pill px-3.5 text-sm font-bold text-ink hover:bg-accent-soft aria-disabled:opacity-50 focus-visible:outline-3 focus-visible:outline-focus"
@@ -154,7 +159,9 @@ function TagPicker({ value, onChange }: { value: TagListItem[]; onChange: (tags:
             </li>
           ))}
       </ul>
-      {q.trim() && found.length === 0 ? <p className="text-sm text-muted">{t('tagsNone')}</p> : null}
+      <p role="status" className="text-sm text-muted empty:sr-only">
+        {q.trim() && found.length === 0 ? t('tagsNone') : ''}
+      </p>
     </fieldset>
   );
 }
@@ -186,6 +193,8 @@ export function Composer({ story }: { story: boolean }) {
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** The field an error is about (aria-invalid + focus), when there is one. */
+  const [errField, setErrField] = useState<string | null>(null);
   const [done, setDone] = useState<{ id: string; held: boolean } | null>(null);
   const [sample, setSample] = useState(false);
   const idem = useRef(`p${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`);
@@ -258,6 +267,7 @@ export function Composer({ story }: { story: boolean }) {
   async function submit() {
     if (busy || (!story && !choice)) return;
     setError(null);
+    setErrField(null);
     setBusy(true);
     try {
       const media: { mediaId: string; role?: 'before' | 'after' }[] = [];
@@ -334,6 +344,18 @@ export function Composer({ story }: { story: boolean }) {
       const built = buildPostInput(draft, idem.current);
       if (!built.ok) {
         setError(t(`err_${built.error}`));
+        const target =
+          built.error === 'body_required'
+            ? ids.body
+            : built.error === 'link_invalid'
+              ? ids.link
+              : built.error === 'fix_required'
+                ? 'fix-symptom'
+                : built.error === 'poll_options'
+                  ? 'poll-0'
+                  : null;
+        setErrField(target);
+        if (target) window.setTimeout(() => document.getElementById(target)?.focus(), 0);
         return;
       }
       const r = await c.createPost(built.input);
@@ -410,7 +432,7 @@ export function Composer({ story }: { story: boolean }) {
       ) : (
         <form
           className="grid gap-5"
-          aria-describedby={error ? ids.err : undefined}
+          noValidate
           onSubmit={(e) => {
             e.preventDefault();
             void submit();
@@ -597,6 +619,10 @@ export function Composer({ story }: { story: boolean }) {
                 <label key={k} className="grid gap-1.5 text-[15px] font-bold text-ink">
                   {t(k === 'symptom' ? 'fixSymptom' : k === 'cause' ? 'fixCause' : 'fixFix')}
                   <textarea
+                    id={`fix-${k}`}
+                    required={k !== 'cause'}
+                    aria-invalid={errField === `fix-${k}` ? true : undefined}
+                    aria-describedby={errField === `fix-${k}` ? ids.err : undefined}
                     value={fix[k]}
                     rows={2}
                     maxLength={500}
@@ -624,6 +650,8 @@ export function Composer({ story }: { story: boolean }) {
               <textarea
                 id={ids.body}
                 ref={bodyRef}
+                aria-invalid={errField === ids.body ? true : undefined}
+                aria-describedby={errField === ids.body ? ids.err : undefined}
                 value={body}
                 rows={story ? 1 : 3}
                 maxLength={story ? 200 : 3000}
@@ -652,6 +680,10 @@ export function Composer({ story }: { story: boolean }) {
                 <label key={i} className="grid gap-1 text-[15px] font-bold text-ink">
                   {t('pollOption', { n: i + 1 })}
                   <input
+                    id={`poll-${String(i)}`}
+                    required={i < 2}
+                    aria-invalid={errField === `poll-${String(i)}` ? true : undefined}
+                    aria-describedby={errField === `poll-${String(i)}` ? ids.err : undefined}
                     value={o}
                     maxLength={80}
                     onChange={(e) => {
@@ -683,6 +715,9 @@ export function Composer({ story }: { story: boolean }) {
               </label>
               <input
                 id={ids.link}
+                required
+                aria-invalid={errField === ids.link ? true : undefined}
+                aria-describedby={errField === ids.link ? ids.err : undefined}
                 type="url"
                 inputMode="url"
                 value={linkUrl}

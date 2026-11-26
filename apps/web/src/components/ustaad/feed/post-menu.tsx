@@ -33,11 +33,12 @@ export function ReportForm({
   const [busy, setBusy] = useState(false);
   const noteId = useId();
   const errId = useId();
-  const legend = useRef<HTMLLegendElement>(null);
+  const group = useRef<HTMLFieldSetElement>(null);
   async function send() {
     if (busy) return;
     if (!reason) {
       setError(t('reportPick'));
+      group.current?.querySelector<HTMLInputElement>('input[type="radio"]')?.focus();
       return;
     }
     setBusy(true);
@@ -59,10 +60,12 @@ export function ReportForm({
         void send();
       }}
     >
-      <fieldset aria-describedby={error ? errId : undefined}>
-        <legend ref={legend} className="font-heading text-base font-extrabold text-ink">
-          {t('reportWhy')}
-        </legend>
+      <fieldset
+        ref={group}
+        aria-describedby={error ? errId : undefined}
+        aria-invalid={error ? true : undefined}
+      >
+        <legend className="font-heading text-base font-extrabold text-ink">{t('reportWhy')}</legend>
         <div className="mt-2 grid gap-2">
           {REPORT_REASONS.map((r) => (
             <label
@@ -72,6 +75,7 @@ export function ReportForm({
               <input
                 type="radio"
                 name="report-reason"
+                required
                 value={r}
                 checked={reason === r}
                 onChange={() => {
@@ -134,8 +138,11 @@ export function PostMenu({
   const [step, setStep] = useState<Step>('menu');
   const [error, setError] = useState<string | null>(null);
   const first = useRef<HTMLButtonElement>(null);
+  const body = useRef<HTMLDivElement>(null);
   useEffect(() => {
+    // The clicked row unmounts with the step: focus the new step's first control (never the page body).
     if (step === 'menu') first.current?.focus();
+    else body.current?.querySelector<HTMLElement>('input, button, textarea')?.focus();
   }, [step]);
 
   async function run(fn: () => Promise<{ ok: boolean; code?: string }>, gone: PostGone) {
@@ -191,90 +198,92 @@ export function PostMenu({
         onClose();
       }}
     >
-      {step === 'menu' ? (
-        <ul className="grid gap-1">
-          {post.status === 'visible'
-            ? row('copy', t('copyLink'), () => void copy(), false, post.mine ? first : undefined)
-            : null}
-          {post.mine ? (
-            row(
-              'close',
-              t('deletePost'),
-              () => {
-                setStep('delete');
-              },
-              true,
-              post.status === 'visible' ? undefined : first,
-            )
-          ) : (
-            <>
-              {row(
-                'flag',
-                t('report'),
+      <div ref={body}>
+        {step === 'menu' ? (
+          <ul className="grid gap-1">
+            {post.status === 'visible'
+              ? row('copy', t('copyLink'), () => void copy(), false, post.mine ? first : undefined)
+              : null}
+            {post.mine ? (
+              row(
+                'close',
+                t('deletePost'),
                 () => {
-                  setStep('report');
-                },
-                false,
-                first,
-              )}
-              {row('close', t('hidePost'), () => {
-                onGone('hidden');
-              })}
-              {row(
-                'bell',
-                t('mute', { name }),
-                () => void run(async () => (await client()).mute(post.author.id, true), 'muted'),
-              )}
-              {row(
-                'lock',
-                t('block', { name }),
-                () => {
-                  setStep('block');
+                  setStep('delete');
                 },
                 true,
-              )}
-            </>
-          )}
-        </ul>
-      ) : null}
-      {step === 'report' ? (
-        <ReportForm
-          targetType="post"
-          targetId={post.id}
-          onDone={(msg) => {
-            onClose(msg);
-          }}
-        />
-      ) : null}
-      {step === 'block' || step === 'delete' ? (
-        <div className="grid gap-4">
-          <p className="text-[16px] leading-relaxed text-ink">
-            {step === 'block' ? t('blockConfirm', { name }) : t('deleteConfirm')}
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              className={btnPrimary}
-              onClick={() =>
-                void (step === 'block'
-                  ? run(async () => (await client()).block(post.author.id, true), 'blocked')
-                  : run(async () => (await client()).deletePost(post.id), 'deleted'))
-              }
-            >
-              {t('confirmYes')}
-            </button>
-            <button
-              type="button"
-              className={btnQuiet}
-              onClick={() => {
-                setStep('menu');
-              }}
-            >
-              {l('cancel')}
-            </button>
+                post.status === 'visible' ? undefined : first,
+              )
+            ) : (
+              <>
+                {row(
+                  'flag',
+                  t('report'),
+                  () => {
+                    setStep('report');
+                  },
+                  false,
+                  first,
+                )}
+                {row('close', t('hidePost'), () => {
+                  onGone('hidden');
+                })}
+                {row(
+                  'bell',
+                  t('mute', { name }),
+                  () => void run(async () => (await client()).mute(post.author.id, true), 'muted'),
+                )}
+                {row(
+                  'lock',
+                  t('block', { name }),
+                  () => {
+                    setStep('block');
+                  },
+                  true,
+                )}
+              </>
+            )}
+          </ul>
+        ) : null}
+        {step === 'report' ? (
+          <ReportForm
+            targetType="post"
+            targetId={post.id}
+            onDone={(msg) => {
+              onClose(msg);
+            }}
+          />
+        ) : null}
+        {step === 'block' || step === 'delete' ? (
+          <div className="grid gap-4">
+            <p className="text-[16px] leading-relaxed text-ink">
+              {step === 'block' ? t('blockConfirm', { name }) : t('deleteConfirm')}
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                className={btnPrimary}
+                onClick={() =>
+                  void (step === 'block'
+                    ? run(async () => (await client()).block(post.author.id, true), 'blocked')
+                    : run(async () => (await client()).deletePost(post.id), 'deleted'))
+                }
+              >
+                {t('confirmYes')}
+              </button>
+              <button
+                type="button"
+                className={btnQuiet}
+                onClick={() => {
+                  setStep('menu');
+                }}
+              >
+                {l('cancel')}
+              </button>
+            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
       <p role="alert" className="mt-3 text-sm font-bold text-error empty:sr-only">
         {error}
       </p>

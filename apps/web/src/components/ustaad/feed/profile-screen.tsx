@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ProfileView } from '@mechdost/shared/ustaad/dto/social';
 import { localePath } from '@/lib/locale-path';
 import { btnPrimary, btnQuiet, card, LoadFailed, LoadingBlock, SampleNote, useCodeLabel } from '../common';
@@ -43,19 +43,47 @@ export function ProfileScreen({ handle }: { handle: string }) {
   const [gone, setGone] = useState(false);
   const busy = useRef(false);
   const moreRef = useRef<HTMLButtonElement>(null);
+  const sheetBody = useRef<HTMLDivElement>(null);
+  const goneRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (sheet === 'block' || sheet === 'report')
+      sheetBody.current?.querySelector<HTMLElement>('input, button, textarea')?.focus();
+  }, [sheet]);
+  useEffect(() => {
+    if (gone) goneRef.current?.focus();
+  }, [gone]);
   const href = (p: string) => localePath(p, locale);
 
-  if (loaded.state === 'loading') return <LoadingBlock />;
+  if (loaded.state === 'loading')
+    return (
+      <>
+        <h1 className="sr-only">@{handle}</h1>
+        <LoadingBlock />
+      </>
+    );
   if (gone || (loaded.state === 'error' && loaded.status === 404))
     return (
       <div className={`${card} grid justify-items-center gap-3 text-center`}>
-        <p className="text-[16px] text-ink">{gone ? f('blockDone') : t('profileGone')}</p>
+        <h1 className="sr-only">@{handle}</h1>
+        <p
+          ref={goneRef}
+          tabIndex={-1}
+          className="text-[16px] text-ink focus-visible:outline-3 focus-visible:outline-focus"
+        >
+          {gone ? f('blockDone') : t('profileGone')}
+        </p>
         <Link href={href('/ustaad')} className={btnPrimary}>
           {f('backToFeed')}
         </Link>
       </div>
     );
-  if (loaded.state === 'error') return <LoadFailed message={errorText(loaded.code)} onRetry={reload} />;
+  if (loaded.state === 'error')
+    return (
+      <>
+        <h1 className="sr-only">@{handle}</h1>
+        <LoadFailed message={errorText(loaded.code)} onRetry={reload} />
+      </>
+    );
   const p = loaded.data;
   const who = name(p.member);
   const rel = p.relationship;
@@ -121,12 +149,14 @@ export function ProfileScreen({ handle }: { handle: string }) {
 
   const conn = rel?.connection;
   const connectBtn = !rel ? null : conn?.status === 'accepted' ? (
-    <span className={`${btnQuiet} pointer-events-none`}>
+    <button type="button" aria-disabled="true" className={btnQuiet}>
       <UstaadIcon name="check" />
       {t('connected')}
-    </span>
+    </button>
   ) : conn?.status === 'requested' && conn.mine ? (
-    <span className={`${btnQuiet} pointer-events-none`}>{t('requested')}</span>
+    <button type="button" aria-disabled="true" className={btnQuiet}>
+      {t('requested')}
+    </button>
   ) : conn?.status === 'requested' ? (
     <Link href={href('/ustaad/network')} className={btnQuiet}>
       <UstaadIcon name="users" />
@@ -277,72 +307,74 @@ export function ProfileScreen({ handle }: { handle: string }) {
             moreRef.current?.focus();
           }}
         >
-          {sheet === 'menu' ? (
-            <ul className="grid gap-1">
-              {(
-                [
-                  ['bell', rel.muted ? t('unmute') : t('mute'), () => void mute(), false],
+          <div ref={sheetBody}>
+            {sheet === 'menu' ? (
+              <ul className="grid gap-1">
+                {(
                   [
-                    'lock',
-                    t('block'),
-                    () => {
-                      setSheet('block');
-                    },
-                    true,
-                  ],
-                  [
-                    'flag',
-                    t('report'),
-                    () => {
-                      setSheet('report');
-                    },
-                    false,
-                  ],
-                ] as const
-              ).map(([icon, label, onClick, danger]) => (
-                <li key={icon}>
+                    ['bell', rel.muted ? t('unmute') : t('mute'), () => void mute(), false],
+                    [
+                      'lock',
+                      t('block'),
+                      () => {
+                        setSheet('block');
+                      },
+                      true,
+                    ],
+                    [
+                      'flag',
+                      t('report'),
+                      () => {
+                        setSheet('report');
+                      },
+                      false,
+                    ],
+                  ] as const
+                ).map(([icon, label, onClick, danger]) => (
+                  <li key={icon}>
+                    <button
+                      type="button"
+                      onClick={onClick}
+                      className={`press flex min-h-14 w-full items-center gap-3 rounded-xl px-3 text-left text-[16px] font-bold hover:bg-pill focus-visible:outline-3 focus-visible:outline-focus ${danger ? 'text-error' : 'text-ink'}`}
+                    >
+                      <UstaadIcon name={icon} />
+                      {label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {sheet === 'block' ? (
+              <div className="grid gap-4">
+                <p className="text-[16px] leading-relaxed text-ink">{f('blockConfirm', { name: who })}</p>
+                <div className="flex flex-wrap gap-3">
+                  <button type="button" className={btnPrimary} onClick={() => void block()}>
+                    {f('confirmYes')}
+                  </button>
                   <button
                     type="button"
-                    onClick={onClick}
-                    className={`press flex min-h-14 w-full items-center gap-3 rounded-xl px-3 text-left text-[16px] font-bold hover:bg-pill focus-visible:outline-3 focus-visible:outline-focus ${danger ? 'text-error' : 'text-ink'}`}
+                    className={btnQuiet}
+                    onClick={() => {
+                      setSheet('menu');
+                    }}
                   >
-                    <UstaadIcon name={icon} />
-                    {label}
+                    {l('cancel')}
                   </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          {sheet === 'block' ? (
-            <div className="grid gap-4">
-              <p className="text-[16px] leading-relaxed text-ink">{f('blockConfirm', { name: who })}</p>
-              <div className="flex flex-wrap gap-3">
-                <button type="button" className={btnPrimary} onClick={() => void block()}>
-                  {f('confirmYes')}
-                </button>
-                <button
-                  type="button"
-                  className={btnQuiet}
-                  onClick={() => {
-                    setSheet('menu');
-                  }}
-                >
-                  {l('cancel')}
-                </button>
+                </div>
               </div>
-            </div>
-          ) : null}
-          {sheet === 'report' ? (
-            <ReportForm
-              targetType="member"
-              targetId={p.member.id}
-              onDone={(msg) => {
-                setSheet(null);
-                setStatus(msg);
-                moreRef.current?.focus();
-              }}
-            />
-          ) : null}
+            ) : null}
+            {sheet === 'report' ? (
+              <ReportForm
+                targetType="member"
+                targetId={p.member.id}
+                onDone={(msg) => {
+                  setSheet(null);
+                  setStatus(msg);
+                  moreRef.current?.focus();
+                }}
+              />
+            ) : null}
+          </div>
         </Sheet>
       ) : null}
     </div>

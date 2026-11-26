@@ -7204,7 +7204,9 @@
       "kindName_poll": "पोल",
       "kindName_link": "लिंक वाली पोस्ट",
       "kindName_mixed": "फ़ोटो और आवाज़ वाली पोस्ट",
-      "kindName_story": "स्टोरी"
+      "kindName_story": "स्टोरी",
+      "storyNewMark": "नई",
+      "storySeenMark": "देख ली"
     },
     "local": {
       "title": "मेरा गैराज नक्शे पर",
