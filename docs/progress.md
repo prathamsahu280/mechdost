@@ -2,6 +2,26 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-26 ~17:20 — end of afternoon session (handover)
+
+- **Live (deploy c6e2eaf8, staff_preview):** Ustaad A–C, E, F1–F3, G1, B (all rounds), D1 feed API, D2 social API,
+  moderation (0096), social (0097), identity B3 (0098, 0099) — all migrations applied to production. Server env:
+  ANTHROPIC_API_KEY + SMART_CORRECTION_PROVIDER=anthropic + SMART_CORRECTION_MODEL=claude-haiku-5-5;
+  ASSISTANT_ENABLED=false + ASSISTANT_MODEL=claude-haiku-5-5 (founder: assistant off, cost first);
+  USTAAD_SHARE_SECRET + USTAAD_LOCATION_SECRET set.
+- **Pushed at handover, CI gates the deploy:** feed web screens (f167ea6b) + messages / My network / Discover screens
+  (merge b96dc804). Quick checks passed (web tsc, i18n 5/5, web guards + ustaad 120/120); full local gates NOT run —
+  check the CI run for HEAD first thing.
+- **Agents stopped mid-work (worktrees on disk, resume by merging their branch heads):**
+  - G2 community manager console: worktree-agent-a8aee6b650d9ce1e4 (staff media view, keep side effects, console
+    sections; unban four-eyes security fix requested — verify it is in before merging).
+  - Ustaad JS budget + fixes: worktree-agent-a03ea82fa62041d96 (/ustaad 226.8 KB vs 150 KB target; SR-37 profile cap;
+    comment-delete confirm; Safari WhatsApp share).
+- **Next:** merge G2 + JS-budget branches → full gates (tsc 4 packages with NODE_OPTIONS=--max-old-space-size=4096
+  for api, lint, prettier, vitest --maxWorkers=1, web build) → push. Then: R2 keys (uploads), Grievance Officer name,
+  founder review on mechdost.com/ustaad, open questions Q-U-* in questions-for-user.md.
+- **Low-memory lessons:** an idle editor tsserver held 1.8 GB on an agent worktree — kill it by PID; max 3 agents.
+
 ## Current status
 
 - **2026-11-26 (afternoon): Ustaad workstream D web screens (feed + social)** (branch
