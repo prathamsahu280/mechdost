@@ -195,7 +195,10 @@ export function adminRecoMocks(c: AuditCase): Mock[] {
   const rule = (i: number, over: Record<string, unknown> = {}) => ({
     id: uuid(740 + i),
     triggerCategory: cats[i % 4] ?? first,
+    triggerProduct: null,
+    suggestKind: 'category' as const,
     suggestCategory: cats[(i + 1) % 4] ?? first,
+    suggestProduct: null,
     label: long(c)
       ? 'Goes well with your engine oil: fresh filter, fresh oil, a smoother ride all the way home'
       : 'Goes well with your oil',

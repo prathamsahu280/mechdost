@@ -4,6 +4,8 @@ import { Suspense } from 'react';
 import { getTranslations } from 'next-intl/server';
 import { CartRecommendations } from '@/components/catalogue/recommendations-cart';
 import { CartView } from '@/components/commerce/cart-view';
+import { RecentlyViewedLazy } from '@/components/personalisation/recently-viewed-lazy';
+import { recentLabels } from '@/lib/recent-labels';
 import { TrustLine } from '@/components/site/trust-line';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { Container } from '@/components/ui/page-intro';
@@ -38,7 +40,7 @@ async function CartSuggestions({ locale }: { locale: Locale }) {
 /** Cart (spec 03) — demo store until the server cart with re-pricing ships in Phase 1. */
 export default async function CartPage({ params }: { params: Promise<{ locale: Locale }> }) {
   const { locale } = await params;
-  const t = await getTranslations('cart');
+  const [t, recent] = await Promise.all([getTranslations('cart'), recentLabels()]);
   return (
     <Container className="py-10 tab:py-14">
       <h1 className="font-heading text-[clamp(30px,3.4vw,44px)] font-extrabold tracking-[-0.03em] text-ink">
@@ -56,6 +58,8 @@ export default async function CartPage({ params }: { params: Promise<{ locale: L
           <CartSuggestions locale={locale} />
         </Suspense>
       ) : null}
+      {/* Recently viewed (personalisation phase 2): a lazy island under everything else. */}
+      <RecentlyViewedLazy surface="cart" locale={locale} labels={recent} />
     </Container>
   );
 }

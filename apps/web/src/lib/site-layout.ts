@@ -15,6 +15,8 @@ export const HOME_SECTIONS = [
   'trust',
   'categories',
   'vehicles',
+  // Recently viewed (personalisation phase 2): a lazy island, nothing until this browser has 2+ products.
+  'recent',
   'products',
   'route',
   'service',

@@ -60,6 +60,16 @@ export async function signOutEverywhere(): Promise<void> {
   const root = document.documentElement;
   root.setAttribute(SIGNING_OUT_ATTRIBUTE, '');
   signOut();
+  // Recently viewed (personalisation phase 2) may hold the account's merged list: forget it and the merge mark, so the
+  // next person on this browser neither sees it nor sends it to their account (shared devices). Inline keys (same as
+  // `RECENT_KEY` in recently-viewed-store.ts and `MERGED_KEY` in recently-viewed-sync.ts; pinned by a test) so the
+  // sign-out button does not import the store.
+  try {
+    window.localStorage.removeItem('mechdost-recent');
+    window.sessionStorage.removeItem('mechdost-recent-merged');
+  } catch {
+    // Storage blocked: nothing kept there.
+  }
   if (AUTH_MODE === 'firebase') {
     // The saved cart and wishlist on this browser belong to the person who signed out (shared devices, security review
     // 2026-11-15): the browser cart goes at once, and the sync and wishlist state are reset so nothing reaches the

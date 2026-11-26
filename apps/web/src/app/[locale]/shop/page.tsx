@@ -21,6 +21,8 @@ import { localePath } from '@/lib/locale-path';
 import { VEHICLE_TYPES } from '@mechdost/shared/vehicles';
 import { parseSegmentParam } from '@mechdost/shared/vehicle-segments';
 import { RoadsideCard } from '@/components/roadside/roadside-promo';
+import { RecentlyViewedLazy } from '@/components/personalisation/recently-viewed-lazy';
+import { recentLabels } from '@/lib/recent-labels';
 import { publishedRoadside } from '@/lib/site-config-content';
 
 type Search = Promise<{
@@ -162,6 +164,7 @@ export default async function ShopPage({ searchParams }: Props) {
   }
   const c = await getTranslations('catalogue');
   const roadside = await publishedRoadside();
+  const recent = await recentLabels();
 
   return (
     <Container className="py-10 tab:py-14">
@@ -177,6 +180,7 @@ export default async function ShopPage({ searchParams }: Props) {
           roadside={
             roadside.enabled ? <RoadsideCard track="shop_search_roadside" title="shopCardTitle" /> : undefined
           }
+          emptyExtra={<RecentlyViewedLazy surface="search_empty" locale={locale} labels={recent} />}
         />
       </ClientMessages>
       <p className="mt-6 text-xs text-muted">{c('inclusive')}</p>

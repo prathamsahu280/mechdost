@@ -2,9 +2,11 @@
 
 import {
   RecoCategoryListDto,
+  RecoProductListDto,
   RecoRuleDto,
   RecoRuleListDto,
   type RecoRule,
+  type RecoSuggestKind,
 } from '@mechdost/shared/recommendations';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useId, useState, type SyntheticEvent } from 'react';
@@ -18,11 +20,22 @@ interface Category {
   name: string;
   nameHi: string | null;
 }
+interface Picked {
+  id: string;
+  name: string;
+  nameHi: string | null;
+}
 interface Form {
   id: string | null;
   version: number;
+  /** Phase 3 (2026-11-26): the trigger is a category or one product; the suggestion a category, a product or the
+   * workshop fitting link. */
+  triggerKind: 'category' | 'product';
+  suggestKind: RecoSuggestKind;
   trigger: string;
   suggest: string;
+  triggerProduct: Picked | null;
+  suggestProduct: Picked | null;
   label: string;
   labelHi: string;
   priority: string;
@@ -35,8 +48,12 @@ const DEVANAGARI = /[ऀ-ॿ]/;
 const EMPTY: Form = {
   id: null,
   version: 1,
+  triggerKind: 'category',
+  suggestKind: 'category',
   trigger: '',
   suggest: '',
+  triggerProduct: null,
+  suggestProduct: null,
   label: '',
   labelHi: '',
   priority: '10',
@@ -73,6 +90,12 @@ export function AdminRecoApi() {
 
   const catName = (c: { name: string; nameHi: string | null }) =>
     locale === 'hi' && c.nameHi ? c.nameHi : c.name;
+  /** What a rule's side is called in the list: the category or product name, or "workshop fitting". */
+  const sideName = (r: RecoRule, side: 'trigger' | 'suggest'): string => {
+    const ref =
+      side === 'trigger' ? (r.triggerCategory ?? r.triggerProduct) : (r.suggestCategory ?? r.suggestProduct);
+    return ref ? catName(ref) : t('fittingName');
+  };
 
   function errorText(code: string): string {
     return (KNOWN_ERRORS as readonly string[]).includes(code)
@@ -83,7 +106,18 @@ export function AdminRecoApi() {
   async function save(e: SyntheticEvent) {
     e.preventDefault();
     if (!form) return;
-    if (form.trigger === form.suggest) {
+    const triggerId = form.triggerKind === 'product' ? form.triggerProduct?.id : form.trigger;
+    const suggestId =
+      form.suggestKind === 'product'
+        ? form.suggestProduct?.id
+        : form.suggestKind === 'category'
+          ? form.suggest
+          : null;
+    if (!triggerId || suggestId === undefined || suggestId === '') {
+      setSaid({ tone: 'error', text: t('err_product') });
+      return;
+    }
+    if (form.triggerKind === form.suggestKind && triggerId === suggestId) {
       setSaid({ tone: 'error', text: t('err_same') });
       return;
     }
@@ -94,8 +128,12 @@ export function AdminRecoApi() {
     setWorking(true);
     setSaid(null);
     const rule = {
-      triggerCategoryId: form.trigger,
-      suggestCategoryId: form.suggest,
+      ...(form.triggerKind === 'product'
+        ? { triggerProductId: triggerId }
+        : { triggerCategoryId: triggerId }),
+      suggestKind: form.suggestKind,
+      ...(form.suggestKind === 'product' && suggestId ? { suggestProductId: suggestId } : {}),
+      ...(form.suggestKind === 'category' && suggestId ? { suggestCategoryId: suggestId } : {}),
       label: form.label,
       labelHi: form.labelHi,
       priority: Number(form.priority),
@@ -140,8 +178,12 @@ export function AdminRecoApi() {
     setForm({
       id: r.id,
       version: r.version,
-      trigger: r.triggerCategory.id,
-      suggest: r.suggestCategory.id,
+      triggerKind: r.triggerProduct ? 'product' : 'category',
+      suggestKind: r.suggestKind,
+      trigger: r.triggerCategory?.id ?? '',
+      suggest: r.suggestCategory?.id ?? '',
+      triggerProduct: r.triggerProduct,
+      suggestProduct: r.suggestProduct,
       label: r.label,
       labelHi: r.labelHi,
       priority: String(r.priority),
@@ -196,30 +238,79 @@ export function AdminRecoApi() {
       {form ? (
         <form onSubmit={(e) => void save(e)} className="space-y-3 rounded-tile border border-line-card p-4">
           <div className="grid gap-3 tab:grid-cols-2">
-            <div>
-              <label htmlFor={field('trigger')} className="text-sm font-bold text-ink">
-                {t('trigger')}
-              </label>
-              {select(
-                form.trigger,
-                (v) => {
-                  setForm({ ...form, trigger: v });
-                },
-                field('trigger'),
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-bold text-ink">{t('triggerKind')}</legend>
+              <KindChoice
+                name={field('triggerKind')}
+                value={form.triggerKind}
+                options={[
+                  ['category', t('kindCategory')],
+                  ['product', t('kindProduct')],
+                ]}
+                onChange={(v) => {
+                  setForm({ ...form, triggerKind: v });
+                }}
+              />
+              {form.triggerKind === 'category' ? (
+                <div>
+                  <label htmlFor={field('trigger')} className="text-sm font-bold text-ink">
+                    {t('trigger')}
+                  </label>
+                  {select(
+                    form.trigger,
+                    (v) => {
+                      setForm({ ...form, trigger: v });
+                    },
+                    field('trigger'),
+                  )}
+                </div>
+              ) : (
+                <ProductPicker
+                  id={field('triggerProduct')}
+                  picked={form.triggerProduct}
+                  onPick={(v) => {
+                    setForm({ ...form, triggerProduct: v });
+                  }}
+                />
               )}
-            </div>
-            <div>
-              <label htmlFor={field('suggest')} className="text-sm font-bold text-ink">
-                {t('suggest')}
-              </label>
-              {select(
-                form.suggest,
-                (v) => {
-                  setForm({ ...form, suggest: v });
-                },
-                field('suggest'),
-              )}
-            </div>
+            </fieldset>
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-bold text-ink">{t('suggestKind')}</legend>
+              <KindChoice
+                name={field('suggestKind')}
+                value={form.suggestKind}
+                options={[
+                  ['category', t('kindCategory')],
+                  ['product', t('kindProduct')],
+                  ['workshop_fitting', t('suggestFitting')],
+                ]}
+                onChange={(v) => {
+                  setForm({ ...form, suggestKind: v });
+                }}
+              />
+              {form.suggestKind === 'category' ? (
+                <div>
+                  <label htmlFor={field('suggest')} className="text-sm font-bold text-ink">
+                    {t('suggest')}
+                  </label>
+                  {select(
+                    form.suggest,
+                    (v) => {
+                      setForm({ ...form, suggest: v });
+                    },
+                    field('suggest'),
+                  )}
+                </div>
+              ) : form.suggestKind === 'product' ? (
+                <ProductPicker
+                  id={field('suggestProduct')}
+                  picked={form.suggestProduct}
+                  onPick={(v) => {
+                    setForm({ ...form, suggestProduct: v });
+                  }}
+                />
+              ) : null}
+            </fieldset>
             <div>
               <label htmlFor={field('label')} className="text-sm font-bold text-ink">
                 {t('label')}
@@ -323,7 +414,7 @@ export function AdminRecoApi() {
       {load.kind === 'ok' && load.rules.length > 0 ? (
         <ul className="divide-y divide-line">
           {load.rules.map((r) => {
-            const names = { trigger: catName(r.triggerCategory), suggest: catName(r.suggestCategory) };
+            const names = { trigger: sideName(r, 'trigger'), suggest: sideName(r, 'suggest') };
             return (
               <li
                 key={r.id}
@@ -366,5 +457,129 @@ export function AdminRecoApi() {
         </ul>
       ) : null}
     </section>
+  );
+}
+
+/** A small radio group (no ARIA widget needed: native radios in a fieldset). */
+function KindChoice<K extends string>({
+  name,
+  value,
+  options,
+  onChange,
+}: {
+  name: string;
+  value: K;
+  options: readonly (readonly [K, string])[];
+  onChange: (v: K) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-x-4 gap-y-1">
+      {options.map(([k, label]) => (
+        <label key={k} className="inline-flex min-h-11 items-center gap-2 text-sm text-ink">
+          <input
+            type="radio"
+            name={name}
+            value={k}
+            checked={value === k}
+            onChange={() => {
+              onChange(k);
+            }}
+            className="size-5 accent-[var(--color-accent-button)]"
+          />
+          {label}
+        </label>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * The product picker of the rule form: a search box and a Find button (no combobox), then the results as buttons;
+ * the chosen product is named under the box. Searches `GET /admin/recommendation-products?q=` (catalogue staff only).
+ */
+function ProductPicker({
+  id,
+  picked,
+  onPick,
+}: {
+  id: string;
+  picked: Picked | null;
+  onPick: (p: Picked) => void;
+}) {
+  const t = useTranslations('adminReco');
+  const locale = useLocale();
+  const [q, setQ] = useState('');
+  const [found, setFound] = useState<Picked[] | null>(null);
+  const name = (p: Picked) => (locale === 'hi' && p.nameHi ? p.nameHi : p.name);
+
+  async function find() {
+    if (q.trim().length < 2) return;
+    const res = await adminApi(
+      locale,
+      `/admin/recommendation-products?q=${encodeURIComponent(q.trim())}`,
+      RecoProductListDto,
+    );
+    setFound(res.ok ? res.data.products : []);
+  }
+
+  return (
+    <div>
+      <label htmlFor={id} className="text-sm font-bold text-ink">
+        {t('productSearch')}
+      </label>
+      <div className="mt-1 flex gap-2">
+        <input
+          id={id}
+          value={q}
+          minLength={2}
+          maxLength={60}
+          aria-describedby={`${id}-help`}
+          onChange={(e) => {
+            setQ(e.target.value);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              void find();
+            }
+          }}
+          className={portalField}
+        />
+        <button type="button" onClick={() => void find()} className={portalQuiet}>
+          {t('find')}
+        </button>
+      </div>
+      <p id={`${id}-help`} className="mt-1 text-[13px] text-muted">
+        {t('productSearchHelp')}
+      </p>
+      {found !== null ? (
+        found.length === 0 ? (
+          <p role="status" className="mt-2 text-sm text-muted">
+            {t('noProducts')}
+          </p>
+        ) : (
+          <ul className="mt-2 max-w-full space-y-1">
+            {found.map((p) => (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  aria-pressed={picked?.id === p.id}
+                  aria-label={`${t('chooseProduct')}: ${name(p)}`}
+                  onClick={() => {
+                    onPick(p);
+                  }}
+                  className="min-h-11 w-full rounded-tile border border-line-card px-3 text-left text-sm text-ink hover:bg-pill aria-pressed:border-accent aria-pressed:font-bold"
+                >
+                  {name(p)}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )
+      ) : null}
+      <p role="status" aria-live="polite" className="mt-2 text-sm font-bold text-ink">
+        {picked ? t('chosen', { name: name(picked) }) : ''}
+      </p>
+    </div>
   );
 }

@@ -523,7 +523,8 @@ export async function searchRecoProducts(
   const like = `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
   return rowsOf<{ id: string; slug: string; name: string; nameHi: string | null }>(
     await db.execute(sql`
-      select p.id, p.slug, b.name || ' ' || p.name as name, p.name_hi as "nameHi"
+      select p.id, p.slug, b.name || ' ' || p.name as name,
+        case when p.name_hi is null then null else b.name || ' ' || p.name_hi end as "nameHi"
       from products p join brands b on b.id = p.brand_id
       where ${productVisible('p')}
         and (p.name ilike ${like} or b.name ilike ${like} or p.slug ilike ${like})
