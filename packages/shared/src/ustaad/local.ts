@@ -154,3 +154,13 @@ export function jobScamSignals(text: string, extraPhrases: readonly string[] = [
   if (PAY_APP.test(t)) out.add('pay_app');
   return [...out];
 }
+
+/** A stored setting read as an integer, with the caller's default for a wrong type (the registry validates saves). */
+export function settingInt(v: unknown, fallback: number): number {
+  return typeof v === 'number' && Number.isFinite(v) ? v : fallback;
+}
+
+/** A stored setting read as a boolean, with the caller's default for a wrong type. */
+export function settingBool(v: unknown, fallback: boolean): boolean {
+  return typeof v === 'boolean' ? v : fallback;
+}
