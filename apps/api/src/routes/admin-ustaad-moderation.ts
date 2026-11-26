@@ -187,10 +187,11 @@ export function adminUstaadModerationRoutes(deps: AppDeps, cache: SessionCache) 
     requireVerified,
     permissionGuard,
   ]);
-  app.use('/admin/ustaad/*', async (c, next) => {
+  const ownPathsOnly: MiddlewareHandler<AppEnv> = async (c, next) => {
     if (OWN.test(c.req.path)) await guard(c, next);
     else await next();
-  });
+  };
+  app.use('/admin/ustaad/*', ownPathsOnly);
   const move = async (r: ModerationResult, to: 'evidence' | 'media') => {
     const m = await moveUstaadMediaObjects({ db: deps.db, host: deps.mediaHost }, r.media, to);
     return {

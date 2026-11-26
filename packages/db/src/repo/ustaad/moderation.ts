@@ -20,6 +20,7 @@ import { and, asc, count, desc, eq, gt, inArray, isNotNull, lte, ne, or, sql, ty
 import { ustaadMediaMachine, ustaadReportMachine, type UstaadReportStatus } from '@mechdost/shared/state';
 import type {
   MODERATION_ACTIONS,
+  UstaadMediaBucket,
   UstaadReportClock,
   UstaadReportTarget,
 } from '@mechdost/shared/ustaad/codes';
@@ -234,7 +235,7 @@ export interface UstaadStaff {
 export interface MediaRelocation {
   mediaId: string;
   ownerMemberId: string;
-  bucket: (typeof ustaadMedia.$inferSelect)['bucket'];
+  bucket: UstaadMediaBucket;
   objectKey: string;
   mime: string;
 }
@@ -335,9 +336,7 @@ export async function listUstaadModerationQueue(
       cityCode,
     })),
     nextCursor:
-      rows.length > 20 && last
-        ? encodeCursor({ rank: Number(last.rank), due: last.r.dueAt, id: last.r.id })
-        : null,
+      rows.length > 20 && last ? encodeCursor({ rank: last.rank, due: last.r.dueAt, id: last.r.id }) : null,
   };
 }
 
@@ -637,7 +636,7 @@ async function archiveMedia(
       out.push({
         mediaId: moved.id,
         ownerMemberId: moved.ownerMemberId,
-        bucket: moved.bucket,
+        bucket: moved.bucket as UstaadMediaBucket,
         objectKey: moved.objectKey,
         mime: moved.declaredMime,
       });
@@ -1002,7 +1001,7 @@ export async function confirmUstaadBan(
     const r = await scopedReport(tx, staff, code);
     if (r.version !== body.version) throw new ConflictError('This report changed meanwhile', 'STALE_REPORT');
     const pending = await pendingBanOf(tx, r);
-    if (!pending || pending.id !== body.proposalId)
+    if (pending?.id !== body.proposalId)
       throw new ConflictError('No ban is waiting on this report', 'USTAAD_BAN_NOT_PENDING');
     if (pending.actorId === staff.userId)
       throw new ForbiddenError('Another staff member must confirm this ban', 'FOUR_EYES');
@@ -1052,7 +1051,7 @@ export async function openUstaadAppeal(
       .from(supportTickets)
       .where(eq(supportTickets.code, body.ticketCode))
       .limit(1);
-    if (!ticket || !author || ticket.userId !== author.userId)
+    if (!author || ticket?.userId !== author.userId)
       throw new ValidationError("The ticket is not the author's", 'USTAAD_APPEAL_TICKET');
     const next = await moveReport(tx, r, 'appealed', body.version, { appealTicketId: ticket.id }, 'member');
     await recordUstaadEvent(tx, {
@@ -1187,7 +1186,7 @@ async function restoreTarget(tx: Tx, t: UstaadTarget): Promise<MediaRelocation[]
       out.push({
         mediaId: moved.id,
         ownerMemberId: moved.ownerMemberId,
-        bucket: moved.bucket,
+        bucket: moved.bucket as UstaadMediaBucket,
         objectKey: moved.objectKey,
         mime: moved.declaredMime,
       });

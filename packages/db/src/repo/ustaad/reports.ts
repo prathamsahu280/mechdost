@@ -147,7 +147,7 @@ export async function createUstaadReport(
 ): Promise<{ code: string; status: string }> {
   return db.transaction(async (tx) => {
     const [me] = await tx.select().from(ustaadMembers).where(eq(ustaadMembers.id, actor.memberId)).limit(1);
-    if (!me || me.userId !== actor.userId) throw new NotFoundError('Not found');
+    if (me?.userId !== actor.userId) throw new NotFoundError('Not found');
     const target = await loadUstaadTarget(tx, body.targetType, body.targetId);
     if (!target) throw new NotFoundError('Not found');
     // A message is visible only to its two members: anyone else gets the same 404 as a missing id.

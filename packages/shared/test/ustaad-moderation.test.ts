@@ -33,7 +33,7 @@ const settled: ScreenAccount = {
 
 describe('normaliser', () => {
   it('NFKC, zero-width and Devanagari digits become plain ASCII', () => {
-    expect(normaliseForScreen('ＯＴＰ​  ९८७६५४३२१०')).toBe('otp 9876543210');
+    expect(normaliseForScreen('ＯＴＰ\u200b  ९८७६५४३२१०')).toBe('otp 9876543210');
   });
   it('phrases match on word edges for Latin text and anywhere for Devanagari', () => {
     expect(phraseHit('pay the security deposit now', 'Security  Deposit')).toBe(true);

@@ -235,7 +235,7 @@ describe('report → remove (AT-TAKEDOWN-1, media)', () => {
       version: 1,
       status: 'overturned',
     });
-    expect(bad.status).toBe(422);
+    expect(bad.status).toBe(400);
     const done = await call(cmRaipur, 'POST', `/admin/ustaad/moderation/reports/${code}/act`, {
       action: 'remove',
       reasonCode: 'abuse',
@@ -277,7 +277,7 @@ describe('member reports', () => {
           x: 1,
         })
       ).status,
-    ).toBe(422);
+    ).toBe(400);
     let last = 0;
     for (let i = 0; i < 21; i += 1) {
       const q = await seedPost(false);
