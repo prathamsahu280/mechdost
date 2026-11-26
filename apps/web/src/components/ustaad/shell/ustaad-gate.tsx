@@ -1,6 +1,5 @@
 'use client';
 
-import { useLocale } from 'next-intl';
 import { useEffect, useState, type ReactNode } from 'react';
 import { ustaadAccessDecision } from '@mechdost/shared/ustaad/access';
 import type { UstaadAccessMode } from '@mechdost/shared/ustaad/codes';
@@ -14,8 +13,7 @@ import { passedUstaadGate } from '@/lib/ustaad/tester-probe';
  * preview asks the gated `/v1/ustaad/me` once; `null` while asking. Never asked for staff, signed-out viewers or other
  * modes.
  */
-function useTesterProbe(enabled: boolean, viewer: string | null): boolean | null {
-  const locale = useLocale();
+function useTesterProbe(enabled: boolean, viewer: string | null, locale: string): boolean | null {
   const [answer, setAnswer] = useState<{ viewer: string; tester: boolean } | null>(null);
   useEffect(() => {
     if (!enabled || viewer === null) return;
@@ -45,12 +43,15 @@ function useTesterProbe(enabled: boolean, viewer: string | null): boolean | null
  * A preview tester (admin-edited list) is recognised by asking the API (`useTesterProbe`).
  */
 export function UstaadGate({
+  locale,
   access,
   notFound,
   signIn,
   preview,
   children,
 }: {
+  /** From the layout: the gate renders outside the next-intl provider during static prerender. */
+  locale: string;
   access: Exclude<UstaadAccessMode, 'off'>;
   notFound: ReactNode;
   signIn: ReactNode;
@@ -61,7 +62,7 @@ export function UstaadGate({
   const session = useSession();
   const staff = session?.role === 'admin';
   const probe = hydrated && access === 'staff_preview' && session !== null && !staff;
-  const tester = useTesterProbe(probe, session?.id ?? null);
+  const tester = useTesterProbe(probe, session?.id ?? null, locale);
   if (!hydrated || tester === null)
     return <div className="skeleton mx-auto mt-10 h-96 w-full max-w-2xl rounded-card" aria-hidden="true" />;
   const decision = ustaadAccessDecision(access, { signedIn: session !== null, staff, tester });

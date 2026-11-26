@@ -106,7 +106,7 @@ export default async function UstaadLayout({ children, params }: Props) {
 
   return (
     <UstaadPublicSwitch open={children} enabled={access === 'open'}>
-      <UstaadGate access={access} notFound={notFoundView} signIn={signIn} preview={preview}>
+      <UstaadGate locale={locale} access={access} notFound={notFoundView} signIn={signIn} preview={preview}>
         <div className="mx-auto w-full max-w-[1200px] px-4 pt-4 pb-32 tab:px-6 nav:grid nav:grid-cols-[220px_minmax(0,1fr)] nav:gap-10 nav:pt-8 nav:pb-14">
           {/* One navigation: the dock (fixed, under 1024 px) and the rail (this column, above). */}
           <div>
