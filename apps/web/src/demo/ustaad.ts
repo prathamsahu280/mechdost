@@ -482,7 +482,7 @@ function seedJobs(): Job[] {
   ];
 }
 
-/** A short silent WAV, so a sample voice note can be played in the demo without any recording. */
+/** A short silent WAV as a `blob:` URL (the CSP allows `blob:` media, not `data:`), so sample voice notes play. */
 function silentWav(seconds: number): string {
   const rate = 8000;
   const n = rate * seconds;
@@ -504,9 +504,7 @@ function silentWav(seconds: number): string {
   str(36, 'data');
   v.setUint32(40, n, true);
   for (let i = 0; i < n; i++) v.setUint8(44 + i, 128);
-  let bin = '';
-  new Uint8Array(buf).forEach((b) => (bin += String.fromCharCode(b)));
-  return `data:audio/wav;base64,${btoa(bin)}`;
+  return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
 }
 
 export function demoUstaadClient(): UstaadClient {
@@ -514,6 +512,7 @@ export function demoUstaadClient(): UstaadClient {
   const jobs = seedJobs();
   const learn: LearnView = structuredClone(LEARN);
   let pinned: MyLocation | null = null;
+  let silent: string | null = null;
   let seq = 0;
   const nextCode = (prefix: 'UQ' | 'UJ') => {
     seq += 1;
@@ -704,6 +703,6 @@ export function demoUstaadClient(): UstaadClient {
       }
       return { ok: true, data: { mediaId: crypto.randomUUID() } };
     },
-    mediaUrl: () => ok({ url: silentWav(2) }),
+    mediaUrl: () => ok({ url: (silent ??= silentWav(2)) }),
   };
 }

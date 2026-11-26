@@ -1299,11 +1299,11 @@ members at the next run. Data dictionary: this § 6.
   (browser `speechSynthesis`, hi-IN for Devanagari or the Hindi page, en-IN otherwise; never starts by itself). Upload =
   declare (sha256 on the phone) → PUT with progress (XHR) → complete; multipart (> 16 MB) is left to D.
 - **Q&A:** composer = big mic first, one typed line (title) and "More details" with `SmartCorrection` (the corrected
-  field is the body, so `bodyOriginal` matches the DTO), vehicle tiles (segments + EV) and optional work chips, one
+  field is the body, so `bodyOriginal` matches the DTO), vehicle tiles (segments + EV) and work choices (radio groups, each with "Not sure"), one
   primary "Send question"; voice uploads on send with progress; the idempotency key is kept across retries. Thread =
   navy question bubble (voice note, Listen, chips), safety note for brake/steering/fuel/airbag/EV tags, answers as chat
   bubbles with the best answer first (badge, "Parts used in this fix" linking to `/shop/{slug}`), Helpful once
-  (`aria-pressed`, disabled after), "Mark as best" only when the API says `can.chooseBest`, answer composer (voice or
+  (`aria-pressed`, stays focusable; a second press does nothing), "Mark as best" only when the API says `can.chooseBest`, answer composer (voice or
   text) only when `can.answer`, otherwise the "Ustaads answer here" note; the disclaimer under the answers.
 - **Learn:** courses with "N of M lessons done" and a bar, short videos; data saver on by default (this phone only,
   `localStorage`, `ustaad_data_saver`): nothing loads before Play; off loads the first picture (`preload="metadata"`).
@@ -1333,7 +1333,9 @@ members at the next run. Data dictionary: this § 6.
   location events are server-side (spec 23 § 16).
 - **Tests:** `apps/web/test/ustaad-media-core.test.ts`, `ustaad-ce-view.test.ts` (recorder MIME, photo fit, hold vs
   tap, watch meter, zone text and shade, projection, pin source, pay, copy parity); e2e `apps/web/e2e/ustaad-ce.spec.ts`
-  (every screen, axe on `main`, fake-microphone recording, apply dialog focus, post form errors, landmark rule) and the
+  (every screen, axe on `main`, signboard photo upload, apply dialog focus, post form errors, landmark rule) and
+  `ustaad-ce-mic.spec.ts` (Chromium fake microphone: hold to talk, tap to talk, ask by voice and play it back, no CSP
+  errors) and the
   Hindi crawl (`hindi-coverage.spec.ts`, ten `/hi/ustaad/*` pages).
 - **Accessibility review (2026-11-26, aria / keyboard + modal / forms + media specialists):** recorder has one name
   ("Record voice note") with `aria-pressed`, one always-mounted live region for every outcome, focus kept across the

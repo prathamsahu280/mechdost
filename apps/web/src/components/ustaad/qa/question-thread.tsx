@@ -133,7 +133,7 @@ export function QuestionThread({ code }: { code: string }) {
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {q.voiceMediaId ? <VoiceNote mediaId={q.voiceMediaId} tone="dark" /> : null}
           {readAloud !== '' ? (
-            <span className="rounded-full bg-white">
+            <span className="rounded-full bg-surface">
               <ListenButton text={readAloud} />
             </span>
           ) : null}

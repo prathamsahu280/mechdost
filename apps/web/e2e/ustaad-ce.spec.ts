@@ -10,6 +10,11 @@ import { expect, test, type Page } from '@playwright/test';
 const DEMO_PASSWORD = 'Raipur@2026';
 const ADMIN = '9000000003';
 const SHOTS = process.env.USTAAD_SHOTS;
+/** A 4 × 4 red PNG for the photo picker. */
+const PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEUlEQVR4nGP4z8AARwgWXg4ArpMP8aaUSCMAAAAASUVORK5CYII=',
+  'base64',
+);
 
 async function signIn(page: Page) {
   await page.route(/^https?:\/\/(?!localhost[:/])/, (route) => route.abort());
@@ -176,6 +181,10 @@ test.describe('Ustaad local (workstream E)', () => {
     page,
   }) => {
     await signIn(page);
+    const csp: string[] = [];
+    page.on('console', (m) => {
+      if (m.text().includes('Content Security Policy')) csp.push(m.text());
+    });
     await page.goto('/ustaad/pin');
     await expect(page).toHaveURL(/\/ustaad\/me\/location$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Pin my garage' })).toBeVisible();
@@ -198,6 +207,14 @@ test.describe('Ustaad local (workstream E)', () => {
     await page.getByRole('button', { name: 'This is my garage' }).click();
     await expect(page.getByText('Location confirmed. Others see only your area.')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Get "Verified location"' })).toBeVisible();
+    // Signboard photo: shrunk and cleaned on the phone, uploaded with progress.
+    await page
+      .getByLabel('Add a photo')
+      .setInputFiles({ name: 'board.png', mimeType: 'image/png', buffer: PNG });
+    await expect(page.getByText('Photo ready.')).toBeVisible();
+    await page.getByRole('button', { name: 'Send signboard photo' }).click();
+    await expect(page.getByText('Signboard photo sent. Our team will check it.')).toBeVisible();
+    expect(csp).toEqual([]);
     if (SHOTS) {
       // In place (a reload would drop the sample pin): GPS found, pin confirmed, signboard offered.
       for (const width of [1440, 390]) {

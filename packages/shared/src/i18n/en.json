@@ -6732,7 +6732,7 @@
       "disclaimer": "Community advice, not a professional guarantee. Unsafe work can cause injury.",
       "bestBadge": "Best answer, chosen by the asker",
       "helpful": "Helpful",
-      "helpfulCount": "{n, plural, =0 {Helpful} other {Helpful · #}}",
+      "helpfulCount": "Helpful{n, plural, =0 {} other { · #}}",
       "helpfulAria": "Mark this answer helpful ({n} so far)",
       "helpfulDone": "You marked this helpful",
       "markBest": "Mark as best",
