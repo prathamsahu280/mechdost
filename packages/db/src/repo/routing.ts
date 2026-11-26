@@ -646,6 +646,15 @@ export async function overrideOrderDelivery(
   return db.transaction(async (tx) => {
     const o = await findOrder(tx, input.scope, input.code, true);
     if (o.status !== 'out_for_delivery') throw new ConflictError(`Order is ${o.status}`, 'WRONG_STEP');
+    // An agent-delivered sub-order is overridden on its delivery job, so the job and the agent's access close too
+    // (spec 24; `overrideDeliveryJob`).
+    const [mode] = await tx
+      .select({ m: orders.deliveryMode })
+      .from(orders)
+      .where(eq(orders.id, o.id))
+      .limit(1);
+    if (mode?.m === 'agent')
+      throw new ConflictError('Use the delivery job override for agent-delivered orders', 'AGENT_DELIVERY');
     const [shipment] = await tx
       .select({ id: shipments.id })
       .from(shipments)

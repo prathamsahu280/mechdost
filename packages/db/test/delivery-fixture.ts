@@ -83,6 +83,11 @@ export async function makeWorld(): Promise<World> {
   await db.update(s.shopInventory).set({ onHand: 100_000 }).where(eq(s.shopInventory.shopId, shop!.id));
   await db.insert(s.settings).values({ key: 'delivery.agents_enabled', value: true });
   await db.insert(s.settings).values({ key: 'delivery.photos_required', value: false });
+  // Staff switched the agent WhatsApp messages on (spec 10 gate); Meta statuses are not synced in tests.
+  for (const key of ['delivery.agent_invite', 'delivery.offer'])
+    await db
+      .insert(s.notificationTemplates)
+      .values({ key, channel: 'whatsapp', locale: 'en', body: 'x', enabled: true });
   return {
     db,
     close: () => client.close(),

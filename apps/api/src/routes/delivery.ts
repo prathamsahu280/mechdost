@@ -134,7 +134,7 @@ const sec = [{ bearerAuth: [] }];
 const Uuid = (name: string) => z.uuid().openapi({ param: { name, in: 'path' } });
 const OrderCode = z
   .string()
-  .regex(/^MD-[A-Z]{3}-\d{4}-[0-9A-Z]{6}$/)
+  .regex(/^MD-[A-Z]{3}-\d{4}-[0-9A-Z]{6}-\d{1,2}$/)
   .openapi({ param: { name: 'code', in: 'path' } });
 const Before = z.iso.datetime().optional();
 const Limit = z.coerce.number().int().min(1).max(100).optional();
@@ -185,7 +185,7 @@ export function deliveryPublicRoutes(deps: AppDeps) {
         path: '/delivery-agent-applications',
         tags: ['delivery'],
         summary: 'Apply as a delivery agent (public; Turnstile)',
-        request: { body: body(DeliveryAgentApplySubmit.openapi('DeliveryAgentApply')) },
+        request: { body: body(DeliveryAgentApplySubmit) },
         responses: { 201: json(Anything, 'Received'), ...errorResponses },
       }),
       async (c) => {
@@ -338,7 +338,7 @@ export function deliveryAgentRoutes(deps: AppDeps, cache: SessionCache) {
         '/me/delivery-invites/accept',
         'Join as a delivery agent with your invite (phone must match)',
         'delivery',
-        { body: body(AgentInviteAccept.openapi('AgentInviteAccept')) },
+        { body: body(AgentInviteAccept) },
       ),
       async (c) =>
         c.json(await acceptAgentInvite(deps.db, { userId: me(c), token: c.req.valid('json').token }), 200),
@@ -361,7 +361,7 @@ export function deliveryAgentRoutes(deps: AppDeps, cache: SessionCache) {
     )
     .openapi(
       r('post', '/agent/me/online', 'Go online or offline', 'delivery-agent', {
-        body: body(AgentOnlineInput.openapi('AgentOnline')),
+        body: body(AgentOnlineInput),
       }),
       async (c) => {
         const b = c.req.valid('json');
@@ -371,7 +371,7 @@ export function deliveryAgentRoutes(deps: AppDeps, cache: SessionCache) {
     )
     .openapi(
       r('put', '/agent/me/documents', 'Upload or replace one document (PAN, licence, RC)', 'delivery-agent', {
-        body: body(AgentDocumentInput.openapi('AgentDocument')),
+        body: body(AgentDocumentInput),
       }),
       async (c) => {
         const b = c.req.valid('json');
@@ -438,7 +438,7 @@ export function deliveryAgentRoutes(deps: AppDeps, cache: SessionCache) {
     .openapi(
       r('post', '/agent/offers/{offerId}/decline', 'Decline an offer with a reason', 'delivery-agent', {
         params: OfferId,
-        body: body(OfferDeclineInput.openapi('OfferDecline')),
+        body: body(OfferDeclineInput),
       }),
       async (c) => {
         const b = c.req.valid('json');
@@ -454,7 +454,7 @@ export function deliveryAgentRoutes(deps: AppDeps, cache: SessionCache) {
     .openapi(
       r('post', '/agent/jobs/{jobId}/give-up', 'Give up an accepted job before pickup', 'delivery-agent', {
         params: JobId,
-        body: body(GiveUpInput.openapi('GiveUp')),
+        body: body(GiveUpInput),
       }),
       async (c) => {
         const b = c.req.valid('json');
@@ -471,7 +471,7 @@ export function deliveryAgentRoutes(deps: AppDeps, cache: SessionCache) {
     .openapi(
       r('post', '/agent/jobs/{jobId}/pickup', "Pick up with the shop's code and a photo", 'delivery-agent', {
         params: JobId,
-        body: body(PickupInput.openapi('Pickup')),
+        body: body(PickupInput),
       }),
       async (c) => {
         const b = c.req.valid('json');
@@ -492,7 +492,7 @@ export function deliveryAgentRoutes(deps: AppDeps, cache: SessionCache) {
         '/agent/jobs/{jobId}/deliver',
         "Deliver with the customer's code and a photo",
         'delivery-agent',
-        { params: JobId, body: body(DeliverInput.openapi('Deliver')) },
+        { params: JobId, body: body(DeliverInput) },
       ),
       async (c) => {
         const b = c.req.valid('json');
@@ -510,7 +510,7 @@ export function deliveryAgentRoutes(deps: AppDeps, cache: SessionCache) {
     .openapi(
       r('post', '/agent/jobs/{jobId}/fail', 'Could not deliver: reason and photo', 'delivery-agent', {
         params: JobId,
-        body: body(FailInput.openapi('FailDelivery')),
+        body: body(FailInput),
       }),
       async (c) => {
         const b = c.req.valid('json');
@@ -534,8 +534,8 @@ export function deliveryAgentRoutes(deps: AppDeps, cache: SessionCache) {
 export function deliveryShopRoutes(deps: AppDeps, cache: SessionCache) {
   const app = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
   for (const path of [
-    '/shop/orders/:code/return-received',
-    '/shop/orders/:code/delivery-switch/*',
+    // '/shop/orders/*' already has sign-in, the per-user limit, verification and orders:fulfil on POST
+    // (shop-orders.ts); registering them again would run them twice (L54).
     '/shop/delivery-mode/*',
   ]) {
     app.use(path, authenticate(deps, cache));
@@ -545,11 +545,7 @@ export function deliveryShopRoutes(deps: AppDeps, cache: SessionCache) {
     );
     app.use(path, requireVerified);
   }
-  app.on(
-    'POST',
-    ['/shop/orders/:code/return-received', '/shop/orders/:code/delivery-switch/*', '/shop/delivery-mode/*'],
-    requirePermission('orders:fulfil'),
-  );
+  app.on('POST', '/shop/delivery-mode/*', requirePermission('orders:fulfil'));
   app.on('GET', '/shop/delivery-mode/*', requirePermission('orders:read'));
   app.on(
     'POST',
@@ -568,7 +564,7 @@ export function deliveryShopRoutes(deps: AppDeps, cache: SessionCache) {
         '/shop/orders/{code}/return-received',
         "The parcel is back: type the agent's return code",
         'shop',
-        { params: Code, body: body(ReturnReceivedInput.openapi('ReturnReceived')) },
+        { params: Code, body: body(ReturnReceivedInput) },
       ),
       async (c) => {
         const out = await confirmDeliveryReturn(deps.db, {
@@ -589,7 +585,7 @@ export function deliveryShopRoutes(deps: AppDeps, cache: SessionCache) {
         '/shop/orders/{code}/delivery-switch/{switchId}/confirm',
         'We will deliver this order ourselves',
         'shop',
-        { params: Switch, body: body(SwitchConfirmInput.openapi('SwitchConfirm')) },
+        { params: Switch, body: body(SwitchConfirmInput) },
       ),
       async (c) => {
         const p = c.req.valid('param');
@@ -610,7 +606,7 @@ export function deliveryShopRoutes(deps: AppDeps, cache: SessionCache) {
         '/shop/orders/{code}/delivery-switch/{switchId}/decline',
         'We cannot deliver it (back to MechDost)',
         'shop',
-        { params: Switch, body: body(SwitchDeclineInput.openapi('SwitchDecline')) },
+        { params: Switch, body: body(SwitchDeclineInput) },
       ),
       async (c) => {
         const p = c.req.valid('param');
@@ -647,7 +643,7 @@ export function deliveryShopRoutes(deps: AppDeps, cache: SessionCache) {
         '/shop/delivery-mode/{shopId}/requests',
         'Ask to deliver yourselves (or go back to agents)',
         'shop',
-        { params: ShopId, body: body(ShopModeRequestInput.openapi('ShopModeRequest')) },
+        { params: ShopId, body: body(ShopModeRequestInput) },
       ),
       async (c) => {
         const b = c.req.valid('json');
@@ -698,7 +694,7 @@ export function deliveryCustomerRoutes(deps: AppDeps, cache: SessionCache) {
       '/me/orders/{code}/delivery-rating',
       'Rate the delivery agent of your delivered order',
       'orders',
-      { params: z.object({ code: OrderCode }), body: body(DeliveryRatingInput.openapi('DeliveryRating')) },
+      { params: z.object({ code: OrderCode }), body: body(DeliveryRatingInput) },
     ),
     async (c) => {
       const b = c.req.valid('json');
@@ -720,9 +716,8 @@ export function deliveryCustomerRoutes(deps: AppDeps, cache: SessionCache) {
 export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
   const app = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
   for (const path of [
+    // '/admin/orders/*' (admin-orders.ts) and '/admin/shops/*' (admin-shops.ts) already sign in, limit and verify.
     '/admin/delivery/*',
-    '/admin/orders/:code/delivery-switch',
-    '/admin/shops/:shopId/delivery-mode',
   ]) {
     app.use(path, authenticate(deps, cache));
     app.use(
@@ -937,7 +932,7 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
         '/admin/delivery/invites',
         'Invite an agent (email + WhatsApp; the link is shown once)',
         'admin-delivery',
-        { body: body(AgentInviteInput.openapi('AgentInvite')) },
+        { body: body(AgentInviteInput) },
       ),
       async (c) => {
         const out = await createAgentInvite(deps.db, {
@@ -994,7 +989,7 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
     .openapi(
       r('patch', '/admin/delivery/agents/{agentId}', "Correct the agent's vehicle", 'admin-delivery', {
         params: AgentId,
-        body: body(AgentEditInput.openapi('AgentEdit')),
+        body: body(AgentEditInput),
       }),
       async (c) => {
         const b = c.req.valid('json');
@@ -1016,7 +1011,7 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
         '/admin/delivery/agents/{agentId}/status',
         'Activate, pause, suspend or offboard (reason)',
         'admin-delivery',
-        { params: AgentId, body: body(AgentStatusInput.openapi('AgentStatus')) },
+        { params: AgentId, body: body(AgentStatusInput) },
       ),
       async (c) => {
         const b = c.req.valid('json');
@@ -1070,7 +1065,7 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
             kind: Kind,
             decision: z.enum(['verify', 'reject']).openapi({ param: { name: 'decision', in: 'path' } }),
           }),
-          body: body(DocumentDecisionInput.openapi('DocumentDecision')),
+          body: body(DocumentDecisionInput),
         },
       ),
       async (c) => {
@@ -1135,7 +1130,7 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
     .openapi(
       r('post', '/admin/delivery/jobs/{jobId}/offer', 'Offer the job to an agent', 'admin-delivery', {
         params: JobId,
-        body: body(JobOfferInput.openapi('JobOffer')),
+        body: body(JobOfferInput),
       }),
       async (c) => {
         const b = c.req.valid('json');
@@ -1155,7 +1150,7 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
         '/admin/delivery/jobs/{jobId}/withdraw',
         'Take the job back (before pickup)',
         'admin-delivery',
-        { params: JobId, body: body(JobWithdrawInput.openapi('JobWithdraw')) },
+        { params: JobId, body: body(JobWithdrawInput) },
       ),
       async (c) => {
         const b = c.req.valid('json');
@@ -1175,7 +1170,7 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
         '/admin/delivery/jobs/{jobId}/failure-decision',
         'Retry (same or another agent) or return to the shop',
         'admin-delivery',
-        { params: JobId, body: body(FailureDecisionInput.openapi('FailureDecision')) },
+        { params: JobId, body: body(FailureDecisionInput) },
       ),
       async (c) => {
         const b = c.req.valid('json');
@@ -1204,7 +1199,7 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
             jobId: Uuid('jobId'),
             kind: z.enum(['pickup', 'delivery', 'return']).openapi({ param: { name: 'kind', in: 'path' } }),
           }),
-          body: body(JobOverrideInput.openapi('JobOverride')),
+          body: body(JobOverrideInput),
         },
       ),
       async (c) => {
@@ -1228,7 +1223,7 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
         '/admin/orders/{code}/delivery-switch',
         'Ask the shop to deliver this order itself',
         'admin-delivery',
-        { params: z.object({ code: OrderCode }), body: body(DeliverySwitchInput.openapi('DeliverySwitch')) },
+        { params: z.object({ code: OrderCode }), body: body(DeliverySwitchInput) },
       ),
       async (c) => {
         const b = c.req.valid('json');
@@ -1277,7 +1272,7 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
             requestId: Uuid('requestId'),
             decision: z.enum(['approve', 'reject']).openapi({ param: { name: 'decision', in: 'path' } }),
           }),
-          body: body(ShopModeDecisionInput.openapi('ShopModeDecision')),
+          body: body(ShopModeDecisionInput),
         },
       ),
       async (c) => {
@@ -1301,7 +1296,7 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
         '/admin/shops/{shopId}/delivery-mode',
         "Set or revoke a shop's delivery mode",
         'admin-delivery',
-        { params: z.object({ shopId: Uuid('shopId') }), body: body(ShopModeSetInput.openapi('ShopModeSet')) },
+        { params: z.object({ shopId: Uuid('shopId') }), body: body(ShopModeSetInput) },
       ),
       async (c) => {
         const b = c.req.valid('json');
@@ -1324,7 +1319,7 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
         '/admin/delivery/payouts',
         'Record a payout already made to an agent (manual)',
         'admin-delivery',
-        { body: body(AgentPayoutInput.openapi('AgentPayout')) },
+        { body: body(AgentPayoutInput) },
       ),
       async (c) => {
         const b = c.req.valid('json');
@@ -1351,7 +1346,7 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
         'admin-delivery',
         {
           params: z.object({ payoutId: Uuid('payoutId') }),
-          body: body(AgentPayoutReverseInput.openapi('AgentPayoutReverse')),
+          body: body(AgentPayoutReverseInput),
         },
       ),
       async (c) => {

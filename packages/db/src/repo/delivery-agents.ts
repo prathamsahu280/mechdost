@@ -32,6 +32,7 @@ import { agentOfUser, auditDelivery, deliverySettings, type AgentRow } from './d
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError, pgCode } from './errors';
 import { recordServerEvent } from './events';
 import { queueNotice, queueStaffNotice } from './notices';
+import { notificationChannelEnabled } from './notification-admin';
 import { enqueueNotification } from './notify';
 import { sealPayloadField } from './order-notifications';
 import type { Tx } from './orders';
@@ -253,14 +254,16 @@ export async function createAgentInvite(
         templateKey: 'delivery_agent_invite',
         payload: { name, hours, ...sealed },
       });
-    await enqueueNotification(tx, {
-      dedupeKey: `delivery_agent_invite:${row.id}:whatsapp`,
-      channel: 'whatsapp',
-      recipient: phone,
-      templateKey: 'delivery.agent_invite',
-      // Never the token on WhatsApp (lock screens, backups): the join page finds the invite by the signed-in phone.
-      payload: { name, hours },
-    });
+    // Same gate as every WhatsApp event (spec 10): only while staff switched the channel on for it.
+    if (await notificationChannelEnabled(tx, 'delivery.agent_invite', 'whatsapp'))
+      await enqueueNotification(tx, {
+        dedupeKey: `delivery_agent_invite:${row.id}:whatsapp`,
+        channel: 'whatsapp',
+        recipient: phone,
+        templateKey: 'delivery.agent_invite',
+        // Never the token on WhatsApp (lock screens, backups): the join page finds the invite by the signed-in phone.
+        payload: { name, hours },
+      });
     await auditDelivery(tx, {
       actorUserId: input.staffUserId,
       actorRole: 'staff',
@@ -1108,7 +1111,7 @@ export async function prepareAgentUpload(
       throw new ForbiddenError('Documents cannot be changed now', 'AGENT_NOT_ACTIVE');
     return { ownerKind: 'agent_document', ownerId: a.id };
   }
-  if (a.status !== 'active')
+  if (a.status !== 'active' && a.status !== 'paused')
     throw new ForbiddenError('Your account is not active for deliveries', 'AGENT_NOT_ACTIVE');
   if (!input.jobId) throw new ValidationError('Which job is this photo for?', 'JOB_REQUIRED');
   const [j] = await db
@@ -1116,8 +1119,9 @@ export async function prepareAgentUpload(
     .from(deliveryJobs)
     .where(eq(deliveryJobs.id, input.jobId))
     .limit(1);
-  if (j?.agentId !== a.id || !['accepted', 'picked_up'].includes(j.status))
-    throw new NotFoundError('Delivery job not found');
+  // A paused agent may only photograph a parcel already picked up (to deliver it or report a failure).
+  const stages = a.status === 'paused' ? ['picked_up'] : ['accepted', 'picked_up'];
+  if (j?.agentId !== a.id || !stages.includes(j.status)) throw new NotFoundError('Delivery job not found');
   return { ownerKind: 'delivery_photo', ownerId: j.id };
 }
 

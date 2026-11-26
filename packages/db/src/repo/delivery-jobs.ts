@@ -1656,6 +1656,8 @@ export async function getAgentJob(db: Tx, input: { userId: string; jobId: string
           eq(deliveryJobOffers.jobId, j.id),
           eq(deliveryJobOffers.agentId, agent.id),
           eq(deliveryJobOffers.status, 'offered'),
+          // An offer past its timer shows nothing even before the sweep closes it.
+          sql`${deliveryJobOffers.expiresAt} > now()`,
         ),
       )
       .limit(1);
@@ -1794,7 +1796,7 @@ const VIEW_STATUSES: Record<AdminJobView, readonly DeliveryJobStatus[]> = {
 
 export async function listAdminJobs(
   db: Tx,
-  input: { scope: CityScope; view: AdminJobView; limit: number; before?: Date | null },
+  input: { scope: CityScope; view: AdminJobView; limit: number; before?: Date | null; jobId?: string },
 ) {
   const scopeSql = input.scope.all
     ? sql`true`
@@ -1837,10 +1839,14 @@ export async function listAdminJobs(
       left join delivery_agents a on a.id = j.agent_id
       left join delivery_job_offers f on f.job_id = j.id and f.status = 'offered'
       left join delivery_agents oa on oa.id = f.agent_id
-      where ${scopeSql} and j.status in (${sql.join(
-        statuses.map((st) => sql`${st}`),
-        sql`, `,
-      )})
+      where ${scopeSql} and ${
+        input.jobId
+          ? sql`j.id = ${input.jobId}::uuid`
+          : sql`j.status in (${sql.join(
+              statuses.map((st) => sql`${st}`),
+              sql`, `,
+            )})`
+      }
       ${input.before ? sql`and j.updated_at < ${input.before}` : sql``}
       order by j.updated_at ${input.view === 'done' ? sql`desc` : sql`asc`}
       limit ${input.limit + 1}`),
@@ -1873,6 +1879,9 @@ export async function listAdminJobs(
 export async function getAdminJob(db: Tx, input: { scope: CityScope; jobId: string }) {
   const [j] = await db.select().from(deliveryJobs).where(eq(deliveryJobs.id, input.jobId)).limit(1);
   if (!j || !inScope(input.scope, j.cityId)) throw new NotFoundError('Delivery job not found');
+  // The same row the queue shows (`AdminJobRow`), plus the detail arrays (`AdminJobDetail`).
+  const [row] = (await listAdminJobs(db, { scope: input.scope, view: 'done', limit: 1, jobId: j.id })).items;
+  if (!row) throw new NotFoundError('Delivery job not found');
   const events = await db
     .select()
     .from(deliveryJobEvents)
@@ -1901,7 +1910,7 @@ export async function getAdminJob(db: Tx, input: { scope: CityScope; jobId: stri
       p.id !== null && p.at !== null,
   );
   return {
-    job: j,
+    ...row,
     events: events.map((e) => ({
       at: e.createdAt.toISOString(),
       kind: e.kind,
@@ -1921,6 +1930,7 @@ export async function getAdminJob(db: Tx, input: { scope: CityScope; jobId: stri
 }
 
 export interface ShopOrderDeliveryInfo {
+  mode: 'agent';
   pickupCode: string | null;
   pickupLocked: boolean;
   jobStatus: DeliveryJobStatus | null;
@@ -1960,6 +1970,7 @@ export async function shopDeliveryInfo(
       ? await readHandoverCode(tx, keyring, r.job.id, 'pickup')
       : null;
     out.set(r.job.orderId, {
+      mode: 'agent',
       pickupCode: code?.code ?? null,
       pickupLocked: code?.locked ?? false,
       jobStatus: r.job.status as DeliveryJobStatus,
@@ -1980,6 +1991,7 @@ export async function shopDeliveryInfo(
     );
   for (const sw of switches) {
     const base = out.get(sw.orderId) ?? {
+      mode: 'agent' as const,
       pickupCode: null,
       pickupLocked: false,
       jobStatus: null,

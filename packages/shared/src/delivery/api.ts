@@ -46,7 +46,7 @@ const Note = Text(1, 300);
 const FourDigits = z.string().regex(/^[0-9]{4}$/);
 const Vehicle = z.enum(AGENT_VEHICLE_TYPES);
 const CityCode = z.string().regex(/^[A-Z]{3}$/);
-const OrderCode = z.string().regex(/^MD-[A-Z]{3}-\d{4}-[0-9A-Z]{6}$/);
+const OrderCode = z.string().regex(/^MD-[A-Z]{3}-\d{4}-[0-9A-Z]{6}-\d{1,2}$/);
 
 /** A reason code; `other` needs a note (rule 16: codes first, free text only as an extra note). */
 function withNote<T extends readonly [string, ...string[]]>(codes: T) {
@@ -257,7 +257,10 @@ export const FailInput = z
     message: 'NOTE_REQUIRED',
   });
 
-/** Result of a code step: a wrong code returns `ok: false` with the tries left (the attempt is counted). */
+/**
+ * Result of a successful code step (200). A wrong code answers 422 `WRONG_CODE` with `details.attemptsLeft`; a locked
+ * code 423 `CODE_LOCKED` (the attempt is counted either way). Same for the shop's return-code step.
+ */
 export const CodeStepResult = z.object({
   ok: z.boolean(),
   attemptsLeft: z.number().int().min(0),

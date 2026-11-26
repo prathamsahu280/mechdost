@@ -179,15 +179,15 @@ describe('role-leak matrix', () => {
     expect(own.totalPaise).toBe(50_000);
   });
 
-  it('a shop user cannot use agent or staff delivery routes', async () => {
-    const shopUser = await login(null);
-    expect((await get('/agent/jobs?view=active', shopUser.headers)).status).toBe(403);
+  it('a signed-in customer cannot use agent or staff delivery routes (shop users: delivery-contract.test.ts)', async () => {
+    const customerOnly = await login(null);
+    expect((await get('/agent/jobs?view=active', customerOnly.headers)).status).toBe(403);
     expect(
       (
         await post(
           `/admin/delivery/jobs/${randomUUID()}/offer`,
           { agentId: randomUUID(), version: 1 },
-          shopUser.headers,
+          customerOnly.headers,
         )
       ).status,
     ).toBe(403);

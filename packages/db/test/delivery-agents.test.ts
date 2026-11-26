@@ -32,6 +32,8 @@ import {
   newShopDeliveryMode,
   offerDeliveryJob,
   pickupDeliveryJob,
+  prepareAgentUpload,
+  overrideOrderDelivery,
   rateDeliveryAgent,
   readHandoverCode,
   requestDeliverySwitch,
@@ -563,6 +565,7 @@ describe('failed delivery', () => {
     expect(res.ok).toBe(true);
     const o = await orderOf(w, code);
     expect(o).toMatchObject({ status: 'returned', statusReasonCode: 'customer_unreachable' });
+    expect(o.shippingPaise).toBeGreaterThan(0);
     const [refund] = await w.db.select().from(s.refunds).where(eq(s.refunds.orderId, orderId));
     expect(refund).toMatchObject({
       source: 'delivery_returned',
@@ -974,6 +977,150 @@ describe('security review 2026-11-26: standing and documents', () => {
       sql`select r.key from user_roles ur join roles r on r.id = ur.role_id where ur.user_id = ${A.userId}`,
     );
     expect(JSON.stringify(roles)).not.toContain('delivery_agent');
+  });
+});
+
+describe('review 2: photos, staff override, refunds and stock', () => {
+  it('with photos required (the default) a step needs a photo of this job; a paused agent can still upload to finish', async () => {
+    await w.db.insert(s.settings).values({ key: 'delivery.photos_required', cityId: w.cityId, value: true });
+    try {
+      const A = await makeAgent(w);
+      const one = await packedOnlineOrder(w);
+      const two = await packedOnlineOrder(w);
+      await ready(one.code);
+      await ready(two.code);
+      await offerAndAccept(one.code, A);
+      await offerAndAccept(two.code, A);
+      const j1 = await jobOf(w, one.orderId);
+      const j2 = await jobOf(w, two.orderId);
+      const pc = (await readHandoverCode(w.t(), keyring, j1.id, 'pickup'))!.code!;
+      await expect(
+        pickupDeliveryJob(w.t(), {
+          userId: A.userId,
+          jobId: j1.id,
+          pickupCode: pc,
+          expectedVersion: j1.version,
+          keyring,
+        }),
+      ).rejects.toMatchObject({ code: 'PHOTO_REQUIRED' });
+      const otherPhoto = await mediaFor(w, 'delivery_photo', j2.id, A.userId);
+      await expect(
+        pickupDeliveryJob(w.t(), {
+          userId: A.userId,
+          jobId: j1.id,
+          pickupCode: pc,
+          photoMediaId: otherPhoto,
+          expectedVersion: j1.version,
+          keyring,
+        }),
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+      const p1 = await mediaFor(w, 'delivery_photo', j1.id, A.userId);
+      expect(
+        (
+          await pickupDeliveryJob(w.t(), {
+            userId: A.userId,
+            jobId: j1.id,
+            pickupCode: pc,
+            photoMediaId: p1,
+            expectedVersion: j1.version,
+            keyring,
+          })
+        ).ok,
+      ).toBe(true);
+      const [a] = await w.db.select().from(s.deliveryAgents).where(eq(s.deliveryAgents.id, A.agentId));
+      await setAgentStatus(w.t(), {
+        scope: { all: true },
+        staffUserId: w.staff,
+        agentId: A.agentId,
+        to: 'paused',
+        reasonCode: 'agent_request',
+        expectedVersion: a!.version,
+      });
+      expect(
+        await prepareAgentUpload(w.t(), { userId: A.userId, purpose: 'delivery', jobId: j1.id }),
+      ).toMatchObject({ ownerKind: 'delivery_photo', ownerId: j1.id });
+      await expect(
+        prepareAgentUpload(w.t(), { userId: A.userId, purpose: 'pickup', jobId: j2.id }),
+      ).rejects.toThrow();
+      const held = await jobOf(w, one.orderId);
+      const p2 = await mediaFor(w, 'delivery_photo', j1.id, A.userId);
+      const res = await deliverDeliveryJob(w.t(), {
+        userId: A.userId,
+        jobId: held.id,
+        deliveryCode: (await customerCode(one.orderId))!,
+        photoMediaId: p2,
+        expectedVersion: held.version,
+        keyring,
+      });
+      expect(res.ok).toBe(true);
+    } finally {
+      await w.db.execute(
+        sql`delete from settings where key = 'delivery.photos_required' and city_id = ${w.cityId}`,
+      );
+    }
+  });
+
+  it('the old staff delivery override refuses an agent-mode order (use the job override)', async () => {
+    const A = await makeAgent(w);
+    const o = await packedOnlineOrder(w);
+    await ready(o.code);
+    await offerAndAccept(o.code, A);
+    await pickUp(o.code, A);
+    const order = await orderOf(w, o.code);
+    await expect(
+      overrideOrderDelivery(w.t(), {
+        scope: { all: true },
+        code: o.code,
+        reason: 'Customer lost the code',
+        expectedVersion: order.version,
+        staffUserId: w.staff,
+      }),
+    ).rejects.toMatchObject({ code: 'AGENT_DELIVERY' });
+    expect((await jobOf(w, o.orderId)).status).toBe('picked_up');
+  });
+
+  it('a return not caused by the customer refunds in full, puts stock back, and restores coins', async () => {
+    const A = await makeAgent(w);
+    const { code, orderId } = await packedOnlineOrder(w);
+    const before = await w.db.execute(
+      sql`select si.on_hand from shop_inventory si join order_items oi on oi.variant_id = si.variant_id where oi.order_id = ${orderId} and si.shop_id = ${w.shopId}`,
+    );
+    await ready(code);
+    await offerAndAccept(code, A);
+    await pickUp(code, A);
+    let j = await jobOf(w, orderId);
+    await failDeliveryJob(w.t(), {
+      userId: A.userId,
+      jobId: j.id,
+      reasonCode: 'unsafe_location',
+      expectedVersion: j.version,
+    });
+    j = await jobOf(w, orderId);
+    await decideDeliveryFailure(w.t(), {
+      scope: { all: true },
+      staffUserId: w.staff,
+      jobId: j.id,
+      decision: 'return_to_shop',
+      expectedVersion: j.version,
+      keyring,
+    });
+    const rc = (await getAgentJob(w.t(), { userId: A.userId, jobId: j.id, keyring })).returnCode!;
+    await confirmDeliveryReturn(w.t(), {
+      shopIds: [w.shopId],
+      staffUserId: w.shopUser,
+      orderCode: code,
+      returnCode: rc,
+      keyring,
+    });
+    const o = await orderOf(w, code);
+    const [refund] = await w.db.select().from(s.refunds).where(eq(s.refunds.orderId, orderId));
+    expect(refund).toMatchObject({ source: 'delivery_returned', amountPaise: o.totalPaise });
+    const after = await w.db.execute(
+      sql`select si.on_hand from shop_inventory si join order_items oi on oi.variant_id = si.variant_id where oi.order_id = ${orderId} and si.shop_id = ${w.shopId}`,
+    );
+    // The accept took 2 off the shelf; the hand-back puts them back.
+    const onHand = (r: unknown) => Number((r as { rows: { on_hand: number }[] }).rows[0]!.on_hand);
+    expect(onHand(after)).toBe(onHand(before) + 2);
   });
 });
 
