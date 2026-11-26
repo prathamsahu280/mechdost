@@ -91,6 +91,18 @@ export interface UstaadServerEventProps {
   ustaad_application_mapped: { outcome: 'invited' | 'joined' | 'closed' | 'skipped' };
   ustaad_takedown_executed: { clock: Of<typeof REPORT_CLOCKS>; seconds: number };
   ustaad_restricted_mode: { memberId: string; reason: 'minor_report' | 'review' | 'cleared' };
+  /** Workstream B round 3: profile and choices saves (field counts, never values). */
+  ustaad_profile_updated: { memberId: string; fields: number };
+  ustaad_choices_saved: { memberId: string; fields: number };
+  /** SR-2: perks and job posting paused after a credential change on a Pakka+ account. */
+  ustaad_security_freeze: {
+    memberId: string;
+    reason: 'phone_changed' | 'email_changed' | 'password_changed';
+  };
+  /** Non-partner owner link issued by staff (SR-6). */
+  ustaad_attest_link_issued: { attestationId: string };
+  /** Nightly reconcile found counters that drifted from their source rows. */
+  ustaad_counter_drift: { members: number };
   admin_ustaad_settings_saved: { keys: string[] };
   admin_ustaad_invariant_refused: { key: string };
   /** Admin → Ustaad tables (task G1): which table, what was done; never the text. */
@@ -104,7 +116,8 @@ export interface UstaadServerEventProps {
       | 'reach_cities'
       | 'promotions'
       | 'tutorial_cards'
-      | 'coachmarks';
+      | 'coachmarks'
+      | 'reserved_names';
     action: 'create' | 'update' | 'merge' | 'move';
   };
   /** The staff preview switch (founder 2026-11-26). */
@@ -143,6 +156,11 @@ export const USTAAD_SERVER_EVENTS = [
   'ustaad_application_mapped',
   'ustaad_takedown_executed',
   'ustaad_restricted_mode',
+  'ustaad_profile_updated',
+  'ustaad_choices_saved',
+  'ustaad_security_freeze',
+  'ustaad_attest_link_issued',
+  'ustaad_counter_drift',
   'admin_ustaad_settings_saved',
   'admin_ustaad_invariant_refused',
   'admin_ustaad_table_saved',

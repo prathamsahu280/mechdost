@@ -110,6 +110,15 @@ export const ustaadAttestations = pgTable(
     tokenHash: text(),
     expiresAt: ts().notNull(),
     decidedAt: ts(),
+    /** When staff last issued the one-time link (non-partner owner; a re-issue replaces `token_hash`). */
+    linkIssuedAt: ts(),
+    /**
+     * Non-partner owner (SR-6): metres between where the owner stood when confirming (browser location) and the
+     * member's garage pin. Only the distance is kept, never the owner's position.
+     */
+    ownerDistanceM: integer(),
+    /** Evidence (owner phone, GSTIN/Udyam) cleared after `verify.evidence_retention_days`; the hash stays for the cap. */
+    evidencePurgedAt: ts(),
     version: version(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -134,6 +143,14 @@ export const ustaadAttestations = pgTable(
       'ustaad_attestations_owner_known',
       sql`${t.workshopId} is not null or ${t.ownerPhoneHash} is not null`,
     ),
+    check('ustaad_attestations_owner_distance', sql`${t.ownerDistanceM} is null or ${t.ownerDistanceM} >= 0`),
+    check(
+      'ustaad_attestations_purged_clear',
+      sql`${t.evidencePurgedAt} is null or (${t.ownerPhoneEnc} is null and ${t.ownerBusinessId} is null)`,
+    ),
+    index('ustaad_attestations_purge_idx')
+      .on(t.decidedAt)
+      .where(sql`${t.evidencePurgedAt} is null and ${t.ownerPhoneHash} is not null`),
     check(
       'ustaad_attestations_since_year',
       sql`${t.sinceYear} is null or ${t.sinceYear} between 1950 and 2100`,
@@ -263,12 +280,14 @@ export const ustaadMemberCounters = pgTable(
     izzat: integer().notNull().default(0),
     bestAnswers30d: integer().notNull().default(0),
     helpful30d: integer().notNull().default(0),
+    /** Followers that count for levels (SR-9), refreshed by the qualified-followers job; the card shows it. */
+    qualifiedFollowers: integer().notNull().default(0),
     updatedAt: updatedAt(),
   },
   (t) => [
     check(
       'ustaad_member_counters_non_negative',
-      sql`${t.followers} >= 0 and ${t.following} >= 0 and ${t.posts} >= 0 and ${t.answers} >= 0 and ${t.bestAnswers} >= 0 and ${t.helpfulVotes} >= 0 and ${t.helpfulAnswers} >= 0 and ${t.videosWatched} >= 0 and ${t.recommendations} >= 0 and ${t.bestAnswers30d} >= 0 and ${t.helpful30d} >= 0`,
+      sql`${t.followers} >= 0 and ${t.following} >= 0 and ${t.posts} >= 0 and ${t.answers} >= 0 and ${t.bestAnswers} >= 0 and ${t.helpfulVotes} >= 0 and ${t.helpfulAnswers} >= 0 and ${t.videosWatched} >= 0 and ${t.recommendations} >= 0 and ${t.bestAnswers30d} >= 0 and ${t.helpful30d} >= 0 and ${t.qualifiedFollowers} >= 0`,
     ),
   ],
 );

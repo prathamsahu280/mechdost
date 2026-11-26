@@ -68,6 +68,16 @@ export async function ustaadRegionFor(tx: Tx, place: { pincode: string }): Promi
   return s['ustaad.general.all_state'] && row.stateCode === REACH_STATE_CODE ? row.cityId : null;
 }
 
+/** The member view of a row (shared with `profile.ts`). */
+export async function ustaadMemberViewOf(tx: Tx, m: MemberRow): Promise<MemberView> {
+  return viewOf(tx, m);
+}
+
+/** The raw member row of a user (any status), for repositories in this folder; never returned to a client. */
+export async function ustaadMemberRowOfUser(tx: Tx, userId: string): Promise<MemberRow | undefined> {
+  return memberRowOfUser(tx, userId);
+}
+
 async function viewOf(tx: Tx, m: MemberRow): Promise<MemberView> {
   const [city] = await tx.select({ code: cities.code }).from(cities).where(eq(cities.id, m.cityId)).limit(1);
   const specs = await tx
@@ -209,7 +219,7 @@ export async function joinUstaad(
     : null;
   if (s['ustaad.general.join_mode'] === 'invite_only' && !invite)
     throw new ValidationError('Joining is by invite right now', 'USTAAD_JOIN_CLOSED');
-  await assertUstaadNameAllowed(db, input.displayName);
+  await assertUstaadNameAllowed(db, input.displayName, { userId: actor.userId });
 
   return db.transaction(async (tx) => {
     const cityId = await ustaadRegionFor(tx, { pincode: input.pincode });

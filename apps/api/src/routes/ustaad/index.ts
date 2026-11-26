@@ -21,6 +21,7 @@ import { ustaadMediaRoutes } from './media';
 import { ustaadCorrectRoutes } from './correct';
 import { ustaadLocalRoutes } from './local';
 import { ustaadMemberRoutes } from './members';
+import { ustaadProfileRoutes } from './profile';
 import { ustaadVerificationRoutes } from './verification';
 import { ustaadQaRoutes } from './qa';
 
@@ -49,7 +50,7 @@ export function ustaadRoutes(deps: AppDeps, sessions: SessionCache, access: Usta
   app.route('/', ustaadMemberRoutes(deps, sessions));
   app.route('/', ustaadMediaRoutes(deps));
   app.route('/', ustaadVerificationRoutes(deps));
-  // B (later): app.route('/', ustaadProfileRoutes(deps, sessions));
+  app.route('/', ustaadProfileRoutes(deps));
   app.route('/', ustaadQaRoutes(deps));
   // D: app.route('/', ustaadPostRoutes(deps)); app.route('/', ustaadFeedRoutes(deps)); …
   app.route('/', ustaadLocalRoutes(deps));

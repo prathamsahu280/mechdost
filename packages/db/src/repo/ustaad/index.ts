@@ -6,6 +6,7 @@
 export * from './events';
 export * from './settings';
 export * from './members';
+export * from './profile';
 export * from './media';
 export * from './names';
 export * from './izzat';

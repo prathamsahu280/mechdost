@@ -652,6 +652,20 @@
       "when": 1795647215924,
       "tag": "0094_ustaad_identity_seed",
       "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "7",
+      "when": 1795674994576,
+      "tag": "0098_ustaad_identity_b3",
+      "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1795675020311,
+      "tag": "0099_ustaad_reserved_names_seed",
+      "breakpoints": true
     }
   ]
 }
