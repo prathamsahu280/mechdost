@@ -2197,3 +2197,9 @@ Spec `docs/specs/23-ustaad-network.md`, design `docs/superpowers/specs/2026-11-2
 - Job codes use RFC 4648 base32 to satisfy the existing `ustaad_jobs_code_format` CHECK; the lead may instead align
   the CHECK with Crockford `publicCode` at merge.
 - The `jobs.enabled` kill switch hides every job surface (404) but never blocks an applicant's withdraw.
+
+## 2026-11-26 — Claude key for Ustaad smart correction; customer assistant off; cost first
+
+- Founder gave an Anthropic key for Ustaad smart correction (Q-U3): `SMART_CORRECTION_PROVIDER=anthropic`, `SMART_CORRECTION_MODEL=claude-haiku-5-5` (cheapest model; only members who gave the smart-correction consent, PII-masked).
+- Founder: "the customer ai assistant chat u can turn it off for now" and "make sure u keep the cost optimized". The key alone no longer switches the assistant on: new `ASSISTANT_ENABLED` (default `false`) must be `true` too (`apps/api/src/config.ts`, test `apps/api/test/assistant-switch.test.ts`). When it is turned back on, set `ASSISTANT_MODEL` to a Haiku model.
+- The key lives in the local `.env` and the server `/opt/mechdost/.env` only (runtime is the server, not GitHub). The founder pasted it in chat; rotating it is advised.
