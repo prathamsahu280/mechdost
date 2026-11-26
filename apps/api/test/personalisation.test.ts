@@ -165,4 +165,21 @@ describe('suggestions (phase 3)', () => {
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.rows)).toBe(true);
   });
+
+  it('a city-scoped manager is refused (client events carry no city, so the funnel is all-city data only)', async () => {
+    const [rpr] = await ctx.db.select().from(s.cities).limit(1);
+    const cityMgr = await person('09');
+    await grantRole(ctx.db, {
+      userId: cityMgr.id,
+      role: 'city_manager',
+      cityId: rpr?.id ?? null,
+      grantedBy: null,
+    });
+    const refused = await call(cityMgr, 'GET', '/admin/analytics/reco-funnel?days=7');
+    expect(refused.status).toBe(403);
+    expect(refused.body.error.code).toBe('ALL_CITIES_REQUIRED');
+    const allCities = await person('10');
+    await grantRole(ctx.db, { userId: allCities.id, role: 'ops_manager', cityId: null, grantedBy: null });
+    expect((await call(allCities, 'GET', '/admin/analytics/reco-funnel?days=7')).status).toBe(200);
+  });
 });

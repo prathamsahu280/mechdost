@@ -133,6 +133,10 @@ export function adminAnalyticsRoutes(deps: AppDeps, cache: SessionCache) {
 
   return app
     .openapi(recoFunnelRoute, async (c) => {
+      // Browser events carry no city, so the funnel cannot be cut by city: all-city analytics only (security
+      // review 2026-11-26); a city-scoped staff member is refused rather than shown other cities' data.
+      if (!cityScopeFrom(c.get('auth').grants, 'analytics:read').all)
+        throw Forbidden('ALL_CITIES_REQUIRED', 'The suggestion report covers every city');
       const to = new Date();
       const from = new Date(to.getTime() - c.req.valid('query').days * 86_400_000);
       const rows = await recoFunnel(deps.db, { from, to });
