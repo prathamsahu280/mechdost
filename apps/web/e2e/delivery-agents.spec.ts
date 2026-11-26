@@ -205,7 +205,7 @@ test.describe('delivery agents (demo)', () => {
     const card = page.locator('article').filter({ hasText: DELIVERY_CODES.packed });
     await expect(card.getByRole('button', { name: 'Out for delivery' })).toHaveCount(0);
     await card.getByRole('button', { name: 'Mark ready for pickup' }).click();
-    await expect(card.getByText('Finding a delivery partner')).toBeVisible();
+    await expect(card.getByText('Finding a delivery partner', { exact: true })).toBeVisible();
     await expect(card.getByText('Pickup code')).toBeVisible();
     await expect(card.getByText(/^\d{4}$/)).toBeVisible();
     // The agent picking up another order is named with first name and vehicle.

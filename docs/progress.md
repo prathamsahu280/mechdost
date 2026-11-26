@@ -13,7 +13,8 @@ This file is the single source of truth for **where the build is right now**. It
     order timeline. Founder rulings (15-min timer, ratings, manual payouts, no insurance/uniform) and the security
     review's Caddy redaction done.
 - Docs: spec 24 § Web screens (contract gaps G1–G8), decisions 2026-11-27, demo runbook logins, specs 07/08/12
-  pointers, Q-DLV-W1…3. **Next:** lead merges with the backend branch; backend closes G1–G8; the API-mode screens
+  pointers, Q-DLV-W1…3. Verified: a11y specialist fixes in; prod build ok; delivery e2e 7+1 pass (desktop+mobile),
+  Hindi crawl delivery pages pass; storefront JS unchanged (≤ 179.4 KB gz). **Next:** lead merges with the backend branch; backend closes G1–G8; the API-mode screens
   need a run against the real API once the routes exist.
 
 ## 2026-11-26 (night) — delivery agents backend (branch worktree-agent-aa4e4463a8d74ac65, not pushed)
