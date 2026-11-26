@@ -32,6 +32,7 @@ import {
   type UstaadActor,
 } from './feed-common';
 import { screenUstaadContent } from './moderation';
+import { ustaadScreenText } from './screen-text';
 import { authorColumns, ustaadMediaViews } from './posts';
 import { readUstaadSettingValues } from './settings';
 
@@ -79,7 +80,8 @@ export async function createUstaadStory(
       throw new ValidationError('Too long', 'USTAAD_MEDIA_TOO_LONG', { maxSeconds: maxS });
     const screen = await screenUstaadContent(tx, {
       kind: 'story',
-      text: input.body ?? null,
+      // A story caption has no smart correction (no original is accepted or stored).
+      text: ustaadScreenText({ parts: [input.body], original: null, correction: 'none' }),
       mediaIds: ids,
       authorId: me.id,
     });

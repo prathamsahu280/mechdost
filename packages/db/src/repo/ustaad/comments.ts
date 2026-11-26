@@ -25,6 +25,7 @@ import {
   type UstaadActor,
 } from './feed-common';
 import { screenUstaadContent } from './moderation';
+import { ustaadScreenText, ustaadStoredOriginal } from './screen-text';
 import { notifyUstaad } from './notify';
 import { authorColumns } from './posts';
 import { readUstaadSettingValues } from './settings';
@@ -82,10 +83,14 @@ export async function commentOnUstaadPost(
       mediaKind = m.kind;
     }
     // The pre-correction words are shown as "see original", so they are screened too.
-    const bodyOriginal = input.correction === 'none' ? null : (input.bodyOriginal ?? null);
+    const bodyOriginal = ustaadStoredOriginal(input.bodyOriginal, input.correction);
     const screen = await screenUstaadContent(tx, {
       kind: 'comment',
-      text: [input.body, bodyOriginal].filter(Boolean).join('\n') || null,
+      text: ustaadScreenText({
+        parts: [input.body],
+        original: input.bodyOriginal,
+        correction: input.correction,
+      }),
       mediaIds: input.mediaId ? [input.mediaId] : [],
       authorId: me.id,
     });

@@ -731,6 +731,12 @@ describe('stories', () => {
     expect(ev).toHaveLength(1);
   });
 
+  it('a story caption is screened (held like a post)', async () => {
+    const img = await media(ramesh.memberId, 'image');
+    const st = await createUstaadStory(t(), ramesh, { mediaId: img, body: 'PAYFEE', idemKey: key() });
+    expect(st.status).toBe('held');
+  });
+
   it('stories are not comment targets and the stories type switch turns them off', async () => {
     const img = await media(ramesh.memberId, 'image');
     const st = await createUstaadStory(t(), ramesh, { mediaId: img, idemKey: key() });

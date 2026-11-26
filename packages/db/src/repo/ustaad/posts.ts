@@ -42,6 +42,7 @@ import {
   type UstaadMemberRow,
 } from './feed-common';
 import { screenUstaadContent } from './moderation';
+import { ustaadScreenText, ustaadStoredOriginal } from './screen-text';
 import { ustaadLinkPreviewsFor } from './previews';
 import { readUstaadSettingValues } from './settings';
 import { resolveUstaadTagIds } from './tags';
@@ -187,20 +188,15 @@ export async function createUstaadPost(db: Tx, actor: UstaadActor, input: Create
     }
     // Everything other members can read is screened, incl. the pre-correction words shown as "see original"
     // (stored only when a correction was used).
-    const bodyOriginal = input.correction === 'none' ? null : (input.bodyOriginal ?? null);
-    const text = [
-      input.body,
-      bodyOriginal,
-      input.fixSymptom,
-      input.fixCause,
-      input.fixFix,
-      input.poll?.options.join('\n'),
-    ]
-      .filter(Boolean)
-      .join('\n');
+    const bodyOriginal = ustaadStoredOriginal(input.bodyOriginal, input.correction);
+    const text = ustaadScreenText({
+      parts: [input.body, input.fixSymptom, input.fixCause, input.fixFix, ...(input.poll?.options ?? [])],
+      original: input.bodyOriginal,
+      correction: input.correction,
+    });
     const screen = await screenUstaadContent(tx, {
       kind: 'post',
-      text: text || null,
+      text,
       mediaIds: media.map((m) => m.id),
       authorId: me.id,
     });
