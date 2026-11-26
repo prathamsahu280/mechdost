@@ -53,6 +53,8 @@ vi.mock('../src/repo/ustaad/moderation', () => ({
   // Holds any text with the test word, so tests prove which fields reach the screen.
   screenUstaadContent: (_tx: unknown, input: { text: string | null }) =>
     Promise.resolve(input.text?.includes('PAYFEE') ? 'hold' : screen.outcome),
+  // G2: held posts, stories and comments open a queue entry; the real queue is covered in ustaad-console.test.ts.
+  openUstaadAutoHoldReport: () => Promise.resolve(null),
 }));
 
 let db: TestDb;

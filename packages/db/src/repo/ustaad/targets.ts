@@ -161,7 +161,8 @@ export async function loadUstaadTarget(
         id,
         authorMemberId: m.row.senderId,
         cityId: m.cityId,
-        status: m.row.deletedAt ? 'removed' : 'visible',
+        // A message the first pass held is `held` until a community manager keeps (releases) or removes it (G2).
+        status: m.row.deletedAt ? 'removed' : m.row.heldReasonCode ? 'held' : 'visible',
         version: 1,
         text: m.row.body,
         mediaIds: m.row.mediaId ? [m.row.mediaId] : [],
@@ -218,7 +219,23 @@ export async function moveUstaadTarget(tx: Tx, t: UstaadTarget, to: string): Pro
       return;
     }
     case 'message': {
-      // Messages have no status machine: removal hides the message for both members (deleted_at), restore clears it.
+      // Messages have no status machine: removal hides the message for both members (deleted_at), restore clears it;
+      // keeping a held message releases it (held_reason_code cleared; G2 publish side effects follow).
+      if (t.status === 'held' && to === 'visible') {
+        const released = await tx
+          .update(ustaadMessages)
+          .set({ heldReasonCode: null })
+          .where(
+            and(
+              eq(ustaadMessages.id, t.id),
+              isNull(ustaadMessages.deletedAt),
+              sql`${ustaadMessages.heldReasonCode} is not null`,
+            ),
+          )
+          .returning({ id: ustaadMessages.id });
+        if (released.length === 0) throw stale();
+        return;
+      }
       const rows = await tx
         .update(ustaadMessages)
         .set({ deletedAt: to === 'removed' ? sql`now()` : null })

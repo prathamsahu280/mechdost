@@ -31,7 +31,7 @@ import {
   visibleUstaadPost,
   type UstaadActor,
 } from './feed-common';
-import { screenUstaadContent } from './moderation';
+import { openUstaadAutoHoldReport, screenUstaadContent } from './moderation';
 import { ustaadScreenText } from './screen-text';
 import { authorColumns, ustaadMediaViews } from './posts';
 import { readUstaadSettingValues } from './settings';
@@ -127,6 +127,14 @@ export async function createUstaadStory(
         props: { postId: row.id, kind },
       },
     );
+    // Held stories reach the moderation queue with a clock (G2).
+    if (status === 'held')
+      await openUstaadAutoHoldReport(tx, {
+        targetType: 'story',
+        targetId: row.id,
+        authorId: me.id,
+        kind: 'story',
+      });
     return { id: row.id, status: row.status, expiresAt: row.expiresAt.toISOString() };
   });
 }

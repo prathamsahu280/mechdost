@@ -26,7 +26,6 @@ import type {
   ThreadListQuery,
   ThreadView,
 } from '@mechdost/shared/ustaad/dto/messages';
-import { istDateString } from '@mechdost/shared/time';
 import { dmTextCheck, orderedPair } from '@mechdost/shared/ustaad/social-rules';
 import {
   auditLog,
@@ -54,8 +53,8 @@ import {
   ustaadVisibleMember,
   type UstaadMemberRow,
 } from './graph-common';
-import { screenUstaadContent } from './moderation';
-import { notifyUstaad } from './notify';
+import { openUstaadAutoHoldReport, screenUstaadContent } from './moderation';
+import { publishUstaadMessage } from './publish';
 import { assertUstaadMemberCanWrite, type UstaadActor } from './qa';
 import { readUstaadSettingValues } from './settings';
 
@@ -230,8 +229,6 @@ async function writeMessage(
     .update(ustaadThreadMembers)
     .set({ lastReadAt: row.at })
     .where(and(eq(ustaadThreadMembers.threadId, thread.id), eq(ustaadThreadMembers.memberId, me.id)));
-  if (held === null)
-    await tx.update(ustaadThreads).set({ lastMessageAt: row.at }).where(eq(ustaadThreads.id, thread.id));
   await recordUstaadEvent(
     tx,
     {
@@ -250,28 +247,17 @@ async function writeMessage(
       props: { threadId: thread.id, kind: c.kind, held: held !== null },
     },
   );
-  if (held === null) {
-    const otherId = otherOf(thread, me.id);
-    const [other] = await tx
-      .select({ userId: ustaadMembers.userId, muted: ustaadThreadMembers.muted })
-      .from(ustaadMembers)
-      .leftJoin(
-        ustaadThreadMembers,
-        and(eq(ustaadThreadMembers.threadId, thread.id), eq(ustaadThreadMembers.memberId, ustaadMembers.id)),
-      )
-      .where(eq(ustaadMembers.id, otherId))
-      .limit(1);
-    if (other && other.muted !== true)
-      await notifyUstaad(tx, requested ? 'ustaad.message_request' : 'ustaad.message', {
-        userId: other.userId,
-        entityId: thread.id,
-        // One bell entry per thread and IST day for messages; one per request.
-        version: requested ? `req-${String(thread.version)}` : istDateString(new Date()),
-        params: (locale) => ({
-          memberName: locale === 'hi' ? (me.displayNameHi ?? me.displayName) : me.displayName,
-        }),
-      });
-  }
+  // A held message reaches the moderation queue (G2); one that goes out now moves the thread and tells the other
+  // member (the same path a community manager's keep runs later).
+  if (held === null) await publishUstaadMessage(tx, row.id);
+  else
+    await openUstaadAutoHoldReport(tx, {
+      targetType: 'message',
+      targetId: row.id,
+      authorId: me.id,
+      kind: 'message',
+      scam: held === 'scam_phrase',
+    });
   return { messageId: row.id, pending: held !== null };
 }
 

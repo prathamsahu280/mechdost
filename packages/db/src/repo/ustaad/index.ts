@@ -47,3 +47,7 @@ export * from './jobs';
 export * from './reports';
 export * from './strikes';
 export * from './removed-archive';
+// G2: the community manager console (media view, members for staff, legal list, own audit trail) and the
+// publish side effects a keep runs.
+export * from './console';
+export * from './publish';
