@@ -942,10 +942,27 @@ export const COMPONENTS: readonly ComponentDef[] = [
     sweep: 8,
   },
   {
+    code: 'PDP-SIMILAR',
+    page: 'Product page (/shop/[slug])',
+    component: 'Similar options row (same size and segment, other brands; cards with the shared size line)',
+    path: `/shop/${PRODUCTS.castrol}`,
+    scope: 'section[aria-labelledby="similar"]',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'cart', values: ['none', 'mixed'] },
+      { name: 'compare', values: ['none', 'lub-2'] },
+    ],
+    checks: [...BASE_CHECKS, 'aligned', 'sync', 'offphoto'],
+    align: CARD_ALIGN,
+    sweep: 8,
+    note: 'Personalisation phase 3 (2026-11-26). "More in this category" shows only when nothing matches the size, so PDP-RELATED uses the spark plug.',
+  },
+  {
     code: 'PDP-RELATED',
     page: 'Product page (/shop/[slug])',
     component: 'Related products row (cards)',
-    path: `/shop/${PRODUCTS.motul}`,
+    path: `/shop/${PRODUCTS.spark}`,
     scope: 'section[aria-labelledby="related"]',
     strategy: 'pairwise',
     params: [

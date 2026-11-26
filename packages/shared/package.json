@@ -27,6 +27,8 @@
     "./privacy-api": "./src/privacy-api.ts",
     "./recommendations": "./src/recommendations.ts",
     "./recommendation-limits": "./src/recommendation-limits.ts",
+    "./recently-viewed": "./src/recently-viewed.ts",
+    "./recently-viewed-api": "./src/recently-viewed-api.ts",
     "./waitlist": "./src/waitlist.ts",
     "./contact-mask": "./src/contact-mask.ts",
     "./admin-people-api": "./src/admin-people-api.ts",

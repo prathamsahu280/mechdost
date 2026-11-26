@@ -1,6 +1,7 @@
 import type { RecoSlot } from '@mechdost/shared/recommendations';
 import { getTranslations } from 'next-intl/server';
 import type { Locale } from '@/i18n/routing';
+import { Wrench } from 'lucide-react';
 import { fetchRecommendations } from '@/lib/catalogue/recommendations-source';
 import type { CardView } from '@/lib/catalogue/view';
 import { formatPrice } from '@/lib/format';
@@ -63,29 +64,58 @@ export async function RecommendationsCore({
   /** The card for each suggestion; the module that picks it decides what client code comes with it. */
   renderCard: (card: CardView) => ReactNode;
 }) {
-  const items = await fetchRecommendations(slugs, slot, locale);
-  if (items.length === 0) return null;
+  const { items, fitting } = await fetchRecommendations(slugs, slot, locale);
+  if (items.length === 0 && !fitting) return null;
   const t = await getTranslations('reco');
   const headingId = `reco-${slot}`;
   return (
-    <section aria-labelledby={headingId} className="mt-14">
+    // `data-reco-*`: the lazy tracker counts impressions and clicks per surface and algorithm (spec 12).
+    <section
+      aria-labelledby={headingId}
+      className="mt-14"
+      data-reco-surface={slot === 'cart' ? 'cart' : 'product'}
+    >
       <h2 id={headingId} className="font-heading text-2xl font-extrabold tracking-[-0.02em] text-ink">
         {slot === 'cart' ? t('titleCart') : t('title')}
       </h2>
-      <ul className="mt-5 grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 nav:grid-cols-4">
-        {items.map(({ card, reason }) => (
-          <li key={card.slug} className="flex flex-col">
-            <div className="flex-1">{renderCard(card)}</div>
-            <p className="mt-2 text-[13px] text-muted">
-              {reason.source === 'rule' && reason.label
-                ? reason.label
-                : reason.count !== null
-                  ? t('together', { count: reason.count })
-                  : null}
-            </p>
-          </li>
-        ))}
-      </ul>
+      {items.length > 0 ? (
+        <ul className="mt-5 grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 nav:grid-cols-4">
+          {items.map(({ card, reason }) => (
+            <li
+              key={card.slug}
+              className="flex flex-col"
+              data-reco-slug={card.slug}
+              data-reco-algo={reason.source === 'copurchase' ? 'copurchase' : 'rule'}
+            >
+              <div className="flex-1">{renderCard(card)}</div>
+              <p className="mt-2 text-[13px] text-muted">
+                {reason.source === 'rule' && reason.label
+                  ? reason.label
+                  : reason.count !== null
+                    ? t('together', { count: reason.count })
+                    : null}
+              </p>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {fitting ? (
+        // The workshop fitting link (phase 3): an admin rule for this kind of product; one quiet row, one link.
+        <p
+          data-reco-slug=""
+          data-reco-algo="fitting"
+          className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-tile border border-line-card bg-surface px-4 py-3 text-sm text-ink"
+        >
+          <Wrench aria-hidden="true" className="size-4 shrink-0 text-muted" />
+          <span className="min-w-0 flex-1">{fitting.label}</span>
+          <LocalLink
+            href="/workshops"
+            className="inline-flex min-h-11 items-center font-bold text-accent-soft-text underline underline-offset-4"
+          >
+            {t('fittingAction')}
+          </LocalLink>
+        </p>
+      ) : null}
     </section>
   );
 }

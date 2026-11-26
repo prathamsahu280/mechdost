@@ -12,7 +12,11 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { RECO_LABEL_MAX, RECO_PRIORITY_MAX } from '@mechdost/shared/recommendation-limits';
+import {
+  RECO_LABEL_MAX,
+  RECO_PRIORITY_MAX,
+  RECO_SUGGEST_KINDS,
+} from '@mechdost/shared/recommendation-limits';
 import { EXPORT_MAX_BYTES, EXPORT_STATES } from '@mechdost/shared/privacy-api';
 import { WAITLIST_STATES } from '@mechdost/shared/waitlist';
 import { createdAt, id, ts, updatedAt, version } from './_common';
@@ -24,18 +28,18 @@ const inList = (values: readonly string[]) => sql.raw(values.map((v) => `'${v}'`
 /**
  * Admin recommendation rules (spec 11, design 2026-11-15 item 4): "when a customer looks at / carries a product of
  * the trigger category (or a sub-category of it), suggest products of the suggested category". Both languages for the
- * reason shown (hard rule 10).
+ * reason shown (hard rule 10). Phase 3 (2026-11-26): the trigger is a category or one product, and the suggestion
+ * (`suggest_kind`) products of a category, one product, or the workshop fitting link (no id).
  */
 export const recommendationRules = pgTable(
   'recommendation_rules',
   {
     id: id(),
-    triggerCategoryId: uuid()
-      .notNull()
-      .references(() => categories.id, { onDelete: 'cascade' }),
-    suggestCategoryId: uuid()
-      .notNull()
-      .references(() => categories.id, { onDelete: 'cascade' }),
+    triggerCategoryId: uuid().references(() => categories.id, { onDelete: 'cascade' }),
+    triggerProductId: uuid().references(() => products.id, { onDelete: 'cascade' }),
+    suggestKind: text().notNull().default('category'),
+    suggestCategoryId: uuid().references(() => categories.id, { onDelete: 'cascade' }),
+    suggestProductId: uuid().references(() => products.id, { onDelete: 'cascade' }),
     label: text().notNull(),
     labelHi: text().notNull(),
     priority: smallint().notNull().default(10),
@@ -46,8 +50,35 @@ export const recommendationRules = pgTable(
     updatedAt: updatedAt(),
   },
   (t) => [
-    uniqueIndex('recommendation_rules_pair_uq').on(t.triggerCategoryId, t.suggestCategoryId),
-    check('recommendation_rules_distinct', sql`${t.triggerCategoryId} <> ${t.suggestCategoryId}`),
+    // One rule per trigger, kind and suggestion (the fitting link has no id: one per trigger).
+    uniqueIndex('recommendation_rules_pair_uq').on(
+      sql`coalesce(${t.triggerCategoryId}, ${t.triggerProductId})`,
+      t.suggestKind,
+      sql`coalesce(${t.suggestCategoryId}, ${t.suggestProductId}, '00000000-0000-0000-0000-000000000000'::uuid)`,
+    ),
+    check(
+      'recommendation_rules_distinct',
+      sql`${t.triggerCategoryId} is distinct from ${t.suggestCategoryId} or ${t.triggerCategoryId} is null`,
+    ),
+    check(
+      'recommendation_rules_distinct_product',
+      sql`${t.triggerProductId} is distinct from ${t.suggestProductId} or ${t.triggerProductId} is null`,
+    ),
+    check(
+      'recommendation_rules_one_trigger',
+      sql`(${t.triggerCategoryId} is null) <> (${t.triggerProductId} is null)`,
+    ),
+    check(
+      'recommendation_rules_suggest_kind_valid',
+      sql`${t.suggestKind} in (${inList(RECO_SUGGEST_KINDS)})`,
+    ),
+    check(
+      'recommendation_rules_suggest_shape',
+      sql`case ${t.suggestKind}
+        when 'category' then ${t.suggestCategoryId} is not null and ${t.suggestProductId} is null
+        when 'product' then ${t.suggestProductId} is not null and ${t.suggestCategoryId} is null
+        else ${t.suggestCategoryId} is null and ${t.suggestProductId} is null end`,
+    ),
     check(
       'recommendation_rules_label_len',
       sql`char_length(${t.label}) between 2 and ${sql.raw(String(RECO_LABEL_MAX))} and char_length(${t.labelHi}) between 2 and ${sql.raw(String(RECO_LABEL_MAX))}`,
@@ -58,6 +89,10 @@ export const recommendationRules = pgTable(
       sql`${t.priority} between 1 and ${sql.raw(String(RECO_PRIORITY_MAX))}`,
     ),
     index('recommendation_rules_suggest_idx').on(t.suggestCategoryId),
+    index('recommendation_rules_suggest_product_idx').on(t.suggestProductId),
+    index('recommendation_rules_active_trigger_product_idx')
+      .on(t.triggerProductId, t.priority)
+      .where(sql`active`),
     index('recommendation_rules_created_by_idx').on(t.createdBy),
     index('recommendation_rules_active_trigger_idx')
       .on(t.triggerCategoryId, t.priority)
@@ -166,5 +201,35 @@ export const pincodeWaitlist = pgTable(
     index('pincode_waitlist_waiting_idx')
       .on(t.pincode)
       .where(sql`${t.status} = 'waiting'`),
+  ],
+);
+
+/**
+ * Recently viewed products (shopping personalisation phase 2, design 2026-11-25): a signed-in customer's last
+ * `RECENT_MAX` products, kept only while they have given the `personalisation` consent (withdrawing deletes the
+ * rows; guests and everyone else keep the list in their browser only). One row per product: a new view moves
+ * `viewed_at` (UTC) forward, at most once a minute; `city_code` is the shop city the product was seen in. The
+ * customer's own list (RLS mirror: read own), written only by `repo/recently-viewed.ts` under the user-row lock.
+ */
+export const recentlyViewed = pgTable(
+  'recently_viewed',
+  {
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    productId: uuid()
+      .notNull()
+      .references(() => products.id, { onDelete: 'cascade' }),
+    cityCode: text().notNull(),
+    viewedAt: ts().notNull().defaultNow(),
+    version: version(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.productId] }),
+    check('recently_viewed_city_code', sql`${t.cityCode} ~ '^[A-Z]{3}$'`),
+    index('recently_viewed_user_viewed_idx').on(t.userId, t.viewedAt.desc()),
+    index('recently_viewed_product_idx').on(t.productId),
   ],
 );

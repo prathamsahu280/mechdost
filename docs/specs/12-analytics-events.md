@@ -289,3 +289,17 @@ submitted search or filter change, never per keystroke) and `ustaad_tag_opened {
 sent (`{ kind, held }`) and Discover pages served are counted server-side (D2 events, spec 23 § 21d). Not added yet
 (the client catalogue is shared and outside this task): a thread-opened and a network-tab event; the server events
 cover the writes. Never text, names, handles, phones or locations.
+
+## Suggestions and recently viewed (2026-11-26, shopping personalisation phases 2 and 3)
+
+Client (strict, `CLIENT_EVENT_SCHEMAS`): `reco_impression { surface, algo, count }` (a suggestion section half in view
+once), `reco_click { surface, algo, slug | null, position }` (a product or the fitting link opened from it),
+`recently_viewed_cleared { surface, count }`, `recently_viewed_toggled { on }` (device switch),
+`list_position_restored { pages }` (Back to a product list). Surfaces: `product`, `cart`, `search_empty`, `account`,
+`home`; algorithms: `similar`, `rule`, `copurchase`, `fitting`, `recent` (`RECO_SURFACES` / `RECO_ALGOS`). Sent by the
+lazy chunk from `data-reco-surface` / `data-reco-algo` / `data-reco-slug` on the server-rendered sections. Server:
+`recently_viewed_deleted { count, reason: 'cleared' | 'consent_withdrawn' }`; `consent_changed.purpose` gains
+`personalisation`. Funnel: `recoFunnel` (repo) counts add_to_cart and orders (`purchase_submitted` code → order items)
+that follow a click in the same session for the same slug; staff read it at `GET /v1/admin/analytics/reco-funnel`.
+Codes and slugs only; no person, no text. Tested in `packages/shared/test/personalisation.test.ts`,
+`packages/db/test/personalisation.test.ts`.

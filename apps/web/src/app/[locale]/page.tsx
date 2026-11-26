@@ -22,6 +22,10 @@ import { site } from '@/lib/site';
 import { featuredCategories, visibleSections, type HomeSection } from '@mechdost/shared/site-layout';
 import { publishedLayout, publishedRoadside } from '@/lib/site-config-content';
 import { RoadsideBand } from '@/components/roadside/roadside-promo';
+import { RecentlyViewedLazy } from '@/components/personalisation/recently-viewed-lazy';
+import { Container } from '@/components/ui/page-intro';
+import { recentLabels } from '@/lib/recent-labels';
+import { RECENT_MIN_HOME } from '@mechdost/shared/recently-viewed';
 import type { ReactNode } from 'react';
 
 export async function generateMetadata({
@@ -47,6 +51,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
   const range = DATA_MODE === 'api' ? await homeRangeCards(locale) : undefined;
   const roadside = await publishedRoadside();
   const vehicleTiles = await homeSegmentTiles(locale);
+  const recent = await recentLabels();
   const sections: Record<HomeSection, ReactNode> = {
     // Roadside help (spec 22): nothing where the city has it off, so the band is never a dead end.
     roadside: roadside.enabled ? <RoadsideBand alwaysOpen={roadside.alwaysOpen} /> : null,
@@ -55,6 +60,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
     categories: <CategoryTiles featured={featuredCategories(layout)} emoji={layout.emoji} />,
     // "Shop by vehicle" (design 2026-11-25): nothing when no segment can be shown, so there is no empty heading.
     vehicles: vehicleTiles.length > 0 ? <VehicleTiles tiles={vehicleTiles} /> : null,
+    // Recently viewed (personalisation phase 2): a lazy island, nothing until this browser has 2+ products.
+    recent: (
+      <Container>
+        <RecentlyViewedLazy surface="home" locale={locale} labels={recent} minItems={RECENT_MIN_HOME} />
+      </Container>
+    ),
     products: <ProductRange cards={range} />,
     route: <OrderRoute />,
     service: <ServiceSection region={region} />,

@@ -3,6 +3,8 @@ import { getTranslations } from 'next-intl/server';
 import type { Locale } from '@/i18n/routing';
 import { AccountSectionBody } from '@/components/account/account-area';
 import { publishedSavings } from '@/lib/savings-content';
+import { RecentlyViewedLazy } from '@/components/personalisation/recently-viewed-lazy';
+import { recentLabels } from '@/lib/recent-labels';
 
 export async function generateMetadata({
   params,
@@ -16,7 +18,13 @@ export async function generateMetadata({
 
 export default async function AccountPage({ params }: { params: Promise<{ locale: Locale }> }) {
   const { locale } = await params;
+  const [savings, recent] = await Promise.all([publishedSavings(locale), recentLabels()]);
   // The admin's "Your savings" wording travels as a prop (decision 2026-11-26): no content fetch in the browser.
-  const savings = await publishedSavings(locale);
-  return <AccountSectionBody section="overview" savingsOverride={savings['savings.account'] ?? null} />;
+  return (
+    <>
+      <AccountSectionBody section="overview" savingsOverride={savings['savings.account'] ?? null} />
+      {/* Recently viewed with Clear and the "remember on this device" switch (personalisation phase 2); signed in only. */}
+      <RecentlyViewedLazy surface="account" locale={locale} labels={recent} showSwitch signedInOnly />
+    </>
+  );
 }

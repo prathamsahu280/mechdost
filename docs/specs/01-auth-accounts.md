@@ -133,6 +133,8 @@ Built as a support request: `POST /v1/support/deletion-request` (spec 09 "Accoun
 - **Account deletion:** the Privacy page only has the entry point. It links to Account -> Support with `topic=account_deletion` (`apps/web/src/lib/privacy-hooks.ts`, `ACCOUNT_DELETION_HOOK`), because the deletion request is the support ticket kind from "Support next tier" (spec 09), which is not on this branch. No second deletion system was built. Queued as Q140.
 - **Not built:** deletion itself (staff-confirmed, spec 09), `users.deletion_requested_at` stays unused, purposes `location`/`share_with_partner`/`whatsapp` in the UI, export of support message text, a staff view of a person's export history.
 
+**Personalisation consent (2026-11-26, shopping personalisation phase 2; migration 0102):** a third purpose `personalisation` ("Remember what I view on all my devices", opt-in, notice `2026-11-26`). Granted: the API keeps the last 10 viewed products (`recently_viewed`); withdrawn: the rows are deleted in the same transaction; the data export lists them (`recentlyViewed`). The account overview shows the recently viewed list with Clear and the device switch "Remember products I view on this device". Sign-out forgets the browser list.
+
 ## Built: Account → Wishlist (2026-11-15)
 
 A new account section `wishlist` (real sign-in only; `lib/sections.ts`): saved products newest first with photo, brand, name and a remove button; empty state with "Browse the shop". See spec 02. At sign-in or sign-up the guest cart is merged into the saved cart (spec 03).

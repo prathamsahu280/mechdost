@@ -27,3 +27,5 @@ The goal: any data we collect can later feed recommendations, offers, demand for
 Nightly export of pseudonymised facts to a warehouse (Postgres replica or BigQuery) as partitioned tables; feature tables for recommendations (spec 11) and risk scoring; model cards for anything that affects customers or partners (offers, routing, fraud flags), with a human in the loop for enforcement decisions.
 
 - **Consent (2026-11-15):** Account -> Privacy writes `consents` rows (purposes `marketing`, `analytics`; append-only, notice version kept). Co-purchase counts are derived from delivered orders as product ids and counts only (`copurchase_pairs`); PIN waitlist events carry the PIN, never the person's contact.
+
+- **Personalisation (2026-11-26):** `recently_viewed` (user id, product id, `city_code`, `viewed_at` UTC; at most 10 per user) exists only with the `personalisation` consent and is deleted on withdrawal; suggestion events `reco_impression` / `reco_click` carry surface and algorithm codes, slugs and positions only (no person); the funnel joins them to add-to-cart and orders by pseudonymous session.

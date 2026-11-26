@@ -219,3 +219,14 @@ revalidate and tags). Not measured here: a production "after" (nothing was deplo
 ## Photo byte cache (2026-11-24)
 
 `GET /v1/product-photos/{id}/{width}` keeps the bytes of approved photos in an in-process LRU (`apps/api/src/photos/byte-cache.ts`, `PHOTO_CACHE_MB`, default 64, max 128, 0 = off) so repeat views and crawlers do not cost Supabase egress (free plan about 5 GB/month). Browsers already cache a year (`immutable`); this covers new visitors. Rules: approved photos only; no previews, no errors; evicted on remove/reject; hit and miss return identical bytes and headers; any cache failure falls back to Storage. A hit/miss summary line (`photo_cache`) is logged every 500 lookups. **Memory math:** WebP variants are about 10 to 40 KB (320), 30 to 90 KB (640), 100 to 300 KB (1600); 64 MB holds roughly 600 to 2,000 photos. Buffers live outside the V8 heap, so the cost is RSS: Node baseline about 150 to 200 MB + 64 MB cache + request buffers (uploads up to 8 MB, a few at once) stays under the new `mem_limit: 448m` (was 384m). The other containers have their own limits: web 512m, redis 96m, srh 160m, caddy 128m, worker 256m; check `docker stats` and `free -h` after deploy and set `PHOTO_CACHE_MB=32` if the host is short.
+
+## Budget note: shopping personalisation phases 2 and 3 (2026-11-26)
+
+Every personal piece is lazy or server-rendered: pages import only `RecentlyViewedLazy` (React.lazy); the list, its
+storage, the signed-in sync and the suggestion tracker are one chunk loaded after hydration; cards come from the
+`recentCards` server action; "Similar options" is a Server Component; the shop's Back restore is `import()`ed after
+mount (`lib/list-place-runtime.ts`). Demo build, `measure-js.mjs` (one build, port 3147): `/` 169.8, `/shop` 179.3,
+product pages 179.0 (castrol and tyre), `/cart` 178.6, `/workshops` 176.1, compare 164.2, `/hi` 169.8 KB gz, all
+under 180. Before (lead's figures for main at 05228a49): `/shop` ~178.6, product ~178.4. So `/shop` +0.7 and product
++0.6 KB (the lazy wrapper, the restore effect and a chunk-split stub). **Headroom now 0.7 KB on `/shop` and 1.0 KB on
+product pages.** Guard: `apps/web/test/personalisation.test.ts`.

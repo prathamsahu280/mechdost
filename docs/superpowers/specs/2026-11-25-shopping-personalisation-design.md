@@ -94,3 +94,54 @@ light-commercial-tyres 26, tractor-batteries 24, tractor-agri-oils 19, industria
 
 Each phase: mechdost-advisor brief, TDD, Hindi, analytics events, admin control, screenshots to the founder before
 shipping, full gates and e2e, migrations first.
+
+## As built: phases 2 and 3 (2026-11-26, branch of the personalisation agent; migrations 0102 + 0103, not applied)
+
+Phase 2 — Recently viewed + Back keeps your place
+
+- **Browser copy (everyone):** `localStorage` key `mechdost-recent` (slugs + UTC ms, newest first, one per product, at
+  most `RECENT_MAX` = 10; `packages/shared/src/recently-viewed.ts`, Zod-free). Every read/write wrapped
+  (`apps/web/src/lib/recently-viewed-store.ts`): blocked storage gives an empty list, never an error.
+- **Account copy (signed in + consent):** new consent purpose `personalisation` (Account → Privacy row "Remember what I
+  view on all my devices"; opt-in, never asked = off; notice `2026-11-26`). Table `recently_viewed` (user, product,
+  `city_code`, `viewed_at` UTC, version; PK user+product, index user+viewed_at desc; RLS on, read-own mirror policy).
+  Repo `repo/recently-viewed.ts`: consent checked on every call, writes under the user-row lock, one upsert per view
+  that only moves `viewed_at` forward when the stored view is a minute older (idempotent per product per minute), future
+  times clamped to now, cut to 10 in the same transaction. Withdrawing the consent deletes the rows in the same
+  transaction (`recently_viewed_deleted { reason: 'consent_withdrawn' }`); the data export lists them.
+- **API:** `GET / POST / DELETE /v1/me/recently-viewed` (signed in, `private, no-store`, per-user API limit plus
+  `recent_write` 600/h on POST, strict body: ≤ 10 views + city). Without the consent: `{ stored: false, items: [] }`.
+- **Merge at sign-in:** the lazy list sends the device's whole list once per browser session (so right after sign-in),
+  then only the viewed product, and merges the answer (latest view per product) back into the device copy.
+- **Where:** product page (records the view, lists the others), cart, empty search results (inside the "nothing found"
+  card), account overview (with the "Remember products I view on this device" switch), home as a new admin-orderable
+  section `recent` shown only with 2+ products. All through `RecentlyViewedLazy` (React.lazy): no page's first load
+  carries the list, the store, the sync or the tracker. Cards are rendered on the server by the `recentCards` server
+  action (compact row card, no client code).
+- **Clear:** on every surface (focus moves to the heading, a polite status says it was cleared; the account copy is
+  cleared too). **Off switch:** account overview (device), Privacy (account consent).
+- **Back keeps your place:** the "Show more" pages were already in the address (`?pages=N`, server-rendered). New:
+  `lib/list-place-runtime.ts` (loaded with `import()` after the shop list mounts) saves the scroll position per list
+  address when a product is opened or the page is left, and gives it back once on Back/Forward
+  (`list_position_restored { pages }`). Shop, category and search all use the same list.
+
+Phase 3 — Suggestions on the product page
+
+- **Similar options** (`slot=similar` of `GET /v1/recommendations`, repo `similarFor`): same category, a shared size
+  (a variant's `size_compact`, or the tyre size in the specs) and, when the product has them, the same `saeGrade` and
+  `capacityAh`; a vehicle segment in common when the product has segments; another brand; visible; a buyable offer in
+  the city; up to 8; the reason carries the shared size ("Same size: 900 ml"). Nothing without a size or key spec (no
+  guess). New index `product_variants_size_compact_eq_idx`. It replaces "More in <category>" when it finds anything.
+  Demo store: the same rule from the spec text (`lib/catalogue/demo-similar.ts`). The page says "check the fit for your
+  vehicle" (never "recommended for you").
+- **Goes well with:** the existing admin rules (spec 11) now take a product as trigger and a product or the **workshop
+  fitting link** as suggestion (`suggest_kind`), with CHECKs for one trigger and the suggestion shape and one unique
+  index per trigger + kind + suggestion. The fitting link rides on the product slot as `fitting { label }` and shows
+  as one quiet row linking to `/workshops`. Admin → Catalogue → "Goes well with" has the kind choices and a product
+  picker (`GET /v1/admin/recommendation-products?q=`, catalogue staff only). Default pairs seeded by migration 0103
+  (tyres → tubes & flaps, batteries → battery accessories, engine oils → oil filters, tyres/batteries → fitting).
+- **Measured:** client events `reco_impression { surface, algo, count }` and `reco_click { surface, algo, slug, position }`
+  for every surface (product, cart, search_empty, account, home) and algorithm (similar, rule, copurchase, fitting,
+  recent), from a tracker in the lazy chunk reading `data-reco-*` attributes on the server-rendered sections. Add to
+  cart and orders are joined to the click by session and slug (`recoFunnel`, `GET /v1/admin/analytics/reco-funnel`,
+  all-city staff only after the security review). No order or cart table changes (phase 4 owns those screens).

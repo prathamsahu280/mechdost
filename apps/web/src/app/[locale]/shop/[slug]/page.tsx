@@ -15,6 +15,11 @@ import { ProductGallery } from '@/components/catalogue/product-gallery';
 import { ProductPhoto, productPhotoLoader } from '@/components/catalogue/product-photo';
 import { ProductVisual } from '@/components/catalogue/product-visual';
 import { RecommendationsSection } from '@/components/catalogue/recommendations-section';
+import { SimilarSection, type SimilarItem } from '@/components/catalogue/similar-section';
+import { RecentlyViewedLazy } from '@/components/personalisation/recently-viewed-lazy';
+import { demoSimilar } from '@/lib/catalogue/demo-similar';
+import { fetchRecommendations } from '@/lib/catalogue/recommendations-source';
+import { recentLabels } from '@/lib/recent-labels';
 import { WishlistHeartLazy } from '@/components/catalogue/wishlist-lazy';
 import { AdminEditLazy } from '@/components/catalogue/admin-edit-lazy';
 import { adminEditPath } from '@/lib/catalogue/admin-edit';
@@ -58,6 +63,8 @@ export function generateStaticParams() {
 interface Loaded {
   product: ProductView;
   related: CardView[];
+  /** "Similar options" (personalisation phase 3): same size/spec and segment, other brands; empty = show `related`. */
+  similar: SimilarItem[];
   /** Demo data only; real data mode streams `ReviewsApiSection` instead. */
   reviews: { summary: RatingSummary; list: SeedReview[] } | null;
 }
@@ -67,10 +74,14 @@ const load = cache(async (slug: string, locale: Locale): Promise<Loaded | null> 
   if (DATA_MODE === 'api') {
     const product = await fetchCatalogueProduct(slug, locale);
     if (!product) return null;
-    const page = await fetchCataloguePage({ locale, category: product.category.slug, limit: 5 });
+    const [page, similar] = await Promise.all([
+      fetchCataloguePage({ locale, category: product.category.slug, limit: 5 }),
+      fetchRecommendations([slug], 'similar', locale),
+    ]);
     return {
       product,
       related: page.items.filter((p) => p.slug !== slug).slice(0, 4),
+      similar: similar.items.map((i) => ({ card: i.card, size: i.reason.size ?? null })),
       reviews: null,
     };
   }
@@ -81,6 +92,7 @@ const load = cache(async (slug: string, locale: Locale): Promise<Loaded | null> 
     related: DEMO_PRODUCTS.filter((p) => p.category === found.category && p.slug !== slug)
       .slice(0, 4)
       .map((p) => demoCard(p, locale)),
+    similar: demoSimilar(slug, locale),
     reviews: { summary: productRating(found), list: productReviews(found) },
   };
 });
@@ -134,9 +146,10 @@ export default async function ProductPage({ params }: Props) {
   const { locale, slug } = await params;
   const data = await load(slug, locale);
   if (!data) notFound();
-  const { product, related, reviews } = data;
+  const { product, related, similar, reviews } = data;
 
-  const [t, c, r, footer, cmp, w, nav, cartNs] = await Promise.all([
+  const [recent, t, c, r, footer, cmp, w, nav, cartNs] = await Promise.all([
+    recentLabels(),
     getTranslations('catalogue'),
     getTranslations('categories'),
     getTranslations('reviews'),
@@ -553,7 +566,10 @@ export default async function ProductPage({ params }: Props) {
         </Suspense>
       ) : null}
 
-      {related.length > 0 ? (
+      {/* "Similar options" (phase 3) takes the place of "More in this category" when the size matches anything. */}
+      <SimilarSection items={similar} />
+
+      {similar.length === 0 && related.length > 0 ? (
         <section aria-labelledby="related" className="mt-14">
           <h2 id="related" className="font-heading text-2xl font-extrabold tracking-[-0.02em] text-ink">
             {categoryName ? t('related', { category: categoryName }) : t('relatedAny')}
@@ -567,6 +583,9 @@ export default async function ProductPage({ params }: Props) {
           </ul>
         </section>
       ) : null}
+
+      {/* Recently viewed (phase 2): records this view and lists the others; a lazy chunk, below everything else. */}
+      <RecentlyViewedLazy surface="product" locale={locale} labels={recent} currentSlug={product.slug} />
     </Container>
   );
 }

@@ -354,3 +354,13 @@ ustaad-console.test.ts` (held answer/question/comment/post/message, NCII re-hold
   PGlite proves idempotency, not contention: say so and queue a real-Postgres run.
 - T-SAV1 · 2026-11-26 · i18n/admin · A locale label meant to show the literal token `{amount}` ("keep {amount}") was parsed as an ICU argument and the Hindi crawl found "undefined" on /hi/admin/content · ICU braces are arguments · ICU-escape literal tokens as `'{amount}'`; guard `apps/web/test/savings-view.test.ts` ("admin field labels show the literal {amount} token").
 - T-SAV2 · 2026-11-26 · JS budget · Importing one helper (`savingsBand`) from `@mechdost/shared/savings` shipped the whole module (+1.0 KB gz) into the /cart first-load chunk: the bundler did not tree-shake the shared package · first-load code imports a tiny dedicated module (`@mechdost/shared/savings-band`); guard: import-graph assertion in `savings-view.test.ts`.
+- T-P23a · 2026-11-26 · e2e/navigation · "Back keeps your place" test went Back to about:blank: it waited for `h1` after
+  clicking a product, but the shop list has an h1 too, so Back ran before the product page loaded · wait for the
+  product URL (`toHaveURL(url => url.pathname === href)`), never for a selector both pages share ·
+  `apps/web/e2e/personalisation.spec.ts`.
+- T-P23b · 2026-11-26 · e2e/lazy islands · Recently viewed e2e was flaky because a view is recorded by a lazy chunk; the test
+  left the page before it loaded · poll the stored key (`localStorage['mechdost-recent']` contains the slug) before
+  navigating; product follow-up: record the view earlier if bounce data shows losses (Q-P23 note).
+- T-P23c · 2026-11-26 · e2e/ports · The consent fixture's origin is `localhost:3100`; running on another port (to avoid
+  other agents' servers) shows the consent banner, which covers element screenshots · seed `mechdost-consent` with
+  `addInitScript` for any port.

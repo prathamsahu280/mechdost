@@ -59,6 +59,16 @@ This file is the single source of truth for **where the build is right now**. It
   imports only `@mechdost/shared/savings-band` (the build showed /cart 179.0 KB with the whole module; ~178.0 KB after,
   esbuild estimate, not rebuilt). **Next:** lead merge (apply 0101 before deploying the checkout change); one build to
   re-measure /cart; QSV1–QSV3 answers.
+- **2026-11-26 (evening): shopping personalisation phases 2 and 3 built** (worktree-agent-a6903db665a40a206, not
+  pushed; migrations **0102_personalisation_p23** (schema: consent purpose `personalisation`, `recently_viewed`, rules
+  product/fitting columns, size equality index) and **0103_personalisation_default_pairs** (data) written, NOT applied;
+  0101 left for another stream — rechain the snapshot at merge if it lands). Recently viewed (browser for everyone,
+  account with the consent; product page, cart, empty search, account with Clear + device switch, home section
+  `recent` from 2 items), Back keeps the shop list place, Similar options (replaces "More in category" when it
+  matches), workshop fitting link, admin product pairs + picker, default pairs, `reco_impression`/`reco_click` +
+  `recoFunnel` (all-city staff only after the lead's security review). Design doc § "As built", specs 01/11/12/16,
+  decisions 2026-11-26, Q-P23-1…3. **Next:** lead merge + apply 0102/0103; founder screenshots (Q-P23-3); phase 4
+  agent owns cart/order savings.
 - **2026-11-26 (afternoon): Ustaad workstream D web screens (feed + social)** (branch
   worktree-agent-a7e40993294570795 on main c6e2eaf8, not pushed, no migration). Home feed with story ring, post cards
   of every kind (like / comment / save / WhatsApp teaser / ⋯ report-hide-mute-block-delete), comments sheet, composer

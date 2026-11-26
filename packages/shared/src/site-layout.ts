@@ -12,6 +12,8 @@ export const HOME_SECTIONS = [
   'trust',
   'categories',
   'vehicles',
+  // "Recently viewed" (shopping personalisation phase 2, 2026-11-26): only once this browser has 2+ products.
+  'recent',
   'products',
   'route',
   'service',

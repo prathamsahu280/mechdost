@@ -2,14 +2,19 @@ import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import {
   createRecoRule,
   deleteRecoRule,
+  fittingFor,
   listRecoCategories,
   listRecoRules,
   recommendFor,
+  searchRecoProducts,
+  similarFor,
   updateRecoRule,
 } from '@mechdost/db/repo';
 import {
   RecoCategoryListDto,
   RecommendationListDto,
+  RecoProductListDto,
+  RecoProductSearchQuerySchema,
   RecoQuerySchema,
   RecoRuleDeleteQuerySchema,
   RecoRuleDto,
@@ -54,7 +59,8 @@ const publicList = createRoute({
   method: 'get',
   path: '/recommendations',
   tags: ['recommendations'],
-  summary: 'Suggestions for the products on a page (admin rules first, then bought together), at most four',
+  summary:
+    'Suggestions for the products on a page: product/cart = goes well with (admin rules first, then bought together, at most four; product also gives the workshop fitting link), similar = same size and segment, other brands (at most eight, first slug only)',
   request: { query: RecoQuerySchema },
   responses: {
     200: json(RecommendationListDto, 'Suggestions'),
@@ -77,6 +83,15 @@ const adminCategories = createRoute({
   summary: 'The categories a rule can use',
   security,
   responses: { 200: json(RecoCategoryListDto, 'Categories'), ...errorResponses },
+});
+const adminProducts = createRoute({
+  method: 'get',
+  path: '/admin/recommendation-products',
+  tags: ['admin'],
+  summary: 'Products a rule can name (name, brand or slug contains the text; at most 20)',
+  security,
+  request: { query: RecoProductSearchQuerySchema },
+  responses: { 200: json(RecoProductListDto, 'Products'), ...errorResponses },
 });
 const adminCreate = createRoute({
   method: 'post',
@@ -116,6 +131,7 @@ export function recommendationRoutes(deps: AppDeps, cache: SessionCache) {
     '/admin/recommendation-rules',
     '/admin/recommendation-rules/*',
     '/admin/recommendation-categories',
+    '/admin/recommendation-products',
   ]) {
     app.use(path, authenticate(deps, cache));
     app.use(
@@ -129,16 +145,25 @@ export function recommendationRoutes(deps: AppDeps, cache: SessionCache) {
   return app
     .openapi(publicList, async (c) => {
       const q = c.req.valid('query');
-      const items = await recommendFor(deps.db, {
-        slugs: q.slugs,
-        cityCode: q.city ?? deps.config.defaultCityCode,
-        locale: q.locale,
-      });
+      const cityCode = q.city ?? deps.config.defaultCityCode;
       c.header('Cache-Control', RECO_CACHE);
-      return c.json({ items }, 200);
+      if (q.slot === 'similar') {
+        const slug = q.slugs[0] ?? '';
+        return c.json({ items: await similarFor(deps.db, { slug, cityCode, locale: q.locale }) }, 200);
+      }
+      const [items, fitting] = await Promise.all([
+        recommendFor(deps.db, { slugs: q.slugs, cityCode, locale: q.locale }),
+        q.slot === 'product'
+          ? fittingFor(deps.db, { slugs: q.slugs, locale: q.locale })
+          : Promise.resolve(null),
+      ]);
+      return c.json({ items, fitting }, 200);
     })
     .openapi(adminList, async (c) => c.json({ rules: await listRecoRules(deps.db) }, 200))
     .openapi(adminCategories, async (c) => c.json({ categories: await listRecoCategories(deps.db) }, 200))
+    .openapi(adminProducts, async (c) =>
+      c.json({ products: await searchRecoProducts(deps.db, c.req.valid('query').q) }, 200),
+    )
     .openapi(adminCreate, async (c) =>
       c.json(
         await createRecoRule(deps.db, { staffUserId: c.get('auth').user.id, input: c.req.valid('json') }),

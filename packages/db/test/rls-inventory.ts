@@ -33,6 +33,7 @@ const OWN = [
   'carts',
   'cart_items',
   'wishlist_items',
+  'recently_viewed',
 ];
 const PARTNER = ['shops', 'shop_users', 'shop_inventory', 'order_assignments', 'workshops'];
 const NONE = [

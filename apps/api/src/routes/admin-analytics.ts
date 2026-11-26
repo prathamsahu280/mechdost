@@ -5,12 +5,14 @@ import {
   analyticsDashboard,
   cityScopeFrom,
   NotFoundError,
+  recoFunnel,
   type AnalyticsResult,
   type CityScope,
   type OverviewScopes,
 } from '@mechdost/db/repo';
 import { AdminOverviewDto, AnalyticsDashboardDto } from '@mechdost/shared/admin-analytics-api';
 import { resolveAnalyticsRange } from '@mechdost/shared/analytics-range';
+import { RecoFunnelDto, RecoFunnelQuerySchema } from '@mechdost/shared/recommendations';
 import { AdminWorkshopAnalyticsDto, workshopMedians } from '@mechdost/shared/workshop-analytics-api';
 import { cachedCityWorkshopAnalytics } from '../workshop-analytics-cache';
 import type { Grant, Permission } from '@mechdost/shared/rbac';
@@ -47,6 +49,24 @@ const DashboardQuery = z
 const json = <T extends z.ZodType>(schema: T, description: string) => ({
   description,
   content: { 'application/json': { schema } },
+});
+
+/**
+ * The suggestion funnel (shopping personalisation phase 3, spec 12 "Suggestions"): impressions, clicks, add-to-cart
+ * and orders per surface and algorithm over the last `days`. Pseudonymous event data, all cities (suggestions are not
+ * city-scoped yet).
+ */
+const recoFunnelRoute = createRoute({
+  method: 'get',
+  path: '/admin/analytics/reco-funnel',
+  tags: ['admin'],
+  summary: 'Suggestion funnel per surface and algorithm (last N days, at most 90)',
+  security: [{ bearerAuth: [] }],
+  request: { query: RecoFunnelQuerySchema },
+  responses: {
+    200: { description: 'Funnel', content: { 'application/json': { schema: RecoFunnelDto } } },
+    ...errorResponses,
+  },
 });
 
 const dashboardRoute = createRoute({
@@ -112,6 +132,16 @@ export function adminAnalyticsRoutes(deps: AppDeps, cache: SessionCache) {
   app.use('/admin/analytics/*', requirePermission('analytics:read'));
 
   return app
+    .openapi(recoFunnelRoute, async (c) => {
+      // Browser events carry no city, so the funnel cannot be cut by city: all-city analytics only (security
+      // review 2026-11-26); a city-scoped staff member is refused rather than shown other cities' data.
+      if (!cityScopeFrom(c.get('auth').grants, 'analytics:read').all)
+        throw Forbidden('ALL_CITIES_REQUIRED', 'The suggestion report covers every city');
+      const to = new Date();
+      const from = new Date(to.getTime() - c.req.valid('query').days * 86_400_000);
+      const rows = await recoFunnel(deps.db, { from, to });
+      return c.json({ from: from.toISOString(), to: to.toISOString(), rows }, 200);
+    })
     .openapi(dashboardRoute, async (c) => {
       const q = c.req.valid('query');
       const range = resolveAnalyticsRange({ from: q.from, to: q.to }, new Date());

@@ -125,6 +125,7 @@ export function ShopBrowser({
   whatsappNote,
   server,
   roadside,
+  emptyExtra,
 }: {
   basePath: string;
   initial: State;
@@ -134,6 +135,8 @@ export function ShopBrowser({
   server?: ServerListing;
   /** The roadside card (server-rendered), only passed where the city has roadside on; shown for breakdown searches. */
   roadside?: ReactNode;
+  /** Shown under "nothing found" (personalisation phase 2: the lazy recently viewed list, server-passed). */
+  emptyExtra?: ReactNode;
 }) {
   const c = useTranslations('catalogue');
   const cat = useTranslations('categories');
@@ -183,6 +186,19 @@ export function ShopBrowser({
     latest.current = { listingKey, navigating };
   });
   const nextCursor = appended ? appended.nextCursor : (server?.nextCursor ?? null);
+
+  // Back keeps your place (personalisation phase 2): a chunk loaded after mount saves and restores the scroll.
+  useEffect(() => {
+    let stop: (() => void) | undefined;
+    let live = true;
+    void import('@/lib/list-place-runtime').then((m) => {
+      if (live) stop = m.watchListPlace();
+    });
+    return () => {
+      live = false;
+      stop?.();
+    };
+  }, []);
 
   // The Hindi product text for the demo's in-browser search is its own chunk, fetched right after the page loads
   // (not part of the first load, spec 16 incident 2026-11-22); until it arrives only the English text matches.
@@ -671,6 +687,7 @@ export function ShopBrowser({
             {shop('emptyAction')}
             <span className="sr-only"> ({whatsappNote})</span>
           </a>
+          {emptyExtra}
         </div>
       )}
     </div>

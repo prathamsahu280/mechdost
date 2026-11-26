@@ -475,3 +475,19 @@ every storefront route into a route group; the network then loads without the sh
 site's shared frame, (c) accept a higher limit for Ustaad pages (for example 185 KB) with per-route ceilings so they
 cannot grow. Default meanwhile: (c), each Ustaad route capped at its measured size + 1 KB in `measure-js`, and the
 storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data shows slow phones struggle.
+
+#### Q-P23-1 … 3: shopping personalisation phases 2 and 3 (2026-11-26)
+
+- **Q-P23-1 (Decision, P3) — order attribution of suggestions.** Built: an order counts for a suggestion when the same
+  browser session clicked it and then placed an order holding that product (event join, no order table change).
+  Option: store the suggestion source on each order line (exact, needs the checkout and order tables). Default: keep
+  the event join.
+- **Q-P23-2 (Decision, P3) — recently viewed for guests is on by default (browser only).** Guests can Clear it on every
+  list; the device off switch is on the account page. Option: show the switch to guests too (next to Clear). Default:
+  as built.
+- **Q-P23-3 (Check, P2) — screenshots.** Recently viewed, Similar options and the fitting link at 390 px (light and
+  Hindi) are in the agent report; please confirm the look before it ships. Default meanwhile: as built.
+- **Q-P23-4 (Check, P2, for the lead) — `recentCards` server action has no rate limit of its own.** It is a public
+  POST (like the shop's `loadMoreCards`); it accepts at most 10 valid slugs and reads only the cached public catalogue
+  (60 s fetch cache), so it adds no API load, but nothing caps calls per IP at the web tier. Default: as built; add a
+  Caddy/edge rate rule for server-action POSTs if abuse shows up.

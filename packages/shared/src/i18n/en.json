@@ -2183,6 +2183,7 @@
     "section_trust": "Trust strip",
     "section_categories": "Category shortcuts",
     "section_vehicles": "Shop by vehicle (trucks, tractors, machines)",
+    "section_recent": "Recently viewed (shown once a shopper has viewed 2 or more products)",
     "section_products": "Popular products",
     "section_route": "How your order reaches you",
     "section_service": "Know the work. Approve the cost.",
@@ -4043,7 +4044,11 @@
     "title": "Goes well with this",
     "titleCart": "Add before checkout",
     "view": "View {name}",
-    "together": "{count, plural, one {Bought together once} other {Bought together # times}}"
+    "together": "{count, plural, one {Bought together once} other {Bought together # times}}",
+    "similarTitle": "Similar options",
+    "similarNote": "Same size and kind of vehicle, other brands. Check the fit for your vehicle before you buy.",
+    "similarSize": "Same size: {size}",
+    "fittingAction": "Find a workshop"
   },
   "privacy": {
     "title": "Privacy",
@@ -4078,11 +4083,13 @@
     "exportError": "Could not do that. Please try again.",
     "deleteTitle": "Delete my account",
     "deleteHelp": "Tell support you want your account deleted. Our team confirms it with you first, and open orders or refunds must finish before the account can close.",
-    "deleteButton": "Ask support to delete my account"
+    "deleteButton": "Ask support to delete my account",
+    "purpose_personalisation": "Remember what I view on all my devices",
+    "purpose_personalisation_help": "Keeps your last 10 viewed products in your account, so the list follows you. Withdraw to delete it at once. Without this, the list stays in this browser only."
   },
   "adminReco": {
     "title": "Goes well with: rules",
-    "intro": "When a customer looks at or carries a product of the first category, we suggest products of the second. Lower priority numbers come first. After the rules, we show what customers bought together.",
+    "intro": "When a customer looks at or carries a product of the first category (or that one product), we suggest products of the second category, one product, or a workshop to fit it. Lower priority numbers come first. After the rules, we show what customers bought together.",
     "empty": "No rules yet. Add the first one, for example oil and oil filters.",
     "new": "Add a rule",
     "edit": "Edit",
@@ -4109,7 +4116,23 @@
     "err_RULE_INVALID": "The rule is not valid. Check both categories and the texts.",
     "err_other": "Could not save the rule. Please try again.",
     "err_hindi": "Write the Hindi reason in Devanagari.",
-    "err_same": "A category cannot suggest itself."
+    "err_same": "A category cannot suggest itself.",
+    "triggerKind": "The rule starts from",
+    "suggestKind": "It suggests",
+    "kindCategory": "A category",
+    "kindProduct": "One product",
+    "suggestFitting": "The workshop fitting link",
+    "productSearch": "Find a product",
+    "productSearchHelp": "Type at least 2 letters of the name or brand, then press Find.",
+    "find": "Find",
+    "noProducts": "No product found. Try another word.",
+    "chooseProduct": "Choose this product",
+    "chosen": "Chosen: {name}",
+    "fittingName": "workshop fitting",
+    "err_product": "Choose a product first.",
+    "tooShort": "Type at least 2 letters.",
+    "searchFailed": "Could not search. Please try again.",
+    "foundCount": "{count, plural, one {1 product found} other {# products found}}"
   },
   "adminDemand": {
     "title": "Waiting for a PIN code",
@@ -8695,5 +8718,13 @@
     "error": "Your savings could not be loaded.",
     "retry": "Try again",
     "loading": "Loading your savings"
+  },
+  "recent": {
+    "title": "Recently viewed",
+    "clear": "Clear",
+    "clearName": "Clear your recently viewed products",
+    "cleared": "Recently viewed products cleared.",
+    "switch": "Remember products I view on this device",
+    "switchHelp": "The list stays in this browser only. To keep it in your account on every device, allow it under Privacy."
   }
 }
