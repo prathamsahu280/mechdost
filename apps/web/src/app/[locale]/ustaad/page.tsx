@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { ClientMessages } from '@/components/ui/client-messages';
 import { UstaadIcon, type UstaadIconName } from '@/components/ustaad/shell/icons';
+import { CoachMark } from '@/components/ustaad/tutorial/coach-mark';
 import { UstaadGreeting } from '@/components/ustaad/shell/ustaad-gate';
 import type { Locale } from '@/i18n/routing';
 import { localePath } from '@/lib/locale-path';
@@ -74,6 +76,9 @@ export default async function UstaadHome({ params, searchParams }: Props) {
         >
           {t('askCta')}
         </Link>
+        <ClientMessages namespaces={['ustaad.tutorial']}>
+          <CoachMark target="mic" />
+        </ClientMessages>
       </section>
 
       <section aria-labelledby="ustaad-stories">

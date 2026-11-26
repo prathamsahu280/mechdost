@@ -74,6 +74,10 @@ export const VerificationViewDto = z.object({
   version: z.number().int(),
 });
 export type VerificationView = z.infer<typeof VerificationViewDto>;
+/** `GET /ustaad/verification-status`. */
+export const VerificationStatusDto = z.object({ verification: VerificationViewDto.nullable() });
+/** `GET /ustaad/media/{id}/url` (A's route), as the browser reads it. */
+export const SignedMediaUrlDto = z.object({ url: z.string(), expiresAt: z.string() });
 
 /** Staff queue row: the member's public card facts only, phone never (SR-38 masks it everywhere). */
 export const VerificationQueueItemDto = VerificationViewDto.extend({

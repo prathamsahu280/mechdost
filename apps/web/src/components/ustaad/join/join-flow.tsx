@@ -223,7 +223,7 @@ export function UstaadJoinFlow({
     setErrors(found);
     setFormError(null);
     if (Object.keys(found).length > 0) return;
-    track('click', { id: `ustaad_join_step_${key}`, path: window.location.pathname });
+    track('ustaad_join_step', { step: step + 1, via });
     if (!last) {
       setStep((s) => s + 1);
       return;

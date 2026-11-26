@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { PartnerStatus } from '@/components/partners/partner-status';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { Container } from '@/components/ui/page-intro';
+import { UstaadVerificationProgress } from '@/components/ustaad/card/verification-progress';
 import type { Locale } from '@/i18n/routing';
 
 interface Props {
@@ -24,6 +25,10 @@ export default async function PartnerStatusPage() {
         {t('statusTitle')}
       </h1>
       <div className="mt-8">
+        {/* Spec 23 § 4a: a signed-in Ustaad member sees their verification progress first (nothing for others). */}
+        <ClientMessages namespaces={['ustaad.card']}>
+          <UstaadVerificationProgress />
+        </ClientMessages>
         <ClientMessages namespaces={['shopTier2']}>
           <PartnerStatus />
         </ClientMessages>
