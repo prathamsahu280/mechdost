@@ -1120,7 +1120,7 @@ export const EMAIL_CATALOGUE = {
     text: ['name', 'hours'],
     params: ['name', 'hours', 'token'],
     button: (p) => `/partners/delivery-invite/${enc(p.token ?? '')}`,
-    sample: { name: 'Ravi Kumar', hours: '72', token: 'preview-only' },
+    sample: { name: 'Ravi Sahu', hours: '72', token: 'preview-only' },
     en: {
       subject: 'Your invitation to deliver with MechDost',
       heading: 'You are invited to be a MechDost delivery agent',
