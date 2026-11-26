@@ -3320,7 +3320,12 @@
     "syn_kind_segment": "Vehicle segment",
     "nav_ustaad": "Community and settings",
     "adminHeader_ustaad": "Moderation, verification and settings of the Ustaad Network, the mechanics-only network.",
-    "navGroup_ustaad": "Ustaad Network"
+    "navGroup_ustaad": "Ustaad Network",
+    "content_group_savings": "Savings wording",
+    "field_savings_order": "Order page line (keep {amount})",
+    "field_savings_account": "Account card line (keep {amount})",
+    "field_savings_cart": "Cart estimate label",
+    "api_set_customers_savings_enabled": "Show “Your savings” to customers (order page, cart, account)"
   },
   "shopGiveUp": {
     "action": "Can't fulfil this order",
@@ -6400,7 +6405,8 @@
     "help_catalogue_shop_photo_uploads": "Lets shops add photos to products they sell. Each photo shows only after staff approve it.",
     "help_api_signed_in_per_minute": "Requests per minute one signed-in account may make. Each person is counted alone, even on shared Wi-Fi.",
     "help_api_guest_per_ip_per_minute": "Requests per minute one internet address may make when not signed in.",
-    "help_api_ip_flood_per_minute": "Most requests per minute from one internet address in total. Guards against floods; keep it above the guest limit."
+    "help_api_ip_flood_per_minute": "Most requests per minute from one internet address in total. Guards against floods; keep it above the guest limit.",
+    "help_customers_savings_enabled": "Shows what customers saved vs the maker's printed MRP on delivered orders. The figures keep being recorded while it is off."
   },
   "roadside": {
     "eyebrow": "Roadside help",
@@ -8666,5 +8672,30 @@
       "n_name_hint": "At least 2 letters.",
       "n_too_short": "Type at least 2 letters."
     }
+  },
+  "savings": {
+    "title": "Your savings",
+    "thisMonth": "This month",
+    "thisYear": "This year",
+    "account": "You saved {amount} this year vs the maker's printed MRP",
+    "order": "You saved {amount} vs the maker's printed MRP on this order",
+    "orderEstimate": "You save about {amount} vs the maker's printed MRP on this order",
+    "cart": "Estimated saving vs the maker's printed MRP",
+    "comp_mrp": "Price below the printed MRP",
+    "comp_coupon": "Coupon",
+    "comp_coins": "MechDost Coins",
+    "comp_delivery": "Free delivery",
+    "breakdown": "How it adds up",
+    "basis": "Delivered orders only. Refunds are taken off.",
+    "excluded": "{count, plural, one {# item had no printed MRP and is not counted.} other {# items had no printed MRP and are not counted.}}",
+    "estimateNote": "Estimate. The final figure is set after delivery.",
+    "cartNote": "Estimate, final after delivery.",
+    "refunded": "A refund on this order reduced the saving.",
+    "orders": "{count, plural, one {# delivered order} other {# delivered orders}}",
+    "empty": "Your savings show here after your first delivered order.",
+    "emptyAction": "Shop parts",
+    "error": "Your savings could not be loaded.",
+    "retry": "Try again",
+    "loading": "Loading your savings"
   }
 }

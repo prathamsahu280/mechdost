@@ -16,6 +16,7 @@ async function contentDefaults(): Promise<ContentDefaults> {
     const hero = await getTranslations({ locale, namespace: 'home.hero' });
     const region = (await getTranslations({ locale, namespace: 'regions' }))(site.defaultRegion);
     const trust = await getTranslations({ locale, namespace: 'trust' });
+    const savings = await getTranslations({ locale, namespace: 'savings' });
     // The product line shows its {brand} token so the admin sees where the brand goes.
     const line = (p: TrustPlacement) => trust(p, { region, brand: '{brand}' });
     return {
@@ -33,6 +34,10 @@ async function contentDefaults(): Promise<ContentDefaults> {
       'trust.emailFooter': line('emailFooter'),
       'trust.workshop': line('workshop'),
       'trust.partner': line('partner'),
+      // The editor shows the {amount} token so the admin sees where the figure goes.
+      'savings.order': savings('order', { amount: '{amount}' }),
+      'savings.account': savings('account', { amount: '{amount}' }),
+      'savings.cart': savings('cart'),
     };
   };
   const [en, hi] = await Promise.all([pick('en'), pick('hi')]);

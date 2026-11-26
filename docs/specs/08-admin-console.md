@@ -482,3 +482,11 @@ the community manager console of G2 joins the same group). Screen (`components/p
   `GET /admin/ustaad/console` hide what the API would refuse; community managers are city scoped, have no
   exports and no `audit:read`. Events `admin_ustaad_console_viewed {section}`, `admin_ustaad_console_action
 {action, outcome}`. `?section=verify` opens Verify (Partners › Applications notice).
+
+## "Your savings" controls (2026-11-26)
+
+- Settings → Store: **Show “Your savings” to customers** (`customers.savings_enabled`, global, default on). Off hides
+  the order-page block, the cart estimate and the account card (the API answers `enabled: false`); the ledger keeps
+  being written.
+- Content → **Savings wording** (en + hi side by side): `savings.order` and `savings.account` must keep `{amount}`
+  (an override without it falls back to the default), `savings.cart` is the cart row label; up to 160 characters.

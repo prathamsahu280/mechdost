@@ -860,6 +860,16 @@ export const CLIENT_EVENT_SCHEMAS = {
   my_refunds_viewed: z
     .object({ count: z.number().int().min(0).max(50), inProgress: z.number().int().min(0).max(50) })
     .strict(),
+  // "Your savings" (decision 2026-11-26): which surface showed it, its state and an amount band (never the amount, the
+  // order code or the period label), plus how many lines had no printed MRP.
+  savings_viewed: z
+    .object({
+      surface: z.enum(['order', 'cart', 'account']),
+      state: z.enum(['final', 'estimate', 'empty']),
+      band: z.enum(['zero', 'lt_100', 'lt_500', 'lt_2000', 'gte_2000']),
+      excluded: z.number().int().min(0).max(99),
+    })
+    .strict(),
   push_prompt_shown: z.object({ variant: z.enum(['normal', 'ios', 'denied']) }).strict(),
   push_prompt_answered: z.object({ answer: z.enum(['turn_on', 'not_now', 'ios_done']) }).strict(),
   push_enabled: z.object({ source: z.enum(['card', 'settings']) }).strict(),

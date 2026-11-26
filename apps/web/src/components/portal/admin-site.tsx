@@ -52,6 +52,9 @@ const FIELD_LABEL = {
   'hero.titleLine1': 'field_hero_titleLine1',
   'hero.titleLine2': 'field_hero_titleLine2',
   'hero.lead': 'field_hero_lead',
+  'savings.order': 'field_savings_order',
+  'savings.account': 'field_savings_account',
+  'savings.cart': 'field_savings_cart',
 } as const satisfies Record<Exclude<ContentKey, TrustKey>, string>;
 
 function usePrefix() {
@@ -110,7 +113,7 @@ function PreviewLink() {
 
 // ── Site content ──────────────────────────────────────────────────────────────────────────────────────────────
 
-const CONTENT_GROUPS: { id: 'announcement' | 'hero' | 'trust'; keys: ContentKey[] }[] = [
+const CONTENT_GROUPS: { id: 'announcement' | 'hero' | 'trust' | 'savings'; keys: ContentKey[] }[] = [
   { id: 'announcement', keys: ['announcement.orders', 'announcement.workshops'] },
   { id: 'hero', keys: ['hero.eyebrow', 'hero.titleLine1', 'hero.titleLine2', 'hero.lead'] },
   {
@@ -126,6 +129,8 @@ const CONTENT_GROUPS: { id: 'announcement' | 'hero' | 'trust'; keys: ContentKey[
       'trust.partner',
     ],
   },
+  // "Your savings" wording (decision 2026-11-26); the on/off switch is in Settings → Store.
+  { id: 'savings', keys: ['savings.order', 'savings.account', 'savings.cart'] },
 ];
 
 export function ContentEditor({ actor, defaults }: { actor: string; defaults: ContentDefaults }) {

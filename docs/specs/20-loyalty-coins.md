@@ -110,3 +110,8 @@ Earned on delivered orders (%), the first order, workshop bookings and referrals
 ### Refunds (built 2026-11-15, spec 05)
 
 - A **fully refunded** sub-order's pending coin rewards are cancelled when Razorpay (or finance, for a manual payout) confirms the refund (`cancelPendingOrderRewards`, reason `order_refunded`); a part refund keeps the reward. Credited rewards are not clawed back. Coins used on a cancelled or rejected part are restored by the order transition as before; the cash refund is the part's `total_paise` (already net of the coin discount), never coins.
+
+## Coins in "Your savings" (2026-11-26)
+
+The value of the Coins redeemed on a delivered order (`orders.coin_discount_paise`) counts as one component of the
+customer's savings ("MechDost Coins"), reversed in proportion by a refund. Coins stay a discount, never a wallet.

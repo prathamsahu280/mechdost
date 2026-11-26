@@ -9,6 +9,7 @@ import { withCode } from '@/components/ui/code-text';
 import type { Locale } from '@/i18n/routing';
 import { DATA_MODE } from '@/lib/data-mode';
 import { orderPageCode } from '@/lib/record-links';
+import { publishedSavings } from '@/lib/savings-content';
 
 interface Props {
   params: Promise<{ locale: Locale; code: string }>;
@@ -25,9 +26,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  * (`NEXT_PUBLIC_DATA_MODE=api`) reads the order from the API for the signed-in customer; demo mode from the browser.
  */
 export default async function OrderPage({ params }: Props) {
-  const { code } = await params;
+  const { code, locale } = await params;
   const safe = orderPageCode(code);
-  const t = await getTranslations('order');
+  const [t, savings] = await Promise.all([getTranslations('order'), publishedSavings(locale)]);
+  const savingsOverride = savings['savings.order'] ?? null;
   return (
     <Container className="py-10 tab:py-14">
       <h1 className="font-heading text-[clamp(22px,3vw,40px)] font-extrabold tracking-[-0.02em] break-words text-ink">
@@ -37,12 +39,16 @@ export default async function OrderPage({ params }: Props) {
         <ClientMessages
           namespaces={
             DATA_MODE === 'api'
-              ? ['order', 'cart', 'demo', 'reviews', 'supportThread', 'refunds']
-              : ['order', 'cart', 'demo']
+              ? ['order', 'cart', 'demo', 'reviews', 'supportThread', 'refunds', 'savings']
+              : ['order', 'cart', 'demo', 'savings']
           }
         >
           <Suspense>
-            {DATA_MODE === 'api' ? <OrderViewApi code={safe} /> : <OrderView code={safe} />}
+            {DATA_MODE === 'api' ? (
+              <OrderViewApi code={safe} savingsOverride={savingsOverride} />
+            ) : (
+              <OrderView code={safe} savingsOverride={savingsOverride} />
+            )}
           </Suspense>
         </ClientMessages>
       </div>

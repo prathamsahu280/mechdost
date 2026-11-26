@@ -52,10 +52,19 @@ export const CONTENT_KEYS = [
   'trust.emailFooter',
   'trust.workshop',
   'trust.partner',
+  // "Your savings" wording (decision 2026-11-26): order page and account card lines keep `{amount}`; the cart label.
+  'savings.order',
+  'savings.account',
+  'savings.cart',
 ] as const;
 export type ContentKey = (typeof CONTENT_KEYS)[number];
 
-const CONTENT_MAX: Partial<Record<ContentKey, number>> = { 'hero.lead': 280 };
+const CONTENT_MAX: Partial<Record<ContentKey, number>> = {
+  'hero.lead': 280,
+  'savings.order': 160,
+  'savings.account': 160,
+  'savings.cart': 160,
+};
 export const CONTENT_MAX_DEFAULT = 80;
 
 export function isContentKey(key: string): key is ContentKey {
@@ -89,4 +98,27 @@ export function trustLineText(
     return brand ? text.replaceAll('{brand}', brand) : fallback;
   }
   return text;
+}
+
+export type SavingsContentKey = 'savings.order' | 'savings.account' | 'savings.cart';
+export const SAVINGS_CONTENT_KEYS: readonly SavingsContentKey[] = [
+  'savings.order',
+  'savings.account',
+  'savings.cart',
+];
+
+/**
+ * The text a "Your savings" line shows (decision 2026-11-26): the admin's override when there is one, else
+ * `fallback` (the locale-file default), with `{amount}` filled. The order and account lines must keep `{amount}`; an
+ * override without it falls back to the default, so a line is never shown without its figure.
+ */
+export function savingsLineText(
+  key: SavingsContentKey,
+  override: string | null | undefined,
+  fallback: string,
+  amount: string,
+): string {
+  const text = override?.trim();
+  const usable = text && (key === 'savings.cart' || text.includes('{amount}')) ? text : fallback;
+  return usable.replaceAll('{amount}', amount);
 }

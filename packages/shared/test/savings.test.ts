@@ -8,6 +8,7 @@ import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import {
   lineMrpSaving,
+  savingsBand,
   savingsBreakdown,
   savingsPeriodBounds,
   savingsReversal,
@@ -228,5 +229,20 @@ describe('savingsPeriodBounds (IST)', () => {
     expect(b.from.toISOString()).toBe('2025-12-31T18:30:00.000Z');
     expect(b.to.toISOString()).toBe('2026-12-31T18:30:00.000Z');
     expect(b.label).toBe('2026');
+  });
+});
+
+describe('savingsBand (analytics, never the amount)', () => {
+  it('bands rupees', () => {
+    expect([0, -5, 99_99, 100_00, 499_99, 500_00, 1_999_99, 2_000_00].map(savingsBand)).toEqual([
+      'zero',
+      'zero',
+      'lt_100',
+      'lt_500',
+      'lt_500',
+      'lt_2000',
+      'lt_2000',
+      'gte_2000',
+    ]);
   });
 });

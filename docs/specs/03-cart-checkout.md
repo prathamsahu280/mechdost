@@ -236,3 +236,13 @@ Plan `docs/superpowers/plans/2026-11-16-coupon-followups.md`; rulings in `docs/d
 Customers never see that a shop fulfils the order: checkout, cart and order pages say "MechDost confirms your order" (stage "Confirming availability", "MechDost confirmed your order"); the order page does not show "Fulfilled by {shop}", the product page has no "Sold by" row, the cart free-delivery hint does not name the seller, and shop-funded coupons read as a MechDost offer. The seller's name and GSTIN go on the bill PDF only (Q221). Coverage copy says Chhattisgarh via `{region}` (`site.defaultRegion`); PIN checks keep their facts (4920 = Raipur). Guard: `packages/shared/test/customer-copy.test.ts`. See decisions 2026-11-22.
 
 - **Sizes in the cart and order snapshot (2026-11-24, spec 02 "Sizes as variants"):** a cart line is one size (the server cart is keyed by SKU, the browser cart by `sku ?? slug`); two sizes of one product are two lines, each priced, stocked and reserved on its own (conditional decrement per `variant_id`). `order_items.variant_label` (migration 0084, nullable) and the " · <size>" suffix on `title`/`title_hi` are written at order creation only for products with more than one active size.
+
+## "Your savings" estimate and snapshots (2026-11-26, personalisation phase 4)
+
+- `POST /v1/checkout/quote` returns `savingsEstimate {mrpPaise, deliveryPaise, totalPaise, excludedLines}`: the
+  printed-MRP saving of the priced lines plus the delivery charge the free-delivery threshold waives (coupon and Coins
+  are chosen later and are not in it); `null` when Admin → Settings → Store "Show “Your savings”" is off.
+- The cart summary shows one row "Estimated saving vs the maker's printed MRP" (admin-editable label, en + hi) with
+  "Estimate, final after delivery." under it, only when the estimate is above ₹0. Server-computed in real data mode;
+  the demo uses the demo catalogue's MRP. No "was ₹X" strike-through, no percentage.
+- Placing an order snapshots `order_items.mrp_paise` and `orders.delivery_waived_paise` (spec 14 "Savings ledger").

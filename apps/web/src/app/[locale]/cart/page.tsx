@@ -9,6 +9,8 @@ import { ClientMessages } from '@/components/ui/client-messages';
 import { Container } from '@/components/ui/page-intro';
 import type { Locale } from '@/i18n/routing';
 import { DATA_MODE } from '@/lib/data-mode';
+import { savingsLineText } from '@mechdost/shared/content';
+import { publishedSavings } from '@/lib/savings-content';
 
 export async function generateMetadata({
   params,
@@ -38,7 +40,16 @@ async function CartSuggestions({ locale }: { locale: Locale }) {
 /** Cart (spec 03) — demo store until the server cart with re-pricing ships in Phase 1. */
 export default async function CartPage({ params }: { params: Promise<{ locale: Locale }> }) {
   const { locale } = await params;
-  const t = await getTranslations('cart');
+  const [t, ts, published] = await Promise.all([
+    getTranslations('cart'),
+    getTranslations('savings'),
+    publishedSavings(locale),
+  ]);
+  // "Your savings" estimate (decision 2026-11-26): wording resolved here, so the cart ships no extra i18n or fetch.
+  const savings = {
+    label: savingsLineText('savings.cart', published['savings.cart'], ts('cart'), ''),
+    note: ts('cartNote'),
+  };
   return (
     <Container className="py-10 tab:py-14">
       <h1 className="font-heading text-[clamp(30px,3.4vw,44px)] font-extrabold tracking-[-0.03em] text-ink">
@@ -47,7 +58,7 @@ export default async function CartPage({ params }: { params: Promise<{ locale: L
       <TrustLine placement="checkout" className="mt-3 max-w-prose text-[15px] text-muted" />
       <div className="mt-8">
         <ClientMessages namespaces={['cart', 'catalogue', 'quote', 'categories', 'checkout']}>
-          <CartView />
+          <CartView savings={savings} />
         </ClientMessages>
       </div>
       {/* "Add before checkout" (spec 11): a Server Component under the cart, real data mode only. */}

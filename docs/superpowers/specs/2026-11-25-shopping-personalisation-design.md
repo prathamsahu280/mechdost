@@ -50,6 +50,34 @@ light-commercial-tyres 26, tractor-batteries 24, tractor-agri-oils 19, industria
 - From 1 Jan 2027 (Consumer Protection E-Commerce amendment, Rule 4(13) per secondary sources; counsel to confirm): start
   recording daily price history now; avoid "was ₹X" strike-throughs on promotions.
 
+### Phase 4 as built (2026-11-26, migration 0101_shopping_savings)
+
+- **Snapshots:** checkout now writes `order_items.mrp_paise` (printed MRP per unit) and
+  `orders.delivery_waived_paise` (the charge the free-delivery threshold waived). Orders placed before 0101 have no
+  MRP snapshot: their lines are excluded and counted, never filled from today's MRP. Coupon and Coins come from the
+  existing `coupon_discount_paise` / `coin_discount_paise`. Price-on-request packs cannot be checked out, so in
+  practice "excluded" means pre-0101 lines.
+- **Ledger:** append-only `customer_savings_entries` (+ `customer_savings_lines` per line) written by one idempotent
+  `syncOrderSavings` on delivery and on each processed refund (proportional, telescoping reversal); periods count by
+  the delivery time (IST), so a refund never makes a month negative. Details: spec 14 "Savings ledger".
+- **One breakdown for every surface:** `@mechdost/shared/savings` (`savingsBreakdown`, `savingsReversal`,
+  `savingsPeriodBounds`); the cart estimate, the order-page estimate, the ledger and the demo use it.
+- **API:** `GET /v1/me/savings?period=month|year` (totals per component, delivered orders, excluded lines) and
+  `GET /v1/me/orders/{code}/savings` (final / estimate / none; another customer's code is 404); the checkout quote
+  carries `savingsEstimate` (MRP saving + waived delivery; coupon and Coins are chosen later).
+- **UI:** order page (estimate while on its way, "You saved ₹X vs the maker's printed MRP on this order" after
+  delivery, breakdown, refund and excluded notes), cart summary row "Estimated saving vs the maker's printed MRP" +
+  "Estimate, final after delivery.", account overview card (this month / this year, breakdown in a disclosure,
+  empty state with "Shop parts"). Demo store: same maths on the browser's orders with the demo catalogue's MRP.
+- **Admin:** Settings → Store "Show “Your savings” to customers" (`customers.savings_enabled`, default on; off hides
+  every surface, the ledger keeps being written); Content → "Savings wording" (`savings.order`, `savings.account`
+  keep `{amount}`, `savings.cart`), en + hi. The "on its way" estimate line is not admin-editable yet.
+- **Price history:** `variant_price_daily` written by the worker once per IST day.
+- **Recap:** the monthly WhatsApp/email recap is designed only (QSV1 in `docs/questions-for-user.md`); nothing is
+  sent.
+- **Not done:** a back-fill of pre-0101 delivered orders (coupon/Coins/delivery parts only; QSV2), a per-customer
+  monthly rollup table (the indexed query is enough at this scale), the recap itself.
+
 ## Approaches considered
 
 - Segments as a new enum on products vs tags: chosen a many-to-many admin-editable segment table (bilingual, counts,
