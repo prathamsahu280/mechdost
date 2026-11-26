@@ -535,6 +535,14 @@ export const NOTICE_CATALOGUE = {
     text: ['reportCode'],
     link: at('/admin/ustaad'),
   }),
+  /** Usage and free limits (2026-11-26): a metric reached a threshold; once per metric, level and month. */
+  'staff.usage_alert': def({
+    category: T,
+    entity: 'platform',
+    audience: 'staff',
+    text: ['metric', 'percent'],
+    link: at('/admin/usage'),
+  }),
   'staff.ustaad_media_budget': def({
     category: T,
     entity: 'ustaad',

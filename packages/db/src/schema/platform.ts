@@ -161,6 +161,10 @@ export const notificationOutbox = pgTable(
       .on(t.channel, t.providerId)
       .where(sql`${t.providerId} is not null`),
     index().on(t.recipientUserId),
+    // Usage monitoring (0103): emails sent this month / in the last 24 h, counted daily.
+    index('outbox_email_sent_idx')
+      .on(t.sentAt)
+      .where(sql`${t.channel} = 'email' and ${t.sentAt} is not null`),
   ],
 );
 
@@ -217,7 +221,7 @@ export const notifications = pgTable(
     check('notifications_category_valid', sql`${t.category} in ('transactional','promotional','reminders')`),
     check(
       'notifications_entity_type_valid',
-      sql`${t.entityType} is null or ${t.entityType} in ('order','service_request','rsa_request','quote','ticket','refund','shop','application','account','ustaad')`,
+      sql`${t.entityType} is null or ${t.entityType} in ('order','service_request','rsa_request','quote','ticket','refund','shop','application','account','ustaad','platform')`,
     ),
     check('notifications_link_local', sql`${t.link} is null or ${t.link} ~ '^/[^/\\\\]'`),
     index().on(t.userId, t.createdAt),

@@ -205,10 +205,21 @@ const USTAAD_NONE = [
   'ustaad_zone_counts',
 ];
 
+/** Usage and free-limit monitoring (0103): staff-only through the API. */
+const USAGE_NONE = [
+  'usage_alert_config',
+  'usage_alerts',
+  'usage_counters',
+  'usage_limits',
+  'usage_runs',
+  'usage_snapshots',
+];
+
 export const RLS_INVENTORY: Record<string, RlsAccess> = {
   ...Object.fromEntries(PUBLIC.map((n) => [n, 'public' as const])),
   ...Object.fromEntries(OWN.map((n) => [n, 'own' as const])),
   ...Object.fromEntries(PARTNER.map((n) => [n, 'partner' as const])),
   ...Object.fromEntries(NONE.map((n) => [n, 'none' as const])),
   ...Object.fromEntries(USTAAD_NONE.map((n) => [n, 'none' as const])),
+  ...Object.fromEntries(USAGE_NONE.map((n) => [n, 'none' as const])),
 };
