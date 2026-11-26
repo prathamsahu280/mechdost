@@ -1119,7 +1119,7 @@ describe('review 2: photos, staff override, refunds and stock', () => {
       sql`select si.on_hand from shop_inventory si join order_items oi on oi.variant_id = si.variant_id where oi.order_id = ${orderId} and si.shop_id = ${w.shopId}`,
     );
     // The accept took 2 off the shelf; the hand-back puts them back.
-    const onHand = (r: unknown) => Number((r as { rows: { on_hand: number }[] }).rows[0]!.on_hand);
+    const onHand = (r: unknown) => (r as { rows: { on_hand: number }[] }).rows[0]!.on_hand;
     expect(onHand(after)).toBe(onHand(before) + 2);
   });
 });

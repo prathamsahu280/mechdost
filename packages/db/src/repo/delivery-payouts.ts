@@ -114,10 +114,18 @@ export async function recordAgentPayout(
 /** A correction: a new row with the opposite amount, pointing at the payment (one reversal per payment). */
 export async function reverseAgentPayout(
   db: Tx,
-  input: { scope: CityScope; staffUserId: string; payoutId: string; note: string; idempotencyKey: string },
+  input: {
+    scope: CityScope;
+    staffUserId: string;
+    payoutId: string;
+    note: string;
+    /** One reversal per payment, so the default key is derived from the payment. */
+    idempotencyKey?: string | undefined;
+  },
 ): Promise<PayoutRow> {
   return db.transaction(async (tx) => {
-    const seen = await byKey(tx, input.idempotencyKey);
+    const key = input.idempotencyKey ?? `rev-${input.payoutId}`;
+    const seen = await byKey(tx, key);
     if (seen) {
       if (seen.reversesId !== input.payoutId)
         throw new ConflictError('This key was used for another payout', 'IDEMPOTENCY_MISMATCH');
@@ -149,7 +157,7 @@ export async function reverseAgentPayout(
         reference: p.reference,
         note: input.note,
         reversesId: p.id,
-        idemKey: input.idempotencyKey,
+        idemKey: key,
         recordedBy: input.staffUserId,
       })
       .returning();
@@ -242,15 +250,15 @@ export async function listAgentPayouts(
     reference: r.p.reference,
     note: r.p.note,
     reversesId: r.p.reversesId,
-    reversed: reversed.has(r.p.id),
+    corrected: reversed.has(r.p.id),
     recordedByName: r.recordedByName ?? null,
     createdAt: r.p.createdAt,
   }));
   return { items, totalPaise: num(t?.total), more: rows.length > input.limit };
 }
 
-/** The agent's own payouts: no staff note, no staff name. */
-export async function listOwnPayouts(db: Tx, userId: string) {
+/** The agent's own payouts and delivered jobs: never the staff note or who recorded it. */
+export async function agentEarnings(db: Tx, userId: string) {
   const a = await agentOfUser(db, userId);
   const rows = await db
     .select()
@@ -258,18 +266,61 @@ export async function listOwnPayouts(db: Tx, userId: string) {
     .where(eq(deliveryAgentPayouts.agentId, a.id))
     .orderBy(desc(deliveryAgentPayouts.createdAt))
     .limit(200);
+  const corrected = new Set(rows.filter((r) => r.reversesId !== null).map((r) => r.reversesId));
+  const [d] = rowsOf<{ n: unknown }>(
+    await db.execute(
+      sql`select count(*) as n from delivery_jobs where agent_id = ${a.id}::uuid and status = 'delivered'`,
+    ),
+  );
   return {
-    items: rows.map((p) => ({
-      id: p.id,
-      kind: p.kind as 'payment' | 'reversal',
-      amountPaise: p.amountPaise,
-      periodFrom: p.periodFrom,
-      periodTo: p.periodTo,
-      method: p.method as AgentPayoutMethod,
-      reference: p.reference,
-      createdAt: p.createdAt,
+    payouts: rows.map((r) => ({
+      id: r.id,
+      agentId: r.agentId,
+      kind: r.kind as 'payment' | 'reversal',
+      amountPaise: r.amountPaise,
+      periodFrom: r.periodFrom,
+      periodTo: r.periodTo,
+      method: r.method as AgentPayoutMethod,
+      reference: r.reference,
+      note: null,
+      reversesId: r.reversesId,
+      corrected: corrected.has(r.id),
+      createdAt: r.createdAt,
     })),
-    totalPaise: rows.reduce((sum, p) => sum + p.amountPaise, 0),
+    totalPaise: rows.reduce((sum, r) => sum + r.amountPaise, 0),
+    deliveredJobs: num(d?.n),
+  };
+}
+
+/** Per agent in scope: delivered jobs (IST days) and the net paid for periods overlapping the window. */
+export async function payoutSummary(db: Tx, input: { scope: CityScope; from: string; to: string }) {
+  const scopeSql = input.scope.all
+    ? sql`true`
+    : input.scope.cityIds.length === 0
+      ? sql`false`
+      : sql`a.city_id in (${sql.join(
+          input.scope.cityIds.map((id) => sql`${id}::uuid`),
+          sql`, `,
+        )})`;
+  const rows = rowsOf<{ agent_id: string; name: string; delivered: unknown; paid: unknown }>(
+    await db.execute(sql`
+      select a.id as agent_id, a.name,
+        (select count(*) from delivery_jobs j where j.agent_id = a.id and j.status = 'delivered'
+          and (j.delivered_at at time zone 'Asia/Kolkata')::date between ${input.from}::date and ${input.to}::date) as delivered,
+        (select coalesce(sum(p.amount_paise), 0) from delivery_agent_payouts p where p.agent_id = a.id
+          and p.period_from <= ${input.to}::date and p.period_to >= ${input.from}::date) as paid
+      from delivery_agents a
+      where ${scopeSql} and a.status <> 'offboarded'
+      order by a.name
+      limit 500`),
+  );
+  return {
+    items: rows.map((r) => ({
+      agentId: r.agent_id,
+      name: r.name,
+      delivered: num(r.delivered),
+      paidPaise: num(r.paid),
+    })),
   };
 }
 

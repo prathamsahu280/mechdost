@@ -2611,7 +2611,7 @@ Spec 24 § 5. Found in the security review of the delivery repositories; fixed i
   payment made outside the app: amount in integer paise, IST period, method `upi|bank_transfer|cash|other`, reference,
   note (required for `other`), idempotency key. Corrections are one reversing row per payment (negative amount, note
   required). Routes: staff list and CSV `/v1/admin/delivery/payouts` and `.csv`, delivered-count helper
-  `/v1/admin/delivery/payouts/delivered-count`, the agent's own list `/v1/agent/payouts` (no staff notes or names).
+  `/v1/admin/delivery/payouts/delivered-count`, the agent's own view `/v1/agent/me/earnings` (no staff notes or names; paths aligned with the web stream 2026-11-27), staff summary `/v1/admin/delivery/payouts/summary`, correction `POST …/payouts/{id}/correct`.
   No rate maths, no transfers, no TDS until the founder sets rates.
 - **Refund on return (lead's call 13):** refund source and reason code `delivery_returned`; parts only keeps
   `shipping_paise`. Failed deliveries then close the order as `returned`.

@@ -1784,7 +1784,7 @@ export async function getAgentJob(db: Tx, input: { userId: string; jobId: string
   });
 }
 
-export type AdminJobView = 'needs_agent' | 'offered' | 'active' | 'failed' | 'returning' | 'done';
+export type AdminJobView = 'needs_agent' | 'offered' | 'active' | 'failed' | 'returning' | 'done' | 'all';
 const VIEW_STATUSES: Record<AdminJobView, readonly DeliveryJobStatus[]> = {
   needs_agent: ['needs_agent'],
   offered: ['offered'],
@@ -1792,11 +1792,30 @@ const VIEW_STATUSES: Record<AdminJobView, readonly DeliveryJobStatus[]> = {
   failed: ['failed'],
   returning: ['returning'],
   done: ['delivered', 'returned', 'cancelled'],
+  all: [
+    'needs_agent',
+    'offered',
+    'accepted',
+    'picked_up',
+    'failed',
+    'returning',
+    'delivered',
+    'returned',
+    'cancelled',
+  ],
 };
 
 export async function listAdminJobs(
   db: Tx,
-  input: { scope: CityScope; view: AdminJobView; limit: number; before?: Date | null; jobId?: string },
+  input: {
+    scope: CityScope;
+    view: AdminJobView;
+    limit: number;
+    before?: Date | null;
+    jobId?: string;
+    /** The jobs of one sub-order (admin order page). */
+    orderCode?: string | undefined;
+  },
 ) {
   const scopeSql = input.scope.all
     ? sql`true`
@@ -1848,6 +1867,7 @@ export async function listAdminJobs(
             )})`
       }
       ${input.before ? sql`and j.updated_at < ${input.before}` : sql``}
+      ${input.orderCode ? sql`and o.code = ${input.orderCode}` : sql``}
       order by j.updated_at ${input.view === 'done' ? sql`desc` : sql`asc`}
       limit ${input.limit + 1}`),
   );
@@ -1882,6 +1902,14 @@ export async function getAdminJob(db: Tx, input: { scope: CityScope; jobId: stri
   // The same row the queue shows (`AdminJobRow`), plus the detail arrays (`AdminJobDetail`).
   const [row] = (await listAdminJobs(db, { scope: input.scope, view: 'done', limit: 1, jobId: j.id })).items;
   if (!row) throw new NotFoundError('Delivery job not found');
+  const pickup = await readHandoverCode(db, null, j.id, 'pickup');
+  const [ship] = await db
+    .select({ attempts: shipments.deliveryCodeAttempts })
+    .from(shipments)
+    .where(eq(shipments.orderId, j.orderId))
+    .orderBy(desc(shipments.createdAt))
+    .limit(1);
+  const settings = await deliverySettings(db, j.cityId);
   const events = await db
     .select()
     .from(deliveryJobEvents)
@@ -1911,6 +1939,9 @@ export async function getAdminJob(db: Tx, input: { scope: CityScope; jobId: stri
   );
   return {
     ...row,
+    pickupLocked: pickup?.locked ?? false,
+    deliveryLocked: (ship?.attempts ?? 0) >= 5,
+    retryAllowed: retryAllowed({ failedAttempts: j.failedAttempts, maxAttempts: settings.maxAttempts }),
     events: events.map((e) => ({
       at: e.createdAt.toISOString(),
       kind: e.kind,

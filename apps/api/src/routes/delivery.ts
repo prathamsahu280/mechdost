@@ -7,7 +7,8 @@ import {
   acceptAgentInvite,
   agentDeliveredCount,
   listAgentPayouts,
-  listOwnPayouts,
+  agentEarnings,
+  payoutSummary,
   recordAgentPayout,
   reverseAgentPayout,
   acceptDeliveryOffer,
@@ -347,14 +348,16 @@ export function deliveryAgentRoutes(deps: AppDeps, cache: SessionCache) {
       c.json(await getAgentProfile(deps.db, me(c)), 200),
     )
     .openapi(
-      r('get', '/agent/payouts', 'Payouts MechDost recorded for you (manual)', 'delivery-agent'),
+      r(
+        'get',
+        '/agent/me/earnings',
+        'Your payouts recorded by MechDost and your delivered jobs',
+        'delivery-agent',
+      ),
       async (c) => {
-        const page = await listOwnPayouts(deps.db, me(c));
+        const e = await agentEarnings(deps.db, me(c));
         return c.json(
-          {
-            items: page.items.map((p) => ({ ...p, createdAt: p.createdAt.toISOString() })),
-            totalPaise: page.totalPaise,
-          },
+          { ...e, payouts: e.payouts.map((p) => ({ ...p, createdAt: p.createdAt.toISOString() })) },
           200,
         );
       },
@@ -387,7 +390,7 @@ export function deliveryAgentRoutes(deps: AppDeps, cache: SessionCache) {
     )
     .openapi(
       r('get', '/agent/jobs', 'Your offers, active jobs or finished jobs', 'delivery-agent', {
-        query: z.object({ view: z.enum(AGENT_JOB_VIEWS), limit: Limit, before: Before }),
+        query: z.object({ view: z.enum(AGENT_JOB_VIEWS), limit: Limit, before: Before, cursor: Before }),
       }),
       async (c) => {
         const q = c.req.valid('query');
@@ -1085,8 +1088,11 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
       r('get', '/admin/delivery/jobs', 'Delivery queue by view', 'admin-delivery', {
         query: z.object({
           view: z.enum(ADMIN_JOB_VIEWS).default('needs_agent'),
+          orderCode: OrderCode.optional(),
           limit: Limit,
           before: Before,
+          /** The previous page's `nextCursor` (same as `before`). */
+          cursor: Before,
         }),
       }),
       async (c) => {
@@ -1094,8 +1100,9 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
         const page = await listAdminJobs(deps.db, {
           scope: scope(c, assign),
           view: q.view,
+          orderCode: q.orderCode,
           limit: q.limit ?? 50,
-          before: q.before ? new Date(q.before) : null,
+          before: (q.before ?? q.cursor) ? new Date(q.before ?? q.cursor ?? '') : null,
         });
         const last = page.items.at(-1);
         return c.json(
@@ -1341,8 +1348,8 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
     .openapi(
       r(
         'post',
-        '/admin/delivery/payouts/{payoutId}/reverse',
-        'Correct a payout with a reversing row',
+        '/admin/delivery/payouts/{payoutId}/correct',
+        'Correct a payout with a reversing row (one per payment)',
         'admin-delivery',
         {
           params: z.object({ payoutId: Uuid('payoutId') }),
@@ -1394,6 +1401,24 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
             totalPaise: page.totalPaise,
             nextCursor: page.more && last ? last.createdAt.toISOString() : null,
           },
+          200,
+        );
+      },
+    )
+    .openapi(
+      r(
+        'get',
+        '/admin/delivery/payouts/summary',
+        'Delivered jobs and net paid per agent over IST days',
+        'admin-delivery',
+        {
+          query: z.object({ from: z.iso.date(), to: z.iso.date() }),
+        },
+      ),
+      async (c) => {
+        const q = c.req.valid('query');
+        return c.json(
+          await payoutSummary(deps.db, { scope: scope(c, payouts), from: q.from, to: q.to }),
           200,
         );
       },

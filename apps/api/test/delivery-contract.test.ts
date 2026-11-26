@@ -34,8 +34,9 @@ import {
   AdminJobPage,
   AgentJobDetail,
   AgentJobPage,
-  AgentOwnPayoutPage,
+  AgentEarnings,
   AgentPayoutPage,
+  AgentPayoutSummary,
   AgentProfile,
   ShopDeliveryModeView,
   ShopOrderDelivery,
@@ -257,6 +258,11 @@ describe('answers match the contract', () => {
       await (await req('GET', `/admin/delivery/jobs/${row.jobId}`, staff.headers)).json(),
     );
     expect(detail.suggestions.map((x) => x.agentId)).toContain(agentLogin.agentId);
+    expect(detail).toMatchObject({ pickupLocked: false, deliveryLocked: false, retryAllowed: true });
+    const byOrder = AdminJobPage.parse(
+      await (await req('GET', `/admin/delivery/jobs?view=all&orderCode=${orderCode}`, staff.headers)).json(),
+    );
+    expect(byOrder.items.map((i) => i.jobId)).toEqual([row.jobId]);
     const offered = await req('POST', `/admin/delivery/jobs/${row.jobId}/offer`, staff.headers, {
       agentId: agentLogin.agentId,
       version: row.version,
@@ -297,7 +303,26 @@ describe('answers match the contract', () => {
         await req('GET', `/admin/delivery/payouts?agentId=${agentLogin.agentId}`, finance.headers)
       ).json(),
     );
-    AgentOwnPayoutPage.parse(await (await req('GET', '/agent/payouts', agentLogin.headers)).json());
+    const page2 = AgentPayoutPage.parse(
+      await (
+        await req('GET', `/admin/delivery/payouts?agentId=${agentLogin.agentId}`, finance.headers)
+      ).json(),
+    );
+    const paymentId = page2.items[0]!.id;
+    const corrected = await req('POST', `/admin/delivery/payouts/${paymentId}/correct`, finance.headers, {
+      note: 'Wrong amount',
+    });
+    expect(corrected.status).toBe(200);
+    const earnings = AgentEarnings.parse(
+      await (await req('GET', '/agent/me/earnings', agentLogin.headers)).json(),
+    );
+    expect(earnings.payouts.find((p) => p.id === paymentId)?.corrected).toBe(true);
+    const summary = AgentPayoutSummary.parse(
+      await (
+        await req('GET', '/admin/delivery/payouts/summary?from=2026-11-01&to=2026-12-31', finance.headers)
+      ).json(),
+    );
+    expect(summary.items.find((i) => i.agentId === agentLogin.agentId)).toMatchObject({ paidPaise: 0 });
     const csv = await req('GET', '/admin/delivery/payouts.csv', finance.headers);
     expect(csv.status).toBe(200);
     expect(csv.headers.get('Content-Type')).toContain('text/csv');
@@ -359,6 +384,5 @@ describe('limiters run once on routes under prefixes other files guard', () => {
     // A shop user is not an agent and not staff.
     expect((await req('GET', '/agent/me', shopUser.headers)).status).toBe(403);
     expect((await req('GET', '/admin/delivery/jobs', shopUser.headers)).status).toBe(403);
-    void cityId;
   });
 });

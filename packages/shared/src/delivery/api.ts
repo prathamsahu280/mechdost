@@ -5,6 +5,7 @@
  * customer's block never names the shop or the agent's phone (decisions 2026-11-14, 2026-11-22).
  */
 import { z } from 'zod';
+import { CUSTOMER_DELIVERY_STAGES, CustomerDeliveryBlock, ShopOrderDelivery } from './views';
 import { IndianMobile } from '../partners';
 import { DELIVERY_JOB_STATES, DELIVERY_OFFER_STATES, AGENT_STATUSES, ORDER_STATES } from '../state';
 import {
@@ -29,7 +30,6 @@ import {
   DELIVERY_SWITCH_STATES,
   DELIVERY_WITHDRAW_REASONS,
   LOAD_CLASSES,
-  ORDER_DELIVERY_MODES,
   SHOP_DELIVERY_MODES,
   SHOP_MODE_REJECT_REASONS,
   SHOP_MODE_REQUEST_REASONS,
@@ -270,22 +270,6 @@ export const CodeStepResult = z.object({
 
 // ── shop ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-/** Added to each shop order card (`GET /v1/shop/orders`). Never the customer's code. */
-export const ShopOrderDelivery = z.object({
-  mode: z.enum(ORDER_DELIVERY_MODES),
-  /** The 4-digit code the shop gives the agent at pickup (while ready for pickup). */
-  pickupCode: FourDigits.nullable(),
-  pickupLocked: z.boolean(),
-  jobStatus: z.enum(DELIVERY_JOB_STATES).nullable(),
-  agentFirstName: z.string().nullable(),
-  vehicleType: Vehicle.nullable(),
-  /** The agent is bringing the parcel back; the shop types the agent's return code. */
-  returning: z.boolean(),
-  /** Staff asked the shop to deliver this sub-order itself (Lead's call 9). */
-  switchRequest: z
-    .object({ id: Uuid, reasonCode: z.enum(DELIVERY_SWITCH_REASONS), requestedAt: Iso, version: Version })
-    .nullable(),
-});
 /** `POST /v1/shop/orders/{code}/advance` gains `step: 'ready_for_pickup'` (agent-mode sub-orders). */
 export const SHOP_ADVANCE_STEPS = ['packed', 'ready_for_pickup', 'shipped', 'out_for_delivery'] as const;
 /** `POST /v1/shop/orders/{code}/return-received`. */
@@ -333,36 +317,6 @@ export const ShopModeRequestInput = z
   });
 
 // ── customer ──────────────────────────────────────────────────────────────────────────────────────────────────────
-
-/** Stages the customer sees (Lead's call 7): never the shop, never the agent's phone. */
-export const CUSTOMER_DELIVERY_STAGES = [
-  'finding_agent',
-  'agent_assigned',
-  'picked_up',
-  'attempt_failed',
-  'retrying',
-  'returning',
-  'delivered',
-  'returned',
-] as const;
-/** Added to the customer's order view (`delivery`) for agent-mode sub-orders. */
-export const CustomerDeliveryBlock = z.object({
-  stage: z.enum(CUSTOMER_DELIVERY_STAGES),
-  agentFirstName: z.string().nullable(),
-  vehicleType: Vehicle.nullable(),
-  failReason: z.enum(DELIVERY_FAIL_REASONS).nullable(),
-  /** Delivered by an agent and not yet rated, or rated and still editable. */
-  canRate: z.boolean(),
-  rating: z
-    .object({
-      stars: z.number().int().min(1).max(5),
-      reasons: z.array(z.enum(DELIVERY_RATING_REASONS)),
-      note: z.string().nullable(),
-      editableUntil: Iso,
-      version: Version,
-    })
-    .nullable(),
-});
 
 /**
  * `PUT /v1/me/orders/{code}/delivery-rating` (customer, own delivered agent sub-order; founder 2026-11-26). One rating
@@ -499,7 +453,16 @@ export const AgentInvitePage = z.object({
 export const AgentInviteCreated = z.object({ id: Uuid, token: z.string(), expiresAt: Iso });
 
 /** `GET /v1/admin/delivery/jobs?view=…`. */
-export const ADMIN_JOB_VIEWS = ['needs_agent', 'offered', 'active', 'failed', 'returning', 'done'] as const;
+/** `all` with `orderCode` lists the jobs of one sub-order (admin order page). */
+export const ADMIN_JOB_VIEWS = [
+  'needs_agent',
+  'offered',
+  'active',
+  'failed',
+  'returning',
+  'done',
+  'all',
+] as const;
 export const AdminJobRow = z.object({
   jobId: Uuid,
   orderCode: OrderCode,
@@ -532,6 +495,12 @@ export const AgentSuggestion = z.object({
   ratingCount: z.number().int(),
 });
 export const AdminJobDetail = AdminJobRow.extend({
+  /** The shop's pickup code is locked (5 wrong tries): only the pickup override is left. */
+  pickupLocked: z.boolean(),
+  /** The customer's delivery code is locked: only the delivery override is left. */
+  deliveryLocked: z.boolean(),
+  /** A failed job may still be retried (`delivery.max_attempts`); otherwise only return to the shop. */
+  retryAllowed: z.boolean(),
   suggestions: z.array(AgentSuggestion),
   events: z.array(
     z.object({
@@ -659,7 +628,11 @@ export const AgentPayoutInput = z
   .refine((v) => v.method !== 'other' || v.note !== undefined, { path: ['note'], message: 'NOTE_REQUIRED' });
 
 /** `POST /v1/admin/delivery/payouts/{payoutId}/reverse`: a correction is a new row with the opposite amount. */
-export const AgentPayoutReverseInput = z.object({ note: Note, idempotencyKey: IdemKey }).strict();
+/**
+ * `POST /v1/admin/delivery/payouts/{payoutId}/correct`: a correction is a new row with the opposite amount (one per
+ * payment, so the key defaults to one derived from the payment).
+ */
+export const AgentPayoutReverseInput = z.object({ note: Note, idempotencyKey: IdemKey.optional() }).strict();
 
 /** Staff rows (`GET /v1/admin/delivery/payouts?agentId&from&to&format=json|csv`). */
 export const AgentPayoutRow = z.object({
@@ -674,7 +647,8 @@ export const AgentPayoutRow = z.object({
   reference: z.string().nullable(),
   note: z.string().nullable(),
   reversesId: Uuid.nullable(),
-  reversed: z.boolean(),
+  /** A reversing row exists for this payment. */
+  corrected: z.boolean(),
   recordedByName: z.string().nullable(),
   createdAt: Iso,
 });
@@ -684,23 +658,36 @@ export const AgentPayoutPage = z.object({
   nextCursor: z.string().nullable(),
 });
 
-/** The agent's own payouts (`GET /v1/agent/payouts`): no staff note, no staff name. */
+/** One payout as the agent sees it: never the staff note (always null) or who recorded it. */
 export const AgentOwnPayoutRow = z.object({
   id: Uuid,
+  agentId: Uuid,
   kind: z.enum(AGENT_PAYOUT_KINDS),
   amountPaise: z.number().int(),
   periodFrom: z.string(),
   periodTo: z.string(),
   method: z.enum(AGENT_PAYOUT_METHODS),
   reference: z.string().nullable(),
+  note: z.null(),
+  reversesId: Uuid.nullable(),
+  corrected: z.boolean(),
   createdAt: Iso,
 });
-export const AgentOwnPayoutPage = z.object({
-  items: z.array(AgentOwnPayoutRow),
+/** `GET /v1/agent/me/earnings`: the agent's recorded payouts and delivered jobs (all time). */
+export const AgentEarnings = z.object({
+  payouts: z.array(AgentOwnPayoutRow),
   totalPaise: z.number().int(),
+  deliveredJobs: z.number().int(),
 });
 
-/** `GET /v1/admin/delivery/agents/{agentId}/delivered-count?from&to` (IST days): a helper for working out pay. */
+/** `GET /v1/admin/delivery/payouts/summary?from&to` (IST days): delivered jobs and net paid per agent in scope. */
+export const AgentPayoutSummary = z.object({
+  items: z.array(
+    z.object({ agentId: Uuid, name: z.string(), delivered: z.number().int(), paidPaise: z.number().int() }),
+  ),
+});
+
+/** `GET /v1/admin/delivery/payouts/delivered-count?agentId&from&to` (IST days): a helper for working out pay. */
 export const AgentDeliveredCount = z.object({
   agentId: Uuid,
   from: z.string(),
@@ -709,3 +696,5 @@ export const AgentDeliveredCount = z.object({
   failedAttempts: z.number().int(),
   paidPaise: z.number().int(),
 });
+
+export { CUSTOMER_DELIVERY_STAGES, CustomerDeliveryBlock, ShopOrderDelivery };

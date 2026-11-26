@@ -5,6 +5,7 @@
  * screens (dynamic import), never by shop pages or demo builds.
  */
 import { z } from 'zod';
+import { ShopOrderDelivery } from './delivery/views';
 
 // ── Shop portal (/v1/shop/*) ──────────────────────────────────────────────────────────────────────────────────
 
@@ -40,6 +41,10 @@ export const ShopOrder = z.object({
   givenUpReason: z.string().nullable().optional(),
   /** Active orders: the delivery code was entered wrongly too often (server state; support takes over). */
   deliveryLocked: z.boolean().optional(),
+  /** Who delivers (spec 24); optional so older API answers still parse. */
+  deliveryMode: z.enum(['agent', 'shop']).optional(),
+  /** Agent-mode orders: pickup code, agent, return, switch request (spec 24). */
+  delivery: ShopOrderDelivery.nullable().optional(),
 });
 export type ShopOrderDto = z.infer<typeof ShopOrder>;
 

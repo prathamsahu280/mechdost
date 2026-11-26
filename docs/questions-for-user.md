@@ -505,3 +505,6 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
 - **Q-USAGE-3 (2026-11-26, Usage & limits, Input, optional):** for exact R2 operation counts, create a Cloudflare API
   token with Account Analytics: Read and set `CLOUDFLARE_ANALYTICS_TOKEN` (`deploy/set-env.sh`). **Default
   meanwhile:** MechDost's own estimate, labelled "Estimated".
+
+- **Q-DA5 (2026-11-27) · Delivery agent help number.** Should agents' **Help** button call a per-city number staff can
+  edit (like roadside SOS), or the company support line? **Default meanwhile:** company support line (7978776551).

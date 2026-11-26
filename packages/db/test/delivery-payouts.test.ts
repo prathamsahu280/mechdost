@@ -8,7 +8,7 @@ import { eq, sql } from 'drizzle-orm';
 import {
   agentDeliveredCount,
   listAgentPayouts,
-  listOwnPayouts,
+  agentEarnings,
   recordAgentPayout,
   reverseAgentPayout,
 } from '../src/repo';
@@ -86,7 +86,7 @@ describe('manual agent payouts', () => {
     ).rejects.toThrow();
     const page = await listAgentPayouts(w.t(), { scope: { all: true }, agentId: A.agentId, limit: 50 });
     expect(page.totalPaise).toBe(0);
-    expect(page.items.find((i) => i.id === p.id)?.reversed).toBe(true);
+    expect(page.items.find((i) => i.id === p.id)?.corrected).toBe(true);
   });
 
   it('staff of another city get 404; the agent sees only their own rows without notes or staff names', async () => {
@@ -111,11 +111,11 @@ describe('manual agent payouts', () => {
       limit: 50,
     });
     expect(other.items).toEqual([]);
-    const own = await listOwnPayouts(w.t(), A.userId);
-    expect(own.items).toHaveLength(1);
+    const own = await agentEarnings(w.t(), A.userId);
+    expect(own.payouts).toHaveLength(1);
     expect(own.totalPaise).toBe(120_000);
-    expect(Object.keys(own.items[0]!)).not.toContain('note');
-    expect(Object.keys(own.items[0]!)).not.toContain('recordedByName');
+    expect(own.payouts[0]!.note).toBeNull();
+    expect(Object.keys(own.payouts[0]!)).not.toContain('recordedByName');
   });
 
   it('counts delivered jobs in an IST period to help staff work out pay', async () => {

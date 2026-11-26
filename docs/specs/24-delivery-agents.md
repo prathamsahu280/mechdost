@@ -227,3 +227,26 @@ Source and reason code `delivery_returned`. Customer's fault (refused, or unreac
 - Submitting the two WhatsApp templates to Meta.
 - Document retention purge job (the setting exists; no job deletes anything).
 - Reroute to another shop after a shop declines a switch (staff cancel with refund, or assign an agent).
+
+## 16. Web contract gaps answered (backend, 2026-11-27)
+
+The web stream listed gaps G1–G8 (its branch, § Web screens). Backend answers, following the web's paths where reasonable:
+
+- **G1** Email invite button → `/partners/delivery-invite/{token}`. The WhatsApp invite has no link (token-free; the
+  join page finds the invite by the OTP-proven phone).
+- **G2** `ShopOrder` carries `deliveryMode?` and `delivery?: ShopOrderDelivery | null`; `TrackedOrder` (customer order)
+  carries `delivery?: CustomerDeliveryBlock | null`. Both blocks live in `@mechdost/shared/delivery/views` (small
+  module; re-exported from `delivery/api`).
+- **G3** `ApplicationStatusDto.kind` accepts `delivery_agent`. `GET /admin/delivery/applications` rows carry `code,
+name, cityCode, vehicleType, status, reasonCode, createdAt` (phone masked).
+- **G4** `GET /admin/delivery/jobs?view=all&orderCode=MD-…-N` lists the jobs of one sub-order (`cursor` is an alias of
+  `before`).
+- **G5** `PUT /me/orders/{code}/delivery-rating`; `GET /agent/me/earnings` → `AgentEarnings`; `GET|POST
+/admin/delivery/payouts`; `POST /admin/delivery/payouts/{id}/correct` (`{ note }`, key optional);
+  `GET /admin/delivery/payouts/summary?from&to` → `AgentPayoutSummary`. Rows carry `corrected`. Agent profile fields
+  are `ratingAvgX10` (average × 10, integer) and `ratingCount`, not `ratingAvg`.
+- **G6** Typed client events `delivery_*` in `packages/shared/src/delivery/client-events.ts` (merged into
+  `CLIENT_EVENT_SCHEMAS`; codes and booleans only).
+- **G7** `AdminJobDetail` has `pickupLocked`, `deliveryLocked`, `retryAllowed`.
+- **G8** Not built: the help button stays the company support number. A per-city editable phone needs a text setting
+  (the operational settings registry is integer/boolean only); queued as Q-DA5.

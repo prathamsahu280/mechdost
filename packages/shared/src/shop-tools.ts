@@ -111,7 +111,7 @@ export const ApplicationStatusBody = z
   .strict();
 export const ApplicationStatusDto = z.object({
   code: z.string(),
-  kind: z.enum(['seller', 'garage', 'mechanic']),
+  kind: z.enum(['seller', 'garage', 'mechanic', 'delivery_agent']),
   stage: z.enum(['new', 'in_review', 'approved', 'rejected']),
   /** When the application was last updated (UTC); no reviewer, note or reason is ever shown here. */
   updatedAt: z.string(),

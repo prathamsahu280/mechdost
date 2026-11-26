@@ -35,6 +35,7 @@ import {
   AgentPayoutReverseInput,
   AgentPayoutRow,
   AgentOwnPayoutRow,
+  AgentEarnings,
 } from '../src/delivery/api';
 import {
   DELIVERY_JOB_STATES,
@@ -428,13 +429,16 @@ describe('manual agent payouts (founder 2026-11-26: manual now, automatic later)
       AgentPayoutReverseInput.safeParse({ note: 'Wrong agent', idempotencyKey: 'rev-0001-abcdefgh' }).success,
     ).toBe(true);
     expect(AgentPayoutReverseInput.safeParse({ idempotencyKey: 'rev-0001-abcdefgh' }).success).toBe(false);
+    expect(AgentPayoutReverseInput.safeParse({ note: 'Wrong amount' }).success).toBe(true);
   });
   it('the agent sees their own payouts without staff notes or who recorded them', () => {
     const keys = Object.keys(AgentOwnPayoutRow.shape);
     expect(keys).not.toContain('recordedBy');
-    expect(keys).not.toContain('note');
+    expect(keys).not.toContain('recordedByName');
+    expect(AgentOwnPayoutRow.shape.note.safeParse('staff note').success).toBe(false);
+    expect(Object.keys(AgentEarnings.shape)).toEqual(expect.arrayContaining(['payouts', 'deliveredJobs']));
     expect(Object.keys(AgentPayoutRow.shape)).toEqual(
-      expect.arrayContaining(['kind', 'reversesId', 'recordedByName']),
+      expect.arrayContaining(['kind', 'reversesId', 'corrected', 'recordedByName']),
     );
   });
 });

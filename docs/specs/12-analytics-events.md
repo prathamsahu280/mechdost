@@ -326,3 +326,12 @@ names, phones, addresses or document numbers): `delivery_agent_applied`, `delive
 `delivery_low_rating_alert`, `delivery_payout_recorded`, `delivery_switch_requested`, `delivery_switch_decided`,
 `shop_delivery_mode_requested`, `shop_delivery_mode_decided`. `order_fulfilment_step` gains step `ready_for_pickup`.
 Client events for the portal screens come with the screens.
+
+### Delivery agents: browser events (2026-11-27)
+
+`delivery_apply_submitted`, `delivery_invite_opened`, `delivery_invite_accepted`, `delivery_online_toggled`,
+`delivery_offer_viewed`, `delivery_offer_answered`, `delivery_job_step`, `delivery_photo_taken`,
+`delivery_contact_tapped`, `delivery_document_submitted`, `delivery_shop_ready_marked`,
+`delivery_shop_return_confirmed`, `delivery_shop_switch_answered`, `delivery_shop_mode_requested`,
+`delivery_rating_submitted`, `delivery_admin_action` (schemas: `packages/shared/src/delivery/client-events.ts`).
+Codes, counts and booleans only; never a typed code, phone, name or address.

@@ -175,7 +175,7 @@ describe('role-leak matrix', () => {
     expect((await post('/admin/delivery/payouts', payout, ops.headers)).status).toBe(403);
     expect((await post('/admin/delivery/payouts', payout, finance.headers)).status).toBe(200);
     expect((await get('/admin/delivery/jobs', finance.headers)).status).toBe(403);
-    const own = (await (await get('/agent/payouts', A.headers)).json()) as { totalPaise: number };
+    const own = (await (await get('/agent/me/earnings', A.headers)).json()) as { totalPaise: number };
     expect(own.totalPaise).toBe(50_000);
   });
 
