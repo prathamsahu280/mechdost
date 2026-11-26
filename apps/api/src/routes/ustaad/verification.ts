@@ -14,6 +14,7 @@ import {
   requestUstaadVouch,
   resetUstaadOnboarding,
   saveUstaadOnboarding,
+  ustaadMyCard,
   ustaadTutorial,
   ustaadVerificationStatus,
   withdrawUstaadVerification,
@@ -21,6 +22,7 @@ import {
 import {
   AttestationRequestDto,
   AttestationViewDto,
+  MyCardDto,
   OnboardingEventDto,
   OnboardingViewDto,
   RequestVerificationDto,
@@ -78,6 +80,14 @@ const r = {
     summary: 'Tutorial cards and coach-marks in my language (narration or speechSynthesis fallback)',
     request: { query: z.object({ lang: z.enum(['hi', 'en']).optional() }) },
     responses: { 200: json(TutorialDto, 'Tutorial'), ...errorResponses },
+  }),
+  card: createRoute({
+    method: 'get',
+    path: '/ustaad/me/card',
+    tags,
+    security: sec,
+    summary: 'My card: counters, badges, the level ladder with qualified followers (never a phone number)',
+    responses: { 200: json(MyCardDto, 'Card'), ...errorResponses },
   }),
   status: createRoute({
     method: 'get',
@@ -161,6 +171,7 @@ export function ustaadVerificationRoutes(deps: AppDeps) {
   const paths = [
     '/ustaad/onboarding',
     '/ustaad/onboarding/*',
+    '/ustaad/me/card',
     '/ustaad/tutorial',
     '/ustaad/verification-status',
     '/ustaad/verifications',
@@ -170,7 +181,12 @@ export function ustaadVerificationRoutes(deps: AppDeps) {
     '/ustaad/vouches/*',
   ];
   for (const p of paths) app.use(p, requireUstaadMember(deps));
-  for (const p of ['/ustaad/onboarding', '/ustaad/tutorial', '/ustaad/verification-status'])
+  for (const p of [
+    '/ustaad/onboarding',
+    '/ustaad/tutorial',
+    '/ustaad/verification-status',
+    '/ustaad/me/card',
+  ])
     app.on('GET', p, rateLimit(deps.rateLimiter, USTAAD_RATE_RULES.memberReads, userKey));
   app.on(['POST', 'PUT'], paths, rateLimit(deps.rateLimiter, USTAAD_RATE_RULES.membershipWrites, userKey));
   app.on(
@@ -191,6 +207,10 @@ export function ustaadVerificationRoutes(deps: AppDeps) {
       const member = c.get('ustaadMember');
       const lang = c.req.valid('query').lang ?? member?.lang ?? 'hi';
       return c.json(await ustaadTutorial(deps.db, lang), 200);
+    })
+    .openapi(r.card, async (c) => {
+      const lang = c.get('ustaadMember')?.lang ?? 'hi';
+      return c.json(await ustaadMyCard(deps.db, c.get('auth').user.id, lang), 200);
     })
     .openapi(r.status, async (c) =>
       c.json({ verification: await ustaadVerificationStatus(deps.db, actor(c)) }, 200),
