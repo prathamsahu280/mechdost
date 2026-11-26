@@ -21,12 +21,10 @@ type ErrorAt = 'businessId' | 'location' | 'form';
 
 const FIELD_ERRORS: Record<string, ErrorAt> = {
   ATTEST_BUSINESS_ID: 'businessId',
-  ATTEST_PHOTO: 'location',
   location_required: 'location',
 };
 const KNOWN = [
   'ATTEST_BUSINESS_ID',
-  'ATTEST_PHOTO',
   'ATTEST_QUARTER_CAP',
   'location_required',
   'TURNSTILE_FAILED',
@@ -46,7 +44,7 @@ export function AttestForm({ token }: { token: string }) {
   const locale = useLocale();
   const [step, setStep] = useState<Step>('loading');
   const [page, setPage] = useState<AttestPage | null>(null);
-  const [outcome, setOutcome] = useState<'confirmed' | 'declined' | null>(null);
+  const [outcome, setOutcome] = useState<'received' | 'declined' | null>(null);
   const [shop, setShop] = useState<Shop | null>(null);
   const [loc, setLoc] = useState<LocState>('idle');
   const [businessId, setBusinessId] = useState('');

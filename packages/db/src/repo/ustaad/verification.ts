@@ -725,6 +725,10 @@ export async function confirmUstaadAttestation(
         'ustaad.verify.attest_per_owner_quarter',
         'ustaad.verify.attest_photo_max_m',
       ]);
+      // Serialise confirmations of one workshop so the quarter cap cannot be raced (security review 2026-11-26).
+      await tx.execute(
+        sql`select pg_advisory_xact_lock(hashtext(${`ustaad_owner_workshop:${a.workshopId}`}))`,
+      );
       const [q] = await tx
         .select({ n: count() })
         .from(ustaadAttestations)

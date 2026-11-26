@@ -21,7 +21,7 @@ describe('nameSkeleton (TR39-style, SR-4)', () => {
       'Месh Dоst', // Cyrillic М, е, с, о
       'MECHDOST',
       'Ｍｅｃｈ Ｄｏｓｔ', // full-width (NFKC)
-      'Mech​Dost', // zero-width space
+      'Mech\u200bDost', // zero-width space
       'Mêch Döst', // accents
       'Mech D0st', // digit zero
     ])
@@ -35,7 +35,7 @@ describe('nameSkeleton (TR39-style, SR-4)', () => {
 
   it('folds Devanagari nukta and joiners so "मेकदोस्त" variants match', () => {
     expect(nameSkeleton('मेक दोस्त')).toBe(nameSkeleton('मेकदोस्त'));
-    expect(nameSkeleton('मेक‍दोस्त')).toBe(nameSkeleton('मेकदोस्त'));
+    expect(nameSkeleton('मेक\u200dदोस्त')).toBe(nameSkeleton('मेकदोस्त'));
     expect(nameSkeleton('ज़')).toBe(nameSkeleton('ज'));
   });
 
@@ -74,7 +74,7 @@ describe('displayNameRefusal', () => {
   it('refuses names without letters and invisible control characters', () => {
     expect(displayNameRefusal('1234')).toBe('NAME_FORMAT');
     expect(displayNameRefusal('---')).toBe('NAME_FORMAT');
-    expect(displayNameRefusal('Raju‮')).toBe('NAME_FORMAT');
+    expect(displayNameRefusal('Raju\u202e')).toBe('NAME_FORMAT');
   });
 
   it('allows Latin and Devanagari names with a garage number', () => {

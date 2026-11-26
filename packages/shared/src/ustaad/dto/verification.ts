@@ -244,5 +244,5 @@ export const VerificationOpenCountDto = z.object({
 export type VerificationOpenCount = z.infer<typeof VerificationOpenCountDto>;
 
 /** Public attest submit answer. */
-export const AttestOutcomeDto = z.object({ outcome: z.enum(['confirmed', 'declined']) });
+export const AttestOutcomeDto = z.object({ outcome: z.enum(['received', 'declined']) });
 export type AttestOutcome = z.infer<typeof AttestOutcomeDto>;

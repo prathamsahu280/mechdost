@@ -2223,3 +2223,9 @@ Spec `docs/specs/23-ustaad-network.md`, design `docs/superpowers/specs/2026-11-2
   `in_review` re-check row; staff then keep or revoke.
 - **Worker:** these jobs run in the existing hourly worker timer (no pg-boss queue for Ustaad yet); every step is
   idempotent.
+- **Owner link hardening (lead, security review 2026-11-26):** the distance check is never revealed to the public
+  caller (every confirmation answers "received"; a failure is recorded for staff and the link closes after
+  `verify.attest_distance_tries`, default 2); the quarter cap counts per owner phone **and** per GSTIN/Udyam (keyed
+  hash kept after the evidence purge) under transaction advisory locks, and the workshop-portal confirm locks per
+  workshop. Residual: until the link closes, a re-opened page still loads after one failed try (the honest owner sees
+  "received" and has no reason to retry); staff see every attempt.

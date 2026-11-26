@@ -1,6 +1,6 @@
 {
-  "id": "9ad9d7fe-27db-4a25-93c5-4cc7eccfd599",
-  "prevId": "8c8f7cc9-b3a3-4e82-a14f-19a0f18be699",
+  "id": "de77fb97-2fac-45e2-b80e-9c31af019589",
+  "prevId": "39edb60e-a794-4483-b638-57ffbfb22f47",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -24920,6 +24920,19 @@
           "primaryKey": false,
           "notNull": false
         },
+        "owner_distance_failures": {
+          "name": "owner_distance_failures",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "owner_business_hash": {
+          "name": "owner_business_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "evidence_purged_at": {
           "name": "evidence_purged_at",
           "type": "timestamp with time zone",
@@ -25069,6 +25082,27 @@
           "where": "\"ustaad_attestations\".\"status\" = 'requested'",
           "concurrently": false
         },
+        "ustaad_attestations_owner_business_hash_decided_at_index": {
+          "name": "ustaad_attestations_owner_business_hash_decided_at_index",
+          "columns": [
+            {
+              "expression": "owner_business_hash",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "decided_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
         "ustaad_attestations_purge_idx": {
           "name": "ustaad_attestations_purge_idx",
           "columns": [
@@ -25159,6 +25193,10 @@
         "ustaad_attestations_owner_distance": {
           "name": "ustaad_attestations_owner_distance",
           "value": "\"ustaad_attestations\".\"owner_distance_m\" is null or \"ustaad_attestations\".\"owner_distance_m\" >= 0"
+        },
+        "ustaad_attestations_distance_failures": {
+          "name": "ustaad_attestations_distance_failures",
+          "value": "\"ustaad_attestations\".\"owner_distance_failures\" between 0 and 20"
         },
         "ustaad_attestations_purged_clear": {
           "name": "ustaad_attestations_purged_clear",

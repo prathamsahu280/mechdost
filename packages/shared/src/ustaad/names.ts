@@ -117,7 +117,7 @@ export function isReservedName(name: string, reservedSkeletons: ReadonlySet<stri
   for (const r of reservedSkeletons) if (r.length >= SUBSTRING_MIN && whole.includes(r)) return true;
   const words = name
     .normalize('NFKC')
-    .split(/[^\p{L}\p{N}\p{M}‌‍$|]+/u)
+    .split(/[^\p{L}\p{N}\p{M}\u200c\u200d$|]+/u)
     .map(nameSkeleton)
     .filter((w) => w.length > 0);
   for (let i = 0; i < words.length; i += 1) {
@@ -133,7 +133,7 @@ export function isReservedName(name: string, reservedSkeletons: ReadonlySet<stri
 export type DisplayNameRefusal = 'NAME_CONTACT' | 'NAME_FORMAT';
 
 /** Bidi overrides and other invisible format characters; ZWJ/ZWNJ stay allowed (Devanagari conjuncts use them). */
-const HIDDEN = /[\p{Cc}​‎‏‪-‮⁠-⁤⁦-⁩﻿]/u;
+const HIDDEN = /[\p{Cc}\u200b\u200e\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff]/u;
 const LINK = /(?:https?:|www\.|\.(?:com|in|net|org|co|io|me|app|xyz|info|link)\b)/iu;
 
 /**

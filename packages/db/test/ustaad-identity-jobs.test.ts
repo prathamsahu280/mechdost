@@ -292,7 +292,7 @@ describe('badge awards (§ 9.3)', () => {
 });
 
 describe('non-partner owner link (SR-6)', () => {
-  async function setup(opts: { pin?: boolean } = {}) {
+  async function setup(opts: { pin?: boolean; phone?: string } = {}) {
     const m = await mkMember({ verified: false, level: 'ustaad_pending' });
     await requestUstaadVerification(t(), { userId: m.userId }, { proofs: ['owner'], requestedLevel: 'naya' });
     if (opts.pin !== false)
@@ -307,7 +307,7 @@ describe('non-partner owner link (SR-6)', () => {
       ring,
       { userId: m.userId },
       {
-        ownerPhone: '+919876500001',
+        ownerPhone: opts.phone ?? '+919876500001',
         sinceYear: 2019,
       },
     );
@@ -332,14 +332,14 @@ describe('non-partner owner link (SR-6)', () => {
     // Opening the page twice does not use the link up.
     await ustaadAttestPage(t(), link.token);
     expect(
-      await decideUstaadAttestByToken(t(), link.token, {
+      await decideUstaadAttestByToken(t(), ring, link.token, {
         decision: 'confirmed',
         businessId: GSTIN,
         shop: near,
       }),
-    ).toEqual({ outcome: 'confirmed' });
+    ).toEqual({ outcome: 'received' });
     await expectCode(ustaadAttestPage(t(), link.token), 'NOT_FOUND');
-    await expectCode(decideUstaadAttestByToken(t(), link.token, { decision: 'declined' }), 'NOT_FOUND');
+    await expectCode(decideUstaadAttestByToken(t(), ring, link.token, { decision: 'declined' }), 'NOT_FOUND');
     const [v] = await db
       .select()
       .from(s.ustaadVerifications)
@@ -360,34 +360,54 @@ describe('non-partner owner link (SR-6)', () => {
     expect((await ustaadAttestPage(t(), second.token)).sinceYear).toBe(2019);
   });
 
-  it('a confirmation needs a GSTIN/Udyam number and the owner within 200 m of a pin the member allowed', async () => {
+  it('a confirmation needs a GSTIN/Udyam number; a failed distance check looks the same to the caller and uses up the link (no location oracle)', async () => {
+    const far = { lat: 21.27, lng: 81.65, accuracyM: 10 };
     const { a } = await setup();
     const { token } = await issueUstaadOwnerAttestLink(t(), ring, staffActor(), { id: a.id });
     await expectCode(
-      decideUstaadAttestByToken(t(), token, { decision: 'confirmed', businessId: 'ABC', shop: near }),
+      decideUstaadAttestByToken(t(), ring, token, { decision: 'confirmed', businessId: 'ABC', shop: near }),
       'ATTEST_BUSINESS_ID',
     );
-    await expectCode(
-      decideUstaadAttestByToken(t(), token, {
+    expect(
+      await decideUstaadAttestByToken(t(), ring, token, {
         decision: 'confirmed',
         businessId: GSTIN,
-        shop: { lat: 21.27, lng: 81.65, accuracyM: 10 },
+        shop: far,
       }),
-      'ATTEST_PHOTO',
+    ).toEqual({ outcome: 'received' });
+    let [row] = await db.select().from(s.ustaadAttestations).where(eq(s.ustaadAttestations.id, a.id));
+    expect(row).toMatchObject({ status: 'requested', ownerDistanceFailures: 1 });
+    expect(row?.ownerDistanceM).toBeGreaterThan(200);
+    // The second failure (setting `verify.attest_distance_tries`, default 2) closes the link; staff decide.
+    expect(
+      await decideUstaadAttestByToken(t(), ring, token, {
+        decision: 'confirmed',
+        businessId: GSTIN,
+        shop: far,
+      }),
+    ).toEqual({ outcome: 'received' });
+    [row] = await db.select().from(s.ustaadAttestations).where(eq(s.ustaadAttestations.id, a.id));
+    expect(row).toMatchObject({ status: 'requested', ownerDistanceFailures: 2, tokenHash: null });
+    await expectCode(ustaadAttestPage(t(), token), 'NOT_FOUND');
+    await expectCode(
+      decideUstaadAttestByToken(t(), ring, token, { decision: 'confirmed', businessId: GSTIN, shop: near }),
+      'NOT_FOUND',
     );
-    // A refused confirmation keeps the link open; a decline then works.
-    expect(await decideUstaadAttestByToken(t(), token, { decision: 'declined' })).toEqual({
-      outcome: 'declined',
-    });
+    // No pin the member allowed for verification: counted as a failed check, same answer.
     const { a: noPin } = await setup({ pin: false });
     const l2 = await issueUstaadOwnerAttestLink(t(), ring, staffActor(), { id: noPin.id });
-    await expectCode(
-      decideUstaadAttestByToken(t(), l2.token, { decision: 'confirmed', businessId: GSTIN, shop: near }),
-      'ATTEST_PHOTO',
-    );
+    expect(
+      await decideUstaadAttestByToken(t(), ring, l2.token, {
+        decision: 'confirmed',
+        businessId: GSTIN,
+        shop: near,
+      }),
+    ).toEqual({ outcome: 'received' });
+    const [np] = await db.select().from(s.ustaadAttestations).where(eq(s.ustaadAttestations.id, noPin.id));
+    expect(np).toMatchObject({ status: 'requested', ownerDistanceFailures: 1, ownerDistanceM: null });
   });
 
-  it('the same owner phone is capped per quarter; the member cannot name their own phone', async () => {
+  it('quarter cap per owner phone and per GSTIN/Udyam holds when two confirmations race; the member cannot name their own phone', async () => {
     await saveUstaadSetting(t(), {
       key: 'ustaad.verify.attest_per_owner_quarter',
       value: 1,
@@ -395,11 +415,25 @@ describe('non-partner owner link (SR-6)', () => {
       staffUserId: f.staff,
       actorRole: 'super_admin',
     });
-    const one = await setup();
+    const phone = '+919876500077';
+    const one = await setup({ phone });
+    const two = await setup({ phone });
     const l1 = await issueUstaadOwnerAttestLink(t(), ring, staffActor(), { id: one.a.id });
-    await expect(
-      decideUstaadAttestByToken(t(), l1.token, { decision: 'confirmed', businessId: GSTIN, shop: near }),
-    ).rejects.toMatchObject({ code: 'ATTEST_QUARTER_CAP' });
+    const l2 = await issueUstaadOwnerAttestLink(t(), ring, staffActor(), { id: two.a.id });
+    const body = { decision: 'confirmed' as const, businessId: '22BBBBB1111B1Z5', shop: near };
+    const results = await Promise.allSettled([
+      decideUstaadAttestByToken(t(), ring, l1.token, body),
+      decideUstaadAttestByToken(t(), ring, l2.token, body),
+    ]);
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+    const refused = results.find((r) => r.status === 'rejected');
+    expect(refused?.status === 'rejected' ? refused.reason : null).toMatchObject({
+      code: 'ATTEST_QUARTER_CAP',
+    });
+    // Another phone, the same business number: capped too.
+    const three = await setup({ phone: '+919876500088' });
+    const l3 = await issueUstaadOwnerAttestLink(t(), ring, staffActor(), { id: three.a.id });
+    await expectCode(decideUstaadAttestByToken(t(), ring, l3.token, body), 'ATTEST_QUARTER_CAP');
     const self = await mkMember({ verified: false, level: 'ustaad_pending' });
     await requestUstaadVerification(
       t(),

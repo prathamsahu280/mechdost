@@ -117,6 +117,13 @@ export const ustaadAttestations = pgTable(
      * member's garage pin. Only the distance is kept, never the owner's position.
      */
     ownerDistanceM: integer(),
+    /**
+     * Failed distance checks through the link (security review: no location oracle). The caller always gets the same
+     * answer; at `verify.attest_distance_tries` failures the token is cleared and staff decide.
+     */
+    ownerDistanceFailures: smallint().notNull().default(0),
+    /** Keyed blind index of the GSTIN/Udyam number: the per-business quarter cap survives the evidence purge. */
+    ownerBusinessHash: text(),
     /** Evidence (owner phone, GSTIN/Udyam) cleared after `verify.evidence_retention_days`; the hash stays for the cap. */
     evidencePurgedAt: ts(),
     version: version(),
@@ -144,6 +151,8 @@ export const ustaadAttestations = pgTable(
       sql`${t.workshopId} is not null or ${t.ownerPhoneHash} is not null`,
     ),
     check('ustaad_attestations_owner_distance', sql`${t.ownerDistanceM} is null or ${t.ownerDistanceM} >= 0`),
+    check('ustaad_attestations_distance_failures', sql`${t.ownerDistanceFailures} between 0 and 20`),
+    index().on(t.ownerBusinessHash, t.decidedAt),
     check(
       'ustaad_attestations_purged_clear',
       sql`${t.evidencePurgedAt} is null or (${t.ownerPhoneEnc} is null and ${t.ownerBusinessId} is null)`,

@@ -38,9 +38,9 @@ describe('Ustaad DTOs are strict (SR-5, no mass assignment)', () => {
       expect(words).not.toContain(banned);
   });
   it('PATCH /ustaad/me refuses official: true (SR-5)', () => {
-    expect(PatchMeDto.safeParse({ displayName: 'Ramesh' }).success).toBe(true);
-    expect(PatchMeDto.safeParse({ official: true }).success).toBe(false);
-    expect(PatchMeDto.safeParse({ phone: '+919999999999' }).success).toBe(false);
+    expect(PatchMeDto.safeParse({ expectedVersion: 1, displayName: 'Ramesh' }).success).toBe(true);
+    expect(PatchMeDto.safeParse({ expectedVersion: 1, official: true }).success).toBe(false);
+    expect(PatchMeDto.safeParse({ expectedVersion: 1, phone: '+919999999999' }).success).toBe(false);
   });
   it('the consent purposes are the ten of spec 23 § 13', () => {
     expect(USTAAD_CONSENT_PURPOSES).toEqual([

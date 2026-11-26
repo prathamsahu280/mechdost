@@ -297,106 +297,189 @@ export type AttestDecision =
   | { decision: 'declined' }
   | { decision: 'confirmed'; businessId: string; shop: { lat: number; lng: number; accuracyM: number } };
 
+/** What the public caller learns: a confirmation is always "received" (never whether the distance check passed). */
+export type AttestPublicOutcome = 'received' | 'declined';
+
+const BUSINESS_PURPOSE = 'ustaad_owner_business';
+
+/** Serialise every confirmation of one owner phone or business number (quarter cap; no count-then-confirm race). */
+async function lockOwnerKey(tx: Tx, key: string): Promise<void> {
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${key}))`);
+}
+
 /**
- * Public `POST /ustaad/attest/{token}` (the API checked Turnstile and the IP limit). Consumes the token with one
- * conditional UPDATE (status, token hash, version, expiry); a second submit is the same 404. A confirmation needs a
- * GSTIN/Udyam number, the owner within `verify.attest_photo_max_m` of the member's garage pin and the owner under the
- * quarter cap (SR-6); a refused confirmation keeps the link open so the owner can fix it.
+ * Public `POST /ustaad/attest/{token}` (the API checked Turnstile and the IP limit). A malformed GSTIN/Udyam number is
+ * refused (`ATTEST_BUSINESS_ID`, a format check only). Then, under transaction-scoped advisory locks on the owner's
+ * phone hash and business hash, the per-quarter caps for both are counted (`ATTEST_QUARTER_CAP`). The distance check
+ * (owner within `verify.attest_photo_max_m` of a pin the member allowed for verification) never answers differently
+ * (security review: no location oracle): a failure records the distance and the attempt for staff and answers
+ * "received"; at `verify.attest_distance_tries` failures the token is cleared. A pass confirms with one conditional
+ * UPDATE (status, token hash, version) and also answers "received". A second submit after the link closed is 404.
  */
 export async function decideUstaadAttestByToken(
   db: Tx,
+  keyring: Keyring,
   token: string,
   input: AttestDecision,
-): Promise<{ outcome: 'confirmed' | 'declined' }> {
+): Promise<{ outcome: AttestPublicOutcome }> {
   return db.transaction(async (tx) => {
     const found = await openByToken(tx, token);
     if (!found) throw new NotFoundError('Not found');
     const a = found.a;
     ustaadAttestationMachine.assert('requested', input.decision, 'workshop');
-    let distanceM: number | null = null;
-    let businessId: string | null = null;
-    if (input.decision === 'confirmed') {
-      businessId = input.businessId.trim().toUpperCase();
-      const s = await readUstaadSettingValues(tx, [
-        'ustaad.verify.attest_per_owner_quarter',
-        'ustaad.verify.attest_photo_max_m',
-      ]);
-      const [pin] = await tx
-        .select({
-          m: sql<number>`round(ST_Distance(${ustaadLocations.location}, ST_SetSRID(ST_MakePoint(${input.shop.lng}::float8, ${input.shop.lat}::float8), 4326)::geography))::int`,
-        })
-        .from(ustaadLocations)
-        .where(
-          and(
-            eq(ustaadLocations.memberId, a.memberId),
-            eq(ustaadLocations.useForVerify, true),
-            eq(ustaadLocations.hidden, false),
-          ),
-        )
-        .limit(1);
-      distanceM = pin ? Number(pin.m) : null;
+    const cas = and(
+      eq(ustaadAttestations.id, a.id),
+      eq(ustaadAttestations.status, 'requested'),
+      eq(ustaadAttestations.version, a.version),
+      eq(ustaadAttestations.tokenHash, tokenHash(token)),
+    );
+    if (input.decision === 'declined') {
+      const [row] = await tx
+        .update(ustaadAttestations)
+        .set({ status: 'declined', decidedAt: new Date(), tokenHash: null })
+        .where(cas)
+        .returning({ id: ustaadAttestations.id });
+      if (!row) throw new NotFoundError('Not found');
+      await decidedEvent(tx, a, found.cityId, 'declined');
+      return { outcome: 'declined' };
+    }
+
+    const businessId = input.businessId.trim().toUpperCase();
+    if (!BUSINESS_ID_RE.test(businessId))
+      throw new ValidationError('Enter a valid GSTIN or Udyam number', 'ATTEST_BUSINESS_ID');
+    const businessHash = blindIndex(businessId, keyring, BUSINESS_PURPOSE);
+    const s = await readUstaadSettingValues(tx, [
+      'ustaad.verify.attest_per_owner_quarter',
+      'ustaad.verify.attest_photo_max_m',
+      'ustaad.verify.attest_distance_tries',
+    ]);
+    const perQuarter = Number(s['ustaad.verify.attest_per_owner_quarter']);
+    const since = quarterStart(new Date());
+    // Locks in a fixed order (phone, then business) so two confirmations never deadlock.
+    const phoneKey = `ustaad_owner_phone:${a.ownerPhoneHash ?? a.id}`;
+    const businessKey = `ustaad_owner_business:${businessHash}`;
+    for (const key of [phoneKey, businessKey].sort()) await lockOwnerKey(tx, key);
+    const confirmedSince = async (
+      column: typeof ustaadAttestations.ownerPhoneHash | typeof ustaadAttestations.ownerBusinessHash,
+      value: string,
+    ) => {
       const [q] = await tx
         .select({ n: count() })
         .from(ustaadAttestations)
         .where(
           and(
-            eq(ustaadAttestations.ownerPhoneHash, a.ownerPhoneHash ?? ''),
+            eq(column, value),
             eq(ustaadAttestations.status, 'confirmed'),
-            gte(ustaadAttestations.decidedAt, quarterStart(new Date())),
+            gte(ustaadAttestations.decidedAt, since),
           ),
         );
-      const refusal = attestationRefusal({
-        ownerIsPartner: false,
-        businessId: BUSINESS_ID_RE.test(businessId) ? businessId : null,
-        photoDistanceM: distanceM,
-        thisQuarter: q?.n ?? 0,
-        perQuarter: Number(s['ustaad.verify.attest_per_owner_quarter']),
-        maxM: Number(s['ustaad.verify.attest_photo_max_m']),
-      });
-      if (refusal) throw new ValidationError('This confirmation cannot be accepted', refusal);
-    }
-    const [row] = await tx
-      .update(ustaadAttestations)
-      .set({
-        status: input.decision,
-        decidedAt: new Date(),
-        tokenHash: null,
-        ownerBusinessId: businessId,
-        ownerDistanceM: distanceM,
+      return q?.n ?? 0;
+    };
+    const used = Math.max(
+      a.ownerPhoneHash ? await confirmedSince(ustaadAttestations.ownerPhoneHash, a.ownerPhoneHash) : 0,
+      await confirmedSince(ustaadAttestations.ownerBusinessHash, businessHash),
+    );
+    if (used >= perQuarter)
+      throw new ValidationError('This confirmation cannot be accepted', 'ATTEST_QUARTER_CAP');
+
+    const [pin] = await tx
+      .select({
+        m: sql<number>`round(ST_Distance(${ustaadLocations.location}, ST_SetSRID(ST_MakePoint(${input.shop.lng}::float8, ${input.shop.lat}::float8), 4326)::geography))::int`,
       })
+      .from(ustaadLocations)
       .where(
         and(
-          eq(ustaadAttestations.id, a.id),
-          eq(ustaadAttestations.status, 'requested'),
-          eq(ustaadAttestations.version, a.version),
-          eq(ustaadAttestations.tokenHash, tokenHash(token)),
+          eq(ustaadLocations.memberId, a.memberId),
+          eq(ustaadLocations.useForVerify, true),
+          eq(ustaadLocations.hidden, false),
         ),
       )
-      .returning({ id: ustaadAttestations.id });
-    if (!row) throw new NotFoundError('Not found');
-    await recordUstaadEvent(
-      tx,
-      {
+      .limit(1);
+    const distanceM = pin ? Number(pin.m) : null;
+    const near =
+      attestationRefusal({
+        ownerIsPartner: false,
+        businessId,
+        photoDistanceM: distanceM,
+        thisQuarter: used,
+        perQuarter,
+        maxM: Number(s['ustaad.verify.attest_photo_max_m']),
+      }) === null;
+
+    if (!near) {
+      const failures = a.ownerDistanceFailures + 1;
+      const closes = failures >= Number(s['ustaad.verify.attest_distance_tries']);
+      const [row] = await tx
+        .update(ustaadAttestations)
+        .set({
+          ownerDistanceFailures: failures,
+          ownerDistanceM: distanceM,
+          ownerBusinessId: businessId,
+          ownerBusinessHash: businessHash,
+          ...(closes ? { tokenHash: null } : {}),
+        })
+        .where(cas)
+        .returning({ id: ustaadAttestations.id });
+      if (!row) throw new NotFoundError('Not found');
+      await recordUstaadEvent(tx, {
         entityType: 'attestation',
         entityId: a.id,
-        kind: input.decision,
+        kind: closes ? 'distance_failed_closed' : 'distance_failed',
         fromStatus: 'requested',
-        toStatus: input.decision,
+        toStatus: 'requested',
         actorId: null,
         actorRole: 'owner',
         cityId: found.cityId,
-        props: { via: 'link' },
-      },
-      {
-        name: 'ustaad_attestation_decided',
-        memberId: a.memberId,
-        userId: null,
-        props: { memberId: a.memberId, outcome: input.decision },
-      },
-    );
-    if (input.decision === 'confirmed') await ustaadMaybeToReview(tx, a.memberId);
-    return { outcome: input.decision };
+        props: { failures, has_pin: distanceM !== null },
+      });
+      return { outcome: 'received' };
+    }
+
+    const [row] = await tx
+      .update(ustaadAttestations)
+      .set({
+        status: 'confirmed',
+        decidedAt: new Date(),
+        tokenHash: null,
+        ownerBusinessId: businessId,
+        ownerBusinessHash: businessHash,
+        ownerDistanceM: distanceM,
+      })
+      .where(cas)
+      .returning({ id: ustaadAttestations.id });
+    if (!row) throw new NotFoundError('Not found');
+    await decidedEvent(tx, a, found.cityId, 'confirmed');
+    await ustaadMaybeToReview(tx, a.memberId);
+    return { outcome: 'received' };
   });
+}
+
+async function decidedEvent(
+  tx: Tx,
+  a: typeof ustaadAttestations.$inferSelect,
+  cityId: string,
+  outcome: 'confirmed' | 'declined',
+): Promise<void> {
+  await recordUstaadEvent(
+    tx,
+    {
+      entityType: 'attestation',
+      entityId: a.id,
+      kind: outcome,
+      fromStatus: 'requested',
+      toStatus: outcome,
+      actorId: null,
+      actorRole: 'owner',
+      cityId,
+      props: { via: 'link' },
+    },
+    {
+      name: 'ustaad_attestation_decided',
+      memberId: a.memberId,
+      userId: null,
+      props: { memberId: a.memberId, outcome },
+    },
+  );
 }
 
 /**

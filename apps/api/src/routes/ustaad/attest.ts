@@ -115,9 +115,11 @@ export function ustaadAttestRoutes(deps: AppDeps, access: UstaadAccessCache) {
     .openapi(r.page, async (c) => c.json(await ustaadAttestPage(deps.db, c.req.valid('param').token), 200))
     .openapi(r.submit, async (c) => {
       const b = c.req.valid('json');
+      if (!deps.keyring) throw new ApiError(503, 'UNAVAILABLE', 'Please try again later');
       await human(c, b.turnstileToken);
       const out = await decideUstaadAttestByToken(
         deps.db,
+        deps.keyring,
         c.req.valid('param').token,
         b.decision === 'declined'
           ? { decision: 'declined' }

@@ -1271,10 +1271,15 @@ reserved_names}`); a look-alike of an existing name is 409 `NAME_EXISTS`. A db t
     written to `audit_log` (`ustaad.attest_owner_phone_read`). Public `GET|POST /v1/ustaad-attest/{token}` (outside
     `/ustaad/*`, because the member gate would 404 a signed-out owner): 404 while access is `off`, 10/IP/h,
     `no-store`, `noindex`, `no-referrer`; one 404 for unknown, used, re-issued and expired tokens; GET never consumes;
-    POST (Turnstile) consumes with a conditional UPDATE on token hash + status + version. Confirm needs a GSTIN/Udyam
-    (`ATTEST_BUSINESS_ID`), the owner's browser position within `verify.attest_photo_max_m` of the member's garage pin
-    **only when the member allowed "use pin for verification"** (`ATTEST_PHOTO`; only the distance is stored,
-    `owner_distance_m`) and the per-owner quarter cap (`ATTEST_QUARTER_CAP`). Web page `/ustaad-attest/[token]` (same
+    POST (Turnstile) consumes with a conditional UPDATE on token hash + status + version. Confirm needs a well-formed
+    GSTIN/Udyam (`ATTEST_BUSINESS_ID`) and passes the quarter caps **per owner phone and per business number**
+    (keyed hashes, counted under `pg_advisory_xact_lock(hashtext(…))` so two confirmations cannot race;
+    `ATTEST_QUARTER_CAP`). The distance check (owner's browser position within `verify.attest_photo_max_m` of the
+    member's garage pin, **only when the member allowed "use pin for verification"**) never changes the answer
+    (security review 2026-11-26: no location oracle): pass or fail, a confirmation answers `{outcome: "received"}`; a
+    failure stores the distance and the GSTIN for staff, counts `owner_distance_failures`, and at
+    `verify.attest_distance_tries` (default 2, 1–5) clears the token (staff decide). Only the distance is stored, never
+    the position. The workshop-portal confirm takes the same kind of lock per workshop. Web page `/ustaad-attest/[token]` (same
     reason: the `/ustaad` shell hides itself from non-members), en + hi (`ustaad.attest`), client-side fetch (per-IP
     limit), focus to each step's heading, errors under their control. **Not built:** the shop photo of SR-6 (needs a
     public upload path), sending the link by WhatsApp/SMS (templates not live; staff call meanwhile).
