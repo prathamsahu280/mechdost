@@ -335,7 +335,7 @@ function ReportPanel({
       ) : (
         <blockquote
           data-user-content
-          className="whitespace-pre-wrap rounded-tile bg-pill p-3 text-sm text-ink"
+          className="whitespace-pre-wrap break-words rounded-tile bg-pill p-3 text-sm text-ink"
         >
           {d.text ?? c('d_text_none')}
         </blockquote>
@@ -343,7 +343,7 @@ function ReportPanel({
       {d.note ? (
         <div className="space-y-1">
           <p className={labelClass}>{c('d_note')}</p>
-          <p data-user-content className="whitespace-pre-wrap text-sm text-ink">
+          <p data-user-content className="whitespace-pre-wrap break-words text-sm text-ink">
             {d.note}
           </p>
         </div>
@@ -587,7 +587,7 @@ function ThreadRead({ code, reason }: { code: string; reason: ViewReason }) {
               {m.reported ? (
                 <span className="ml-2 text-xs font-bold text-error">{c('thread_reported')}</span>
               ) : null}
-              <p data-user-content className="whitespace-pre-wrap">
+              <p data-user-content className="whitespace-pre-wrap break-words">
                 {m.body ?? ''}
               </p>
             </li>

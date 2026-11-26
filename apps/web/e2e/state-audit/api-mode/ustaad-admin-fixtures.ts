@@ -30,6 +30,7 @@ import {
   type UstaadSettingSpec,
 } from '@mechdost/shared/ustaad/settings';
 import type { AuditCase } from '../cases.ts';
+import { ustaadConsoleMocks } from './ustaad-console-fixtures.ts';
 import type { Mock, Reply } from './mock-api.ts';
 
 type Dto<S extends { parse(value: unknown): unknown }> = ReturnType<S['parse']>;
@@ -251,5 +252,7 @@ export function ustaadAdminMocks(c: AuditCase): Mock[] {
         },
       ]),
     })),
+    // G2: the community console shares the page (and its first call, the capabilities).
+    ...ustaadConsoleMocks(c),
   ];
 }

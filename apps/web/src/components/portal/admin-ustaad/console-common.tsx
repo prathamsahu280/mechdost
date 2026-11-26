@@ -50,7 +50,9 @@ export function ClockBadge({ clock, dueAt, createdAt }: { clock: string; dueAt: 
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5">
       <StatusBadge tone={b.tone}>
-        {c(b.overdue ? 'overdue' : 'due_in', { h: b.hours, m: b.minutes })}
+        <span className="tabular-nums">
+          {c(b.overdue ? 'overdue' : 'due_in', { h: b.hours, m: b.minutes })}
+        </span>
       </StatusBadge>
       {CLOCK_HOURS[clock] !== undefined ? (
         <span className="text-xs text-muted">{c(`clock_${clock}`)}</span>
