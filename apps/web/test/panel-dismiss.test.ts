@@ -167,6 +167,8 @@ const EXEMPT: Record<string, string> = {
     'setMode switches the comment input (text / voice / photo) inside the sheet; nothing opens in place',
   'components/portal/shop-csv-api.tsx':
     'file-check steps: "Choose another file" resets; the file field is always visible',
+  'components/account/account-payments.tsx':
+    'opens the lazy CodRequestPanel (commerce/cod-request-panel.tsx), whose Close button carries data-panel-cancel="cod-request"; the opener here carries data-disclosure-trigger',
 };
 
 function walk(dir: string): string[] {

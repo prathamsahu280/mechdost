@@ -9,6 +9,7 @@ import {
   type CodRevokeReason,
 } from '@mechdost/shared/cod-eligibility';
 import { maskPhone } from '@mechdost/shared/contact-mask';
+import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useId, useState } from 'react';
 import { riskOfChange } from '@/lib/admin-settings-registry';
@@ -224,12 +225,12 @@ export function AdminCodRequests({ actor }: { actor: string }) {
       </h2>
       <p className="mt-1 max-w-2xl text-sm text-muted">{t('intro')}</p>
       {REAL ? (
-        <a
+        <Link
           href={`${locale === 'hi' ? '/hi' : ''}/admin/settings?cat=payments`}
           className="mt-2 inline-flex min-h-11 items-center text-sm font-bold text-ink underline underline-offset-2"
         >
           {t('settingsLink')}
-        </a>
+        </Link>
       ) : (
         <DemoSwitches />
       )}

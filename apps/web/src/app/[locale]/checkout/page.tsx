@@ -35,6 +35,8 @@ export default async function CheckoutPage() {
             'categories',
             'gstStates',
             'coupons',
+            // Cash on delivery on request (founder ruling 2026-11-26).
+            'codRequest',
             'accountApi',
           ]}
         >

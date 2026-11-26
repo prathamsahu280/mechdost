@@ -371,3 +371,6 @@ ustaad-console.test.ts` (held answer/question/comment/post/message, NCII re-hold
   placeholders are in the test's `SAMPLE` (`metric`, `percent` added) · add the sample values in the same change.
 - T-COD1 · 2026-11-26 · API tests · FakeVerifier tokens must match `BEARER` (20+ chars): `token-cod-000000NN` was 18
   and every request was a silent 401 (the public quote fell back to the guest answer) · use `token-<area>-requests-0000NN`.
+- T-COD2 · 2026-11-26 · i18n · new client components used namespaces (accountPayments, codRequest, adminCod, checkout) that the
+  account/admin/checkout ClientMessages lists did not pass, so production would show raw keys; caught by
+  `client-messages-coverage.test.ts` · add every new namespace to the page/layout ClientMessages list in the same change.
