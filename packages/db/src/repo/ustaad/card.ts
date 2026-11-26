@@ -4,7 +4,7 @@
  * of it (SR-34). Text comes in the member's language (`*_hi` columns, hard rule 10).
  */
 import { and, asc, eq, isNull } from 'drizzle-orm';
-import type { UstaadLevel, UstaadMemberStatus } from '@mechdost/shared/ustaad/codes';
+import type { UstaadMemberStatus } from '@mechdost/shared/ustaad/codes';
 import type { MyCard } from '@mechdost/shared/ustaad/dto/verification';
 import { shownIzzat } from '@mechdost/shared/ustaad/izzat';
 import { DEFAULT_LEVEL_RULES, qualifiedFollowers } from '@mechdost/shared/ustaad/levels';
@@ -140,6 +140,6 @@ export async function ustaadMyCard(tx: Tx, userId: string, lang: 'hi' | 'en'): P
       held: b.held !== null,
     })),
     ladder,
-    current: member.level as UstaadLevel,
+    current: member.level,
   };
 }

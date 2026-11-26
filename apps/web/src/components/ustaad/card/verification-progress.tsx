@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import type { VerificationView } from '@mechdost/shared/ustaad/dto/verification';
@@ -77,12 +78,12 @@ export function UstaadVerificationProgress() {
       ) : (
         <p className="text-base text-ink">{t('status_none')}</p>
       )}
-      <a
+      <Link
         href={localePath('/ustaad/me', locale)}
         className="press inline-flex min-h-12 items-center justify-center rounded-button bg-accent-button px-5 text-base font-bold text-white hover:bg-accent-button-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus min-[520px]:justify-self-start"
       >
         {t('openNetwork')}
-      </a>
+      </Link>
     </section>
   );
 }
