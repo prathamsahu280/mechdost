@@ -19,6 +19,7 @@ import {
 } from '@/lib/recently-viewed-store';
 import { listPlaceKey, readListPlace, saveListPlace } from '@/lib/list-place';
 import { demoSimilar, similarKey } from '@/lib/catalogue/demo-similar';
+import { impressionGroups } from '@/lib/reco-impressions';
 
 const src = (p: string) => readFileSync(join(__dirname, '..', 'src', p), 'utf8');
 
@@ -76,6 +77,34 @@ describe('recently viewed in the browser', () => {
     expect(loadRecent(s)).toEqual([]);
     setRecentOff(s, false);
     expect(isRecentOff(s)).toBe(false);
+  });
+});
+
+describe('suggestion impressions per algorithm', () => {
+  it('a section with its own algorithm counts its distinct products once', () => {
+    expect(
+      impressionGroups('similar', [
+        { slug: 'a', algo: undefined },
+        { slug: 'a', algo: undefined },
+        { slug: 'b', algo: undefined },
+      ]),
+    ).toEqual([{ algo: 'similar', count: 2 }]);
+  });
+
+  it('"Goes well with" (no section algorithm) counts each item under its own: rule, bought together, fitting', () => {
+    expect(
+      impressionGroups(undefined, [
+        { slug: 'a', algo: 'rule' },
+        { slug: 'b', algo: 'rule' },
+        { slug: 'c', algo: 'copurchase' },
+        { slug: '', algo: 'fitting' },
+        { slug: 'x', algo: 'magic' },
+      ]),
+    ).toEqual([
+      { algo: 'rule', count: 2 },
+      { algo: 'copurchase', count: 1 },
+      { algo: 'fitting', count: 1 },
+    ]);
   });
 });
 

@@ -19,6 +19,8 @@ import {
   listRecoRules,
   recentlyViewed,
   recommendFor,
+  placeOrder,
+  quoteCheckout,
   recordClientEvents,
   recordRecentViews,
   recoFunnel,
@@ -344,5 +346,64 @@ describe('suggestion funnel per surface and algorithm (spec 12)', () => {
       orders: 0,
     });
     expect(rows.find((r) => r.surface === 'cart' && r.algo === 'recent')?.impressions).toBe(1);
+  });
+
+  it('counts an order placed later in the same session that holds the clicked product, once', async () => {
+    const now = new Date();
+    const lines = [{ sku: fixture.products.find((p) => p.slug === SHELL)?.sku ?? '', qty: 1 }];
+    const q = await quoteCheckout(t(), { pincode: '492004', lines, locale: 'en' });
+    const placed = await placeOrder(t(), {
+      method: 'cod',
+      userId: ravi,
+      idempotencyKey: 'p23-funnel-order-0001',
+      address: {
+        contactName: 'Ravi Sahu',
+        contactPhone: '+919876543210',
+        line1: 'House 12, Pandri',
+        line2: null,
+        landmark: null,
+        pincode: '492004',
+      },
+      lines,
+      expectedTotalPaise: q.totalPaise,
+      note: null,
+      locale: 'en',
+      coins: 0,
+    });
+    const at = (ms: number) => new Date(now.getTime() + ms);
+    await recordClientEvents(t(), {
+      source: 'web',
+      anonymousId: 'anon-p23-3',
+      sessionId: 'sess-p23-3',
+      consentVersion: '2026-11-14',
+      rows: [
+        {
+          event: 'reco_click',
+          occurredAt: at(0),
+          page: '/shop/x',
+          props: { surface: 'home', algo: 'recent', slug: SHELL, position: 1 },
+        },
+        { event: 'add_to_cart', occurredAt: at(1000), page: '/shop/x', props: { slug: SHELL, qty: 1 } },
+        {
+          event: 'purchase_submitted',
+          occurredAt: at(2000),
+          page: '/checkout',
+          props: { code: placed.code, valuePaise: q.totalPaise, demo: false, businessPurchase: false },
+        },
+        // A click on a product the order does not hold is not attributed.
+        {
+          event: 'reco_click',
+          occurredAt: at(0),
+          page: '/shop/x',
+          props: { surface: 'home', algo: 'recent', slug: HP, position: 2 },
+        },
+      ],
+    });
+    const rows = await recoFunnel(t(), { from: at(-3_600_000), to: at(3_600_000) });
+    expect(rows.find((r) => r.surface === 'home' && r.algo === 'recent')).toMatchObject({
+      clicks: 2,
+      adds: 1,
+      orders: 1,
+    });
   });
 });

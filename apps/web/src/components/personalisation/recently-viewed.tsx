@@ -12,6 +12,7 @@ import { recentCards } from '@/app/[locale]/recent-actions';
 import { useSession } from '@/demo/session-state';
 import type { Locale } from '@/i18n/routing';
 import { track } from '@/lib/analytics';
+import { impressionGroups } from '@/lib/reco-impressions';
 import {
   browserStorage,
   isRecentOff,
@@ -99,10 +100,14 @@ function useSuggestionTracking(rescan: unknown): void {
           io.unobserve(entry.target);
           const el = entry.target as HTMLElement;
           const surface = el.dataset.recoSurface;
-          const algo = el.dataset.recoAlgo;
-          const count = slugsIn(el).length;
-          if (isSurface(surface) && isAlgo(algo) && count > 0)
-            track('reco_impression', { surface, algo, count: Math.min(20, count) });
+          if (!isSurface(surface)) continue;
+          // "Goes well with" has no section algorithm: each item counts under its own (rule, copurchase, fitting).
+          const items = [...el.querySelectorAll<HTMLElement>('[data-reco-slug]')].map((i) => ({
+            slug: i.dataset.recoSlug ?? '',
+            algo: i.dataset.recoAlgo,
+          }));
+          for (const { algo, count } of impressionGroups(el.dataset.recoAlgo, items))
+            track('reco_impression', { surface, algo, count });
         }
       },
       { threshold: 0.5 },
@@ -198,13 +203,16 @@ export default function RecentlyViewed({
     }, 200);
     const hush = window.setTimeout(() => {
       setSaid('');
-      setCleared(false);
     }, 5000);
     return () => {
       window.clearTimeout(say);
       window.clearTimeout(hush);
     };
   }, [cleared, showSwitch, labels.cleared]);
+  // A refilled list (the sign-in merge) ends the "just cleared" state, so a later Clear focuses and speaks again.
+  useEffect(() => {
+    if (cards.length > 0) setCleared(false);
+  }, [cards.length]);
 
   useSuggestionTracking(cards.length);
 
