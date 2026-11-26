@@ -49,6 +49,7 @@ import {
   type ShopModeRequestStatus,
 } from '@mechdost/shared/delivery/codes';
 import { publicCode } from '@mechdost/shared/ids';
+import type { RatingReason } from '@/lib/delivery/types';
 import { agentStatusMachine, deliveryJobMachine } from '@mechdost/shared/state';
 import { localizeArea, localizeShop, productNameFor } from './i18n/localize';
 import { DEMO_SHOPS, findShop } from './shops';
@@ -179,8 +180,8 @@ export interface DemoSwitch {
   version: number;
 }
 /** Rider rating by the customer (founder 2026-11-26): one per job, editable for 24 h. */
-export const RATING_REASONS = ['on_time', 'polite', 'careful', 'late', 'rude', 'damaged', 'other'] as const;
-export type RatingReason = (typeof RATING_REASONS)[number];
+export { RATING_REASONS } from '@/lib/delivery/types';
+export type { RatingReason };
 export interface DemoRating {
   jobId: string;
   agentId: string;
