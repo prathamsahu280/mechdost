@@ -7,6 +7,7 @@ import {
   EXPORT_MAX_BYTES,
   EXPORT_ROWS_PER_KIND,
   EXPORT_TTL_HOURS,
+  PERSONALISATION_NOTICE_VERSION,
   PRIVACY_PURPOSES,
   type ConsentView,
   type ExportStatus,
@@ -17,6 +18,7 @@ import { auditLog, consents, dataExportRequests } from '../schema';
 import { ConflictError, NotFoundError, pgCode } from './errors';
 import { recordServerEvent } from './events';
 import { setNoticePreferences } from './notices';
+import { clearRecentlyViewed } from './recently-viewed';
 import type { Tx } from './orders';
 import { rowsOf } from './sql-rows';
 
@@ -25,7 +27,8 @@ import { rowsOf } from './sql-rows';
  * the user id comes from the session, never from the URL or body, and another person's export id is a 404.
  *
  * Consents are append-only rows (`consents`, trigger `consents_append_only`); granting or withdrawing writes a new row
- * only when the answer changes. Withdrawal is effective at once for what uses the purpose: `marketing` turns the
+ * only when the answer changes. Withdrawal is effective at once for what uses the purpose: `personalisation` deletes the
+ * stored recently viewed list, `marketing` turns the
  * promotional notice preferences off (same path as Account -> Notifications), `analytics` is read by the browser
  * (it stops sending events as soon as the page saves the choice).
  *
@@ -39,6 +42,7 @@ const HOUR_MS = 3_600_000;
 const NOTICE_VERSION: Record<PrivacyPurpose, string> = {
   marketing: MARKETING_NOTICE_VERSION,
   analytics: CONSENT_NOTICE_VERSION,
+  personalisation: PERSONALISATION_NOTICE_VERSION,
 };
 
 // ── Consents ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -94,6 +98,9 @@ export async function setConsent(
           props: { purpose: input.purpose, granted: input.granted, noticeVersion: version },
         });
       }
+      // Withdrawing personalisation deletes what it kept (the recently viewed list), in the same transaction.
+      if (input.purpose === 'personalisation' && !input.granted)
+        await clearRecentlyViewed(tx, input.userId, 'consent_withdrawn');
     }
     return consentViews(tx, input.userId);
   });
@@ -250,6 +257,11 @@ async function buildExport(tx: Tx, userId: string, now: Date): Promise<Record<st
       tx,
       sql`select rating, body, status, created_at from reviews where user_id = ${uid}
         order by created_at, id`,
+    ),
+    recentlyViewed: await section(
+      tx,
+      sql`select p.slug, r.city_code, r.viewed_at from recently_viewed r join products p on p.id = r.product_id
+        where r.user_id = ${uid} order by r.viewed_at desc, r.product_id`,
     ),
     coins: await section(
       tx,

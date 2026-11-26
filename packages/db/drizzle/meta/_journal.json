@@ -687,6 +687,20 @@
       "when": 1795682078197,
       "tag": "0100_ustaad_console_g2",
       "breakpoints": true
+    },
+    {
+      "idx": 100,
+      "version": "7",
+      "when": 1795700630007,
+      "tag": "0102_personalisation_p23",
+      "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "7",
+      "when": 1795700690007,
+      "tag": "0103_personalisation_default_pairs",
+      "breakpoints": true
     }
   ]
 }

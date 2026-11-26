@@ -93,6 +93,7 @@ export * from './customer-search';
 export * from './audit-viewer';
 export * from './exports';
 export * from './service-photos';
+export * from './recently-viewed';
 export * from './recommendations';
 export * from './privacy';
 export * from './pincode-waitlist';

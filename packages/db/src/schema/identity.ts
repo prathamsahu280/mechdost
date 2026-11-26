@@ -173,7 +173,7 @@ export const consents = pgTable(
     check(
       'consents_purpose_valid',
       // Ustaad Network purposes (spec 23 § 13) added by migration ustaad_foundations; the list is the shared one.
-      sql`${t.purpose} in ('account','marketing','analytics','location','share_with_partner','whatsapp',${sql.raw(USTAAD_CONSENT_PURPOSES.map((p) => `'${p}'`).join(','))})`,
+      sql`${t.purpose} in ('account','marketing','analytics','personalisation','location','share_with_partner','whatsapp',${sql.raw(USTAAD_CONSENT_PURPOSES.map((p) => `'${p}'`).join(','))})`,
     ),
     index().on(t.userId, t.purpose, t.createdAt),
   ],

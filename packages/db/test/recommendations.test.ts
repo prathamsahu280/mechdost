@@ -52,6 +52,7 @@ const address = (): ShippingAddress => ({
 
 const ruleInput = (trigger: string, suggest: string, over: Record<string, unknown> = {}) => ({
   triggerCategoryId: cat[trigger] ?? '',
+  suggestKind: 'category' as const,
   suggestCategoryId: cat[suggest] ?? '',
   label: 'Goes well with your oil',
   labelHi: 'आपके ऑयल के साथ अच्छा चलता है',
@@ -128,8 +129,8 @@ afterAll(async () => {
 describe('recommendation rules (admin)', () => {
   it('creates, edits and deletes a rule with an audit row each time, and refuses a duplicate pair', async () => {
     const rule = await createRecoRule(t(), { staffUserId: staff, input: ruleInput('lubricants', 'filters') });
-    expect(rule.triggerCategory.slug).toBe('lubricants');
-    expect(rule.suggestCategory.slug).toBe('filters');
+    expect(rule.triggerCategory?.slug).toBe('lubricants');
+    expect(rule.suggestCategory?.slug).toBe('filters');
     await expect(
       createRecoRule(t(), { staffUserId: staff, input: ruleInput('lubricants', 'filters') }),
     ).rejects.toMatchObject({ code: 'DUPLICATE_RULE' });

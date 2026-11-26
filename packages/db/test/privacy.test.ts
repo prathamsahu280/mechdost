@@ -51,11 +51,12 @@ afterAll(async () => {
 });
 
 describe('consents per purpose', () => {
-  it('starts as "never asked" for both purposes', async () => {
+  it('starts as "never asked" for every purpose (personalisation too, 2026-11-26)', async () => {
     const v = await getPrivacyView(t(), ravi);
     expect(v.consents).toEqual([
       { purpose: 'marketing', granted: null, at: null, noticeVersion: null },
       { purpose: 'analytics', granted: null, at: null, noticeVersion: null },
+      { purpose: 'personalisation', granted: null, at: null, noticeVersion: null },
     ]);
     expect(v.export).toBeNull();
     expect(v.canRequestExport).toBe(true);

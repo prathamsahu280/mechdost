@@ -4,6 +4,7 @@ import { scrubFreeText } from './privacy';
 import { COUPON_FUNDERS, COUPON_REASONS } from './coupon';
 import { ORDER_CANCEL_REASONS } from './state';
 import { VEHICLE_SEGMENTS } from './vehicle-segments';
+import { RECO_ALGOS, RECO_SURFACES } from './recommendation-limits';
 import { USTAAD_CLIENT_EVENT_SCHEMAS, type UstaadServerEventProps } from './ustaad/analytics';
 
 /**
@@ -435,7 +436,13 @@ export interface ServerEventProps extends UstaadServerEventProps {
   /** The nightly co-purchase job finished (a count, never who bought). */
   copurchase_computed: { pairs: number };
   /** Privacy (DPDP, 2026-11-15): a consent switched in Account -> Privacy (marketing has its own event above). */
-  consent_changed: { purpose: 'marketing' | 'analytics'; granted: boolean; noticeVersion: string };
+  consent_changed: {
+    purpose: 'marketing' | 'analytics' | 'personalisation';
+    granted: boolean;
+    noticeVersion: string;
+  };
+  /** The stored recently viewed list was deleted (shopping personalisation phase 2): by Clear or by withdrawing the consent. */
+  recently_viewed_deleted: { count: number; reason: 'cleared' | 'consent_withdrawn' };
   data_export_requested: { exportId: string };
   data_export_ready: { exportId: string; bytes: number };
   data_export_failed: { exportId: string; errorCode: string };
@@ -666,6 +673,32 @@ export const CLIENT_EVENT_SCHEMAS = {
     })
     .strict(),
   home_segment_tile_clicked: z.object({ segment: z.enum(VEHICLE_SEGMENTS) }).strict(),
+  // Shopping personalisation phases 2 and 3 (2026-11-26): suggestions and the recently viewed list, measured per
+  // surface and algorithm. An impression is one list scrolled into view (count = cards in it); a click names the
+  // product (null for the workshop fitting link) and its 1-based place. Add-to-cart and orders are joined to the click
+  // by session and slug (spec 12 "Suggestions"). Codes and slugs only.
+  reco_impression: z
+    .object({
+      surface: z.enum(RECO_SURFACES),
+      algo: z.enum(RECO_ALGOS),
+      count: z.number().int().min(1).max(20),
+    })
+    .strict(),
+  reco_click: z
+    .object({
+      surface: z.enum(RECO_SURFACES),
+      algo: z.enum(RECO_ALGOS),
+      slug: id.nullable(),
+      position: z.number().int().min(1).max(20),
+    })
+    .strict(),
+  recently_viewed_cleared: z
+    .object({ surface: z.enum(RECO_SURFACES), count: z.number().int().min(0).max(20) })
+    .strict(),
+  // The "Remember products I view on this device" switch (Account -> Privacy).
+  recently_viewed_toggled: z.object({ on: z.boolean() }).strict(),
+  // Back to a product list put the shopper where they were (`pages` = "Show more" pages open).
+  list_position_restored: z.object({ pages: z.number().int().min(1).max(10) }).strict(),
   // `source` is optional so events from tabs opened before comparison existed still pass.
   add_to_cart: z
     .object({ slug: id, qty: z.number().int().min(1).max(99), source: z.enum(['compare']).optional() })

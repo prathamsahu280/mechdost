@@ -9,8 +9,14 @@ import { z } from 'zod';
  * Purposes a person can switch in Privacy: only the ones that change what MechDost does today. `marketing` = offers
  * and promotions in the bell and push; `analytics` = page and click events from this browser. The others in the
  * database list (`location`, `share_with_partner`, `whatsapp`) appear here when a feature uses them.
+ * `personalisation` (2026-11-26, shopping personalisation phase 2) = keep the products this person views in their
+ * account so the list follows them across devices; without it the list stays in this browser only. Never asked =
+ * not granted (DPDP: opt-in).
  */
-export const PRIVACY_PURPOSES = ['marketing', 'analytics'] as const;
+export const PRIVACY_PURPOSES = ['marketing', 'analytics', 'personalisation'] as const;
+
+/** The notice the personalisation consent is given under (Account -> Privacy wording of 2026-11-26). */
+export const PERSONALISATION_NOTICE_VERSION = '2026-11-26';
 export type PrivacyPurpose = (typeof PRIVACY_PURPOSES)[number];
 
 export const EXPORT_STATES = ['requested', 'ready', 'expired', 'failed'] as const;
