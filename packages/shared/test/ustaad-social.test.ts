@@ -56,9 +56,15 @@ describe('dmTextCheck (SR-33, AT-DM-1)', () => {
 
 describe('thread machine: unblock restores, never opens a request', () => {
   it('allows blocked → requested | open | declined and refuses requested → open by system', () => {
-    expect(() => ustaadThreadMachine.assert('blocked', 'requested', 'member')).not.toThrow();
-    expect(() => ustaadThreadMachine.assert('blocked', 'declined', 'member')).not.toThrow();
-    expect(() => ustaadThreadMachine.assert('requested', 'open', 'system')).toThrow();
+    expect(() => {
+      ustaadThreadMachine.assert('blocked', 'requested', 'member');
+    }).not.toThrow();
+    expect(() => {
+      ustaadThreadMachine.assert('blocked', 'declined', 'member');
+    }).not.toThrow();
+    expect(() => {
+      ustaadThreadMachine.assert('requested', 'open', 'system');
+    }).toThrow();
   });
 });
 

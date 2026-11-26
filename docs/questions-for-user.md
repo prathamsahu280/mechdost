@@ -343,6 +343,13 @@ page needs `ustaad:read` or `ustaad:settings`, so a marketing account sees "cann
 marketing get the Promotions list alone (a small page in the same group)? Default meanwhile: the super admin runs
 promotions from Network settings → Promotions.
 
+#### Q-U-D2a: "Top this week" posts in Discover (Decision, P3, default: Discover only, never a feed tab)
+
+Spec 23 § 9.5 says the feed has no trending tab. Workstream D2 built a read-only "Top this week" list (most saved and
+liked member posts in the member's city over 7 days, `GET /ustaad/discover/top-posts`) for the Discover screen. Keep it
+in Discover, drop it, or rank it by saves only (helpfulness) instead of saves and likes? Default meanwhile: Discover
+only, saves × 2 + likes, never in the feed.
+
 - **Q-U-C1 (2026-11-26, Ustaad Learn):** should hosted training videos have their own daily completion limit, separate
   from "Lessons a member can mark done a day" (`learn.self_mark_daily_cap`, default 5)? **Default meanwhile:** one
   shared limit for both (videos are also wall-clock checked, so a jump to the end never counts).

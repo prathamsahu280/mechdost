@@ -15,7 +15,7 @@
  * - Blocked either way: the thread is 404 for both (SR-35). Staff read a thread only through an open report on one of
  *   its messages, city scoped, with a reason code, and every read writes `audit_log` (`ustaad.dm_read`).
  */
-import { and, asc, desc, eq, gt, inArray, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import { ustaadThreadMachine, type UstaadThreadStatus } from '@mechdost/shared/state';
 import type {
   MessageView,

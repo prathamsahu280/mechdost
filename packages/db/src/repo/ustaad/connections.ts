@@ -8,7 +8,7 @@
  * restricted members cannot ask. Blocked either
  * way = 404 (SR-35).
  */
-import { and, desc, eq, lt, ne, or, sql, type SQL } from 'drizzle-orm';
+import { and, desc, eq, lt, ne, or, sql } from 'drizzle-orm';
 import { ustaadConnectionMachine, type UstaadConnectionStatus } from '@mechdost/shared/state';
 import type { ConnectionListQuery, ConnectionView } from '@mechdost/shared/ustaad/dto/social';
 import { orderedPair } from '@mechdost/shared/ustaad/social-rules';
@@ -291,7 +291,7 @@ export async function listUstaadConnections(
   q: ConnectionListQuery,
 ): Promise<{ items: ConnectionView[]; nextCursor: string | null }> {
   const me = await ustaadActingMember(db, actor.memberId);
-  const mine = or(eq(ustaadConnections.lowId, me.id), eq(ustaadConnections.highId, me.id)) as SQL;
+  const mine = or(eq(ustaadConnections.lowId, me.id), eq(ustaadConnections.highId, me.id)) ?? sql`false`;
   const box =
     q.box === 'connected'
       ? eq(ustaadConnections.status, 'accepted')

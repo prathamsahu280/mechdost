@@ -105,7 +105,7 @@ async function member(opts: { track?: 'apprentice' | 'ustaad'; level?: string; a
 
 async function setSetting(key: string, value: unknown) {
   await db.delete(s.settings).where(and(eq(s.settings.key, key), sql`${s.settings.cityId} is null`));
-  await db.insert(s.settings).values({ key, cityId: null, value: value as never });
+  await db.insert(s.settings).values({ key, cityId: null, value });
 }
 
 async function counters(m: M) {
@@ -229,9 +229,9 @@ describe('follow (spec 23 flow 7, § 6.9, AT-RATE-1)', () => {
     expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
     expect((await counters(a))?.following).toBe(5);
     // Unfollowing does not give the slot back (no follow/unfollow churn past the cap).
-    await unfollowUstaadMember(t(), a, targets[0]?.memberId ?? '');
-    await unfollowUstaadMember(t(), a, targets[1]?.memberId ?? '');
-    await unfollowUstaadMember(t(), a, targets[2]?.memberId ?? '');
+    await unfollowUstaadMember(t(), a, targets[0].memberId);
+    await unfollowUstaadMember(t(), a, targets[1].memberId);
+    await unfollowUstaadMember(t(), a, targets[2].memberId);
     expect((await err(followUstaadMember(t(), a, (await member()).memberId))).status).toBe(429);
     await setSetting('ustaad.limits.follows_per_day', 20);
   });

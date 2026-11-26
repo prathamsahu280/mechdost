@@ -1278,6 +1278,84 @@ members at the next run. Data dictionary: this § 6.
   "How to use Ustaad Network" course, vehicle-model picker data, and a Hindi `topic` placeholder for
   `question_waiting` (today the notice receives the work/segment **code**; it must be the localized label).
 
+## 21d. Workstream D2 as built (2026-11-26: follow, connect, block/mute, messages, Discover, promotions; API only)
+
+- **Migration `0097_ustaad_social`** (written, not applied; D1 may take 0095 and F2 0096, the lead renumbers):
+  `ustaad_thread_members` (per side: `last_read_at` read receipt, per-thread `muted`; separate from the thread so a
+  read never moves the thread's `version`), `ustaad_messages.held_reason_code` (`screened | scam_phrase`),
+  `ustaad_threads.blocked_from` (the status before a block; CHECK: set exactly while `blocked`),
+  `ustaad_daily_counters` (`member_id, kind, day` IST; kinds `promo_served | profiles_served | follows |
+new_threads | connect_requests`; one conditional upsert `n + k where n < cap`, never count-then-insert),
+  `ustaad_promo_hides` (member, promotion, reason code). RLS on, grants revoked, `touch_updated_at` triggers,
+  rls-inventory `none`. The thread machine gained `declined → blocked`, `blocked → requested | declined` (unblock
+  restores `blocked_from`; a request never becomes `open` without the receiver accepting).
+- **Connections:** A's unique `(low_id, high_id)` index already allows one row per pair (stronger than a partial
+  "one pending" index), so a re-request is a conditional UPDATE on that row; crossed requests become one accepted
+  connection. Security review fixes (2026-11-26): restricted members cannot ask (403 `USTAAD_RESTRICTED`); the same
+  requester waits `limits.connect_cooldown_days` (default 7) after a decline, withdraw or removal (409
+  `USTAAD_CONNECT_COOLDOWN`; the other member may ask at once); `limits.connect_requests_per_day` (default 20) through
+  the atomic daily counter (429 `USTAAD_DAILY_CAP`); the connect notice is deduped per pair and requester, so request
+  → withdraw → request loops notify once.
+- **Follows:** idempotent insert, counters only from inserted/deleted rows (`> 0` guard), no self-follow (422), 404
+  when blocked or the member left. Daily cap `limits.follows_per_day` through the atomic counter after a real insert;
+  unfollow does not give the slot back. `followed` / `unfollowed` events on the followee (workstream B's level job reads
+  them; `ustaad_follows.counted` untouched), follower Izzat keyed on the pair (no farming), one `ustaad.follow` notice
+  per follower and member ever. Remove follower.
+- **Blocks and mutes:** a block (any member, even restricted) removes follows both ways, moves the connection to
+  `removed`, the thread to `blocked` (remembering `blocked_from`) and ends open mentorships with reason `blocked`, in
+  one transaction; mutual 404 on profile relationship, follow, connect, threads and media. Unblock restores the thread
+  only when no block is left either way. Mutes are a row each, listed with the blocks (never who blocked me).
+- **Messages (SR-33–35):** `POST /ustaad/threads` = first message, text only; account on the network ≥
+  `limits.dm_min_account_days` (403 `USTAAD_DM_TOO_NEW`); `limits.new_threads_per_day` (atomic, 429); receiver
+  `dm_mode` `nobody` → 403 `USTAAD_DM_NOT_ALLOWED`, `everyone` or an accepted connection → open at once, else a request.
+  While `requested`: one message only (409 `USTAAD_DM_PENDING`), a link → 422 `USTAAD_DM_LINK`, phone numbers, emails
+  and UPI ids masked to "#" (`dmTextCheck`, `shared/ustaad/social-rules.ts`), no media. Every message passes
+  `screenUstaadContent` (`block` → 422 `USTAAD_CONTENT_BLOCKED`, `hold` → held) and the scam signals (fee phrase, UPI,
+  pay-app ask, admin `scam_phrase` list) → held: invisible to the receiver, no notice, `last_message_at` unchanged,
+  shown to the sender as pending; its media is not readable by the receiver (`readableUstaadMedia` now requires an
+  `open` thread and an unheld message). Voice/photo only the sender's own verified audio/image in `media`; a shared
+  post must be visible to both. Read receipts, per-thread mute (no notice), one `ustaad.message` bell entry per thread
+  and IST day. Report hook for F2: `ustaadMessageReportTarget(tx, reporterMemberId, messageId)`.
+- **Staff read (SR-38):** `GET /admin/ustaad/threads/read?reportCode=&reason=` (`ustaad:moderate`, staff session,
+  city scoped through the report's city): only an open or in-review report on a message of the thread; reason codes
+  `report_review | legal_order | child_safety`; every read writes `audit_log` `ustaad.dm_read` and an event.
+- **Discover (§ 9.4, SR-37):** `GET /ustaad/discover?q=&work=&level=&city=` ranks by Wilson of helpful answers, best
+  rate (30-day best answers weigh double, approximating the 90-day half-life from B's counters), distinct askers,
+  trust, new-member boost; followers weigh 0; `discover.new_slots` per page; 20 a page, position cursor, no total;
+  `discover.profiles_per_day` through the atomic counter (429); opted-out members only for a typed search;
+  restricted/banned/left/blocked never. Distance bands from E's `ustaadDistanceBands` only when
+  `USTAAD_LOCATION_SECRET` is set (new config variable, `.env.example`). `GET /ustaad/discover/tags` (popular tags in
+  reach, 14 days) and `GET /ustaad/discover/top-posts` ("Top this week": visible member posts in my city, saves × 2 +
+  likes, no stories, no blocked or muted authors) read A's/D1's tables only. § 9.5 says "no trending tab" for the
+  feed; this is a Discover section and is queued as Q-U-D2a.
+- **Promotions (serve side; CRUD is G1's `/admin/ustaad/promotions`, `ustaad:promotions`, audited):**
+  `GET /ustaad/promotions?slot=` (`feed | stories | search | jobs | learn`; `answer_parts` is not a served slot) returns
+  one promotion or null with the locked label `{ en: 'Sponsored', hi: 'प्रायोजित' }` (`SPONSORED_LABEL`) and `href`, a
+  MechDost internal path built on the server (`promotionHref`: `/shop/{slug}`, `/shop?category=`, `/offers`,
+  `/ustaad/learn…`, or a stored internal path) re-checked by `isSafeInternalPath`; no redirect endpoint exists.
+  Rules: `promo.enabled` + `promo.place.<slot>`, live in its window, city/speciality targeting only, never on a
+  member's first day or in restricted mode, never once hidden, `promo.daily_cap_per_member` (atomic).
+  `POST …/{id}/click` answers the same link; `POST …/{id}/hide` takes a reason code. The feed's `promo.every_n` spacing
+  is the feed's job (D1/D2 feed).
+- **Events:** server events added `ustaad_unfollowed`, `ustaad_connection_changed`, `ustaad_member_blocked`,
+  `ustaad_member_muted`, `ustaad_message_thread_changed`, `ustaad_message_sent {kind, held}`,
+  `ustaad_dm_read_by_staff`, `ustaad_discover_served`, `ustaad_promo_served`, `ustaad_promo_clicked`,
+  `ustaad_promo_hidden_by_member` (ids and codes only). Settings added `limits.connect_requests_per_day`,
+  `limits.connect_cooldown_days` (en + hi labels).
+- **Rate rules (SR-43):** follows 20/day, connects 20/day, new threads 20/day, messages 120/h, search 60/min, reads and
+  promotion calls the member read rule, block/mute/unfollow the membership write rule, staff read 300/min. Member guard
+  and limits are bound to each file's own prefixes (`onUstaadPaths`).
+- **Tests:** `packages/shared/test/ustaad-social.test.ts` (12), `packages/db/test/ustaad-social.test.ts` (31: double
+  follow, double accept, crossed requests, block cascade, unblock restore, AT-DM-1, masking, held scam message and its
+  media, parallel caps at cap − 1, staff read via report only, Discover ranking/opt-out/cap, promotions label/window/
+  cap/hides/targeting), `apps/api/test/ustaad-social-api.test.ts` (11: role leak on 27 routes for a non-member and
+  under staff preview, strict bodies, flow with no phone, block 404, AT-RATE-1, Discover, promotions, staff read by
+  role). PGlite serialises transactions, so the parallel tests prove the single-statement caps but not a real
+  interleaving; the real-Postgres concurrency run is owed (`TEST_DATABASE_URL`).
+- **Not built (D2):** web screens (My network, message request, thread, Discover), mentorship routes (machine and
+  table exist; block ends them), tag follows (`/ustaad/tags*` belong to D1), message delete/unsend, the feed's own
+  promotion spacing, push channel tuning for `ustaad.message`.
+
 ## 21e. Workstream E as built (2026-11-26, branch `worktree-agent-a53f6c8fce669739a`, no migration)
 
 - **Pure rules** `packages/shared/src/ustaad/local.ts`: `noisyDistanceBand(metres, noiseUnit)` (± 25 % stable
