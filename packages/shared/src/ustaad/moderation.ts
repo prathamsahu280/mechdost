@@ -65,10 +65,11 @@ const OTP_ASK =
  */
 const PHONE = /(?<![0-9-])(?:(?:\+|00)?91[\s]?|0)?[6-9](?:\s?[0-9]){9}(?![0-9]|-[0-9])/;
 /**
- * A dashed 10-digit run (`98765-43210`) is also how part numbers look (`94109-12000`), so it only holds the item for
- * review (never blocks); a longer dashed code (`96100-62010-00`) does not match at all.
+ * Anything else shaped like a mobile number: an optional +91 / 0 prefix, then 10 digits starting 6–9 with any mix of
+ * spaces and dashes (`+91-98765-43210`, `9-8-7-6-5-4-3-2-1-0`). Part numbers share the shape (`94109-12000`), so this
+ * only holds the item (security review 2026-11-26); staff masking uses it too, so no number reaches a staff screen.
  */
-const PHONE_LIKE = /(?<![0-9-])[6-9](?:-?[0-9]){9}(?![0-9]|-[0-9])/;
+const PHONE_LIKE = /(?<![0-9])(?:(?:\+|00)?91[\s-]?|0[\s-]?)?[6-9](?:[\s-]?[0-9]){9}(?![0-9])/;
 
 /**
  * Staff views never show a phone number (SR-38): every phone-like run and e-mail address becomes `[phone]` /
@@ -76,8 +77,8 @@ const PHONE_LIKE = /(?<![0-9-])[6-9](?:-?[0-9]){9}(?![0-9]|-[0-9])/;
  */
 export function maskContactsInText(text: string): string {
   return normaliseDigits(text)
-    .replace(new RegExp(PHONE.source, 'g'), '[phone]')
     .replace(new RegExp(PHONE_LIKE.source, 'g'), '[phone]')
+    .replace(new RegExp(PHONE.source, 'g'), '[phone]')
     .replace(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi, '[email]');
 }
 
@@ -96,6 +97,14 @@ const PLATE_SPACED_UPPER = new RegExp(
   `(?<![A-Za-z0-9])(?:${STATE_CODES.toUpperCase()})[\\s-][0-9]{1,2}[\\s-][A-Z]{1,3}[\\s-][0-9]{4}(?![A-Za-z0-9])`,
 );
 const PLATE_BH = /(?<![a-z0-9])[0-9]{2}[\s-]?bh[\s-]?[0-9]{4}[\s-]?[a-z]{1,2}(?![a-z0-9])/i;
+/**
+ * Any case with at least one separator after a valid state code (`cg 04 ab 1234`, `cg-04-ab-1234`): ordinary
+ * Hinglish can look like this ("ka 97 cc 2018"), so it only holds (`plate_like`, security review 2026-11-26).
+ */
+const PLATE_SEPARATED = new RegExp(
+  `(?<![a-z0-9])(?:${STATE_CODES})[\\s-]+[0-9]{1,2}[\\s-]*[a-z]{1,3}[\\s-]*[0-9]{4}(?![a-z0-9])`,
+  'i',
+);
 
 /**
  * A link: a scheme, `www.`, or a bare domain with a top-level domain people rarely type by accident (`hai.me`,
@@ -103,6 +112,18 @@ const PLATE_BH = /(?<![a-z0-9])[0-9]{2}[\s-]?bh[\s-]?[0-9]{4}[\s-]?[a-z]{1,2}(?!
  */
 const LINK =
   /\bhttps?:\/\/|\bwww\.|(?<![@a-z0-9-])[a-z0-9][a-z0-9-]{2,62}\.(?:com|in|net|org|xyz|io|app|link|ly|info|site|online|shop|store)(?![a-z0-9-])/;
+
+/**
+ * Short redirector and messaging domains always count as links, also written with spaces or "dot"
+ * (`t . me`, `wa dot me`, `bit (dot) ly`; security review 2026-11-26).
+ */
+const REDIRECTOR =
+  /(?<![a-z0-9])(?:t\.me|wa\.me|bit\.ly|tinyurl(?:\.com)?|goo\.gl|rb\.gy|cutt\.ly)(?![a-z0-9])/;
+
+/** Undo "dot" spellings and spaces around dots, so `wa dot me` and `t . me` read as `wa.me` and `t.me`. */
+function collapseDots(t: string): string {
+  return t.replace(/\s*(?:\.|\(dot\)|\[dot\]|\bdot\b)\s*/g, '.');
+}
 
 export type ScreenSignal =
   | 'banned_word'
@@ -113,6 +134,7 @@ export type ScreenSignal =
   | 'phone_number'
   | 'phone_like'
   | 'number_plate'
+  | 'plate_like'
   | 'link'
   | 'link_denied'
   | 'illegal_modification';
@@ -149,10 +171,14 @@ export function screenTextSignals(text: string, lists: ScreenLists): ScreenSigna
   // Plates are checked on the un-lowered text too (spaced capitals); normalised digits either way.
   const cased = normaliseDigits(text);
   if (PLATE_COMPACT.test(t) || PLATE_BH.test(t) || PLATE_SPACED_UPPER.test(cased)) out.add('number_plate');
-  if (LINK.test(t)) {
+  else if (PLATE_SEPARATED.test(t)) out.add('plate_like');
+  const dotted = collapseDots(t);
+  if (LINK.test(t) || REDIRECTOR.test(dotted)) out.add('link');
+  // The denylist runs on the whole text, dotted spellings included, whether or not a link shape matched.
+  const denied = lists.linkDomains.map((d) => normaliseForScreen(d)).filter((d) => d.length > 3);
+  if (denied.some((d) => t.includes(d) || dotted.includes(d))) {
     out.add('link');
-    const denied = lists.linkDomains.map((d) => normaliseForScreen(d)).filter((d) => d.length > 3);
-    if (denied.some((d) => t.includes(d))) out.add('link_denied');
+    out.add('link_denied');
   }
   return [...out];
 }
@@ -211,7 +237,8 @@ export function screenDecision(
     has('pay_app') ||
     has('otp_ask') ||
     has('phone_number') ||
-    has('phone_like');
+    has('phone_like') ||
+    (kind !== 'message' && has('plate_like'));
   return { outcome: hold ? 'hold' : 'ok', signals: all };
 }
 
@@ -226,6 +253,7 @@ export function autoReportSource(signals: readonly string[]): 'auto_scam' | 'aut
 
 /** The report reason of an automatic hold. */
 export function autoReportReason(signals: readonly string[]): UstaadReportReason {
+  if (signals.includes('plate_like')) return 'privacy';
   if (signals.includes('illegal_modification')) return 'illegal_modification';
   if (autoReportSource(signals) === 'auto_scam') return 'spam';
   if (signals.includes('new_account_media')) return 'other';

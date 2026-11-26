@@ -8,6 +8,7 @@ import { CreateReportDto, ModerationActDto, TakedownDto } from '../src/ustaad/dt
 import {
   banNeedsFourEyes,
   clockFor,
+  maskContactsInText,
   clockMs,
   normaliseForScreen,
   overdueStage,
@@ -48,16 +49,50 @@ describe('signals', () => {
   });
   it('part numbers and tyre sizes are not phone numbers or plates', () => {
     expect(screenTextSignals('6301 bearing, 175/65 R14, DOT 3', lists)).toEqual([]);
-    // Honda-style part numbers: a dashed 10-digit run only holds (phone_like), a longer code is nothing.
-    expect(screenTextSignals('96100-62010-00 lagao', lists)).toEqual([]);
+    // Honda-style part numbers look like dashed phone numbers: they only hold (phone_like), never block.
+    expect(screenTextSignals('96100-62010-00 lagao', lists)).toEqual(['phone_like']);
     expect(screenTextSignals('94109-12000 washer', lists)).toEqual(['phone_like']);
     expect(screenDecision('post', ['phone_like'], settled).outcome).toBe('hold');
   });
-  it('ordinary Hinglish is not a plate or a link', () => {
-    expect(screenTextSignals('Splendor ka 97 cc 2018 model', lists)).toEqual([]);
+  it('ordinary Hinglish is not a link; a lower-case spaced plate shape only holds (plate_like)', () => {
+    expect(screenTextSignals('Splendor ka 97 cc 2018 model', lists)).toEqual(['plate_like']);
+    expect(screenDecision('post', ['plate_like'], settled).outcome).toBe('hold');
     expect(screenTextSignals('rs 50 se 2000 tak', lists)).toEqual([]);
     expect(screenTextSignals('thik hai.me kal aaunga', lists)).toEqual([]);
     expect(screenTextSignals('gaadi cg04ab1234 hai', lists)).toContain('number_plate');
+  });
+  it('security review: phone numbers written with any mix of spaces and dashes are caught and masked', () => {
+    expect(screenTextSignals('98 76 54 32 10', lists)).toContain('phone_number');
+    expect(screenTextSignals('0 98765 43210', lists)).toContain('phone_number');
+    for (const p of ['+91-98765-43210', '9-8-7-6-5-4-3-2-1-0']) {
+      const s = screenTextSignals(`call ${p}`, lists);
+      expect(
+        s.some((x) => x === 'phone_number' || x === 'phone_like'),
+        p,
+      ).toBe(true);
+      expect(maskContactsInText(`call ${p}`), p).not.toMatch(/[0-9]{3}/);
+    }
+  });
+  it('security review: redirector and messaging links count in any spelling; the denylist runs on all text', () => {
+    for (const l of [
+      't.me/kaam',
+      'wa.me/919876543210',
+      'bit.ly/x1',
+      'tinyurl kaam',
+      'goo.gl/x',
+      'rb.gy/x',
+      'cutt.ly/x',
+    ])
+      expect(screenTextSignals(`join ${l}`, lists), l).toContain('link');
+    expect(screenTextSignals('join t . me/kaam', lists)).toContain('link');
+    expect(screenTextSignals('wa dot me pe aao', lists)).toContain('link');
+    expect(screenTextSignals('bit (dot) ly/abc', lists)).toContain('link');
+    expect(screenTextSignals('visit evil dot xyz for jobs', lists)).toContain('link_denied');
+  });
+  it('security review: plates with separators in any case', () => {
+    expect(screenTextSignals('CG-04-AB-1234', lists)).toContain('number_plate');
+    expect(screenTextSignals('gaadi cg 04 ab 1234 hai', lists)).toContain('plate_like');
+    expect(screenTextSignals('ka 97 cc 2018', lists)).toContain('plate_like');
   });
   it('UPI ids, pay-app asks, OTP asks and fee phrases are flagged', () => {
     expect(screenTextSignals('paise ramesh@ybl pe bhejo', lists)).toContain('upi_id');
