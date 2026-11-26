@@ -501,3 +501,22 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
 - **Q-USAGE-3 (2026-11-26, Usage & limits, Input, optional):** for exact R2 operation counts, create a Cloudflare API
   token with Account Analytics: Read and set `CLOUDFLARE_ANALYTICS_TOKEN` (`deploy/set-env.sh`). **Default
   meanwhile:** MechDost's own estimate, labelled "Estimated".
+
+#### Q-COD-1 … 5: cash on delivery only on request (founder ruling 2026-11-26)
+
+- **Q-COD-1 (Decision, P0) — live online payment before this ships.** Production still runs Razorpay **test** keys
+  (decisions 2026-11-14, Q75). With "Cash on delivery for every customer" off (the founder's default), an ordinary
+  customer can only pay online, so without live keys they cannot really buy. **Default meanwhile:** the rule ships as
+  ruled; Admin → Settings → Payments can switch "every customer" back on per city until live keys are in.
+- **Q-COD-2 (Decision, P2) — bulk quote orders.** Staff negotiate each quote with the customer, so a quote accepted
+  cash on delivery is **not** gated by COD eligibility (its own `quotes.cod_cap_paise` still applies; PIN rule and
+  blocks too). Option: require eligibility for quotes as well. **Default meanwhile:** quotes exempt.
+- **Q-COD-3 (Decision, P3) — demo store default.** The browser demo has no online payment, so its "every customer"
+  switch starts **on** (otherwise no demo checkout could finish); everything else mirrors production and Admin →
+  Customers → COD requests switches it off. **Default meanwhile:** as built.
+- **Q-COD-4 (Decision, P3) — Ustaad level for the perk.** Any verified, active Ustaad level counts (Naya and up; not
+  Chhotu, not restricted, not with frozen perks). The admin can raise it per city
+  (`checkout.cod_ustaad_min_level`: 0 Naya … 3 Master). **Default meanwhile:** 0.
+- **Q-COD-5 (Check, P2) — screenshots.** Checkout (COD not available, request panel), Account → Payments (390 px,
+  light and Hindi) and Admin → Customers → COD requests (1440 px) are in the agent report. **Default meanwhile:** as
+  built.

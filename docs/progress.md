@@ -2,6 +2,23 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-26 (late) — Cash on delivery only on request (branch worktree-agent-a0f97a70e50f22164, not pushed)
+
+- **Founder ruling + addendum** (decisions 2026-11-26 "Cash on delivery only on request"): normal customers get no
+  COD, not even one piece; COD for customers the admin approves (per city) and verified Ustaad members; "every
+  customer" switch off by default with a risk warning; minimum order and pieces for eligible customers (off).
+- **Built:** shared rule `cod-eligibility.ts` + `codRequestMachine`; settings `checkout.cod_*` (7 keys, per city);
+  migration **0109_cod_eligibility** (NOT applied; journal `when` = generate time, snapshot chained after 0104 —
+  rechain after the delivery agents' 0105–0108); repo `cod-requests.ts` (request, withdraw, decide, revoke, queue,
+  status); quote `cod.eligibility` (personal with a bearer) and placement `COD_NOT_ELIGIBLE`; API `/v1/me/cod*`,
+  `/v1/admin/cod-requests*` with `customers:cod_approve` (ops + city managers, city-scoped); bell + email en/hi;
+  checkout UI (disabled COD + reason + one action + lazy request panel), Account → Payments, Admin → Customers → COD
+  requests; demo store `demo/cod.ts` ("everyone" starts on in the demo, Q-COD-3).
+- **Test DB:** `createTestDb()` now inserts `checkout.cod_everyone = true` for the older suites; `{ codDefaults: true }`
+  tests the real defaults.
+- **Needs at merge:** `pnpm db:seed` (new permission), rechain 0109 after 0105–0108, Razorpay live keys before go-live
+  (Q-COD-1, P0). Open: Q-COD-1 … 5.
+
 ## 2026-11-26 (night) — four fixes agent (branch worktree-agent-a3b1a256dd1a31849, not pushed, no migration)
 
 - **Shop:** the 2W/3W/4W "Vehicle type" select is retired (founder ruling, Q-segments answered); old `?vehicle=` links

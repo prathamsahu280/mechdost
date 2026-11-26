@@ -84,7 +84,7 @@ export async function codRulesForCity(db: Tx, cityId: string): Promise<CodCityRu
     const spec = OPERATIONAL_SETTINGS[key];
     if (spec.kind !== 'int') return 0;
     if (typeof v === 'number' && Number.isSafeInteger(v) && v >= spec.min && v <= spec.max) return v;
-    return spec.default ?? 0;
+    return spec.default;
   };
   return {
     switches: {

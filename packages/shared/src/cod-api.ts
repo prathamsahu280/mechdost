@@ -82,3 +82,6 @@ export const AdminCodRequestsDto = z.object({
 export type AdminCodRequests = z.infer<typeof AdminCodRequestsDto>;
 
 export const CodDecisionDto = z.object({ status: z.enum(COD_REQUEST_STATES), version: z.number().int() });
+
+/** `POST /me/cod/requests/{id}/withdraw` answers the new version. */
+export const CodVersionDto = z.object({ version: z.number().int() });

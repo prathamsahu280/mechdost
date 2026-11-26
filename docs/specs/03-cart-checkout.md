@@ -27,7 +27,7 @@ cart (client + server `carts` for logged-in) → `checkout_sessions` (address, p
 
 **Built 2026-11-03 (first slice: quote + COD placement; `packages/db/src/repo/checkout.ts`, `apps/api/src/routes/checkout.ts`):**
 
-- `POST /v1/checkout/quote` `{pincode, lines:[{sku, qty}], locale}`: public (60/min per IP). Each line is priced from the **nearest covering shop with free stock for the whole quantity** (same rule as spec 02); lines are grouped by that shop into per-shop groups ("Sold by …", delivery from `shop_pincodes.shipping_paise`, free when the group subtotal reaches setting `checkout.free_delivery_min_paise`); GST split exactly per line (`splitInclusiveGst`: CGST = SGST when shop state = delivery state, else IGST). Line issues: `unavailable` (not live / no stock anywhere) or `insufficient_stock` with `available` = the most one shop can deliver. COD eligibility: `checkout.cod_cap_paise` (default ₹5,000) and the PIN's `cod_allowed`; `checkout.cod_fee_paise` (default 0). The COD fee is stored on the group (`order_groups.cod_fee_paise`) **and on the first sub-order** (`orders.cod_fee_paise`, migration 0032), so each sub-order's total is exactly what its shop collects (`orders_total_matches` CHECK: total = subtotal − discount + shipping + COD fee) and the sub-orders add up to the group total (code review 2026-11-03). Settings are per city with a global fallback (admin-editable, hard rule 8). Unknown or non-live PIN → 422 `PINCODE_NOT_SERVICEABLE`.
+- `POST /v1/checkout/quote` `{pincode, lines:[{sku, qty}], locale}`: public (60/min per IP). Each line is priced from the **nearest covering shop with free stock for the whole quantity** (same rule as spec 02); lines are grouped by that shop into per-shop groups ("Sold by …", delivery from `shop_pincodes.shipping_paise`, free when the group subtotal reaches setting `checkout.free_delivery_min_paise`); GST split exactly per line (`splitInclusiveGst`: CGST = SGST when shop state = delivery state, else IGST). Line issues: `unavailable` (not live / no stock anywhere) or `insufficient_stock` with `available` = the most one shop can deliver. COD eligibility: `checkout.cod_cap_paise` (default ₹5,000) and the PIN's `cod_allowed` (since 2026-11-26 also who the customer is: § Cash-on-delivery eligibility); `checkout.cod_fee_paise` (default 0). The COD fee is stored on the group (`order_groups.cod_fee_paise`) **and on the first sub-order** (`orders.cod_fee_paise`, migration 0032), so each sub-order's total is exactly what its shop collects (`orders_total_matches` CHECK: total = subtotal − discount + shipping + COD fee) and the sub-orders add up to the group total (code review 2026-11-03). Settings are per city with a global fallback (admin-editable, hard rule 8). Unknown or non-live PIN → 422 `PINCODE_NOT_SERVICEABLE`.
 - `POST /v1/orders` (signed in, phone + email verified, `orders:place`, 10 per 10 min per user, **`Idempotency-Key` header required**): COD only (`online` → 422 `PAYMENT_METHOD_UNAVAILABLE` until Razorpay, pending #1). In one transaction: advisory lock on (user, key) → same key returns the same order (200, `replayed: true`; first time 201) — but only for the same request: a SHA-256 of address, lines and note is stored (`order_groups.request_hash`, 0033) and the same key with a different request is 422 `IDEMPOTENCY_MISMATCH` → re-quote → `CHECKOUT_UNAVAILABLE` (422, `details.lines`) / `PRICE_CHANGED` (409, the customer's `expectedTotalPaise` must equal the re-priced total) / `COD_NOT_ALLOWED` (422) → order group `MD-{CITY}-{YYYY}-{6}` (code collision retried in a savepoint) + one sub-order per shop (`{group}-{n}`, status `placed`, `suggested_shop_id` = pricing shop, address snapshot) + items with tax snapshot and the title in English and Hindi (`order_items.title` / `title_hi`, 0033; readers pick by locale, shops get both) + stock reservations (conditional updates; TTL `checkout.cod_reservation_minutes`, default 24 h) + audit row; the insert trigger writes the `placed` timeline event with actor customer and the live outbox pings the admin queue.
 - Customer blocks (spec 08, built 2026-11-03): `orders`/`full` → 403 `ORDERS_BLOCKED`; `cod_only` → `COD_NOT_ALLOWED` (`reason: customer`). The public quote does not know the customer, so placement is the authoritative check.
 - Not yet: server carts and merge, checkout sessions, COD OTP confirmation (coupons: built 2026-11-15, § Built: coupons; Coins redemption at the server: built, spec 20), the web cart on the API (the pay-online button already places API orders; see § Online payment).
@@ -246,3 +246,59 @@ Customers never see that a shop fulfils the order: checkout, cart and order page
   "Estimate, final after delivery." under it, only when the estimate is above ₹0. Server-computed in real data mode;
   the demo uses the demo catalogue's MRP. No "was ₹X" strike-through, no percentage.
 - Placing an order snapshots `order_items.mrp_paise` and `orders.delivery_waived_paise` (spec 14 "Savings ledger").
+
+## Cash-on-delivery eligibility (founder ruling 2026-11-26)
+
+Founder: "cash on delivery would be only available on request if the admin approves it for that user or like only for
+ustaad mechanics, not availble to everyone (make it admin configurable)"; addendum: "we wont really give cash on
+delivery for one piece for normal users bc cash handling would be an issue". Decision: `docs/decisions.md`
+2026-11-26 "Cash on delivery only on request". This supersedes "COD for every verified customer within the cap".
+
+**Rule** (`packages/shared/src/cod-eligibility.ts`, pure; DB `packages/db/src/repo/cod-requests.ts`): per city, with
+the global value as fallback (Settings → Payments):
+
+| Setting                             | Default | Meaning                                                                            |
+| ----------------------------------- | ------- | ---------------------------------------------------------------------------------- |
+| `checkout.cod_everyone`             | off     | every customer, as before 2026-11-26 (turning it on shows a risk warning)          |
+| `checkout.cod_approved_customers`   | on      | customers whose request staff approved (for that city)                             |
+| `checkout.cod_ustaad_verified`      | on      | verified, active Ustaad members, not restricted, perks not frozen                  |
+| `checkout.cod_ustaad_min_level`     | 0       | 0 Naya, 1 Pakka, 2 Bada, 3 Master                                                  |
+| `checkout.cod_min_order_paise`      | 0       | eligible customers: smallest cash order (paid at the door, after coupon and Coins) |
+| `checkout.cod_min_items`            | 1       | eligible customers: fewest pieces in one order                                     |
+| `checkout.cod_request_reapply_days` | 7       | global: wait after a reject or revoke before asking again                          |
+
+Order of checks (quote and placement): customer block → **eligibility** (everyone → signed in → approval here →
+Ustaad) → PIN `cod_allowed` → cap (the lower of the city cap and an approval's personal cap, on what is paid at the
+door) → minimum order → minimum pieces. Bulk quote orders skip eligibility and the minimums (Q-COD-2).
+
+**API.** `POST /v1/checkout/quote` (still public) returns `cod: { allowed, reason: over_cap|pincode|null, capPaise,
+eligibility: { eligible, via: everyone|approved|ustaad|null, reason, canRequest, capPaise }, cartReason, minOrderPaise,
+minItems }`; with a bearer token the answer is the person's (checkout sends it, the cart page does not); guests get
+`sign_in_required`; `Cache-Control: no-store`. `POST /v1/orders` with `paymentMethod: cod`: 422 `COD_NOT_ELIGIBLE`
+(`details.reason`, `canRequest`), 422 `COD_NOT_ALLOWED` (`details.reason`: `customer | pincode | over_cap |
+below_min_order | below_min_items`). Reasons: `sign_in_required | disabled | not_approved | request_pending | rejected |
+revoked | expired | ustaad_not_member | ustaad_not_verified | ustaad_level_low`.
+
+**Requests.** `GET /v1/me/cod?pincode=` (state + up to 20 requests), `POST /v1/me/cod/requests` `{pincode, reasonCode,
+note?}` (strict; phone verified; 5 a day per customer; 409 `COD_ALREADY_AVAILABLE | COD_REQUEST_PENDING |
+COD_REQUEST_TOO_SOON`, 422 `COD_REQUESTS_CLOSED | PINCODE_NOT_SERVICEABLE`), `POST /v1/me/cod/requests/{id}/withdraw`
+`{version}` (foreign id 404). Reason codes: `no_upi_or_card | prefer_pay_on_receipt | business_cash_account |
+regular_buyer | large_order | other`. Staff side: spec 08 "COD requests".
+
+**Data** (migration `0109_cod_eligibility`): `cod_requests` (user, city, PIN, status, reason code, note ≤ 300,
+decision by/at, reject reason code, staff note ≤ 500 never shown to the customer, personal cap paise, end date, revoke
+by/at/reason code, version) with partial unique indexes "one pending per customer" and "one approval per customer and
+city", CHECKs for every code list and for complete decisions; `cod_request_events` append-only. RLS deny-all.
+
+**UI.** Checkout: the cash-on-delivery choice is disabled when it is not the customer's, with one line saying why
+(`checkout.codNot_*`) and the one next action: "Request cash on delivery" (opens the lazy request panel), "Sign in",
+"Get verified on Ustaad" or "Join MechDost Ustaad"; payment falls back to online. Account → Payments shows online
+(always) and cash on delivery (available, why not, the same action) plus the request history with "Withdraw request".
+Events: `checkout_cod_unavailable_shown`, `cod_request_opened` (client); `cod_requested`, `cod_request_withdrawn`,
+`cod_request_approved`, `cod_request_rejected`, `cod_approval_revoked` (server). Demo: the browser store
+`apps/web/src/demo/cod.ts` mirrors the rule; its "everyone" switch starts on (no online payment in the demo, Q-COD-3).
+
+**Tests.** `packages/shared/test/cod-eligibility.test.ts` (rule matrix, machine), `packages/db/test/cod-requests.test.ts`
+(defaults, one pending, CAS, history/audit/events/notice, revoke, expiry, withdraw 404, city scope, self-decision,
+Ustaad, minimums, city override), `apps/api/test/cod-requests.test.ts` (HTTP, role leaks, strict bodies, rate limit),
+`apps/web/test/cod-view.test.ts`, e2e `apps/web/e2e/cod-eligibility.spec.ts`.

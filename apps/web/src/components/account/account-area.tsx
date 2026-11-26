@@ -89,6 +89,8 @@ const NoticeSettings = lazy(() =>
 // Shop staff invite (design 2026-11-15, security review): the invitee accepts or declines; real sign-in only.
 const ShopInviteCard = lazy(() => import('./shop-invites-api').then((m) => ({ default: m.ShopInviteCard })));
 const PushPrompt = lazy(() => import('../notices/push-card').then((m) => ({ default: m.PushPrompt })));
+// Cash on delivery on request and payment options (founder ruling 2026-11-26), loaded when the section opens.
+const AccountPayments = lazy(() => import('./account-payments'));
 const sectionFallback = <div className="skeleton h-72 rounded-card" aria-hidden="true" />;
 
 const SECTION_EMOJI: Record<AccountSection, string> = {
@@ -98,6 +100,7 @@ const SECTION_EMOJI: Record<AccountSection, string> = {
   services: '🔧',
   quotes: '💬',
   coins: '🪙',
+  payments: '💳',
   support: '🛟',
   vehicles: '🚗',
   addresses: '📍',
@@ -277,6 +280,11 @@ export function AccountSectionBody({
         ) : (
           <CoinsSection account={session} />
         )
+      ) : null}
+      {section === 'payments' ? (
+        <Suspense fallback={sectionFallback}>
+          <AccountPayments account={session} />
+        </Suspense>
       ) : null}
       {section === 'support' ? (
         // useSearchParams (preset order) needs a Suspense boundary on statically built pages.

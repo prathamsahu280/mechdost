@@ -30,3 +30,7 @@ Nightly export of pseudonymised facts to a warehouse (Postgres replica or BigQue
 
 - **Personalisation (2026-11-26):** `recently_viewed` (user id, product id, `city_code`, `viewed_at` UTC; at most 10 per user) exists only with the `personalisation` consent and is deleted on withdrawal; suggestion events `reco_impression` / `reco_click` carry surface and algorithm codes, slugs and positions only (no person); the funnel joins them to add-to-cart and orders by pseudonymous session.
 - **Usage and free limits (2026-11-26, migration 0103):** `usage_snapshots` is an append-only time series (one row per metric per check: metric code with its unit, bigint value, the limit that applied, source `measured|estimated|provider_api`, trigger, UTC `measured_at`, `run_id` to `usage_runs`); `usage_alerts` is append-only (metric, level, month, value, limit, percent in basis points). No personal data; alert recipients live only in `usage_alert_config` and the audit log.
+
+- **Cash on delivery (2026-11-26):** `cod_requests` (reason, reject and revoke **codes**; the customer note and the staff
+  note are extra free text, the staff note never leaves staff screens), append-only `cod_request_events` (from, to,
+  actor type and id, reason code, UTC time), personal cap in paise. Analytics events carry ids and codes only.

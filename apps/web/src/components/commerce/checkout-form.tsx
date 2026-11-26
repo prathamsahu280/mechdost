@@ -21,7 +21,9 @@ import { DATA_MODE } from '@/lib/data-mode';
 import { useCartPricing } from '@/lib/use-cart-pricing';
 import { freeDeliveryHints } from '@/lib/free-delivery-hint';
 import { checkoutTotals } from '@/lib/checkout-totals';
-import { codAllowedAfterCoins, coinRulesFromApi } from '@/lib/coins-view';
+import { coinRulesFromApi } from '@/lib/coins-view';
+import { codChoice, codNextAction } from '@/lib/cod-view';
+import { demoCodEligibility, useDemoCod } from '@/demo/cod';
 import { CartView } from './cart-view';
 
 // Real sign-in: the customer's saved addresses (design 2026-11-15), loaded only for a signed-in customer.
@@ -33,6 +35,8 @@ import type { AppliedCoupon } from '@/lib/coupon-api';
 
 // Real data mode: the coupon field (spec 03), loaded only when the customer opens checkout, never with the page shell.
 const CheckoutCoupon = lazy(() => import('./checkout-coupon'));
+// Cash on delivery on request (founder ruling 2026-11-26): loaded only when the customer opens it.
+const CodRequestPanel = lazy(() => import('./cod-request-panel'));
 
 type Field = 'name' | 'phone' | 'address' | 'pincode' | 'gstin' | 'businessName' | 'consent';
 
@@ -59,7 +63,11 @@ export function CheckoutForm() {
   const [blockedNote, setBlockedNote] = useState<string | null>(null);
   // Online payment (Razorpay) needs real sign-in: the API knows who pays.
   const onlineAvailable = AUTH_MODE === 'firebase';
-  const [method, setMethod] = useState<'cod' | 'online'>('cod');
+  // The customer's choice; `method` below falls back to online when cash on delivery is not offered to them.
+  const [chosenMethod, setMethod] = useState<'cod' | 'online'>('cod');
+  // Cash on delivery on request (founder ruling 2026-11-26): the request panel, opened from the payment choice.
+  const [codPanel, setCodPanel] = useState(false);
+  const [codRequested, setCodRequested] = useState(false);
   const [onlineNote, setOnlineNote] = useState<{ text: string; link?: 'sign_in' | 'verify_email' } | null>(
     null,
   );
@@ -115,10 +123,12 @@ export function CheckoutForm() {
   const pickKey = picked?.id ?? 'typed';
   // Real data mode re-quotes as the PIN changes (the server's prices, delivery and GST are the only numbers shown).
   const [typedPin, setTypedPin] = useState<string | null>(null);
+  // A signed-in customer's quote is personal: the server says whether cash on delivery is theirs.
   const pricing = useCartPricing(
     lines,
     typedPin !== null && PIN.test(typedPin) ? typedPin : prefill.pincode,
     locale,
+    realCustomer !== null,
   );
   const { priced, subtotalPaise, deliveryPaise, totalPaise } = pricing;
   const hints = pricing.quote ? freeDeliveryHints(pricing.quote.groups) : [];
@@ -147,6 +157,48 @@ export function CheckoutForm() {
     realData ? (apiCoins?.rules ?? { ...coinRulesFrom(settings), maxRedeemBp: 0 }) : coinRulesFrom(settings),
   );
   const [useCoinsOn, setUseCoinsOn] = useState(false);
+  // Who may pay cash (founder ruling 2026-11-26): the API's answer in real data mode, the demo store's otherwise; judged
+  // on what is paid at the door (after the coupon and Coins) like the server. Unknown while the first quote loads.
+  const demoCod = useDemoCod();
+  const pieces = priced.reduce((sum, l) => sum + l.qty, 0);
+  const codDiscount = (useCoinsOn ? redemption.discountPaise : 0) + couponDiscount;
+  const codState = realData
+    ? pricing.quote
+      ? codChoice(pricing.quote, { discountPaise: codDiscount, pieces })
+      : null
+    : codChoice(
+        {
+          totalPaise,
+          cod: {
+            allowed: true,
+            reason: null,
+            capPaise: Number.MAX_SAFE_INTEGER,
+            eligibility: demoCodEligibility(demoCod, session?.role === 'customer' ? session.id : null),
+            minOrderPaise: demoCod.minOrderPaise,
+            minItems: demoCod.minItems,
+          },
+        },
+        { discountPaise: codDiscount, pieces },
+      );
+  // A request just sent here reads as pending until the next quote says so too.
+  const codReason =
+    codRequested && codState?.available === false ? 'request_pending' : (codState?.reason ?? null);
+  const codAvailable = codState?.available ?? true;
+  const codAction = codRequested
+    ? null
+    : codNextAction(codState?.reason ?? null, codState?.canRequest ?? false);
+  const method: 'cod' | 'online' = codAvailable ? chosenMethod : 'online';
+  // Neither way to pay (the demo has no online payment): ordering waits for cash on delivery.
+  const noPaymentMethod = !codAvailable && !onlineAvailable;
+  const shownReason = codAvailable ? null : codReason;
+  useEffect(() => {
+    if (shownReason)
+      track('checkout_cod_unavailable_shown', {
+        surface: 'checkout',
+        reason: shownReason,
+        canRequest: codAction === 'request',
+      });
+  }, [shownReason, codAction]);
   // Demo: coins are a demo-store discount on cash on delivery only. Real data: the API applies them to both methods.
   const coinDiscount = useCoinsOn && (realData || method === 'cod') ? redemption.discountPaise : 0;
   const showCoins = (coinAccount !== null || realCustomer !== null) && balance > 0;
@@ -248,9 +300,9 @@ export function CheckoutForm() {
       setOnlineNote({ text: pricing.status === 'error' ? t('pricesError') : t('pricesLoading') });
       return;
     }
-    // Judged on what the customer pays at the door, after coins (the server checks the same).
-    if (!codAllowedAfterCoins(quote, coinDiscount + couponDiscount)) {
-      setOnlineNote({ text: t('cod_not_allowed') });
+    // Judged on what the customer pays at the door, after coins (the server checks the same and decides).
+    if (!codAvailable) {
+      setOnlineNote({ text: t('cod_not_eligible') });
       return;
     }
     setSubmitting(true);
@@ -324,9 +376,11 @@ export function CheckoutForm() {
               ? { text: t('online_cart_changed') }
               : res.code === 'COD_NOT_ALLOWED'
                 ? { text: t('cod_not_allowed') }
-                : res.code === 'ORDERS_BLOCKED'
-                  ? { text: t('blockedOrders') }
-                  : { text: t('cod_unavailable') };
+                : res.code === 'COD_NOT_ELIGIBLE'
+                  ? { text: t('cod_not_eligible') }
+                  : res.code === 'ORDERS_BLOCKED'
+                    ? { text: t('blockedOrders') }
+                    : { text: t('cod_unavailable') };
     setOnlineNote(note);
   }
 
@@ -433,6 +487,11 @@ export function CheckoutForm() {
       return;
     }
     setBlockedNote(null);
+    // No way to pay here (the demo has no online payment and cash on delivery is not theirs): say so, order nothing.
+    if (noPaymentMethod) {
+      setOnlineNote({ text: t('codNoMethod') });
+      return;
+    }
     if (method === 'online') {
       void payOnlineNow({ name: value('name'), phone, address: value('address'), pincode }, business);
       return;
@@ -579,12 +638,16 @@ export function CheckoutForm() {
           </div>
           <fieldset>
             <legend className="text-sm font-bold text-ink">{t('payment')}</legend>
-            <label className="mt-2 flex min-h-11 items-center gap-2 rounded-input border border-input-border px-3 text-sm text-ink">
+            <label
+              className={`mt-2 flex min-h-11 items-center gap-2 rounded-input border px-3 text-sm ${codAvailable ? 'border-input-border text-ink' : 'border-line text-muted'}`}
+            >
               <input
                 type="radio"
                 name="payment"
                 value="cod"
                 checked={method === 'cod'}
+                disabled={!codAvailable}
+                aria-describedby={shownReason ? 'checkout-cod-reason' : undefined}
                 onChange={() => {
                   setMethod('cod');
                 }}
@@ -592,6 +655,70 @@ export function CheckoutForm() {
               />
               {t('cod')}
             </label>
+            {shownReason ? (
+              // Why cash on delivery is not offered, and the one next step (spec 03 § Cash-on-delivery eligibility).
+              <div className="mt-2 rounded-input bg-surface-alt px-3 py-2">
+                <p id="checkout-cod-reason" className="text-sm text-ink">
+                  {shownReason === 'over_cap'
+                    ? t('codNot_over_cap', { amount: formatPrice(pricing.quote?.cod.capPaise ?? 0) })
+                    : shownReason === 'below_min_order'
+                      ? t('codNot_below_min_order', {
+                          amount: formatPrice(
+                            realData ? (pricing.quote?.cod.minOrderPaise ?? 0) : demoCod.minOrderPaise,
+                          ),
+                        })
+                      : shownReason === 'below_min_items'
+                        ? t('codNot_below_min_items', {
+                            count: realData ? (pricing.quote?.cod.minItems ?? 1) : demoCod.minItems,
+                          })
+                        : t(`codNot_${shownReason}`)}
+                </p>
+                {codAction === 'request' && !codPanel ? (
+                  <button
+                    type="button"
+                    data-disclosure-trigger="cod-request"
+                    aria-expanded="false"
+                    onClick={() => {
+                      setCodPanel(true);
+                    }}
+                    className="press mt-2 min-h-11 rounded-button border border-input-border bg-surface px-4 text-sm font-bold text-ink hover:bg-pill"
+                  >
+                    {t('codAction_request')}
+                  </button>
+                ) : null}
+                {codAction === 'sign_in' ? (
+                  <Link
+                    href={`${prefix}/login?next=${encodeURIComponent(`${prefix}/checkout`)}`}
+                    className="mt-2 inline-flex min-h-11 items-center text-sm font-bold text-accent-soft-text underline underline-offset-2"
+                  >
+                    {t('codAction_sign_in')}
+                  </Link>
+                ) : null}
+                {codAction === 'ustaad_verify' || codAction === 'ustaad_join' ? (
+                  <Link
+                    href={`${prefix}${codAction === 'ustaad_verify' ? '/ustaad/me' : '/ustaad/join'}`}
+                    className="mt-2 inline-flex min-h-11 items-center text-sm font-bold text-accent-soft-text underline underline-offset-2"
+                  >
+                    {t(codAction === 'ustaad_verify' ? 'codAction_ustaad_verify' : 'codAction_ustaad_join')}
+                  </Link>
+                ) : null}
+                {codPanel ? (
+                  <Suspense fallback={<div className="skeleton mt-3 h-40 rounded-card" aria-hidden="true" />}>
+                    <CodRequestPanel
+                      surface="checkout"
+                      pincode={quotePin}
+                      accountId={session?.role === 'customer' ? session.id : null}
+                      onClose={() => {
+                        setCodPanel(false);
+                      }}
+                      onSent={() => {
+                        setCodRequested(true);
+                      }}
+                    />
+                  </Suspense>
+                ) : null}
+              </div>
+            ) : null}
             <label
               className={`mt-2 flex min-h-11 items-center gap-2 rounded-input border px-3 text-sm ${onlineAvailable ? 'border-input-border text-ink' : 'border-line text-muted'}`}
             >

@@ -83,7 +83,12 @@ function useDemoCartPricing(lines: readonly CartLine[]): CartPricing {
   }, [lines]);
 }
 
-function useApiCartPricing(lines: readonly CartLine[], pincode: string, locale: string): CartPricing {
+function useApiCartPricing(
+  lines: readonly CartLine[],
+  pincode: string,
+  locale: string,
+  personal = false,
+): CartPricing {
   const [state, setState] = useState<{
     key: string;
     quote: CheckoutQuote | null;
@@ -95,7 +100,7 @@ function useApiCartPricing(lines: readonly CartLine[], pincode: string, locale: 
     () => lines.flatMap((l) => (l.sku ? [{ sku: l.sku, qty: l.qty, slug: l.slug }] : [])),
     [lines],
   );
-  const key = `${pincode}|${locale}|${apiLines.map((l) => `${l.sku}:${String(l.qty)}`).join(',')}`;
+  const key = `${personal ? 'me' : 'guest'}|${pincode}|${locale}|${apiLines.map((l) => `${l.sku}:${String(l.qty)}`).join(',')}`;
 
   useEffect(() => {
     if (apiLines.length === 0 || !/^\d{6}$/.test(pincode)) return;
@@ -106,6 +111,7 @@ function useApiCartPricing(lines: readonly CartLine[], pincode: string, locale: 
           locale,
           pincode,
           apiLines.map(({ sku, qty }) => ({ sku, qty })),
+          personal,
         );
         if (!live) return;
         setState((prev) =>
@@ -119,7 +125,7 @@ function useApiCartPricing(lines: readonly CartLine[], pincode: string, locale: 
       live = false;
       window.clearTimeout(timer);
     };
-  }, [key, apiLines, pincode, locale]);
+  }, [key, apiLines, pincode, locale, personal]);
 
   const fresh = state.key === key;
   const current = fresh ? state.quote : null;
@@ -168,5 +174,10 @@ function useApiCartPricing(lines: readonly CartLine[], pincode: string, locale: 
  * Picked once at build time (`NEXT_PUBLIC_DATA_MODE` is inlined), so the demo bundle carries no API pricing code and
  * the API bundle no demo pricing. Same hook order on every render either way.
  */
-export const useCartPricing: (lines: readonly CartLine[], pincode: string, locale: string) => CartPricing =
-  DATA_MODE === 'api' ? useApiCartPricing : useDemoCartPricing;
+/** With personal = true a signed-in checkout sends its token, so the quote's cash-on-delivery answer is the person's own. */
+export const useCartPricing: (
+  lines: readonly CartLine[],
+  pincode: string,
+  locale: string,
+  personal?: boolean,
+) => CartPricing = DATA_MODE === 'api' ? useApiCartPricing : useDemoCartPricing;

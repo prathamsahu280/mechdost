@@ -181,3 +181,13 @@ robots.txt asks AI-training scrapers and SEO-tool crawlers to stay out (`apps/we
 ## Storefront edit shortcut (2026-11-25)
 
 The pencil link on cards and the product page is convenience only; authority stays in the API. Every `/admin/catalogue/*` route requires sign-in, phone verification and `products:write`; `apps/api/test/admin-catalogue-role-leak.test.ts` pins 401 (signed out) and 403 (customer, shop owner, workshop owner, support_agent, finance, marketing, ops_manager) on the read that opens the editor and on each save route, and 200 for catalogue_manager and super_admin. Visibility comes from the live `GET /v1/me` permissions, never from a stored value; a doctored browser record shows nothing. The link carries only the slug (validated before it reaches an API path); saves keep `version` checks and the audit log.
+
+### Cash-on-delivery requests (2026-11-26)
+
+- New permission `customers:cod_approve` (ops manager, city manager, super admin). City-scoped: a request carries the
+  city of the PIN it was asked from; another city's request is a 404; the queue lists only the grant's cities. Staff
+  cannot decide their own request (`COD_SELF_DECISION`). Support agents, finance and marketing get 403.
+- Customer routes: phone verified, `forbidSellers`, 5 requests a day per customer, strict bodies with reason codes, a
+  foreign request id is a 404. The quote reads a bearer token only to make the COD answer personal (`no-store`); an
+  invalid token falls back to the guest answer. Tests: `apps/api/test/cod-requests.test.ts` (role leaks, scope, limit).
+- Needs `pnpm db:seed` (RBAC catalogue sync) at merge so the new permission reaches `role_permissions`.

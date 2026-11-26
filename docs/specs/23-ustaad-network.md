@@ -535,6 +535,12 @@ triggering event (best answer, follow, video completed, verification approved):
   mentorship until counsel). Perk text stays editable.
 - Inactivity: after `levels.inactive_pause_days` (90) without activity a grey "not active right now" dot shows and
   perks pause; the level stays.
+- **Cash on delivery (perk, founder ruling 2026-11-26; spec 03 § Cash-on-delivery eligibility):** a member with
+  `verification_state = 'verified'`, `status = 'active'`, `restricted_mode = 'none'`, perks not frozen
+  (`perks_frozen_until` past or empty) and a level at or above `checkout.cod_ustaad_min_level` (0 Naya … 3 Master;
+  Chhotu and `ustaad_pending` never) may pay cash on delivery without asking, while the city's
+  `checkout.cod_ustaad_verified` switch is on. A member who is not verified yet sees "Get verified on Ustaad" at
+  checkout and on Account → Payments. Not built: the inactivity pause for this perk (the 90-day pause is not read).
 
 ### 9.3 Badges and specialities
 
