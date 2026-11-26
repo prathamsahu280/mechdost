@@ -215,3 +215,16 @@ which are automated. Add new classes at the end of the relevant section.
   pass (`apps/api/test/ustaad-correction-engine.test.ts`). Guard: count numerals over the whole text, never per segment.
 - **S2 · Key presence switches a processor on** — an existing API key for another feature makes a new feature send
   personal text. Test: config default `none` and a route test that sends nothing without the purpose consent.
+
+## Q · Layout and tests that outlive rulings (2026-11-26)
+
+- **Q1 · Screen-reader text escapes a scroll box** — `.sr-only` is `position: absolute`; inside an `overflow-x-auto`
+  box with no positioned ancestor its containing block is the page, so a wide table's "Actions" header or row-action
+  names widen the page at 320 px. Test: the state audit `hscroll` rule at 320 px with a table of row actions; guard
+  `apps/web/test/audit-batch-2a.test.ts` (AdminTable and ScrollRegion carry `relative`).
+- **Q2 · A "keep it applied" observer fights the user** — a MutationObserver that re-applies the stored value reverts
+  a change that could not be stored (storage full). Test: fake observer in `test/theme-light-default.test.ts`;
+  e2e qa-regressions "theme toggle ... storage is full".
+- **Q3 · Copy ruling leaves an e2e literal behind** — a ruling rewords customer copy, the e2e asserting the old text
+  keeps failing for days. Test: `git log -S '<literal>'` on every failing text assertion; the ruling's change greps
+  `apps/web/e2e` for the old literal.
