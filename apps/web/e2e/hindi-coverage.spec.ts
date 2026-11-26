@@ -103,6 +103,8 @@ const MUST_SHOW: Readonly<Record<string, string>> = {
   '/admin/applications': CODES.application,
   '/admin/reviews': 'Good work',
   '/admin/partners': 'शर्मा ऑटो पार्ट्स',
+  '/ustaad/q/UQ-RPR-2026-K7QM2D': 'Splendor Plus',
+  '/ustaad/jobs': 'शंकर नगर',
 };
 
 /** Visits each page and returns "page: words" for every page with English left on it. */
@@ -181,6 +183,19 @@ const CUSTOMER_PAGES = [
 
 // The Ustaad Network shell is shown to staff during the preview (spec 23, 2026-11-26).
 const ADMIN_PAGES = [...ADMIN_SECTIONS.map((s) => (s === 'overview' ? '/admin' : `/admin/${s}`)), '/ustaad'];
+// Ustaad Q&A, Learn and local screens (workstreams C and E) with the browser demo's sample data.
+const USTAAD_PAGES = [
+  '/ustaad/ask',
+  '/ustaad/ask?filter=mine',
+  '/ustaad/ask/new',
+  '/ustaad/q/UQ-RPR-2026-K7QM2D',
+  '/ustaad/learn',
+  '/ustaad/me/location',
+  '/ustaad/area',
+  '/ustaad/jobs',
+  '/ustaad/jobs/UJ-RPR-2026-Q4MZ7A',
+  '/ustaad/jobs/new',
+];
 
 const report = (failures: string[]) =>
   `English text on Hindi pages — translate it (or mark user-typed text with data-user-content):\n${failures.join('\n')}`;
@@ -213,6 +228,13 @@ test.describe('Hindi pages have no English left (hard rule 10)', () => {
   test('workshop portal', async ({ page }) => {
     await signIn(page, PHONES.workshop);
     const failures = await audit(page, ['/partner/workshop'], true);
+    expect(failures, report(failures)).toEqual([]);
+  });
+
+  test('Ustaad Q&A, Learn, pin, area and jobs (staff preview)', async ({ page }) => {
+    test.setTimeout(180_000);
+    await signIn(page, PHONES.admin);
+    const failures = await audit(page, USTAAD_PAGES, true);
     expect(failures, report(failures)).toEqual([]);
   });
 
