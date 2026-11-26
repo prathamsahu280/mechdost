@@ -93,6 +93,20 @@ export interface UstaadServerEventProps {
   ustaad_restricted_mode: { memberId: string; reason: 'minor_report' | 'review' | 'cleared' };
   admin_ustaad_settings_saved: { keys: string[] };
   admin_ustaad_invariant_refused: { key: string };
+  /** Admin → Ustaad tables (task G1): which table, what was done; never the text. */
+  admin_ustaad_table_saved: {
+    table:
+      | 'levels'
+      | 'badges'
+      | 'tags'
+      | 'words'
+      | 'reasons'
+      | 'reach_cities'
+      | 'promotions'
+      | 'tutorial_cards'
+      | 'coachmarks';
+    action: 'create' | 'update' | 'merge' | 'move';
+  };
   /** The staff preview switch (founder 2026-11-26). */
   admin_ustaad_access_changed: { from: Of<typeof USTAAD_ACCESS_MODES>; to: Of<typeof USTAAD_ACCESS_MODES> };
 }
@@ -131,6 +145,7 @@ export const USTAAD_SERVER_EVENTS = [
   'ustaad_restricted_mode',
   'admin_ustaad_settings_saved',
   'admin_ustaad_invariant_refused',
+  'admin_ustaad_table_saved',
   'admin_ustaad_access_changed',
 ] as const satisfies readonly (keyof UstaadServerEventProps)[];
 
@@ -171,6 +186,30 @@ export const USTAAD_CLIENT_EVENT_SCHEMAS = {
   ustaad_coachmark_seen: z.object({ target: z.enum(COACHMARK_TARGETS) }).strict(),
   ustaad_coachmark_dismissed: z.object({ target: z.enum(COACHMARK_TARGETS) }).strict(),
   ustaad_help_replayed: z.object({}).strict(),
+  /** Admin → Ustaad (G1): a settings save or a list change; area = `settings` or the list's id; never values. */
+  admin_ustaad_change: z
+    .object({
+      area: z.enum([
+        'settings',
+        'levels',
+        'badges',
+        'tags',
+        'reasons',
+        'cities',
+        'promotions',
+        'cards',
+        'coachmarks',
+        'words_protected',
+        'words_correction',
+        'words_banned',
+        'words_pii_pattern',
+        'words_link_domain',
+        'words_scam_phrase',
+      ]),
+      action: z.enum(['save', 'create', 'update', 'merge', 'move']),
+      fields: count,
+    })
+    .strict(),
   /** Shell navigation (A): which bottom tab was opened. */
   ustaad_tab_opened: z.object({ tab: z.enum(['home', 'discover', 'create', 'learn', 'me']) }).strict(),
 } as const;

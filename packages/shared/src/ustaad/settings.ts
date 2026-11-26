@@ -269,7 +269,16 @@ const num = (v: UstaadSettingValue): number => (typeof v === 'number' ? v : Numb
 export function ustaadSettingInvariant(
   values: UstaadSettingValues,
   actorRole: string,
-  opts: { reasonCode?: string; protectedWords?: number } = {},
+  opts: {
+    reasonCode?: string;
+    protectedWords?: number;
+    /**
+     * The keys this save changes (Admin → Ustaad, task G1). When given, the super admin + reason rule for a video
+     * length above 180 s applies only if the video key is among them: an earlier raise does not block later saves of
+     * other keys. Omitted = checked on every save (the single-key caller).
+     */
+    changedKeys?: readonly UstaadSettingKey[];
+  } = {},
 ): UstaadInvariantProblem | null {
   const invariant = (key: UstaadSettingKey): UstaadInvariantProblem => ({ key, code: 'SETTING_INVARIANT' });
   for (const key of USTAAD_SETTING_KEYS) {
@@ -283,7 +292,8 @@ export function ustaadSettingInvariant(
   if (!(num(values['ustaad.promo.every_n']) >= 8)) return invariant('ustaad.promo.every_n');
   if (!(num(values['ustaad.media.video_max_mb']) <= 150)) return invariant('ustaad.media.video_max_mb');
   if (!(num(values['ustaad.media.url_ttl_min']) <= 10)) return invariant('ustaad.media.url_ttl_min');
-  if (num(values['ustaad.posts.video_max_s']) > 180) {
+  const videoChanged = opts.changedKeys?.includes('ustaad.posts.video_max_s') ?? true;
+  if (videoChanged && num(values['ustaad.posts.video_max_s']) > 180) {
     const reasonOk = (USTAAD_VIDEO_RAISE_REASONS as readonly string[]).includes(opts.reasonCode ?? '');
     if (actorRole !== 'super_admin' || !reasonOk) return invariant('ustaad.posts.video_max_s');
   }
