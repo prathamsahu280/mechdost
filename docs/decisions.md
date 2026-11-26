@@ -2197,3 +2197,25 @@ Spec `docs/specs/23-ustaad-network.md`, design `docs/superpowers/specs/2026-11-2
 - Job codes use RFC 4648 base32 to satisfy the existing `ustaad_jobs_code_format` CHECK; the lead may instead align
   the CHECK with Crockford `publicCode` at merge.
 - The `jobs.enabled` kill switch hides every job surface (404) but never blocks an applicant's withdraw.
+
+## 2026-11-26 - Ustaad moderation F2 / compliance F3 as built
+
+Spec 23 § 21f. Rulings made while building (lead brief + security review of the branch):
+
+- **Migration 0096** adds the 36 h removal-grievance clock, the `auto_safety` report source, the
+  `ncii_impersonation` reason (2 h), the `safety_block` media reject reason and `ustaad_members.restricted_until`.
+  Reason: A's CHECKs had no code for these duties; papering over them in code would break the analytics codes.
+- **Appeal outcome names:** `upheld` = the decision stands, `overturned` = reversed (spec § 7.6 updated).
+- **Pre-moderation scope:** media posts, stories and comments only; voice notes on questions and answers are never
+  pre-moderated (verification is never a wall, founder ruling).
+- **Blocks vs holds:** only what the author can fix is blocked (phone in public text, plates, links from new accounts,
+  denied domains); every other signal holds silently (no filter oracle).
+- **Security review fixes (2026-11-26):** sanctions never shorten or date a stronger one; an overturned appeal lifts
+  only its own sanction and recomputes the status, never a POCSO freeze; legal removals are reversed only with
+  `ustaad:takedown` and never while on legal hold; a later legal hold covers already-archived media and the purge skips
+  media of held rows; an NCII complaint hides content at once only from a qualified reporter, and dismissed NCII
+  reports count toward the false-report strike.
+- **Staff route prefix** `/v1/admin/ustaad/moderation/*` (own guard, own rate-limit count), so G1's settings router and
+  G2's console never share a guard.
+- **Community Rules** are a policy page `policy.community_rules` at `/policies/community-rules`, admin-editable like
+  `/terms`; the quarterly reminder links there.

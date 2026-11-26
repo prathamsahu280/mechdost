@@ -436,7 +436,8 @@ requested_level`, flips `counts_for_levels` on the member's answers, Izzat back-
 5. **Question:** `open → answered` (first visible answer) `→ solved` (best chosen) ; `open|answered → closed` (asker or
    inactivity `qa.auto_close_days`); any `→ removed`; `removed → previous` on appeal. Answer: `visible → removed →
 visible`, `visible → hidden_author`.
-6. **Report:** `open → in_review → actioned | dismissed`; `actioned → appealed → upheld | overturned` (appeal via a
+6. **Report:** `open → in_review → actioned | dismissed`; `actioned → appealed → upheld | overturned` (`upheld` = the
+   decision stands, `overturned` = it is reversed; ruled 2026-11-26 F2) (appeal via a
    support ticket `REQ-…`, decided by a different staff member); an overdue clock raises `staff.ustaad_report_overdue`.
 7. **Job:** `draft → pending_review` (scam/employer checks) `→ open → paused ↔ open → filled | closed | expired`; any
    `→ removed`. **Application:** `applied → seen → shortlisted → hired | rejected`; `applied|seen|shortlisted →
@@ -1321,6 +1322,72 @@ members at the next run. Data dictionary: this § 6.
   (needs D's connections), "near you" lists (D's Discover calls `ustaadDistanceBands` with a server secret; a
   `USTAAD_LOCATION_SECRET` env variable is still to be added to config and `.env.example`), notifications on
   application moves, AT-LOC-1 trilateration simulation.
+
+## 21f. Workstream F2 / F3 as built (2026-11-26, migration `0096_ustaad_moderation_f2`, unapplied)
+
+- **Migration 0096** (0094 is B's identity seed, 0095 left for another agent): report clock `removal_36h` (Rule 3(1)(b)
+  removal grievances, setting `mod.clock_removal_h` 36), report source `auto_safety` (classifier), reason
+  `ncii_impersonation` (2 h, seeded en + hi, admin-editable), media reject reason `safety_block`,
+  `ustaad_members.restricted_until` (+ CHECK: only with status `restricted`). New settings: `mod.clock_removal_h`,
+  `mod.rules_reminder_days` (90), `mod.false_report_strike_after` (3).
+- **Screen** (`screenUstaadContent`, A's signature; rules in `@mechdost/shared/ustaad/moderation`): one normaliser on
+  both sides (NFKC, format characters stripped, every script's digits → ASCII); banned words, admin scam phrases,
+  built-in illegal-modification phrases, UPI ids, pay-app and OTP asks, phone numbers, number plates, links, denied
+  link domains, media flagged by the classifier. **Block** (the author can fix it): a phone number in a post, story,
+  question or answer; a plate in any public text; any link from an account younger than `mod.links_min_account_days`;
+  a denied domain. **Hold**: everything else above, a phone number in a comment, message or job, and pre-moderation of
+  media **posts, stories and comments** from accounts younger than `mod.premod_account_days` or with fewer than
+  `mod.premod_first_posts` visible media posts (voice notes on questions and answers are never pre-moderated:
+  verification is never a wall). Callers open the queue entry with `openUstaadAutoHoldReport` (C answers and
+  questions, E jobs wired; D must do the same). Questions have no `held` status: a held question stays open, gets no
+  Ustaad notices and sits in the queue.
+- **Reports** `POST /v1/ustaad/reports` (member, 20 a day): one open report per reporter and item (repeat = same
+  code), no self-report (`USTAAD_REPORT_SELF`), inactive reason `USTAAD_REASON_OFF`, a message only by its thread's
+  members (404 otherwise). **Qualified reporter** (verified, account ≥ 30 days, no active `false_report` strike):
+  a `minor` report sets the author's `restricted_mode = minor_report` until a decision; an `ncii_impersonation`
+  report hides the item at once (`visible → held`). From anyone else both are only queued (minor reports and
+  classifier hits sort first). Dismissed minor **and** NCII reports count toward the `false_report` strike.
+- **Staff routes** `/v1/admin/ustaad/moderation/*` (not `/admin/ustaad/reports…` as § 8 first said): `GET reports`
+  (`?queue=open|appealed|decided&city=&cursor=`), `GET reports/{code}`, `POST reports/{code}/act`
+  (`keep | remove | warn | restrict | ban`), `POST reports/{code}/ban/confirm`, `POST reports/{code}/appeal`
+  (links the author's `REQ-…` ticket), `POST reports/{code}/appeal/decide`, `GET reports/{code}/thread?reason=`
+  (DM read, audited `ustaad.dm_read`), `POST takedowns` (`ustaad:takedown`). Reads `ustaad:moderate | ustaad:read`,
+  writes `ustaad:moderate`; city scope of the permission; texts masked (`[phone]`, `[email]`); no phone, no export.
+- **Decisions:** keep (dismiss; held → visible, held job → open), remove (archive + media `removed_archived` + objects
+  moved to the evidence bucket by the API), warn (strike, no Izzat), restrict (`mod.restrict_days`), ban N days /
+  permanent: from `mod.four_eyes_from_ban_days` (or permanent) the first call proposes (`ustaad_events`
+  `ban_proposed`) and a different staff member confirms (`FOUR_EYES` for the proposer). Staff never decide on their
+  own content (`SELF_MODERATION`). A sanction never shortens or dates a stronger one (a permanent or later-ending
+  ban; a frozen `review` or `minor_report` account is never given an end date).
+- **Appeals (§ 7.6 names ruled):** `upheld` = the decision stands; `overturned` = reversed: content and media restored,
+  strikes overturned (Izzat `reversal`), and the member's status **recomputed** from the ban/restrict actions that
+  still stand on other reports (only this report's sanction is lifted); a frozen `review` (POCSO) account is never
+  lifted by an appeal. Decided by someone who took no part (`FOUR_EYES`). A legal removal (source `legal_order` or a
+  `takedown` action) can be overturned only with `ustaad:takedown`, and nothing is restored while any archive row of
+  the item is on legal hold (`USTAAD_LEGAL_HOLD`). Removed jobs stay removed (terminal in § 7.7).
+- **Takedown fast path:** one call opens the report on the right clock (3 h orders, 2 h NCII, 36 h removal
+  grievance), removes and archives the item (legal orders `legal_hold = legal_order`, also applied to media an earlier
+  removal archived), moves the objects (main key and image variants) out of the live bucket, audits the reference and
+  returns `seconds`. AT-TAKEDOWN-1 is proven for signed media URLs, Q&A and jobs; feed, profile, search, tag pages and
+  share teasers do not exist yet (D) and must join the test when built.
+- **Child safety:** `ImageSafetyClassifier` adapter (`apps/api/src/ustaad/safety/classifier.ts`; `NoOp` default,
+  `HashListImageSafetyClassifier` test double) runs on images in the verify step: a hash match copies the private
+  copy to the evidence bucket, marks the media `rejected` / `safety_block` / `legal_hold = pocso`, freezes the account
+  (`restricted`, `review`, no end date), opens a 2 h `auto_safety` report and notifies every `ustaad:takedown` holder
+  (POCSO task, runbook § 6); a score ≥ `mod.nsfw_hold_score_pct` writes `safety_flagged` and the screen holds posts
+  using the file. Videos and voice notes are not classified in v1 (no posters without transcoding).
+- **Jobs (worker):** `ustaad_report_clock` (every minute: `staff.ustaad_report_overdue` at 50 % and 100 %, once per
+  stage; expired bans and restrictions end), `ustaad_removed_archive_purge` and `ustaad_rules_reminder` (hourly tick;
+  the reminder once per `mod.rules_reminder_days` period, notice version = period number).
+- **F3:** `docs/runbooks/ustaad.md` (grievance desk, rota, clocks, takedown, agency 72 h, POCSO, CERT-In 6 h / DPDP 72 h
+  with en + hi templates, ICT logs, archive, reminder, tabletop drill, SSMI); `docs/research/processors.md`;
+  Community Rules page `/policies/community-rules` (en + hi, admin-editable as `policy.community_rules`; the
+  reminder notice links there).
+- **Not done (F):** consent toggles per purpose with "withdrawal stops the job" (B3's "Settings and my choices" owns
+  the route; the purposes and notice version exist), the `ustaad_grievance` support-ticket kind with its own timers
+  (grievances enter through staff intake `POST …/takedowns` with `grievance_removal` meanwhile), ICT log retention on
+  the server (Q-UF1), a staff read of evidence (two-person access is an ops step), D's surfaces in AT-TAKEDOWN-1, the
+  G2 console UI.
 
 ## 22. Not built / later
 
