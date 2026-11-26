@@ -306,3 +306,8 @@ T203 · 2026-11-24 · notifications · the WhatsApp approval gate is per event (
 - T-UE2 · 2026-11-26 · ustaad/filters · UPI id at sentence end (`ramesh@ybl.`) or with zero-width chars slipped the scam filter · regex excluded any trailing dot, no normalisation · `packages/shared/test/ustaad-local.test.ts` "UPI ids at sentence end…".
 - T-UB1 · 2026-11-26 · ustaad/verification · Revoking a vouch freed the monthly cap and cleared the reciprocity check; a suspended workshop could still confirm attestations · counts filtered on current status `given`; workshop status not joined · `packages/db/test/ustaad-identity.test.ts` "a revoked vouch still counts…", "a suspended workshop cannot see or confirm attestations"
 - T-UB2 · 2026-11-26 · seeds vs CRUD tests · A data-only seed migration (level rules, badges, coach-marks) broke G1's create tests with DUPLICATE · tests assumed empty admin tables · clear seeded tables in those suites' setup; any new seed migration runs the admin CRUD suites in the same change
+- T-UF1 · 2026-11-26 · ustaad/moderation · Sanction races: a short ban over a permanent one, an overturned appeal on
+  one of two bans, a restriction on a frozen account, a legal takedown appealed without `ustaad:takedown`, a later
+  legal hold on media an earlier removal archived → regression tests in `packages/db/test/ustaad-moderation.test.ts`
+  ("security review fixes"). Any new seed row in an admin table also changes count assertions in the schema and admin
+  tests (reasons 11 → 12).

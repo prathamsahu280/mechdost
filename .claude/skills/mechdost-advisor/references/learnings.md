@@ -398,3 +398,14 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
   script digits) and must not rely on "not followed by ." to tell UPI ids from emails (sentence-ending full stops) →
   match a known PSP list first, then the generic rule; screen every member-visible free-text field, not just the body.
 - L-B2 · 2026-11-26 · ustaad/ui a11y · Specialist review of the new Ustaad screens found the same misses three times: status shown only by aria-hidden glyphs, live regions mounted together with their text, focus lost when the focused control unmounts (dismiss, retry, disabled submit), field errors not focused → for every new client screen: always-mounted role=status, sr-only state words beside glyphs, focus moved before unmounting, aria-disabled instead of disabled on a focused submit, focus the first invalid control after a failed step.
+- L-UF1 · 2026-11-26 · ustaad/moderation · The first F2 cut let any later sanction overwrite the member row (a 3-day
+  ban replaced a permanent one, an appeal set `active` and lifted a POCSO freeze, a legal removal could be restored by
+  any second manager). Security review caught all five → sanctions are a set, not a field: compute the member's status
+  from the actions still standing, never shorten or date a stronger one, never let an appeal touch a legal hold or a
+  `review` freeze, and give every one-tap "hide now" path the same reporter qualification as the minor path.
+- L-UF2 · 2026-11-26 · ustaad/schema · A's CHECK lists lacked codes the legal duties need (36 h clock, classifier
+  source, NCII reason, `safety_block`) → when a spec duty has no code, add it in one migration with the shared enum and
+  a decisions entry; never map it onto a nearby code (analytics and counsel read the codes).
+- L-UF3 · 2026-11-26 · tooling/windows · Python scripts that rewrite repo files on Windows wrote CRLF and broke the
+  prettier pre-commit; the worktree guard also refuses long `&&` chains with heredocs → open files with `newline=''`,
+  keep scripts in the scratchpad, run them as one plain command.

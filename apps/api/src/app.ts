@@ -71,6 +71,7 @@ import { reviewPublicRoutes, reviewRoutes } from './routes/reviews';
 import { recommendationRoutes } from './routes/recommendations';
 import { privacyRoutes } from './routes/privacy';
 import { pincodeWaitlistRoutes } from './routes/pincode-waitlist';
+import { adminUstaadModerationRoutes } from './routes/admin-ustaad-moderation';
 import { adminUstaadSettingsRoutes } from './routes/admin-ustaad-settings';
 import { adminUstaadVerificationRoutes } from './routes/admin-ustaad-verification';
 import { workshopUstaadRoutes } from './routes/workshop-ustaad';
@@ -187,6 +188,7 @@ export function createApp(deps: AppDeps) {
   const ustaadAccess = ustaadAccessCache(deps);
   v1.route('/', ustaadRoutes(deps, sessions, ustaadAccess));
   v1.route('/', adminUstaadSettingsRoutes(deps, sessions, ustaadAccess));
+  v1.route('/', adminUstaadModerationRoutes(deps, sessions));
   v1.route('/', adminUstaadVerificationRoutes(deps, sessions));
   v1.route('/', workshopUstaadRoutes(deps, sessions));
   app.route('/v1', v1);

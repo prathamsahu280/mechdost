@@ -199,7 +199,7 @@ export function ustaadMediaRoutes(deps: AppDeps) {
       const host = hostOf();
       const b = c.req.valid('json');
       const v = await completeAndVerify(
-        { db: deps.db, host },
+        { db: deps.db, host, classifier: deps.safetyClassifier ?? null },
         { mediaId: c.req.valid('param').id, memberId: member(c).id, ...(b.parts ? { parts: b.parts } : {}) },
       );
       return c.json(

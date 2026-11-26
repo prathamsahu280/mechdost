@@ -46,6 +46,7 @@ Read `../CLAUDE.md` first (hard rules). Then:
 - `runbooks/collaborator-setup.md` — new collaborator setup: run the site, Claude Code project skills (auto-loaded from `.claude/skills/`), public skills, plugins and MCP servers to install.
 - `runbooks/payments.md` — Razorpay keys, how to try online payment end to end (quote → place → Checkout → verify), the webhook (Q75), unpaid-order expiry (2026-11-12).
 - `runbooks/photos.md` — job photos: the private `service-photos` bucket (created by the API on start), how pictures are served, limits, orphans, first live check (2026-11-15).
+- `runbooks/ustaad.md` — Ustaad Network moderation and legal duties: grievance desk, 24×7 rota, clocks, takedown fast path, agency requests (72 h), POCSO steps, CERT-In 6 h / DPDP 72 h incident runbook with en + hi templates, ICT logs, archive purge, rules reminder, tabletop drill (2026-11-26, task F3).
 - `runbooks/catalogue-import.md` — adding products: the admin form and the CSV import (columns, attribute codes, problem codes, limits, API); sample file `runbooks/catalogue-import-sample.csv` (2026-11-14).
 - `runbooks/firebase.md` — Firebase projects, local keys, production checklist for sign-in.
 - `runbooks/staff-roles.md` — giving and removing staff roles from Admin → Staff, finding a customer, reading the audit log; the CLI stays for the first admin (2026-11-15).
@@ -56,6 +57,7 @@ Read `../CLAUDE.md` first (hard rules). Then:
 - `runbooks/roadside.md` — turning roadside help on for a city: migration 0082 first, settings, PIN codes, workshop opt-in, refund approvers, WhatsApp templates, a test run (2026-11-24, spec 22).
 - `specs/22-roadside-assistance.md` — roadside assistance: statuses, data, settings, money rules, API, notifications, what is not built (phase 1 built 2026-11-24).
 - `research/ustaad-security-review.md` — design-stage security, safety and compliance review of the Ustaad Network (threats, design flaws, India compliance checklist, SR-1–46 requirements with acceptance tests, top 15; 2026-11-26; resolutions in spec 23 § 14a).
+- `research/processors.md` — processor register (DPDP s.8): every provider that handles personal data, its region, contract and training terms (2026-11-26, task F3).
 - `specs/23-ustaad-network.md` — Ustaad Network, the mechanics-only network: rulings, roles, flows, join (replaces "Apply as a mechanic"), tutorial, data model, state machines, API, media pipeline (R2), smart correction (LLM + word list), notifications, events, moderation and legal duties, security requirements SR-1–46, settings, tests (decided 2026-11-26, not built). Design `superpowers/specs/2026-11-26-ustaad-network-design.md`, plan `superpowers/plans/2026-11-26-ustaad-network.md`.
 - `runbooks/seo.md` — SEO: robots.txt, sitemap, titles, canonical/hreflang, structured data (real data only), checks after a deploy, Google Search Console setup steps, competitor study and next steps (2026-11-17).
 - `runbooks/traffic.md` — visitor log (Caddy), crawler rules, top agents/paths/IPs one-liners, blocking an abusive bot, photo cache metric (2026-11-24).

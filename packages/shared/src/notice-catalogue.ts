@@ -505,7 +505,7 @@ export const NOTICE_CATALOGUE = {
     entity: 'ustaad',
     audience: 'member',
     text: [],
-    link: at('/terms'),
+    link: at('/policies/community-rules'),
   }),
   'ustaad.invite': def({
     category: T,

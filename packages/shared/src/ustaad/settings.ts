@@ -168,6 +168,12 @@ export const USTAAD_SETTINGS = {
   'ustaad.mod.clock_legal_h': int(1, 72, 3),
   'ustaad.mod.clock_standard_h': int(1, 168, 24),
   'ustaad.mod.clock_grievance_days': int(1, 30, 7),
+  /** F2: Rule 3(1)(b) removal grievances (security review L4; counsel to confirm). */
+  'ustaad.mod.clock_removal_h': int(1, 72, 36),
+  /** F2: the Community Rules reminder to every member (IT Rules, every 3 months per research). */
+  'ustaad.mod.rules_reminder_days': int(30, 180, 90),
+  /** F2: dismissed "someone under 18" reports by one member before a `false_report` strike. */
+  'ustaad.mod.false_report_strike_after': int(2, 20, 3),
   'ustaad.mod.premod_first_posts': int(0, 20, 3),
   'ustaad.mod.premod_account_days': int(0, 180, 30),
   /** Score × 100 (0.70 → 70); integers only in the registry. */

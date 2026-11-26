@@ -337,7 +337,7 @@ describe('level rules (SR-8)', () => {
 describe('report reasons', () => {
   it('the seed has every reason; "other" cannot be switched off; another one can', async () => {
     const reasons = await listUstaadReasons(t());
-    expect(reasons.length).toBe(11);
+    expect(reasons.length).toBe(12); // 11 from 0093 + ncii_impersonation (0096, F2)
     const other = reasons.find((r) => r.code === 'other');
     if (!other) throw new Error('no other');
     await expectCode(

@@ -17,6 +17,7 @@ import type { Revalidator } from './revalidate';
 import type { CorrectionCache } from './ustaad/correction/cache';
 import type { SmartCorrectionEngine } from './ustaad/correction/engine';
 import type { MediaHost } from './ustaad/media/host';
+import type { ImageSafetyClassifier } from './ustaad/safety/classifier';
 
 /** Everything the app needs from the outside world — injected so tests use PGlite and fakes. */
 export interface AppDeps {
@@ -50,6 +51,8 @@ export interface AppDeps {
   correctionCache?: CorrectionCache;
   /** Ustaad Network media store (R2 or Supabase, spec 23 § 10); null → media routes answer 503 MEDIA_UNAVAILABLE. */
   mediaHost?: MediaHost | null;
+  /** Ustaad image-safety classifier (spec 23 § 10 step 4, Q-U6); null/absent = none (pre-moderation applies). */
+  safetyClassifier?: ImageSafetyClassifier | null;
 }
 
 export interface AuthContext {
