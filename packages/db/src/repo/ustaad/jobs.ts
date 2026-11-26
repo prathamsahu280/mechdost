@@ -147,6 +147,24 @@ async function employerOf(
   );
 }
 
+/** The job's employer still holds the workshop grant or a verified trade account (checked again on resume). */
+async function employerStillValid(
+  tx: Tx,
+  userId: string,
+  job: { workshopId: string | null; tradeAccountId: string | null },
+): Promise<void> {
+  await employerOf(
+    tx,
+    userId,
+    job.workshopId ? { kind: 'workshop', workshopId: job.workshopId } : { kind: 'trade' },
+  );
+}
+
+async function jobsEnabled(tx: Tx): Promise<void> {
+  const s = await readUstaadSettingValues(tx, ['ustaad.jobs.enabled']);
+  if (!settingBool(s['ustaad.jobs.enabled'], true)) throw new NotFoundError();
+}
+
 async function extraScamPhrases(tx: Tx): Promise<string[]> {
   const rows = await tx
     .select({ phrase: ustaadWordLists.phrase })
@@ -201,7 +219,10 @@ export async function postUstaadJob(
       if (dup) return viewOf(dup, place.cityCode, actor.memberId);
     }
     const employer = await employerOf(tx, actor.userId, input.employer);
-    const text = `${input.title}\n${input.description}\n${input.timing}`;
+    // Every member-visible free-text field goes through the filters (title, description, timing, area labels).
+    const text = [input.title, input.description, input.timing, input.areaLabel, input.areaLabelHi ?? '']
+      .filter(Boolean)
+      .join('\n');
     const signals = jobScamSignals(text, await extraScamPhrases(tx));
     const screen = await screenUstaadContent(tx, {
       kind: 'job',
@@ -423,8 +444,14 @@ export async function moveUstaadApplication(
   actor: UstaadJobActor,
   applicationId: string,
   to: EmployerMove | 'withdrawn',
+  now = new Date(),
 ): Promise<{ status: UstaadApplicationStatus }> {
   return db.transaction(async (tx) => {
+    // Withdrawing stays possible for everyone; every employer move needs jobs on and an unrestricted employer.
+    if (to !== 'withdrawn') {
+      await jobsEnabled(tx);
+      await memberGate(tx, actor.memberId, now);
+    }
     const [row] = await tx
       .select({
         app: ustaadJobApplications,
@@ -488,14 +515,22 @@ export async function moveUstaadJob(
   actor: UstaadJobActor,
   code: string,
   to: 'paused' | 'open' | 'closed' | 'filled',
+  now = new Date(),
 ): Promise<{ status: string }> {
   return db.transaction(async (tx) => {
+    // Closing or filling stays possible (it only takes the job down); opening needs jobs on, an unrestricted
+    // employer and a still-valid employer account.
+    if (to === 'open' || to === 'paused') {
+      await jobsEnabled(tx);
+      await memberGate(tx, actor.memberId, now);
+    }
     const [job] = await tx.select().from(ustaadJobs).where(eq(ustaadJobs.code, code)).limit(1);
     if (!job || job.employerMemberId !== actor.memberId) throw new NotFoundError();
     const from = job.status as (typeof ustaadJobs.$inferSelect)['status'] &
       Parameters<typeof ustaadJobMachine.can>[0];
     if (!ustaadJobMachine.can(from, to))
       throw new ConflictError('This job cannot move that way', 'INVALID_TRANSITION');
+    if (to === 'open') await employerStillValid(tx, actor.userId, job);
     ustaadJobMachine.assert(from, to, 'member');
     const done = await tx
       .update(ustaadJobs)

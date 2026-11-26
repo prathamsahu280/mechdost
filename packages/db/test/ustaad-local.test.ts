@@ -236,6 +236,52 @@ describe('jobs (AT-JOB-1)', () => {
     );
   });
 
+  it('a scam phrase in the area label is held too', async () => {
+    const held = await postUstaadJob(t(), a, job({ areaLabel: 'Pay at paytm karo first' }));
+    expect(held.status).toBe('pending_review');
+  });
+
+  it('a restricted or no-longer-verified employer cannot resume a job or hire; jobs off refuses moves', async () => {
+    const j = await postUstaadJob(t(), a, job({ title: 'Electrician needed' }));
+    expect(await moveUstaadJob(t(), a, j.code, 'paused')).toEqual({ status: 'paused' });
+    await db
+      .update(s.tradeAccounts)
+      .set({ status: 'revoked', reasonCode: 'misuse' })
+      .where(eq(s.tradeAccounts.userId, a.userId));
+    await expectCode(moveUstaadJob(t(), a, j.code, 'open'), 'USTAAD_EMPLOYER_REQUIRED');
+    await db
+      .update(s.tradeAccounts)
+      .set({ status: 'verified', reasonCode: null })
+      .where(eq(s.tradeAccounts.userId, a.userId));
+    await db
+      .update(s.ustaadMembers)
+      .set({ restrictedMode: 'review' })
+      .where(eq(s.ustaadMembers.id, a.memberId));
+    await expectCode(moveUstaadJob(t(), a, j.code, 'open'), 'USTAAD_RESTRICTED');
+    await db
+      .update(s.ustaadMembers)
+      .set({ restrictedMode: 'none' })
+      .where(eq(s.ustaadMembers.id, a.memberId));
+    expect(await moveUstaadJob(t(), a, j.code, 'open')).toEqual({ status: 'open' });
+    const app = await applyToUstaadJob(t(), b, j.code, { sharePhone: false, voiceIntroMediaId: null });
+    await db
+      .update(s.ustaadMembers)
+      .set({ restrictedMode: 'review' })
+      .where(eq(s.ustaadMembers.id, a.memberId));
+    await expectCode(moveUstaadApplication(t(), a, app.applicationId, 'shortlisted'), 'USTAAD_RESTRICTED');
+    await db
+      .update(s.ustaadMembers)
+      .set({ restrictedMode: 'none' })
+      .where(eq(s.ustaadMembers.id, a.memberId));
+    await db.insert(s.settings).values({ key: 'ustaad.jobs.enabled', value: false });
+    await expectCode(moveUstaadApplication(t(), a, app.applicationId, 'shortlisted'), 'NOT_FOUND');
+    // The applicant can always withdraw.
+    expect(await moveUstaadApplication(t(), b, app.applicationId, 'withdrawn')).toEqual({
+      status: 'withdrawn',
+    });
+    await db.delete(s.settings).where(eq(s.settings.key, 'ustaad.jobs.enabled'));
+  });
+
   it('restricted members cannot apply; expired jobs move to expired', async () => {
     const fresh = await postUstaadJob(t(), a, job({ title: 'Helper wanted' }));
     await db
