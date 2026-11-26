@@ -392,3 +392,8 @@ T-DA2 · 2026-11-27 · API/OpenAPI · a shared path-param schema (.openapi({ par
 - T-DLV3 · 2026-11-27 · unit · demo store drifted from the API contract (ratings, payouts, applications without
   version) and no test caught it · parse every demo client answer with the shared Zod schema and stub `adminApi` to
   assert the API client's paths and bodies (`apps/web/test/delivery-contract.test.ts`).
+
+T-NIGHT1 · 2026-11-27 · Hindi crawl · `/hi/admin/notifications: Ravi` failed CI three times · I changed two sample maps
+(email catalogue, WhatsApp meta) by guess; the page renders previews from `apps/web/src/components/portal/notify-labels.ts`
+SAMPLES · → trace the render path (grep the page's component for the sample source) before editing, and prove the fix
+locally with `latinOffenders()` from `apps/web/test/hindi-allowlist.ts` (a 2-line vitest) instead of a 25-min CI round.
