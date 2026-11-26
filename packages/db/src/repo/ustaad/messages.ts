@@ -44,6 +44,7 @@ import { ConflictError, DailyCapError, ForbiddenError, NotFoundError, Validation
 import type { Tx } from '../orders';
 import { recordUstaadEvent } from './events';
 import {
+  bumpUstaadDailyCounter,
   decodeUstaadCursor,
   encodeUstaadCursor,
   ustaadActingMember,
@@ -300,13 +301,16 @@ export async function startUstaadThread(
       throw new ForbiddenError('New accounts can send messages after a few days', 'USTAAD_DM_TOO_NEW');
     if (target.dmMode === 'nobody')
       throw new ForbiddenError('This member does not take messages', 'USTAAD_DM_NOT_ALLOWED');
-    const [today] = await tx
-      .select({ n: sql<number>`count(*)::int` })
-      .from(ustaadThreads)
-      .where(
-        and(eq(ustaadThreads.requestedBy, me.id), gt(ustaadThreads.createdAt, sql`now() - interval '1 day'`)),
-      );
-    if ((today?.n ?? 0) >= Number(s['ustaad.limits.new_threads_per_day']))
+    // Atomic daily cap (security review 2026-11-26): one conditional upsert; a refusal rolls everything back.
+    if (
+      !(await bumpUstaadDailyCounter(
+        tx,
+        me.id,
+        'new_threads',
+        1,
+        Number(s['ustaad.limits.new_threads_per_day']),
+      ))
+    )
       throw new DailyCapError('You have started enough conversations for today', 'USTAAD_DAILY_CAP');
     const [conn] = await tx
       .select({ status: ustaadConnections.status })

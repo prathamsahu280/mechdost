@@ -157,7 +157,13 @@ export const PROMOTION_HIDE_REASONS = ['not_relevant', 'seen_too_often', 'mislea
 /** Why a message was held for staff (D2): the screening hook said hold, or a scam signal (fee, UPI, pay app). */
 export const MESSAGE_HOLD_REASONS = ['screened', 'scam_phrase'] as const;
 /** Per-member daily counters with an admin cap (D2): promotions served, Discover profiles served (SR-37). */
-export const USTAAD_DAILY_COUNTER_KINDS = ['promo_served', 'profiles_served'] as const;
+export const USTAAD_DAILY_COUNTER_KINDS = [
+  'promo_served',
+  'profiles_served',
+  'follows',
+  'new_threads',
+  'connect_requests',
+] as const;
 /** Why a mentorship ended when a block forced it (spec 23 § 7.9). */
 export const MENTORSHIP_END_REASONS = ['blocked', 'left', 'ended_by_member'] as const;
 export const LEARNING_KINDS = ['hosted_video', 'external_link'] as const;

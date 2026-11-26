@@ -3,7 +3,9 @@
  * One row per ordered pair (unique `(low_id, high_id)`, stronger than a partial "one pending" index): a first request
  * inserts with `ON CONFLICT DO NOTHING`, a later one is a conditional UPDATE on the existing row
  * (`machine.assert` + `(id, status, version)`). Crossed requests (both ask) become one accepted connection. A member
- * whose request was declined cannot ask again (no pestering); the one who declined may ask later. Blocked either
+ * whose request was declined or withdrawn waits `limits.connect_cooldown_days` before asking again (no pestering); the
+ * one who declined may ask at once. Requests are capped by `limits.connect_requests_per_day` (atomic daily counter);
+ * restricted members cannot ask. Blocked either
  * way = 404 (SR-35).
  */
 import { and, desc, eq, lt, ne, or, sql, type SQL } from 'drizzle-orm';
@@ -11,10 +13,11 @@ import { ustaadConnectionMachine, type UstaadConnectionStatus } from '@mechdost/
 import type { ConnectionListQuery, ConnectionView } from '@mechdost/shared/ustaad/dto/social';
 import { orderedPair } from '@mechdost/shared/ustaad/social-rules';
 import { ustaadConnections, ustaadMembers } from '../../schema';
-import { ConflictError, NotFoundError, ValidationError } from '../errors';
+import { ConflictError, DailyCapError, NotFoundError, ValidationError } from '../errors';
 import type { Tx } from '../orders';
 import { recordUstaadEvent } from './events';
 import {
+  bumpUstaadDailyCounter,
   decodeUstaadCursor,
   encodeUstaadCursor,
   ustaadActingMember,
@@ -23,12 +26,14 @@ import {
   ustaadVisibleMember,
 } from './graph-common';
 import { notifyUstaad } from './notify';
-import type { UstaadActor } from './qa';
+import { assertUstaadMemberCanWrite, type UstaadActor } from './qa';
+import { readUstaadSettingValues } from './settings';
 
 type ConnectionRow = typeof ustaadConnections.$inferSelect;
 export type UstaadConnectionAction = 'accept' | 'decline' | 'ignore' | 'withdraw' | 'remove';
 
 const PAGE = 20;
+const DAY_MS = 86_400_000;
 
 async function moveConnection(
   tx: Tx,
@@ -119,7 +124,7 @@ async function connected(tx: Tx, row: ConnectionRow, actorUserId: string, accept
 /**
  * Ask to connect. Returns the row's status: `requested`, or `accepted` when the other member had already asked
  * (crossed requests) or the two are already connected. Refuses `USTAAD_SELF_CONNECT` (422),
- * `USTAAD_CONNECT_DECLINED` (409) when the other member declined this caller's request, 404 when blocked.
+ * `USTAAD_CONNECT_COOLDOWN` (409) inside the cooldown after a decline or withdraw, `USTAAD_RESTRICTED` (403), `USTAAD_DAILY_CAP` (429), 404 when blocked.
  */
 export async function requestUstaadConnection(
   db: Tx,
@@ -129,7 +134,12 @@ export async function requestUstaadConnection(
   if (targetId === actor.memberId) throw new ValidationError('That is you', 'USTAAD_SELF_CONNECT');
   return db.transaction(async (tx) => {
     const me = await ustaadActingMember(tx, actor.memberId);
+    assertUstaadMemberCanWrite(me);
     const target = await ustaadVisibleMember(tx, me.id, targetId);
+    const s = await readUstaadSettingValues(tx, [
+      'ustaad.limits.connect_requests_per_day',
+      'ustaad.limits.connect_cooldown_days',
+    ]);
     const pair = orderedPair(me.id, target.id);
     const [created] = await tx
       .insert(ustaadConnections)
@@ -162,8 +172,11 @@ export async function requestUstaadConnection(
         await connected(tx, moved, actor.userId, me.id);
         return { id: moved.id, status: 'accepted' };
       }
-      if (cur.status === 'declined' && cur.requestedBy === me.id)
-        throw new ConflictError('This member did not accept your request', 'USTAAD_CONNECT_DECLINED');
+      // Cooldown (security review 2026-11-26): after this member's request was declined or withdrawn (or the
+      // connection removed), the same requester waits `limits.connect_cooldown_days`; the other member may ask now.
+      const coolMs = Number(s['ustaad.limits.connect_cooldown_days']) * DAY_MS;
+      if (cur.requestedBy === me.id && Date.now() - cur.updatedAt.getTime() < coolMs)
+        throw new ConflictError('You can ask this member again later', 'USTAAD_CONNECT_COOLDOWN');
       row = await moveConnection(
         tx,
         cur,
@@ -172,10 +185,22 @@ export async function requestUstaadConnection(
         { requestedBy: me.id },
       );
     }
+    // Atomic daily cap on new requests (security review): a refusal rolls the request back.
+    if (
+      !(await bumpUstaadDailyCounter(
+        tx,
+        me.id,
+        'connect_requests',
+        1,
+        Number(s['ustaad.limits.connect_requests_per_day']),
+      ))
+    )
+      throw new DailyCapError('You have sent enough requests for today', 'USTAAD_DAILY_CAP');
+    // One notice per pair and requester, ever: request → withdraw → request loops cannot spam the receiver.
     await notifyUstaad(tx, 'ustaad.connect_request', {
       userId: target.userId,
       entityId: row.id,
-      version: `req-${String(row.version)}`,
+      version: `req-${me.id}`,
       params: (locale) => ({
         memberName: locale === 'hi' ? (me.displayNameHi ?? me.displayName) : me.displayName,
       }),

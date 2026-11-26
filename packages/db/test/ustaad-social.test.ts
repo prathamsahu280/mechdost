@@ -220,6 +220,22 @@ describe('follow (spec 23 flow 7, § 6.9, AT-RATE-1)', () => {
     await setSetting('ustaad.limits.follows_per_day', 20);
   });
 
+  it('parallel follows at cap − 1: exactly one succeeds (atomic daily counter, security review)', async () => {
+    await setSetting('ustaad.limits.follows_per_day', 5);
+    const a = await member();
+    for (let i = 0; i < 4; i += 1) await followUstaadMember(t(), a, (await member()).memberId);
+    const targets = await Promise.all([member(), member(), member()]);
+    const results = await Promise.allSettled(targets.map((x) => followUstaadMember(t(), a, x.memberId)));
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+    expect((await counters(a))?.following).toBe(5);
+    // Unfollowing does not give the slot back (no follow/unfollow churn past the cap).
+    await unfollowUstaadMember(t(), a, targets[0]?.memberId ?? '');
+    await unfollowUstaadMember(t(), a, targets[1]?.memberId ?? '');
+    await unfollowUstaadMember(t(), a, targets[2]?.memberId ?? '');
+    expect((await err(followUstaadMember(t(), a, (await member()).memberId))).status).toBe(429);
+    await setSetting('ustaad.limits.follows_per_day', 20);
+  });
+
   it('lists followers and following with cards that carry no phone; remove follower works', async () => {
     const a = await member();
     const b = await member();
@@ -255,7 +271,7 @@ describe('connect (spec 23 § 6.2, § 7.9)', () => {
     expect(rows).toHaveLength(1);
   });
 
-  it('only the receiver accepts or declines (others 404); the requester withdraws; a declined requester cannot re-ask', async () => {
+  it('only the receiver accepts or declines (others 404); the requester withdraws; a declined or withdrawn requester waits out the cooldown', async () => {
     const a = await member();
     const b = await member();
     const stranger = await member();
@@ -263,12 +279,56 @@ describe('connect (spec 23 § 6.2, § 7.9)', () => {
     expect((await err(moveUstaadConnection(t(), a, req.id, 'accept'))).status).toBe(404);
     expect((await err(moveUstaadConnection(t(), stranger, req.id, 'accept'))).status).toBe(404);
     await moveUstaadConnection(t(), b, req.id, 'decline');
-    expect((await err(requestUstaadConnection(t(), a, b.memberId))).code).toBe('USTAAD_CONNECT_DECLINED');
-    // The one who declined may ask later.
+    const cool = await err(requestUstaadConnection(t(), a, b.memberId));
+    expect(cool.status).toBe(409);
+    expect(cool.code).toBe('USTAAD_CONNECT_COOLDOWN');
+    // The one who declined may ask at once.
     expect((await requestUstaadConnection(t(), b, a.memberId)).status).toBe('requested');
     const c = await member();
     const r2 = await requestUstaadConnection(t(), c, a.memberId);
     expect((await moveUstaadConnection(t(), c, r2.id, 'withdraw')).status).toBe('removed');
+    // A withdrawn request also waits out the cooldown (connect_cooldown_days, default 7), then may ask again.
+    expect((await err(requestUstaadConnection(t(), c, a.memberId))).code).toBe('USTAAD_CONNECT_COOLDOWN');
+    // (updated_at is set by a trigger, so the wait is shortened through the setting instead of the clock.)
+    await setSetting('ustaad.limits.connect_cooldown_days', 0);
+    expect((await requestUstaadConnection(t(), c, a.memberId)).status).toBe('requested');
+    await setSetting('ustaad.limits.connect_cooldown_days', 7);
+  });
+
+  it('a restricted member cannot ask to connect (403 USTAAD_RESTRICTED)', async () => {
+    const a = await member();
+    const b = await member();
+    await db
+      .update(s.ustaadMembers)
+      .set({ restrictedMode: 'review' })
+      .where(eq(s.ustaadMembers.id, a.memberId));
+    const e = await err(requestUstaadConnection(t(), a, b.memberId));
+    expect(e.status).toBe(403);
+    expect(e.code).toBe('USTAAD_RESTRICTED');
+  });
+
+  it('request → withdraw → request (after the cooldown) notifies the receiver once', async () => {
+    await setSetting('ustaad.limits.connect_cooldown_days', 0);
+    const a = await member();
+    const b = await member();
+    const r1 = await requestUstaadConnection(t(), a, b.memberId);
+    await moveUstaadConnection(t(), a, r1.id, 'withdraw');
+    await requestUstaadConnection(t(), a, b.memberId);
+    const notices = await db.select().from(s.notifications).where(eq(s.notifications.userId, b.userId));
+    expect(notices.filter((x) => x.kind === 'ustaad.connect_request')).toHaveLength(1);
+    await setSetting('ustaad.limits.connect_cooldown_days', 7);
+  });
+
+  it('the daily cap on connection requests (limits.connect_requests_per_day) answers 429, also in parallel', async () => {
+    await setSetting('ustaad.limits.connect_requests_per_day', 5);
+    const a = await member();
+    for (let i = 0; i < 4; i += 1) await requestUstaadConnection(t(), a, (await member()).memberId);
+    const others = await Promise.all([member(), member(), member()]);
+    const results = await Promise.allSettled(others.map((o) => requestUstaadConnection(t(), a, o.memberId)));
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+    const e = await err(requestUstaadConnection(t(), a, (await member()).memberId));
+    expect(e.status).toBe(429);
+    await setSetting('ustaad.limits.connect_requests_per_day', 20);
   });
 });
 
@@ -456,6 +516,15 @@ describe('request-only messages (SR-33, SR-34, AT-DM-1)', () => {
       await startUstaadThread(t(), a, { memberId: (await member()).memberId, text: 'namaste' });
     const e = await err(startUstaadThread(t(), a, { memberId: (await member()).memberId, text: 'namaste' }));
     expect(e.status).toBe(429);
+    // Parallel starts at cap − 1: exactly one succeeds.
+    const p = await member();
+    for (let i = 0; i < 4; i += 1)
+      await startUstaadThread(t(), p, { memberId: (await member()).memberId, text: 'namaste' });
+    const targets = await Promise.all([member(), member(), member()]);
+    const results = await Promise.allSettled(
+      targets.map((x) => startUstaadThread(t(), p, { memberId: x.memberId, text: 'namaste' })),
+    );
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
     await setSetting('ustaad.limits.new_threads_per_day', 20);
 
     const x = await member();

@@ -5,7 +5,7 @@ CREATE TABLE "ustaad_daily_counters" (
 	"n" integer DEFAULT 0 NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "ustaad_daily_counters_member_id_kind_day_pk" PRIMARY KEY("member_id","kind","day"),
-	CONSTRAINT "ustaad_daily_counters_kind_valid" CHECK ("ustaad_daily_counters"."kind" in ('promo_served','profiles_served')),
+	CONSTRAINT "ustaad_daily_counters_kind_valid" CHECK ("ustaad_daily_counters"."kind" in ('promo_served','profiles_served','follows','new_threads','connect_requests')),
 	CONSTRAINT "ustaad_daily_counters_n" CHECK ("ustaad_daily_counters"."n" >= 0)
 );
 --> statement-breakpoint

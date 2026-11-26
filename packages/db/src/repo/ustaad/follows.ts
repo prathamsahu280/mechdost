@@ -25,6 +25,7 @@ import { DailyCapError, ValidationError } from '../errors';
 import type { Tx } from '../orders';
 import { recordUstaadEvent } from './events';
 import {
+  bumpUstaadDailyCounter,
   decodeUstaadCursor,
   encodeUstaadCursor,
   ustaadActingMember,
@@ -67,19 +68,15 @@ export async function followUstaadMember(
     const me = await ustaadActingMember(tx, actor.memberId);
     const target = await ustaadVisibleMember(tx, me.id, targetId);
     const s = await readUstaadSettingValues(tx, ['ustaad.limits.follows_per_day']);
-    const [today] = await tx
-      .select({ n: sql<number>`count(*)::int` })
-      .from(ustaadFollows)
-      .where(
-        and(eq(ustaadFollows.followerId, me.id), gt(ustaadFollows.createdAt, sql`now() - interval '1 day'`)),
-      );
     const inserted = await tx
       .insert(ustaadFollows)
       .values({ followerId: me.id, followeeId: target.id })
       .onConflictDoNothing()
       .returning({ at: ustaadFollows.createdAt });
     if (inserted.length === 0) return { following: true, followers: await followerCount(tx, target.id) };
-    if ((today?.n ?? 0) >= Number(s['ustaad.limits.follows_per_day']))
+    // Atomic daily cap (security review 2026-11-26): one conditional upsert after a real insert; a refusal rolls the
+    // follow back. Unfollow never gives the slot back, so follow/unfollow churn cannot pass the cap.
+    if (!(await bumpUstaadDailyCounter(tx, me.id, 'follows', 1, Number(s['ustaad.limits.follows_per_day']))))
       throw new DailyCapError('You have followed enough people for today', 'USTAAD_DAILY_CAP');
     await tx
       .update(ustaadMemberCounters)

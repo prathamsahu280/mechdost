@@ -192,6 +192,9 @@ export const USTAAD_SETTINGS = {
   'ustaad.limits.dm_min_account_days': int(0, 60, 7),
   'ustaad.limits.new_threads_per_day': int(5, 50, 20),
   'ustaad.limits.follows_per_day': int(5, 200, 20),
+  // D2 (security review 2026-11-26): connection requests a day and the wait after a declined or withdrawn request.
+  'ustaad.limits.connect_requests_per_day': int(5, 100, 20),
+  'ustaad.limits.connect_cooldown_days': int(0, 90, 7),
   'ustaad.limits.joins_per_day': int(1, 10, 3),
   'ustaad.dm.default_mode': { kind: 'enum', values: USTAAD_DM_MODES, default: 'request' },
   // ── Notifications (A) ─────────────────────────────────────────────────────────────────────────────────────
