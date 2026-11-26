@@ -259,7 +259,8 @@ export async function createAgentInvite(
       channel: 'whatsapp',
       recipient: phone,
       templateKey: 'delivery.agent_invite',
-      payload: { name, hours, ...sealed },
+      // Never the token on WhatsApp (lock screens, backups): the join page finds the invite by the signed-in phone.
+      payload: { name, hours },
     });
     await auditDelivery(tx, {
       actorUserId: input.staffUserId,
@@ -310,6 +311,37 @@ async function openInviteByToken(tx: Tx, token: string, lock: boolean) {
   return inv;
 }
 
+/** The open, unexpired invite of a phone (locked); 404 when there is none. */
+async function openInviteByPhone(tx: Tx, phone: string | null) {
+  if (!phone) throw new NotFoundError('Invite not found');
+  const [row] = await tx
+    .select({ hash: deliveryAgentInvites.tokenHash })
+    .from(deliveryAgentInvites)
+    .where(
+      and(
+        eq(deliveryAgentInvites.phone, phone),
+        eq(deliveryAgentInvites.status, 'sent'),
+        sql`${deliveryAgentInvites.expiresAt} > now()`,
+      ),
+    )
+    .limit(1);
+  if (!row) throw new NotFoundError('Invite not found');
+  const [inv] = await tx
+    .select({
+      id: deliveryAgentInvites.id,
+      name: deliveryAgentInvites.name,
+      phone: deliveryAgentInvites.phone,
+      cityId: deliveryAgentInvites.cityId,
+      vehicleType: deliveryAgentInvites.vehicleType,
+      applicationId: deliveryAgentInvites.applicationId,
+    })
+    .from(deliveryAgentInvites)
+    .where(eq(deliveryAgentInvites.tokenHash, row.hash))
+    .for('update');
+  if (!inv) throw new NotFoundError('Invite not found');
+  return inv;
+}
+
 /** What the invite page shows before sign-in (the phone only by its last four digits). */
 export async function previewAgentInvite(db: Tx, token: string) {
   const inv = await openInviteByToken(db, token, false);
@@ -329,15 +361,18 @@ export async function previewAgentInvite(db: Tx, token: string) {
  */
 export async function acceptAgentInvite(
   db: Tx,
-  input: { userId: string; token: string },
+  input: { userId: string; token?: string | undefined },
 ): Promise<{ agentId: string; status: AgentStatus }> {
   return db.transaction(async (tx) => {
-    const inv = await openInviteByToken(tx, input.token, true);
     const [user] = await tx
       .select({ phone: users.phone, verified: users.phoneVerifiedAt })
       .from(users)
       .where(eq(users.id, input.userId))
       .limit(1);
+    // From the WhatsApp message there is no token: the open invite of this OTP-proven phone (bound to it anyway).
+    const inv = input.token
+      ? await openInviteByToken(tx, input.token, true)
+      : await openInviteByPhone(tx, user?.verified ? (user.phone ?? null) : null);
     if (!user?.phone || !user.verified || user.phone !== inv.phone)
       throw new ForbiddenError('This invite is for a different phone number', 'INVITE_PHONE_MISMATCH');
     const [existing] = await tx

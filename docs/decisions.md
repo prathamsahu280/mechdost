@@ -2579,3 +2579,46 @@ word of the design:
    `CustomerDeliveryBlock.rating/canRate`.
 4. **No accident insurance and no uniform or dress requirement** for agents: removed from the "before go-live" list
    (design doc, research §5–6).
+
+## 2026-11-26 — Delivery agents: security review fixes (standing, documents)
+
+Spec 24 § 5. Found in the security review of the delivery repositories; fixed in c7fce3d6 and b44c63db.
+
+- **Every agent job action needs agent status `active`**, checked once in the shared agent lookup that all job actions
+  use, not per route.
+- **A paused agent may only finish parcels already picked up** (deliver, fail; and see the return code while carrying
+  a parcel back). A paused agent gets no new offers and cannot accept or pick up. **Suspended and offboarded agents can
+  do nothing**; staff take over.
+- **On pause, suspend and offboard:** open offers are withdrawn, accepted (not picked-up) jobs go back to the admin
+  queue, and **every job the agent holds** gets an `agent_unavailable` job event and a staff notice
+  `staff.delivery_agent_unavailable`. Offboarding removes the `delivery_agent` role grant.
+- **Replacing a document** sets it back to `submitted` (unverified), takes the agent offline and withdraws open
+  offers. Suggestions and accepts need all three documents verified.
+- `cityScopeFrom` ignores known non-staff roles, so an agent grant never becomes a staff city scope.
+- WhatsApp invite: the lead first accepted a one-time, phone-bound, 72 h token in the button (it only works with the
+  same OTP-proven phone). The builder went further: the WhatsApp message carries **no token** (lock screens, chat
+  backups); it sends the person to the join page and signing in with the invite's phone finds the open invite. The
+  email carries the link. The two WhatsApp templates (`partner_delivery_invite`, `partner_delivery_offer`) are **not
+  submitted to Meta** (founder's go-ahead needed, Q-DA1).
+- Tests that pin it: `packages/db/test/delivery-agents.test.ts`, block "security review 2026-11-26".
+
+## 2026-11-26 — Delivery agents: pause ruling and manual payouts
+
+- **Pause (lead ruling after the review):** pausing is for a short break or a check, not a punishment, so a paused
+  agent may still finish the parcels in hand (deliver, fail, show the return code when carrying a parcel back); the
+  held jobs are flagged to staff. Paused agents with an end date resume in the worker.
+- **Payouts are manual** (founder 2026-11-26: "payouts would be manual and we can make it automatic later"). Append-only
+  table `delivery_agent_payouts` (migration 0106). Staff with `delivery_payouts:manage` (finance, super admin) record a
+  payment made outside the app: amount in integer paise, IST period, method `upi|bank_transfer|cash|other`, reference,
+  note (required for `other`), idempotency key. Corrections are one reversing row per payment (negative amount, note
+  required). Routes: staff list and CSV `/v1/admin/delivery/payouts` and `.csv`, delivered-count helper
+  `/v1/admin/delivery/payouts/delivered-count`, the agent's own list `/v1/agent/payouts` (no staff notes or names).
+  No rate maths, no transfers, no TDS until the founder sets rates.
+- **Refund on return (lead's call 13):** refund source and reason code `delivery_returned`; parts only keeps
+  `shipping_paise`. Failed deliveries then close the order as `returned`.
+- **Media:** pickup, delivery and failure photos and document photos are `media_objects` with owner kinds
+  `delivery_photo` and `agent_document` in the existing private bucket (not R2); staff-only signed URLs at
+  `/v1/delivery-photos/{id}/{variant}`.
+- **Worker:** offers expire every 30 s (one transaction each; failures logged and skipped).
+- **Not built (queued as founder questions):** reroute to another shop after a declined switch; document retention
+  purge job (setting `delivery.document_retention_days` only); Meta template submission.

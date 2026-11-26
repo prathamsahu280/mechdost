@@ -3765,7 +3765,7 @@
     "reason_other": "अन्य",
     "reason_rsa_cancelled": "रोडसाइड अनुरोध रद्द हुआ",
     "reason_rsa_overpaid": "रोडसाइड कुल राशि अग्रिम से कम",
-    "reason_delivery_returned": "डिलीवरी दुकान पर वापस आई"
+    "reason_delivery_returned": "डिलीवरी पूरी नहीं हो पाई"
   },
   "refunds": {
     "title": "रिफ़ंड",
@@ -3919,8 +3919,8 @@
     "source_rsa_overpaid": "रोडसाइड कुल राशि अग्रिम से कम",
     "reason_rsa_cancelled": "रोडसाइड अनुरोध रद्द हुआ",
     "reason_rsa_overpaid": "रोडसाइड कुल राशि अग्रिम से कम",
-    "source_delivery_returned": "डिलीवरी वापस आई",
-    "reason_delivery_returned": "डिलीवरी दुकान पर वापस आई"
+    "source_delivery_returned": "डिलीवरी पूरी नहीं हुई",
+    "reason_delivery_returned": "डिलीवरी पूरी नहीं हो पाई"
   },
   "accountApi": {
     "loadError": "यह लोड नहीं हो सका। इंटरनेट जाँचकर फिर कोशिश करें।",
@@ -8945,7 +8945,7 @@
   "delivery": {
     "orderStatus": {
       "ready_for_pickup": "पिकअप के लिए तैयार",
-      "returned": "दुकान को वापस"
+      "returned": "वापस गया"
     },
     "jobStatus": {
       "needs_agent": "एजेंट चाहिए",

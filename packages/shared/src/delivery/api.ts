@@ -86,7 +86,15 @@ export const AgentInvitePreview = z.object({
   expiresAt: Iso,
 });
 /** `POST /v1/me/delivery-invites/accept` (signed in; the OTP-proven phone must match the invite). */
-export const AgentInviteAccept = z.object({ token: z.string().regex(/^[A-Za-z0-9_-]{32,64}$/) }).strict();
+/** Without a token (from the WhatsApp message): the open invite of the account's OTP-proven phone. */
+export const AgentInviteAccept = z
+  .object({
+    token: z
+      .string()
+      .regex(/^[A-Za-z0-9_-]{32,64}$/)
+      .optional(),
+  })
+  .strict();
 export const AgentInviteAccepted = z.object({ agentId: Uuid, status: z.enum(AGENT_STATUSES) });
 
 // ── agent ─────────────────────────────────────────────────────────────────────────────────────────────────────────

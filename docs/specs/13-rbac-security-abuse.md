@@ -181,3 +181,23 @@ robots.txt asks AI-training scrapers and SEO-tool crawlers to stay out (`apps/we
 ## Storefront edit shortcut (2026-11-25)
 
 The pencil link on cards and the product page is convenience only; authority stays in the API. Every `/admin/catalogue/*` route requires sign-in, phone verification and `products:write`; `apps/api/test/admin-catalogue-role-leak.test.ts` pins 401 (signed out) and 403 (customer, shop owner, workshop owner, support_agent, finance, marketing, ops_manager) on the read that opens the editor and on each save route, and 200 for catalogue_manager and super_admin. Visibility comes from the live `GET /v1/me` permissions, never from a stored value; a doctored browser record shows nothing. The link carries only the slug (validated before it reaches an API path); saves keep `version` checks and the audit log.
+
+## Delivery agents (2026-11-26, spec 24)
+
+- **Role** `delivery_agent` (self scope) holds `deliveries:read|respond|fulfil` only, never `orders:*`. Staff:
+  `delivery_agents:manage`, `delivery_jobs:assign` (ops_manager, city_manager), `delivery_payouts:manage` (finance);
+  super_admin has all.
+- **`cityScopeFrom` hardening:** known non-staff roles (including `delivery_agent`) never yield a staff city scope; test
+  in `packages/db/test/delivery-agents.test.ts`.
+- **Standing:** every agent job action needs status `active`; paused may only finish parcels already picked up;
+  suspended and offboarded can do nothing (spec 24 § 5). Replacing a document unverifies it.
+- **Documents:** PAN, licence, RC numbers encrypted with a blind index; photos private (media owner kind
+  `agent_document`); staff view audited; **no Aadhaar** (12-digit numbers refused by Zod and the repository).
+  Delivery photos (owner kind `delivery_photo`) served only to staff by signed URL.
+- **RLS:** deny-all on every new table (no policies); the API is the only reader (actor-scoped repositories, 404 for
+  foreign ids).
+- **Limits:** apply 5/h per IP + 3/day per phone with Turnstile; invite preview 30/h per IP; pickup, deliver, return
+  code steps 20 per 10 min per user and 5 tries per code; agent photos 30 per 10 min; rating 10/h per user; payouts
+  CSV under the existing CSV export budget.
+- **Invite token:** single use, phone-bound, 72 h, sent in the email link only. The WhatsApp message carries no token
+  (lock screens, chat backups); signing in with the invite's phone finds the open invite.

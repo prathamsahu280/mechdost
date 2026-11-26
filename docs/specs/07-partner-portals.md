@@ -350,3 +350,14 @@ Separate from seller applications (their table is seller-shaped: GST status, add
 ## Roadside in the workshop portal (2026-11-24, spec 22)
 
 `/partner/workshop` has a Roadside panel (permission `roadside:respond`, scoped to the caller's workshops): opt-in (on/off, radius 1 to 50 km, vehicle types, problem types, towing), offers with a countdown (accept, or decline with a reason code), and the job steps: on my way, the customer's arrival code (5 tries, then support), start, bill lines (kind, description, quantity, price), and "customer paid in cash". The customer's phone is never shown; calls go through MechDost support at launch.
+
+## Delivery agents in the portals (2026-11-26, spec 24; screens not built yet)
+
+- **Agent portal** (`/partner/delivery`, mobile first, en + hi): apply (public) and join by invite link; documents
+  (PAN, driving licence, RC) with status; online toggle; offers with a countdown (accept, decline with reason); job
+  screen by stage (shop details, pickup code + photo, customer details, delivery code + photo, or failed with reason +
+  photo; give up before pickup); history; profile with own rating; payouts list (manual, no staff notes); support call
+  as SOS. API: `/v1/agent/*`.
+- **Shop portal:** "Ready for pickup" step and the pickup code for agent-mode orders; return code entry when an agent
+  brings a parcel back; confirm or decline a "deliver it yourselves" switch (decline with reason); a "Deliver
+  ourselves" request card (one pending per shop, withdraw). Self-delivery shops are unchanged.

@@ -246,3 +246,19 @@ State: `rsa_requests` moves only through `rsaMachine` as a conditional UPDATE on
   person's savings rows. PGlite is one connection: the concurrency test proves idempotency under interleaving, not
   real contention; run `packages/db/test/savings.test.ts` with `TEST_DATABASE_URL` on real Postgres before relying on
   the advisory lock under load.
+
+## Data model note: delivery agents (migrations 0105 and 0106, 2026-11-26, spec 24)
+
+- Machines `deliveryJobMachine`, `deliveryOfferMachine`, `agentStatusMachine` (`packages/shared/src/state/delivery.ts`);
+  every move is a conditional UPDATE on `version` with an event row, in one transaction.
+- **One active job per order:** partial unique index `delivery_jobs_one_active_uq` over the non-terminal states. **One
+  open offer per job:** `delivery_job_offers_one_open_uq` (`offered|accepted`). One open invite per phone, one open
+  switch per order, one pending mode request per shop (partial uniques). One document per agent and kind.
+- **Lock order:** order row, then job, then offer and handover codes, then the agent row; `lockAgentWork` is taken
+  before the agent row. Never the reverse.
+- **Append-only:** `delivery_job_events`, `delivery_agent_events`, `delivery_agent_payouts` (a correction is one
+  reversing row, `reverses_id` unique; sign CHECKs; amounts in paise).
+- Handover codes (pickup, return) live in `delivery_handover_codes`, their own rows, with attempt counters and locks.
+- Order CHECKs accept `ready_for_pickup`, `returned` and actor `delivery_agent`; `orders_agent_states` keeps agent-only
+  states to agent mode; a returned order needs a delivery failure reason.
+- Idempotency: payouts by `idem_key`; refunds by the existing refund keys (`delivery_returned`).

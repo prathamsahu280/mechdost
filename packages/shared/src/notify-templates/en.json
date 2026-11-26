@@ -23,5 +23,9 @@
     "bill_ready": "The bill for your roadside request {{1}} is ready. Tap below to see it and pay what is left after your advance.",
     "refunded": "The refund for your roadside request {{1}} is processed. Your bank can take a few days to show it. Tap below for details.",
     "offer": "New roadside request {{1}} for your workshop. Accept or decline within {{2}} minutes in the MechDost partner portal."
+  },
+  "delivery": {
+    "offer": "New delivery job {{1}} for you. Accept or decline within {{2}} minutes in the MechDost delivery portal.",
+    "agent_invite": "Hello {{1}}, MechDost has invited you to join as a delivery agent. Open mechdost.com/partners/delivery/join and sign in with this mobile number within {{2}} hours."
   }
 }

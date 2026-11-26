@@ -1048,4 +1048,47 @@ export const EMAIL_CATALOGUE = {
       button: 'उपयोग और सीमाएँ खोलें',
     },
   }),
+  // ----- Delivery agents (spec 24) --------------------------------------------------------------------------
+  delivery_agent_invite: def({
+    purpose: 'updates',
+    category: 'transactional',
+    audience: T.partner,
+    text: ['name', 'hours'],
+    params: ['name', 'hours', 'token'],
+    button: (p) => `/partners/delivery/invite/${enc(p.token ?? '')}`,
+    sample: { name: 'Ravi Kumar', hours: '72', token: 'preview-only' },
+    en: {
+      subject: 'Your invitation to deliver with MechDost',
+      heading: 'You are invited to be a MechDost delivery agent',
+      body: 'Hello {name},\n\nMechDost has invited you to join as a delivery agent. Open the link below and sign in with the mobile number this invite was sent to, then upload your PAN, driving licence and vehicle RC.\n\nThe link works once and only for your number. It stops working after {hours} hours.',
+      button: 'Join as a delivery agent',
+    },
+    hi: {
+      subject: 'MechDost के साथ डिलीवरी करने का न्योता',
+      heading: 'आपको MechDost डिलीवरी एजेंट बनने का न्योता है',
+      body: 'नमस्ते {name},\n\nMechDost ने आपको डिलीवरी एजेंट के रूप में जुड़ने के लिए बुलाया है। नीचे दिया लिंक खोलें और उसी मोबाइल नंबर से साइन इन करें जिस पर यह न्योता आया है, फिर अपना पैन, ड्राइविंग लाइसेंस और गाड़ी की आरसी अपलोड करें।\n\nयह लिंक एक बार और सिर्फ़ आपके नंबर के लिए काम करता है। {hours} घंटे बाद यह काम नहीं करेगा।',
+      button: 'डिलीवरी एजेंट बनें',
+    },
+  }),
+  delivery_offer: def({
+    purpose: 'updates',
+    category: 'transactional',
+    audience: T.partner,
+    text: ['orderCode', 'minutes'],
+    params: ['orderCode', 'minutes'],
+    button: () => '/partner/delivery',
+    sample: { orderCode: 'MD-RPR-2026-7K3QWX', minutes: '15' },
+    en: {
+      subject: 'New delivery job {orderCode}',
+      heading: 'A delivery job is waiting for you',
+      body: 'Order {orderCode} is offered to you. Open your delivery portal and accept or decline within {minutes} minutes.',
+      button: 'Open the delivery portal',
+    },
+    hi: {
+      subject: 'नया डिलीवरी काम {orderCode}',
+      heading: 'एक डिलीवरी काम आपका इंतज़ार कर रहा है',
+      body: 'ऑर्डर {orderCode} आपको दिया गया है। अपना डिलीवरी पोर्टल खोलें और {minutes} मिनट में स्वीकार या मना करें।',
+      button: 'डिलीवरी पोर्टल खोलें',
+    },
+  }),
 } as const satisfies Record<string, EmailTemplateDef>;

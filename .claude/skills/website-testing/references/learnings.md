@@ -369,3 +369,7 @@ ustaad-console.test.ts` (held answer/question/comment/post/message, NCII re-hold
   `apps/api/test/admin-usage.test.ts` are 20+ chars; reuse the `token-<area>-0000000NN` shape.
 - T-USAGE2 · 2026-11-26 · notices · a new bell kind with placeholders fails `notice-catalogue.test.ts` until its
   placeholders are in the test's `SAMPLE` (`metric`, `percent` added) · add the sample values in the same change.
+- T-DA1 · 2026-11-26 · partner standing · bug class "partner standing not re-checked on in-flight work": a suspended
+  agent could keep acting on held jobs, and a replaced document kept a verified agent working → test every action per
+  status × stage, and test that a changed document unverifies. Pinned by `packages/db/test/delivery-agents.test.ts`,
+  block "security review 2026-11-26: standing and documents". · active

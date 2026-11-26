@@ -136,6 +136,23 @@ export const WHATSAPP_TEMPLATES = {
     params: ['orderCode', 'acceptMinutes'],
     audience: 'partner',
   },
+  // Delivery agents (spec 24). Not submitted to Meta until the founder's go-ahead.
+  'delivery.offer': {
+    name: 'partner_delivery_offer',
+    category: 'utility',
+    params: ['orderCode', 'minutes'],
+    audience: 'partner',
+  },
+  /**
+   * No token in WhatsApp (lock screens, chat backups): the message sends the person to the join page, where signing in
+   * with this OTP-proven number finds their open invite (the invite is bound to the phone). The email carries the link.
+   */
+  'delivery.agent_invite': {
+    name: 'partner_delivery_invite',
+    category: 'utility',
+    params: ['name', 'hours'],
+    audience: 'partner',
+  },
 } as const satisfies Record<string, WhatsAppTemplate>;
 
 export type WhatsAppTemplateKey = keyof typeof WHATSAPP_TEMPLATES;

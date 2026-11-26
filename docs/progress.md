@@ -11,8 +11,20 @@ This file is the single source of truth for **where the build is right now**. It
   `docs/superpowers/plans/2026-11-26-delivery-agents.md` (advisor brief inside).
 - **Known gap until migration 0105:** the database CHECKs (`orders_status_valid`, `order_events_actor_valid`) do not
   yet accept the new states/actor; nothing writes them before the repositories land.
-- **Next:** migrations 0105+ → repositories → API + worker → notifications/analytics → docs (spec 24 + 04/05/07/08/
-  10/12/13/14) → gates. Web screens: second agent, from the contract.
+- **Commits on this branch (since 473a6356):** 63c68d0c contract; 0a02d4ac contract update (rider ratings, 15 min
+  offer timer) + schema + migration **0105**; 56db024d repositories (onboarding, dispatch, pickup/deliver/fail/return,
+  switch, shop mode, ratings); c7fce3d6 security review fix (agent standing, document re-verification); b44c63db pause
+  keeps held parcels finishable, every held job flagged on pause/suspend/offboard; e7531842 manual agent payouts
+  (contract, migration **0106**) and the HTTP API. Migrations 0105 + 0106 are **not applied** anywhere.
+- **Docs done:** spec 24 (new) + 04, 05, 07, 08, 10, 12, 13, 14; decisions "security review fixes" and "pause ruling and
+  manual payouts"; questions Q-DA1–Q-DA4 (Q217 marked answered); WhatsApp runbook; learnings L-DA1–L-DA4, T-DA1.
+- **Not built:** web screens, demo store, masked calling, broadcast dispatch, live map, rider cash/COD, automatic
+  payouts and rate cards, Meta template submission (not submitted), document retention purge job, reroute after a
+  declined switch.
+- **Next:** web agent builds the screens from the contract (design doc "Contract" + spec 24); lead merge; apply
+  migrations 0105 + 0106 (check `drizzle-kit generate` says no changes first, L-DA1); submit the two WhatsApp templates
+  to Meta on the founder's go-ahead (Q-DA1); turn `delivery.agents_enabled` on for Raipur only after the founder
+  confirms the compliance items.
 
 ## 2026-11-26 (night) — four fixes agent (branch worktree-agent-a3b1a256dd1a31849, not pushed, no migration)
 

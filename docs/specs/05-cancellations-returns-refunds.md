@@ -181,3 +181,17 @@ A refund can now belong to a roadside request (`refunds.rsa_request_id`; exactly
 A processed refund on a delivered order (either mode, webhook replay safe) appends one reversal row to the savings
 ledger, in proportion to refund / order total per component and per line (spec 14 "Savings ledger"). The order page
 then says "A refund on this order reduced the saving." Cancelled or rejected orders never had savings.
+
+## Failed delivery, return and refund (2026-11-26, spec 24)
+
+The no returns or exchanges policy is unchanged; this is about a parcel the agent could not hand over.
+
+- One free retry (`delivery.max_attempts` 2), then the parcel goes back to the shop and the sub-order closes as
+  `returned` when the shop types the agent's return code (or staff override, audited).
+- Refund kind (`returnRefundKind`): **customer's fault** (last reason `customer_refused`, or `customer_unreachable`
+  again on the retry) refunds the parts only and keeps `shipping_paise`; anything else (wrong address, unsafe location,
+  vehicle issue, `other`, or one unreachable attempt) refunds in full including delivery. Founder accepted 2026-11-26.
+- Refund source and reason code `delivery_returned`, through the existing refund paths (idempotent, original payment
+  method). Coins and coupon are restored in both cases. Stock goes back to the shop on hand-back.
+- A customer unreachable on the first attempt, then returned without a retry, counts as not the customer's fault (full
+  refund): default as built, queued as a founder question.

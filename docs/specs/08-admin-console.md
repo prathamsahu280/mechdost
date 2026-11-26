@@ -521,3 +521,13 @@ emailLocale, expectedVersion}`); compare-and-set on `version`, 409 when stale, a
 - **Tests:** `packages/db/test/usage.test.ts`, `apps/api/test/admin-usage.test.ts`, `packages/shared/test/usage.test.ts`,
   state-audit row `API-ADM-USAGE`, `e2e/state-audit/usage.shots.ts` (`playwright.usage.config.ts`).
 - **Later:** a recovery note when a metric drops back; Upstash and Supabase egress numbers (need other keys).
+
+## Delivery section (2026-11-26, spec 24; backend built, screens not built yet)
+
+New section **Delivery** (en + hi, city-scoped, `delivery_agents:manage` and `delivery_jobs:assign`):
+Applications (partner applications of kind `delivery_agent`), Invites (create, revoke; email + WhatsApp), Agents (list,
+detail, edit, status with reason, rating), Documents (audited view, verify or reject with reason), Jobs queue (needs an
+agent / offered / active / failed, timers, ranked suggestions, offer, withdraw, failure decision retry or return,
+audited overrides, switch an order to the shop), Shop delivery mode (requests, approve or reject, set directly),
+Payouts (record, reverse, list, CSV; `delivery_payouts:manage`, finance and super admin), KPIs. The `delivery.*`
+settings show under Admin → Settings → Partners until the section has its own settings screen.

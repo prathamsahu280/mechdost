@@ -541,3 +541,17 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
 - L-USAGE3 · 2026-11-26 · settings design · The `settings` registry only takes ints and booleans and renders on Admin →
   Settings; a feature with lists (email recipients) and per-metric limits fits better in its own versioned tables
   edited on its own page, audited like settings. → Check the registry's kinds before planning an admin-editable list.
+- L-DA1 · 2026-11-26 · schema/migrations · `drizzle-kit generate` named the file by the journal count and overwrote the
+  previous snapshot again (second time after L-USAGE1) → renumber, restore the old snapshot from git, and fold later
+  schema changes into the unapplied migration with a temp delta (generate, move its SQL in, take its snapshot, drop the
+  temp journal entry); then `generate` must say "No schema changes". Candidate for promotion to a hard checklist. · active
+- L-DA2 · 2026-11-26 · tooling · A JS `String.replace` whose replacement string contains `$'` (or `` $` ``, `$&`) inserts
+  the rest of the file; an edit script silently duplicated text → use a replacer function `() => b`, or split/join, in
+  every edit script. · active
+- L-DA3 · 2026-11-26 · authz/partners · Standing checks (active, paused, suspended) were per route and a suspended agent
+  kept acting on held jobs → put the standing check in the shared agent lookup used by every job action, and decide up
+  front per status × stage what a paused partner may still do (here: finish parcels already picked up, show the return
+  code). · active
+- L-DA4 · 2026-11-26 · state machines · A new order state (`ready_for_pickup`, `returned`) was missing from the
+  "closed/dead" status lists in other features → when adding an order state, grep every status list (coupon dead-order
+  checks, analytics live parts, routing closed view, support-deletion done list) and add it in the same change. · active

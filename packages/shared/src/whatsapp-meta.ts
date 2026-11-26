@@ -62,6 +62,9 @@ const SAMPLE: Record<string, string> = {
   quoteCode: 'QT-RPR-2026-8N3R4T',
   rsaCode: 'RSA-RPR-2026-6M4QZB',
   acceptMinutes: '10',
+  minutes: '15',
+  name: 'Ravi',
+  hours: '72',
 };
 
 interface ButtonCopy {
@@ -105,6 +108,8 @@ export const META_TEMPLATE_COPY: Record<WhatsAppTemplateKey, { button?: ButtonCo
   },
   'rsa.offer': {},
   'order.routed': {},
+  'delivery.offer': {},
+  'delivery.agent_invite': {},
 };
 
 const BODIES: Record<
@@ -115,6 +120,7 @@ const BODIES: Record<
     ticket: Record<string, string>;
     quote: Record<string, string>;
     rsa: Record<string, string>;
+    delivery: Record<string, string>;
   }
 > = {
   en,
@@ -123,7 +129,10 @@ const BODIES: Record<
 
 /** The locale-file text of a catalogue event, e.g. `order.confirmed` → `notifyTemplates.order.confirmed`. */
 export function whatsAppBodyText(key: WhatsAppTemplateKey, locale: WhatsAppLocale): string {
-  const [group, event] = key.split('.') as ['order' | 'service' | 'ticket' | 'quote' | 'rsa', string];
+  const [group, event] = key.split('.') as [
+    'order' | 'service' | 'ticket' | 'quote' | 'rsa' | 'delivery',
+    string,
+  ];
   return BODIES[locale][group][event] ?? '';
 }
 

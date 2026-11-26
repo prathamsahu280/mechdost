@@ -175,6 +175,39 @@ describe('onboarding', () => {
     expect(JSON.stringify(out[0]!.payload)).not.toContain(inv.token);
   });
 
+  it('the WhatsApp invite carries no token; joining without one finds the open invite of the signed-in phone', async () => {
+    const ph = '+919844446666';
+    const userId = (
+      await w.db
+        .insert(s.users)
+        .values({ firebaseUid: `fb-dl-w-${randomUUID()}`, phone: ph, phoneVerifiedAt: new Date() })
+        .returning()
+    )[0]!.id;
+    const stranger = (
+      await w.db
+        .insert(s.users)
+        .values({
+          firebaseUid: `fb-dl-s-${randomUUID()}`,
+          phone: '+919844447777',
+          phoneVerifiedAt: new Date(),
+        })
+        .returning()
+    )[0]!.id;
+    const inv = await createAgentInvite(w.t(), {
+      scope: { all: true },
+      staffUserId: w.staff,
+      keyring,
+      from: { name: 'Kiran Patel', phone: ph, cityCode: 'RPR', vehicleType: 'scooter' },
+    });
+    const [wa] = await w.db
+      .select()
+      .from(s.notificationOutbox)
+      .where(eq(s.notificationOutbox.dedupeKey, `delivery_agent_invite:${inv.id}:whatsapp`));
+    expect(Object.keys(wa!.payload as object).sort()).toEqual(['hours', 'name']);
+    await expect(acceptAgentInvite(w.t(), { userId: stranger })).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    expect((await acceptAgentInvite(w.t(), { userId })).status).toBe('onboarding');
+  });
+
   it('refuses Aadhaar, needs all three documents verified before active, and only active agents go online', async () => {
     const ph = '+919833335555';
     const userId = (

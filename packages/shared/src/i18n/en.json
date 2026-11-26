@@ -3765,7 +3765,7 @@
     "reason_other": "Other",
     "reason_rsa_cancelled": "Roadside request cancelled",
     "reason_rsa_overpaid": "Roadside total below the advance",
-    "reason_delivery_returned": "Delivery came back to the shop"
+    "reason_delivery_returned": "Delivery could not be completed"
   },
   "refunds": {
     "title": "Refunds",
@@ -3919,8 +3919,8 @@
     "source_rsa_overpaid": "Roadside total below the advance",
     "reason_rsa_cancelled": "Roadside request cancelled",
     "reason_rsa_overpaid": "Roadside total below the advance",
-    "source_delivery_returned": "Delivery came back",
-    "reason_delivery_returned": "Delivery came back to the shop"
+    "source_delivery_returned": "Delivery not completed",
+    "reason_delivery_returned": "Delivery could not be completed"
   },
   "accountApi": {
     "loadError": "We couldn't load this. Check your connection and try again.",
@@ -8945,7 +8945,7 @@
   "delivery": {
     "orderStatus": {
       "ready_for_pickup": "Ready for pickup",
-      "returned": "Returned to the shop"
+      "returned": "Returned"
     },
     "jobStatus": {
       "needs_agent": "Needs an agent",

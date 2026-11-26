@@ -313,3 +313,16 @@ period YYYY-MM }`, `admin_usage_limit_saved { metric, limit|null, alerts }`, `ad
 criticalPct, recipients (count), emailLocale }`. Client clicks (`data-track`): `admin_usage_check_now`,
 `admin_usage_limit_edit`, `admin_usage_limit_save`, `admin_usage_alerts_save`. The measurements themselves are in
 `usage_snapshots` (append-only, metric code with unit, bigint value, limit, source, UTC time, run id).
+
+## Delivery agent events (2026-11-26, spec 24)
+
+Server events from `packages/shared/src/delivery/analytics.ts` (ids, codes, enums, seconds, grams, paise only; never
+names, phones, addresses or document numbers): `delivery_agent_applied`, `delivery_agent_invited`,
+`delivery_agent_joined`, `delivery_agent_document_submitted`, `delivery_agent_document_decided`,
+`delivery_agent_status_changed`, `delivery_agent_online`, `delivery_job_created`, `delivery_job_offered`,
+`delivery_offer_accepted`, `delivery_offer_declined`, `delivery_offer_expired`, `delivery_offer_withdrawn`,
+`delivery_job_given_up`, `delivery_contact_revealed`, `delivery_picked_up`, `delivery_delivered`, `delivery_failed`,
+`delivery_failure_decided`, `delivery_returned`, `delivery_code_wrong`, `delivery_rated`,
+`delivery_low_rating_alert`, `delivery_payout_recorded`, `delivery_switch_requested`, `delivery_switch_decided`,
+`shop_delivery_mode_requested`, `shop_delivery_mode_decided`. `order_fulfilment_step` gains step `ready_for_pickup`.
+Client events for the portal screens come with the screens.
