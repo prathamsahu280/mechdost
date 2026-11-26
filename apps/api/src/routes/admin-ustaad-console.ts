@@ -10,6 +10,7 @@ import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import type { Context, MiddlewareHandler } from 'hono';
 import {
   cityScopeFrom,
+  confirmUstaadUnban,
   listUstaadLegalCases,
   listUstaadStaffOwnActions,
   sanctionUstaadMember,
@@ -21,6 +22,7 @@ import {
 } from '@mechdost/db/repo';
 import { can, type Permission } from '@mechdost/shared/rbac';
 import {
+  ConfirmUnbanDto,
   ConsoleCapsDto,
   LegalCasesDto,
   MemberSearchQueryDto,
@@ -96,8 +98,24 @@ const R = {
     ...meta,
     method: 'post',
     path: '/admin/ustaad/members/{id}/unban',
-    summary: 'Lift a ban or restriction with a reason (never a child-safety freeze)',
+    summary:
+      'Lift a ban or restriction with a reason (a long or permanent ban is proposed for a second staff member; never a child-safety freeze)',
     request: { params: MemberId, body: body(UnbanMemberDto) },
+    responses: ok(
+      z.object({
+        memberId: z.string(),
+        status: z.string(),
+        pendingUnban: z.object({ proposalId: z.string() }).optional(),
+      }),
+      'Lifted or proposed',
+    ),
+  }),
+  confirmUnban: createRoute({
+    ...meta,
+    method: 'post',
+    path: '/admin/ustaad/members/{id}/unban/confirm',
+    summary: 'Second staff member confirms lifting a ban (four-eyes)',
+    request: { params: MemberId, body: body(ConfirmUnbanDto.openapi('UstaadConfirmUnban')) },
     responses: ok(z.object({ memberId: z.string(), status: z.string() }), 'Lifted'),
   }),
   legal: createRoute({
@@ -212,6 +230,17 @@ export function adminUstaadConsoleRoutes(deps: AppDeps, cache: SessionCache) {
     .openapi(R.unban, async (c) =>
       c.json(
         await unbanUstaadMember(
+          deps.db,
+          staffOf(c, 'ustaad:moderate'),
+          c.req.valid('param').id,
+          c.req.valid('json'),
+        ),
+        200,
+      ),
+    )
+    .openapi(R.confirmUnban, async (c) =>
+      c.json(
+        await confirmUstaadUnban(
           deps.db,
           staffOf(c, 'ustaad:moderate'),
           c.req.valid('param').id,

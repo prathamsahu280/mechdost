@@ -61,6 +61,8 @@ export const StaffMemberDetailDto = StaffMemberRowDto.extend({
   joinedAt: z.string(),
   version: z.number().int(),
   openReports: z.number().int(),
+  /** Four-eyes: lifting a long or permanent ban waits for a second staff member. */
+  pendingUnban: z.object({ proposalId: z.string(), proposedByMe: z.boolean() }).nullable(),
   strikes: z.array(z.object({ reasonCode: z.string(), status: z.string(), at: z.string() })),
   /** Moderation actions on the member or on anything they wrote, newest first (50). */
   history: z.array(
@@ -144,3 +146,6 @@ export const OwnActionsDto = z.object({
   nextCursor: z.string().nullable(),
 });
 export type OwnActions = z.infer<typeof OwnActionsDto>;
+
+/** Four-eyes: a second staff member confirms an unban proposal. */
+export const ConfirmUnbanDto = z.object({ proposalId: z.uuid(), version }).strict();

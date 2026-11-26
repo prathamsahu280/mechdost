@@ -1786,10 +1786,141 @@ export async function sanctionUstaadMember(
   });
 }
 
+/** Ban and restrict actions on a member that still stand (active strike, not yet ended), with who took part. */
+async function standingUstaadSanctions(tx: Tx, memberId: string, now: Date) {
+  const rows = await tx
+    .select({
+      id: ustaadModerationActions.id,
+      action: ustaadModerationActions.action,
+      days: ustaadModerationActions.days,
+      at: ustaadModerationActions.createdAt,
+      actorId: ustaadModerationActions.actorId,
+      secondActorId: ustaadModerationActions.secondActorId,
+      decidedBy: ustaadReports.decidedBy,
+    })
+    .from(ustaadStrikes)
+    .innerJoin(ustaadModerationActions, eq(ustaadModerationActions.id, ustaadStrikes.actionId))
+    .leftJoin(ustaadReports, eq(ustaadReports.id, ustaadModerationActions.reportId))
+    .where(
+      and(
+        eq(ustaadStrikes.memberId, memberId),
+        eq(ustaadStrikes.status, 'active'),
+        inArray(ustaadModerationActions.action, ['ban', 'restrict']),
+      ),
+    );
+  return rows.filter((a) => a.days === null || a.at.getTime() + a.days * 86_400_000 > now.getTime());
+}
+
+/** The open unban proposal of a member (four-eyes), or null. */
+export async function pendingUstaadUnban(
+  tx: Tx,
+  memberId: string,
+): Promise<{ id: string; actorId: string | null; reasonCode: string | null; props: unknown } | null> {
+  const [p] = await tx
+    .select({
+      id: ustaadEvents.id,
+      kind: ustaadEvents.kind,
+      actorId: ustaadEvents.actorId,
+      reasonCode: ustaadEvents.reasonCode,
+      props: ustaadEvents.props,
+    })
+    .from(ustaadEvents)
+    .where(
+      and(
+        eq(ustaadEvents.entityType, 'member'),
+        eq(ustaadEvents.entityId, memberId),
+        inArray(ustaadEvents.kind, ['unban_proposed', 'unban_confirmed', 'unbanned']),
+      ),
+    )
+    .orderBy(desc(ustaadEvents.occurredAt), desc(ustaadEvents.id))
+    .limit(1);
+  return p?.kind === 'unban_proposed' ? p : null;
+}
+
+async function unbanPreconditions(
+  tx: Tx,
+  staff: UstaadStaff,
+  memberId: string,
+  version: number,
+): Promise<typeof ustaadMembers.$inferSelect> {
+  const m = await scopedMember(tx, staff, memberId);
+  if (m.version !== version) throw new ConflictError('This member changed meanwhile', 'STALE_MEMBER');
+  if (m.userId === staff.userId)
+    throw new ForbiddenError('Another staff member must decide on your own account', 'SELF_MODERATION');
+  if (m.restrictedMode === 'review')
+    throw new ConflictError('This account is frozen for a child-safety review', 'USTAAD_MEMBER_FROZEN');
+  return m;
+}
+
+/** Nobody who proposed, confirmed or decided a sanction being lifted may lift it (403 `FOUR_EYES`). */
+function assertNotInvolved(
+  staff: UstaadStaff,
+  lifted: readonly { actorId: string; secondActorId: string | null; decidedBy: string | null }[],
+): void {
+  const involved = new Set(
+    lifted.flatMap((a) => [a.actorId, a.secondActorId, a.decidedBy]).filter((x): x is string => x !== null),
+  );
+  if (involved.has(staff.userId))
+    throw new ForbiddenError('Another staff member must lift this', 'FOUR_EYES');
+}
+
+/** Overturn the lifted sanctions' strikes, recompute the status from what still stands, record it. */
+async function liftUstaadSanctions(
+  tx: Tx,
+  m: typeof ustaadMembers.$inferSelect,
+  liftedIds: readonly string[],
+  p: { reasonCode: string; note: string | null; actorId: string; secondActorId: string | null },
+  now: Date,
+): Promise<string> {
+  await overturnUstaadStrikes(tx, {
+    actionIds: liftedIds,
+    staffUserId: p.secondActorId ?? p.actorId,
+    appealTicketId: null,
+  });
+  await recomputeUstaadSanction(tx, m.id, now);
+  const [after] = await tx
+    .select({ status: ustaadMembers.status })
+    .from(ustaadMembers)
+    .where(eq(ustaadMembers.id, m.id))
+    .limit(1);
+  const target = await loadUstaadTarget(tx, 'member', m.id);
+  if (!target) throw new NotFoundError('Member not found');
+  await writeAction(tx, {
+    report: null,
+    target: { ...target, status: m.status },
+    action: 'unban',
+    reasonCode: p.reasonCode,
+    actorId: p.actorId,
+    secondActorId: p.secondActorId,
+    note: p.note,
+    now,
+  });
+  await recordUstaadEvent(tx, {
+    entityType: 'member',
+    entityId: m.id,
+    kind: 'unbanned',
+    fromStatus: m.status,
+    toStatus: after?.status ?? m.status,
+    reasonCode: p.reasonCode,
+    actorId: p.secondActorId ?? p.actorId,
+    actorRole: 'staff',
+    cityId: m.cityId,
+    props: { actionIds: [...liftedIds] },
+  });
+  return after?.status ?? m.status;
+}
+
 /**
- * Lift a ban or a restriction from Members, with a reason code (audited `ustaad.unban`, append-only action). A frozen
- * child-safety review account (`restricted_mode = review`) is never lifted here (409 `USTAAD_MEMBER_FROZEN`; the
- * Grievance Officer's POCSO path decides), and a minor-report restricted mode stays until its report is decided.
+ * Lift the standing bans of a member (or, with no ban, the standing restrictions) from Members, with a reason code.
+ * Same controls as bans and appeals (lead security review 2026-11-26):
+ *  - a ban at or above `mod.four_eyes_from_ban_days` (or permanent) is lifted only through a proposal that a different
+ *    staff member confirms (`confirmUstaadUnban`; the console shows "waiting for approval");
+ *  - nobody who proposed, confirmed or decided a sanction being lifted may propose or confirm (403 `FOUR_EYES`);
+ *  - only those sanctions' strikes are overturned and the status is recomputed from what still stands (a restriction
+ *    from another report stays);
+ *  - a child-safety freeze (`review`) is never lifted here (409 `USTAAD_MEMBER_FROZEN`), and a minor-report restricted
+ *    mode stays until its report is decided;
+ *  - append-only `unban` action (with the second staff member) + `audit_log` + `ustaad_events`.
  */
 export async function unbanUstaadMember(
   db: Tx,
@@ -1797,44 +1928,101 @@ export async function unbanUstaadMember(
   memberId: string,
   body: UnbanMemberBody,
   now = new Date(),
+): Promise<{ memberId: string; status: string; pendingUnban?: { proposalId: string } }> {
+  return db.transaction(async (tx) => {
+    const m = await unbanPreconditions(tx, staff, memberId, body.version);
+    const standing = await standingUstaadSanctions(tx, m.id, now);
+    const kind = standing.some((a) => a.action === 'ban') ? 'ban' : 'restrict';
+    const lifted = standing.filter((a) => a.action === kind);
+    if (lifted.length === 0)
+      throw new ConflictError('This member has no ban or restriction', 'USTAAD_NOT_SANCTIONED');
+    assertNotInvolved(staff, lifted);
+    if (await pendingUstaadUnban(tx, m.id))
+      throw new ConflictError('Lifting this is already waiting for approval', 'USTAAD_UNBAN_PENDING');
+    const s = await readUstaadSettingValues(tx, ['ustaad.mod.four_eyes_from_ban_days']);
+    const from = Number(s['ustaad.mod.four_eyes_from_ban_days']);
+    if (kind === 'ban' && lifted.some((a) => banNeedsFourEyes(a.days, from))) {
+      const [ev] = await tx
+        .insert(ustaadEvents)
+        .values({
+          entityType: 'member',
+          entityId: m.id,
+          kind: 'unban_proposed',
+          reasonCode: body.reasonCode,
+          actorId: staff.userId,
+          actorRole: 'staff',
+          cityId: m.cityId,
+          props: { schema_version: 1, note: body.note ?? null, actionIds: lifted.map((a) => a.id) },
+        })
+        .returning({ id: ustaadEvents.id });
+      if (!ev) throw new Error('proposal insert returned nothing');
+      await tx.insert(auditLog).values({
+        actorUserId: staff.userId,
+        actorRole: 'staff',
+        action: 'ustaad.unban_proposed',
+        entity: 'ustaad_member',
+        entityId: m.id,
+        after: { actions: lifted.length },
+        reason: body.reasonCode,
+      });
+      return { memberId: m.id, status: m.status, pendingUnban: { proposalId: ev.id } };
+    }
+    const status = await liftUstaadSanctions(
+      tx,
+      m,
+      lifted.map((a) => a.id),
+      { reasonCode: body.reasonCode, note: body.note ?? null, actorId: staff.userId, secondActorId: null },
+      now,
+    );
+    return { memberId: m.id, status };
+  });
+}
+
+/**
+ * Four-eyes: a different staff member confirms an unban proposal (403 `FOUR_EYES` for the proposer and for anyone
+ * who proposed, confirmed or decided a sanction being lifted). Lifts only the proposal's sanctions that still stand.
+ */
+export async function confirmUstaadUnban(
+  db: Tx,
+  staff: UstaadStaff,
+  memberId: string,
+  body: { proposalId: string; version: number },
+  now = new Date(),
 ): Promise<{ memberId: string; status: string }> {
   return db.transaction(async (tx) => {
-    const m = await scopedMember(tx, staff, memberId);
-    if (m.version !== body.version) throw new ConflictError('This member changed meanwhile', 'STALE_MEMBER');
-    if (m.userId === staff.userId)
-      throw new ForbiddenError('Another staff member must decide on your own account', 'SELF_MODERATION');
-    if (m.restrictedMode === 'review')
-      throw new ConflictError('This account is frozen for a child-safety review', 'USTAAD_MEMBER_FROZEN');
-    if (m.status !== 'banned' && m.status !== 'restricted')
-      throw new ConflictError('This member has no ban or restriction', 'USTAAD_NOT_SANCTIONED');
-    const rows = await tx
-      .update(ustaadMembers)
-      .set({ status: 'active', bannedUntil: null, restrictedUntil: null })
-      .where(and(eq(ustaadMembers.id, m.id), eq(ustaadMembers.version, m.version)))
-      .returning({ id: ustaadMembers.id });
-    if (rows.length === 0) throw new ConflictError('This member changed meanwhile', 'STALE_MEMBER');
-    const target = await loadUstaadTarget(tx, 'member', m.id);
-    if (!target) throw new NotFoundError('Member not found');
-    await writeAction(tx, {
-      report: null,
-      target,
-      action: 'unban',
-      reasonCode: body.reasonCode,
-      actorId: staff.userId,
-      note: body.note ?? null,
-      now,
-    });
-    await recordUstaadEvent(tx, {
+    const m = await unbanPreconditions(tx, staff, memberId, body.version);
+    const pending = await pendingUstaadUnban(tx, m.id);
+    if (pending?.id !== body.proposalId)
+      throw new ConflictError('This proposal changed meanwhile', 'STALE_MEMBER');
+    if (pending.actorId === staff.userId || pending.actorId === null)
+      throw new ForbiddenError('Another staff member must approve this', 'FOUR_EYES');
+    const ids = (pending.props as { actionIds?: unknown }).actionIds;
+    const wanted = new Set(Array.isArray(ids) ? ids.filter((x): x is string => typeof x === 'string') : []);
+    const lifted = (await standingUstaadSanctions(tx, m.id, now)).filter((a) => wanted.has(a.id));
+    assertNotInvolved(staff, lifted);
+    await tx.insert(ustaadEvents).values({
       entityType: 'member',
       entityId: m.id,
-      kind: 'unbanned',
-      fromStatus: m.status,
-      toStatus: 'active',
-      reasonCode: body.reasonCode,
+      kind: 'unban_confirmed',
+      reasonCode: pending.reasonCode,
       actorId: staff.userId,
       actorRole: 'staff',
       cityId: m.cityId,
+      props: { schema_version: 1, proposalId: pending.id },
     });
-    return { memberId: m.id, status: 'active' };
+    const note = (pending.props as { note?: unknown }).note;
+    const status = await liftUstaadSanctions(
+      tx,
+      m,
+      lifted.map((a) => a.id),
+      {
+        reasonCode: pending.reasonCode ?? 'other',
+        note: typeof note === 'string' ? note : null,
+        actorId: pending.actorId,
+        secondActorId: staff.userId,
+      },
+      now,
+    );
+    return { memberId: m.id, status };
   });
 }

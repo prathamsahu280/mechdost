@@ -67,6 +67,7 @@ const JOIN = (displayName: string) => ({
 let superAdmin: Person;
 let cmRaipur: Person;
 let cmRaipur2: Person;
+let cmRaipur3: Person;
 let cmBilaspur: Person;
 let ops: Person;
 let support: Person;
@@ -140,6 +141,7 @@ beforeAll(async () => {
   });
   cmRaipur = await person('community_manager', raipurId);
   cmRaipur2 = await person('community_manager', raipurId);
+  cmRaipur3 = await person('community_manager', raipurId);
   cmBilaspur = await person('community_manager', bilaspurId);
   ops = await person('ops_manager');
   support = await person('support_agent');
@@ -173,6 +175,7 @@ describe('role-leak matrix for the console routes', () => {
         { action: 'restrict', reasonCode: 'spam', version: 1 },
       ],
       ['POST', `/admin/ustaad/members/${id}/unban`, { reasonCode: 'mistake', version: 1 }],
+      ['POST', `/admin/ustaad/members/${id}/unban/confirm`, { proposalId: id, version: 1 }],
       ['GET', '/admin/ustaad/legal', undefined],
       ['GET', '/admin/ustaad/my-actions', undefined],
       [
@@ -278,6 +281,68 @@ describe('members, legal list, own actions', () => {
         })
       ).status,
     ).toBe(400);
+  });
+
+  it('lifting a long ban: one staff member alone only proposes; the banning staff cannot; another confirms', async () => {
+    let d = await call(cmRaipur, 'GET', `/admin/ustaad/members/${authorMemberId}`);
+    const ban = await call(cmRaipur, 'POST', `/admin/ustaad/members/${authorMemberId}/sanction`, {
+      action: 'ban',
+      reasonCode: 'abuse',
+      days: 30,
+      version: d.body.version,
+    });
+    expect(ban.status).toBe(200);
+    const proposal = (ban.body.pendingBan as { proposalId: string }).proposalId;
+    const rep = await call(cmRaipur2, 'GET', `/admin/ustaad/moderation/reports/${ban.body.code as string}`);
+    expect(
+      (
+        await call(
+          cmRaipur2,
+          'POST',
+          `/admin/ustaad/moderation/reports/${ban.body.code as string}/ban/confirm`,
+          {
+            proposalId: proposal,
+            version: rep.body.version,
+          },
+        )
+      ).status,
+    ).toBe(200);
+    d = await call(cmRaipur3, 'GET', `/admin/ustaad/members/${authorMemberId}`);
+    expect(d.body.status).toBe('banned');
+    const byBanner = await call(cmRaipur, 'POST', `/admin/ustaad/members/${authorMemberId}/unban`, {
+      reasonCode: 'mistake',
+      version: d.body.version,
+    });
+    expect(byBanner.status).toBe(403);
+    expect(byBanner.body.error.code).toBe('FOUR_EYES');
+    const proposed = await call(cmRaipur3, 'POST', `/admin/ustaad/members/${authorMemberId}/unban`, {
+      reasonCode: 'mistake',
+      version: d.body.version,
+    });
+    expect(proposed.status).toBe(200);
+    expect(proposed.body.status).toBe('banned');
+    const pid = (proposed.body.pendingUnban as { proposalId: string }).proposalId;
+    d = await call(superAdmin, 'GET', `/admin/ustaad/members/${authorMemberId}`);
+    expect(d.body.pendingUnban).toMatchObject({ proposalId: pid, proposedByMe: false });
+    const self = await call(cmRaipur3, 'POST', `/admin/ustaad/members/${authorMemberId}/unban/confirm`, {
+      proposalId: pid,
+      version: d.body.version,
+    });
+    expect(self.status).toBe(403);
+    expect(
+      (
+        await call(ops, 'POST', `/admin/ustaad/members/${authorMemberId}/unban/confirm`, {
+          proposalId: pid,
+          version: d.body.version,
+        })
+      ).status,
+    ).toBe(403);
+    const ok = await call(superAdmin, 'POST', `/admin/ustaad/members/${authorMemberId}/unban/confirm`, {
+      proposalId: pid,
+      version: d.body.version,
+    });
+    expect(ok.status).toBe(200);
+    expect(ok.body.status).toBe('active');
   });
 
   it('legal list for takedown holders; the own audit trail', async () => {

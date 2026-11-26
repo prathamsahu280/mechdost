@@ -25,7 +25,7 @@ import {
 } from '../../schema';
 import { ForbiddenError, NotFoundError, ValidationError } from '../errors';
 import type { Tx } from '../orders';
-import type { UstaadStaff } from './moderation';
+import { pendingUstaadUnban, type UstaadStaff } from './moderation';
 import { loadUstaadTarget } from './targets';
 
 const iso = (d: Date) => d.toISOString();
@@ -196,6 +196,7 @@ export async function ustaadMemberForStaff(
     .where(eq(ustaadStrikes.memberId, memberId))
     .orderBy(desc(ustaadStrikes.createdAt))
     .limit(50);
+  const unban = await pendingUstaadUnban(tx, memberId);
   const [open] = await tx
     .select({ n: count() })
     .from(ustaadReports)
@@ -223,6 +224,7 @@ export async function ustaadMemberForStaff(
     joinedAt: iso(m.joinedAt),
     version: m.version,
     openReports: open?.n ?? 0,
+    pendingUnban: unban ? { proposalId: unban.id, proposedByMe: unban.actorId === staff.userId } : null,
     strikes: strikes.map((s) => ({ reasonCode: s.reasonCode, status: s.status, at: iso(s.createdAt) })),
     history: history.map(({ a, reportCode }) => ({
       action: a.action,

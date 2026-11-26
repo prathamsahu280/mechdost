@@ -16,6 +16,7 @@ import {
   askUstaadQuestion,
   commentOnUstaadPost,
   confirmUstaadBan,
+  confirmUstaadUnban,
   createUstaadPost,
   createUstaadReport,
   ensureUser,
@@ -134,6 +135,8 @@ let answerer: M;
 let other: M;
 let cmA: UstaadStaff;
 let cmA2: UstaadStaff;
+let cmA3: UstaadStaff;
+let cmA4: UstaadStaff;
 let cmB: UstaadStaff;
 
 const noticesOf = (userId: string, kind: string) =>
@@ -164,6 +167,8 @@ beforeAll(async () => {
   other = await member();
   cmA = { userId: await staffUser('a'), scope: { all: false, cityIds: [f.raipur] } };
   cmA2 = { userId: await staffUser('a2'), scope: { all: false, cityIds: [f.raipur] } };
+  cmA3 = { userId: await staffUser('a3'), scope: { all: false, cityIds: [f.raipur] } };
+  cmA4 = { userId: await staffUser('a4'), scope: { all: false, cityIds: [f.raipur] } };
   cmB = { userId: await staffUser('b'), scope: { all: false, cityIds: [otherCityId] } };
 });
 
@@ -537,6 +542,10 @@ describe('members for staff', () => {
     expect(rep).toMatchObject({ source: 'staff', targetType: 'member', reporterId: null });
     const after = await ustaadMemberForStaff(t(), cmA, target.memberId);
     expect(after.status).toBe('restricted');
+    // The staff member who restricted may not lift it alone.
+    await expect(
+      unbanUstaadMember(t(), cmA, target.memberId, { reasonCode: 'mistake', version: after.version }),
+    ).rejects.toMatchObject({ code: 'FOUR_EYES' });
     await unbanUstaadMember(t(), cmA2, target.memberId, {
       reasonCode: 'sanction_served',
       version: after.version,
@@ -569,6 +578,93 @@ describe('members for staff', () => {
       version: det.version,
     });
     expect((await ustaadMemberForStaff(t(), cmA, target.memberId)).status).toBe('banned');
+  });
+
+  it('unban of a four-eyes ban: refused alone, refused for anyone who took part, lifted when a second staff member confirms', async () => {
+    const target = await member();
+    const d = await ustaadMemberForStaff(t(), cmA, target.memberId);
+    const out = await sanctionUstaadMember(t(), cmA, target.memberId, {
+      action: 'ban',
+      reasonCode: 'abuse',
+      days: 30,
+      version: d.version,
+    });
+    const det = await ustaadReportDetail(t(), cmA2, out.code);
+    await confirmUstaadBan(t(), cmA2, out.code, {
+      proposalId: out.pendingBan?.proposalId ?? '',
+      version: det.version,
+    });
+    const banned = await ustaadMemberForStaff(t(), cmA3, target.memberId);
+    expect(banned.status).toBe('banned');
+    // The proposer and the confirmer of the ban may not even propose lifting it.
+    for (const who of [cmA, cmA2])
+      await expect(
+        unbanUstaadMember(t(), who, target.memberId, { reasonCode: 'mistake', version: banned.version }),
+      ).rejects.toMatchObject({ code: 'FOUR_EYES' });
+    // A third staff member proposes: nothing is lifted yet, the UI shows "waiting for approval".
+    const proposed = await unbanUstaadMember(t(), cmA3, target.memberId, {
+      reasonCode: 'mistake',
+      version: banned.version,
+    });
+    expect(proposed.pendingUnban).toBeDefined();
+    const waiting = await ustaadMemberForStaff(t(), cmA3, target.memberId);
+    expect(waiting.status).toBe('banned');
+    expect(waiting.pendingUnban).toMatchObject({ proposedByMe: true });
+    expect((await ustaadMemberForStaff(t(), cmA4, target.memberId)).pendingUnban).toMatchObject({
+      proposedByMe: false,
+    });
+    // Neither the proposer nor anyone involved in the ban confirms.
+    for (const who of [cmA3, cmA, cmA2])
+      await expect(
+        confirmUstaadUnban(t(), who, target.memberId, {
+          proposalId: proposed.pendingUnban?.proposalId ?? '',
+          version: waiting.version,
+        }),
+      ).rejects.toMatchObject({ code: 'FOUR_EYES' });
+    await confirmUstaadUnban(t(), cmA4, target.memberId, {
+      proposalId: proposed.pendingUnban?.proposalId ?? '',
+      version: waiting.version,
+    });
+    const lifted = await ustaadMemberForStaff(t(), cmA, target.memberId);
+    expect(lifted.status).toBe('active');
+    expect(lifted.pendingUnban).toBeNull();
+    expect(lifted.activeStrikes).toBe(0);
+    const [action] = await db
+      .select()
+      .from(s.ustaadModerationActions)
+      .where(
+        and(
+          eq(s.ustaadModerationActions.targetId, target.memberId),
+          eq(s.ustaadModerationActions.action, 'unban'),
+        ),
+      );
+    expect(action).toMatchObject({ actorId: cmA3.userId, secondActorId: cmA4.userId });
+  });
+
+  it('lifting a ban keeps a restriction that stands on another report', async () => {
+    const target = await member();
+    let d = await ustaadMemberForStaff(t(), cmA, target.memberId);
+    await sanctionUstaadMember(t(), cmA, target.memberId, {
+      action: 'restrict',
+      reasonCode: 'spam',
+      version: d.version,
+    });
+    d = await ustaadMemberForStaff(t(), cmA2, target.memberId);
+    // A short ban (below the four-eyes threshold) from another report.
+    await sanctionUstaadMember(t(), cmA2, target.memberId, {
+      action: 'ban',
+      reasonCode: 'abuse',
+      days: 3,
+      version: d.version,
+    });
+    d = await ustaadMemberForStaff(t(), cmA3, target.memberId);
+    expect(d.status).toBe('banned');
+    const out = await unbanUstaadMember(t(), cmA3, target.memberId, {
+      reasonCode: 'mistake',
+      version: d.version,
+    });
+    expect(out.pendingUnban).toBeUndefined();
+    expect((await ustaadMemberForStaff(t(), cmA3, target.memberId)).status).toBe('restricted');
   });
 
   it('staff never sanction themselves; a frozen (child-safety review) account is never unbanned here', async () => {
