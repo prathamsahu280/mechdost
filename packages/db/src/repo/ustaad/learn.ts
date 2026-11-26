@@ -55,7 +55,7 @@ export async function ustaadLearnView(db: Tx, actor: UstaadActor): Promise<Learn
     url: row.r.url,
     label: row.r.label,
     watchedSeconds: row.p?.watchedSeconds ?? 0,
-    completed: row.p?.completedAt != null,
+    completed: Boolean(row.p?.completedAt),
   });
   const active = new Set(courses.map((c) => c.id));
   return {
@@ -114,7 +114,7 @@ export async function writeUstaadLearnProgress(
           ),
         )
         .limit(1);
-      if (!already?.c && (today?.n ?? 0) >= s['ustaad.learn.self_mark_daily_cap'])
+      if (!already?.c && (today?.n ?? 0) >= Number(s['ustaad.learn.self_mark_daily_cap']))
         throw new ValidationError('Daily limit reached', 'USTAAD_DAILY_CAP');
     }
     const watched = Math.min(input.watchedSeconds ?? 0, r.durationS ?? 86_400);

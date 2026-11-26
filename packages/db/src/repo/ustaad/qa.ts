@@ -144,9 +144,10 @@ export async function askUstaadQuestion(
       'ustaad.qa.notify_ustaads',
       'ustaad.general.all_state',
     ]);
-    if (input.reach === 'state' && !s['ustaad.general.all_state'])
+    if (input.reach === 'state' && s['ustaad.general.all_state'] !== true)
       throw new ValidationError('Questions reach your city only', 'USTAAD_REGION');
-    if (input.voiceMediaId) await assertOwnVoice(tx, me.id, input.voiceMediaId, s['ustaad.qa.voice_max_s']);
+    if (input.voiceMediaId)
+      await assertOwnVoice(tx, me.id, input.voiceMediaId, Number(s['ustaad.qa.voice_max_s']));
     const [city] = await tx
       .select({ code: cities.code })
       .from(cities)
@@ -219,7 +220,7 @@ export async function askUstaadQuestion(
         cityId: me.cityId,
         askerId: me.id,
         codes,
-        limit: s['ustaad.qa.notify_ustaads'],
+        limit: Number(s['ustaad.qa.notify_ustaads']),
       });
       for (const target of targets)
         await notifyUstaad(tx, 'ustaad.question_waiting', {
@@ -276,12 +277,13 @@ export async function answerUstaadQuestion(
       .limit(1);
     if (existing) return existing;
     const s = await readUstaadSettingValues(tx, ['ustaad.qa.apprentice_can_answer', 'ustaad.qa.voice_max_s']);
-    if (me.status !== 'active' || (me.track !== 'ustaad' && !s['ustaad.qa.apprentice_can_answer']))
+    if (me.status !== 'active' || (me.track !== 'ustaad' && s['ustaad.qa.apprentice_can_answer'] !== true))
       throw new ForbiddenError('Only Ustaads can answer', 'USTAAD_CANNOT_ANSWER');
     if (q.status !== 'open' && q.status !== 'answered')
       throw new ConflictError('This question is closed', 'USTAAD_QUESTION_CLOSED');
     if (q.askerId === me.id) throw new ValidationError('You asked this question', 'USTAAD_CANNOT_ANSWER');
-    if (input.voiceMediaId) await assertOwnVoice(tx, me.id, input.voiceMediaId, s['ustaad.qa.voice_max_s']);
+    if (input.voiceMediaId)
+      await assertOwnVoice(tx, me.id, input.voiceMediaId, Number(s['ustaad.qa.voice_max_s']));
     const screen = await screenUstaadContent(tx, {
       kind: 'answer',
       text: input.body ?? null,
@@ -508,7 +510,7 @@ export async function chooseUstaadBestAnswer(
           sql`${ustaadEvents.occurredAt} > now() - interval '7 days'`,
         ),
       );
-    if ((week?.n ?? 0) >= s['ustaad.qa.best_per_week'])
+    if ((week?.n ?? 0) >= Number(s['ustaad.qa.best_per_week']))
       throw new ValidationError('Weekly limit for best answers reached', 'USTAAD_WEEKLY_CAP');
     ustaadQuestionMachine.assert('answered', 'solved', 'member');
     const moved = await tx
@@ -706,8 +708,8 @@ function cardOf(
     workCode: q.workCode,
     safetyTag: q.safetyTag,
     status: q.status,
-    answers: Number(answers),
-    asker: { ...asker, handle: String(asker.handle) },
+    answers,
+    asker: { ...asker, handle: asker.handle },
     mine: q.askerId === viewerId,
     createdAt: q.createdAt.toISOString(),
   };
@@ -738,7 +740,7 @@ export async function ustaadQuestionDetail(
     .select({
       a: ustaadAnswers,
       author: authorCols,
-      voted: sql<boolean>`exists (select 1 from ustaad_answer_votes v where v.answer_id = ${ustaadAnswers.id}
+      voted: sql<unknown>`exists (select 1 from ustaad_answer_votes v where v.answer_id = ${ustaadAnswers.id}
         and v.voter_id = ${me.id})`,
     })
     .from(ustaadAnswers)
@@ -779,10 +781,10 @@ export async function ustaadQuestionDetail(
       correction: r.a.correction,
       voiceMediaId: r.a.voiceMediaId,
       helpfulCount: r.a.helpfulCount,
-      votedByMe: r.voted === true || String(r.voted) === 't',
+      votedByMe: r.voted === true || r.voted === 't',
       isBest: q.bestAnswerId === r.a.id,
       mine: r.a.authorId === me.id,
-      author: { ...r.author, handle: String(r.author.handle) },
+      author: { ...r.author, handle: r.author.handle },
       parts: parts
         .filter((p) => p.answerId === r.a.id)
         .map(({ productId, slug, name, nameHi }) => ({ productId, slug, name, nameHi })),
@@ -791,7 +793,7 @@ export async function ustaadQuestionDetail(
     .sort((x, y) => Number(y.isBest) - Number(x.isBest));
   const open = q.status === 'open' || q.status === 'answered';
   return {
-    ...cardOf(q, { ...asker, handle: String(asker.handle) }, 0, me.id),
+    ...cardOf(q, { ...asker, handle: asker.handle }, 0, me.id),
     answers: answers.filter((r) => r.a.status === 'visible').length,
     body: q.body,
     bodyOriginal: q.correction === 'none' ? null : q.bodyOriginal,
@@ -804,7 +806,7 @@ export async function ustaadQuestionDetail(
         open &&
         q.askerId !== me.id &&
         me.status === 'active' &&
-        (me.track === 'ustaad' || s['ustaad.qa.apprentice_can_answer']),
+        (me.track === 'ustaad' || s['ustaad.qa.apprentice_can_answer'] === true),
       chooseBest: q.askerId === me.id && q.status === 'answered',
     },
     answerList: list,
