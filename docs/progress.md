@@ -13,7 +13,7 @@ This file is the single source of truth for **where the build is right now**. It
   (merge b96dc804). Quick checks passed (web tsc, i18n 5/5, web guards + ustaad 120/120); full local gates NOT run —
   check the CI run for HEAD first thing.
 - **Agents stopped mid-work (worktrees on disk, resume by merging their branch heads):**
-  - G2 community manager console: worktree-agent-a8aee6b650d9ce1e4 (staff media view, keep side effects, console
+  - G2 community manager console: DONE at 4ea8972f (worktree-agent-a8aee6b650d9ce1e4); merge, apply migration 0100 (hand-written; drizzle snapshots 0096/0097 collide — fix before next generate), run full api suite + state audit after rebuild (G1 table overflow at 320/768 and English fixture labels on /hi are G1-owned). Was: (staff media view, keep side effects, console
     sections; unban four-eyes security fix requested — verify it is in before merging).
   - Ustaad JS budget + fixes: worktree-agent-a03ea82fa62041d96 (/ustaad 226.8 KB vs 150 KB target; SR-37 profile cap;
     comment-delete confirm; Safari WhatsApp share).
