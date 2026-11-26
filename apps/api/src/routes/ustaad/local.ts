@@ -6,8 +6,10 @@
  */
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
+import { createMiddleware } from 'hono/factory';
 import {
   applyToUstaadJob,
+  assertUstaadJobsEnabled,
   getUstaadJob,
   listUstaadJobs,
   moveUstaadApplication,
@@ -185,6 +187,13 @@ export function ustaadLocalRoutes(deps: AppDeps) {
     '/ustaad/applications/*',
   ];
   for (const p of paths) app.use(p, requireUstaadMember(deps));
+  // Jobs kill switch (`ustaad.jobs.enabled`): every job surface answers 404 when off, except withdrawing an
+  // application (a member can always take theirs back).
+  const jobsSwitch = createMiddleware<AppEnv>(async (c, next) => {
+    if (!/\/ustaad\/applications\/[^/]+\/withdraw$/.test(c.req.path)) await assertUstaadJobsEnabled(deps.db);
+    await next();
+  });
+  for (const p of ['/ustaad/jobs', '/ustaad/jobs/*', '/ustaad/applications/*']) app.use(p, jobsSwitch);
   app.use('/ustaad/me/location', rateLimit(deps.rateLimiter, USTAAD_RATE_RULES.memberReads, userKey));
   app.on(
     ['PUT', 'POST'],

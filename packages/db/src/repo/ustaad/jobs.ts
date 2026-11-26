@@ -160,7 +160,8 @@ async function employerStillValid(
   );
 }
 
-async function jobsEnabled(tx: Tx): Promise<void> {
+/** The `ustaad.jobs.enabled` kill switch: off → 404 for every job surface (withdraw excepted). */
+export async function assertUstaadJobsEnabled(tx: Tx): Promise<void> {
   const s = await readUstaadSettingValues(tx, ['ustaad.jobs.enabled']);
   if (!settingBool(s['ustaad.jobs.enabled'], true)) throw new NotFoundError();
 }
@@ -370,6 +371,7 @@ export async function applyToUstaadJob(
   now = new Date(),
 ): Promise<{ applicationId: string; status: UstaadApplicationStatus }> {
   return db.transaction(async (tx) => {
+    await assertUstaadJobsEnabled(tx);
     const place = await memberGate(tx, actor.memberId, now);
     const [job] = await tx.select().from(ustaadJobs).where(eq(ustaadJobs.code, code)).limit(1);
     if (!job || job.cityId !== place.cityId) throw new NotFoundError();
@@ -449,7 +451,7 @@ export async function moveUstaadApplication(
   return db.transaction(async (tx) => {
     // Withdrawing stays possible for everyone; every employer move needs jobs on and an unrestricted employer.
     if (to !== 'withdrawn') {
-      await jobsEnabled(tx);
+      await assertUstaadJobsEnabled(tx);
       await memberGate(tx, actor.memberId, now);
     }
     const [row] = await tx
@@ -521,7 +523,7 @@ export async function moveUstaadJob(
     // Closing or filling stays possible (it only takes the job down); opening needs jobs on, an unrestricted
     // employer and a still-valid employer account.
     if (to === 'open' || to === 'paused') {
-      await jobsEnabled(tx);
+      await assertUstaadJobsEnabled(tx);
       await memberGate(tx, actor.memberId, now);
     }
     const [job] = await tx.select().from(ustaadJobs).where(eq(ustaadJobs.code, code)).limit(1);

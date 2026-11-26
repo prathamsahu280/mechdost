@@ -2133,3 +2133,14 @@ Spec `docs/specs/23-ustaad-network.md`, design `docs/superpowers/specs/2026-11-2
 - **No device spike:** the plan's "2 GB Android" re-encode spike was not run (no device). Conservative client caps
   stand meanwhile: 150 MB hard cap, Supabase 50 MB per file, 3 videos a day, 10 GB network budget; the recorder
   (workstreams C/D) must write WebM from MediaRecorder and show sizes before upload.
+
+## 2026-11-26 — Ustaad workstream E (local): build rulings
+
+- Distance noise is ± 25 % of the true distance, seeded per pair by HMAC-SHA256 of the sorted member ids; band codes
+  only (SR-29). Zone complementary suppression hides the next-smallest visible cell while hidden cells hold 1–4
+  members, and rounds the total to 5 (SR-31).
+- A pin with no city centre set is checked against the city's PIN code centres (within 15 km); no centre at all →
+  refused (fail closed).
+- Job codes use RFC 4648 base32 to satisfy the existing `ustaad_jobs_code_format` CHECK; the lead may instead align
+  the CHECK with Crockford `publicCode` at merge.
+- The `jobs.enabled` kill switch hides every job surface (404) but never blocks an applicant's withdraw.
