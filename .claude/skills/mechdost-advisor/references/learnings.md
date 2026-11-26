@@ -446,3 +446,14 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
   module's `/ustaad/*` routes (L171/L190). → Bind a module's member guard to its own path prefixes
   (`onUstaadPaths` in `routes/ustaad/social.ts`). · active
 - L-B5 · 2026-11-26 · migrations/merge · Regenerating an unapplied migration after merging another stream's migration: drizzle-kit numbers the new file and its snapshot by journal count, so the new snapshot overwrote the other stream's `0096_snapshot.json` → after `generate`, rename both the SQL and the snapshot to the reserved number and `git checkout main -- <their snapshot>`; check the new SQL holds only your changes. · active
+- L-UDM1 · 2026-11-26 · ui/a11y · Six static a11y specialists on the D2 web screens all converged on one bug class:
+  a write that swaps the focused control for another tree (block → blocked card, accept → composer, voice button →
+  recorder panel, list row removed after an action, last "Show more") drops focus to `<body>`; plus identical button
+  names per row ("Remove" × N). → When an action replaces the focused element, move focus to its replacement in an
+  effect keyed on the new state (never on first render); give row actions an sr-only member name (`Who`); close a
+  native `<dialog>` with `.close()` before unmounting so the browser restores focus to the invoker. · active
+- L-UDM2 · 2026-11-26 · web/deps · `apps/web` has no zod dependency: shared DTO schemas work as `Schema<T>` but a new
+  inline `z.object` in web code fails typecheck → reuse shared DTOs, or hand-write `safeParse` guards for tiny answers;
+  never add zod to the web bundle for it. · active
+- L-UDM3 · 2026-11-26 · i18n · sr-only text is crawled by the Hindi gate too (`Enter`/`Shift` key names, a model name
+  in a tag) → Hindi copy spells key names in Devanagari (एंटर, शिफ़्ट); demo tags carry a transliterated `nameHi`. · active

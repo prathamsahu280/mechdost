@@ -4,6 +4,17 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-26 (evening): Ustaad D2 web screens built — messages, My network, Discover** (branch
+  worktree-agent-a02ee59857e93453c, not pushed, no migration). `/ustaad/messages` (Chats · Requests · Sent; `?to=<handle>`
+  request form with the request-only rules), `/ustaad/messages/[id]` (WhatsApp-style bubbles, Sent / Seen / Being
+  checked in words, hold-to-talk voice and photo composer, accept/decline, notices off, report dialog, block/unblock),
+  `/ustaad/network` (five tabs, keyset Show more, cap and cooldown words), `/ustaad/discover` (search + work/level
+  filters, people cards with distance band, Follow / Connect / Message, tags, Top this week). Own seam
+  `lib/ustaad/messages-api.ts` + labelled demo `demo/ustaad-messages.ts`; copy `ustaad.messages|network|discover` en + hi;
+  e2e `apps/web/e2e/ustaad-dm.spec.ts`; Hindi crawl `USTAAD_DM_PAGES`; state-audit rows `API-USTAAD-MESSAGES|THREAD|
+NETWORK|DISCOVER` + regenerated checklist. Accessibility review (six specialists) fixes in. Spec 23 § 21g, decisions
+  2026-11-26 "messages, My network and Discover web", Q-U-DM1 (handle lookup route). **Next:** lead merge; the profile
+  agent links "Message" to `/ustaad/messages?to=<handle>` and adds the shell nav entries; handle route (Q-U-DM1).
 - **2026-11-26 (afternoon): Ustaad workstream B round 3** (branch worktree-agent-ab7b78a32bea2c97c, not pushed,
   migrations **0098_ustaad_identity_b3** (schema) and **0099_ustaad_reserved_names_seed** (data) written, NOT applied).
   Reserved/look-alike names, `PATCH /ustaad/me`, specialities, choices, SR-2 freeze, garage-owner link (staff-issued) and
