@@ -231,13 +231,16 @@ export function PinGarage() {
                   : t('gpsFound', { m: fix.accuracyM })
                 : ''}
         </p>
-        <PinMap
-          value={pin}
-          accuracy={fix}
-          label={t('mapLabel')}
-          markerLabel={t('pinMarker')}
-          onChange={setPin}
-        />
+        {/* Low data: the map (style, tiles, MapLibre) loads only once there is a pin to show. */}
+        {pin ? (
+          <PinMap
+            value={pin}
+            accuracy={fix}
+            label={t('mapLabel')}
+            markerLabel={t('pinMarker')}
+            onChange={setPin}
+          />
+        ) : null}
         <fieldset>
           <legend className="text-sm font-bold text-ink">{t('nudgeL')}</legend>
           <div className="mt-2 flex flex-wrap gap-2">
