@@ -1224,8 +1224,9 @@ members at the next run. Data dictionary: this § 6.
 - **Review fixes (2026-11-26, lead review MEDIUM):** one write guard `assertUstaadMemberCanWrite` (status `active`
   and `restricted_mode = none`, else 403 `USTAAD_RESTRICTED`) on ask, answer, helpful, best answer and parts;
   restricted members still read. Learn progress for hosted videos is a heartbeat `deltaSeconds` (1–300): the server
-  credits at most the wall-clock time since the row's `updated_at` (touched on every write) + 30 s slack, so a jump to
-  the end never completes a video (no new column, no migration). First completions of hosted videos and self-marked
+  credits at most the time since the row's `updated_at` on the DB clock (`now() - updated_at`, touched on every
+  write); only the first heartbeat gets a 30 s slack, so the gaps telescope and the total never exceeds the time since
+  the first write + 30 s, however many heartbeats are sent (second review fix); a jump to the end never completes a video (no new column, no migration). First completions of hosted videos and self-marked
   links share one daily cap, `learn.self_mark_daily_cap` (IST day; Q-U-C1 asks whether videos need their own setting).
 - **API** `apps/api/src/routes/ustaad/qa.ts` (mounted in `routes/ustaad/index.ts`): `GET/POST /ustaad/questions`,
   `GET /ustaad/questions/{code}`, `POST …/{code}/answers`, `POST …/{code}/best`, `POST /ustaad/answers/{id}/helpful`,

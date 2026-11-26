@@ -7,7 +7,7 @@
  */
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { USTAAD_QUESTION_CODE_RE } from '@mechdost/shared/ustaad/dto/qa';
 import {
   answerUstaadQuestion,
@@ -448,24 +448,73 @@ describe('learn', () => {
     link = rows[1]?.id ?? '';
   });
 
-  it('jump to the end is refused: a delta counts only up to the wall-clock time since the last write', async () => {
+  /** Simulate time passing: move the row's last write back (the touch trigger is paused so the UPDATE keeps it). */
+  async function backdate(m: M, resourceId: string, seconds: number) {
+    await db.execute(
+      sql.raw(
+        'alter table ustaad_learning_progress disable trigger ustaad_learning_progress_touch_updated_at',
+      ),
+    );
+    await db
+      .update(s.ustaadLearningProgress)
+      .set({ updatedAt: sql`now() - make_interval(secs => ${seconds})` })
+      .where(
+        and(
+          eq(s.ustaadLearningProgress.memberId, m.memberId),
+          eq(s.ustaadLearningProgress.resourceId, resourceId),
+        ),
+      );
+    await db.execute(
+      sql.raw(
+        'alter table ustaad_learning_progress enable trigger ustaad_learning_progress_touch_updated_at',
+      ),
+    );
+  }
+
+  it('jump to the end is refused: a delta counts only up to the DB time since the last write', async () => {
     const m = await member('apprentice');
     const first = await writeUstaadLearnProgress(t(), m, video, { deltaSeconds: 100 });
     expect(first.completed).toBe(false);
     expect(first.watchedSeconds).toBeLessThanOrEqual(30);
-    // Straight away again: almost no time has passed, so almost nothing more counts.
+    // Straight away again: no time has passed and the slack is spent, so almost nothing more counts.
     const again = await writeUstaadLearnProgress(t(), m, video, { deltaSeconds: 100 });
-    expect(again.completed).toBe(false);
-    expect(again.watchedSeconds).toBeLessThanOrEqual(first.watchedSeconds + 31);
+    expect(again.watchedSeconds).toBeLessThanOrEqual(first.watchedSeconds + 2);
+  });
+
+  it('20 heartbeats of 300 s within seconds add up to the elapsed time + one slack, never a completion', async () => {
+    const [long] = await db
+      .insert(s.ustaadLearningResources)
+      .values({
+        kind: 'hosted_video',
+        titleEn: 'Long clip',
+        titleHi: 'लंबी क्लिप',
+        durationS: 600,
+        mediaId: await audio(ustaad.memberId, {
+          kind: 'video',
+          declaredMime: 'video/mp4',
+          objectKey: `m/${ustaad.memberId}/${randomUUID()}.mp4`,
+        }),
+      })
+      .returning();
+    const m = await member('apprentice');
+    const started = Date.now();
+    let last = { watchedSeconds: 0, completed: false };
+    for (let i = 0; i < 20; i += 1)
+      last = await writeUstaadLearnProgress(t(), m, long?.id ?? '', { deltaSeconds: 300 });
+    const elapsed = Math.ceil((Date.now() - started) / 1000);
+    expect(elapsed).toBeLessThanOrEqual(10);
+    expect(last.watchedSeconds).toBeLessThanOrEqual(elapsed + 30);
+    expect(last.completed).toBe(false);
   });
 
   it('a hosted video completes at ≥ 80 % watched, in real time; seconds only go up', async () => {
-    const t0 = Date.now();
-    const w1 = await writeUstaadLearnProgress(t(), asker, video, { deltaSeconds: 30 }, new Date(t0));
+    const w1 = await writeUstaadLearnProgress(t(), asker, video, { deltaSeconds: 30 });
     expect(w1).toEqual({ watchedSeconds: 30, completed: false });
-    const w2 = await writeUstaadLearnProgress(t(), asker, video, { deltaSeconds: 49 }, new Date(t0 + 60_000));
+    await backdate(asker, video, 60);
+    const w2 = await writeUstaadLearnProgress(t(), asker, video, { deltaSeconds: 49 });
     expect(w2).toEqual({ watchedSeconds: 79, completed: false });
-    const w3 = await writeUstaadLearnProgress(t(), asker, video, { deltaSeconds: 1 }, new Date(t0 + 120_000));
+    await backdate(asker, video, 60);
+    const w3 = await writeUstaadLearnProgress(t(), asker, video, { deltaSeconds: 1 });
     expect(w3.completed).toBe(true);
     const [c] = await db
       .select()
@@ -473,7 +522,8 @@ describe('learn', () => {
       .where(eq(s.ustaadMemberCounters.memberId, asker.memberId));
     expect(c?.videosWatched).toBe(1);
     // A replay after completion does not count twice.
-    await writeUstaadLearnProgress(t(), asker, video, { deltaSeconds: 20 }, new Date(t0 + 180_000));
+    await backdate(asker, video, 60);
+    await writeUstaadLearnProgress(t(), asker, video, { deltaSeconds: 20 });
     const [c2] = await db
       .select()
       .from(s.ustaadMemberCounters)
