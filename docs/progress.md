@@ -34,7 +34,11 @@ This file is the single source of truth for **where the build is right now**. It
   block, cart estimate row, account overview card (real + demo). Admin: Settings → Store switch
   `customers.savings_enabled`, Content → Savings wording (en + hi). Event `savings_viewed`. Docs: design doc "as
   built", specs 03/05/08/12/14/20, decisions "Your savings as built", questions QSV1 (recap template, nothing sent),
-  QSV2 (back-fill). **Next:** lead merge (apply 0101 before deploying the checkout change); QSV1/QSV2 answers.
+  QSV2 (back-fill), QSV3 (consent reading). Post-review: a part delivered before 0101 shows nothing (never an
+  estimate); price history cascades with its pack (UPDATE-only trigger) so `db:seed:demo --remove` still works; cart
+  imports only `@mechdost/shared/savings-band` (the build showed /cart 179.0 KB with the whole module; ~178.0 KB after,
+  esbuild estimate, not rebuilt). **Next:** lead merge (apply 0101 before deploying the checkout change); one build to
+  re-measure /cart; QSV1–QSV3 answers.
 - **2026-11-26 (afternoon): Ustaad workstream D web screens (feed + social)** (branch
   worktree-agent-a7e40993294570795 on main c6e2eaf8, not pushed, no migration). Home feed with story ring, post cards
   of every kind (like / comment / save / WhatsApp teaser / ⋯ report-hide-mute-block-delete), comments sheet, composer
