@@ -1762,7 +1762,7 @@ new_threads | connect_requests`; one conditional upsert `n + k where n < cap`, n
   posts (followers and following only when shown), "Works on" chips, Follow (`aria-pressed`), Connect → Request sent /
   Accept (links to `/ustaad/network`) / Connected, Message (thread or `/ustaad/messages?to=`), More sheet (Mute /
   Unmute, Block with confirm, Report member), then the member's posts. Own profile: "This is your profile" + My card.
-- **Teaser** (`share-teaser.tsx`, page `s/[token]`): rendered without the network gate and shell
+- **Teaser** (`share-teaser.tsx`, page `s/[token]`): while `ustaad.access = open` rendered without the network gate and shell (during the staff preview the gate decides and the title does not name the network; e2e)
   (`UstaadPublicSwitch` in the layout, `lib/ustaad/public-paths.ts`); a signed-in member goes to the post
   (`GET /ustaad/shares/{token}` → `router.replace`); otherwise the public `GET /ustaad/s/{token}` decides between the
   generic card (Sign in) and "This link is not working any more". `referrer: no-referrer`; the token is redacted from
