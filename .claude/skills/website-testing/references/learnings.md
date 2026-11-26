@@ -369,3 +369,4 @@ ustaad-console.test.ts` (held answer/question/comment/post/message, NCII re-hold
   `apps/api/test/admin-usage.test.ts` are 20+ chars; reuse the `token-<area>-0000000NN` shape.
 - T-USAGE2 · 2026-11-26 · notices · a new bell kind with placeholders fails `notice-catalogue.test.ts` until its
   placeholders are in the test's `SAMPLE` (`metric`, `percent` added) · add the sample values in the same change.
+- T-QA1 · 2026-11-27 · admin UI guards · A new admin client component failed two repo-wide source guards on the first full web run: its next-intl namespace was not in the admin layout's client bundle (client-messages-coverage) and its inline confirm lacked the data-disclosure-trigger / data-panel-cancel pair (panel-dismiss) · new component wired to neither · test/client-messages-coverage.test.ts, test/panel-dismiss.test.ts (run the full web suite, not only the new test file).

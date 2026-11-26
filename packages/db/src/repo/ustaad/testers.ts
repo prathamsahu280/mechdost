@@ -5,7 +5,7 @@
  * (`removed_at`) as history. Every change writes one `audit_log` row in the same transaction. A tester holds no role
  * and no permission: the access gate is the only reader.
  */
-import { and, asc, count, eq, isNull } from 'drizzle-orm';
+import { and, asc, count, eq, isNull, sql } from 'drizzle-orm';
 import { maskPhone } from '@mechdost/shared/contact-mask';
 import { parseSignInIdentifier } from '@mechdost/shared/auth';
 import {
@@ -83,6 +83,8 @@ export async function addUstaadPreviewTester(
       )
       .limit(1);
     if (!user) throw new NotFoundError('No account with that phone number or email');
+    // Serialise adds so two at once cannot both pass the cap (no read-then-write race; hard rule 14).
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext('ustaad_preview_testers_add'))`);
     const [active] = await tx
       .select({ n: count() })
       .from(ustaadPreviewTesters)

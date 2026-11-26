@@ -2561,3 +2561,13 @@ Founder ruling R3 (2026-11-27) for the Ustaad QA simulation (`docs/qa/ustaad-sim
   unless the bypass recognises the signed-in account).
 - **Removal:** delete the file, unwrap in `server.ts`, drop the three env names (runbook deploy.md § 7.1); revert within
   48 h of the run unless the founder keeps it dormant (Q-SIM-3).
+
+## 2026-11-27 — Ustaad preview testers
+
+Founder ruling (2026-11-27): during `ustaad.access = staff_preview` a named list of non-staff accounts may enter the
+network. Built as its own table `ustaad_preview_testers` (migration 0110), not a setting key (the settings registry
+only takes int/boolean/enum values and a list needs per-row history) and **never a role grant** (an unknown grant with
+no shop or workshop would count as staff in `isStaffGrant`). Super admin only (`ustaad:settings`, reads too: the list
+names accounts, masked phone only); reason codes, audited, cap 50; removal keeps the row. Testers pass the access gate
+only — no staff preview, no `general.enabled` bypass, no admin power. The web learns tester status by asking the gated
+`/v1/ustaad/me` (no new public field). Details: spec 23 "as built".

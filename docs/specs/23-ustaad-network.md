@@ -1192,6 +1192,18 @@ members at the next run. Data dictionary: this § 6.
   `0091_ustaad_feed`, `0092_ustaad_local`, `0093_ustaad_moderation` (62 tables, RLS on, grants revoked, triggers;
   `ustaad_media_totals` added for the budget; report reasons seeded; reach cities seeded from existing city slugs).
 - Access: setting `ustaad.access` (`off | staff_preview | open`, default `staff_preview`); see decisions 2026-11-26 "workstream A".
+- **Preview testers (founder 2026-11-27, migration 0110):** table `ustaad_preview_testers` (one active row per user,
+  removal keeps the row with a reason code; RLS on, grants revoked). During `staff_preview` a listed non-staff account
+  passes the access gate (`ustaadAccessDecision` viewer `tester`); `off` hides it, `open` ignores the list. A tester is
+  **not staff**: no staff preview on `/ustaad/me` (a non-member tester gets `USTAAD_NOT_MEMBER` and the web shows the
+  join card), no `general.enabled` bypass, no admin route. The gate caches the list with the mode (10 s per instance;
+  an add/remove clears this instance at once, others follow within 10 s). Admin: `GET|POST /v1/admin/ustaad/preview-testers`,
+  `POST …/{id}/remove` (`ustaad:settings` = super admin, for reads too; add by phone or email, answer = masked phone;
+  reason codes `qa_run|beta_mechanic|founder_request|other`, removal `run_finished|no_longer_needed|added_by_mistake|other`;
+  audit `ustaad.preview_tester.added|removed`; cap 50). UI: Admin → Ustaad → General, card under the access switch.
+  The web gate asks the gated `/v1/ustaad/me` for signed-in non-staff viewers (`lib/ustaad/tester-probe.ts`); the
+  "Staff preview" banner shows to staff only. Tests: shared access matrix, `packages/db/test/ustaad-preview-testers.test.ts`,
+  `apps/api/test/ustaad-preview-testers.test.ts` (role leak, RBAC, cache), `apps/web/test/ustaad-tester-probe.test.ts`.
 - Settings: `USTAAD_SETTINGS` registry (not `OPERATIONAL_SETTINGS`), `/v1/admin/ustaad/settings`.
 - Media: § 10 as amended by decisions 2026-11-26 (private-copy verification, container allowlists, fragmented MP4 and
   extra metadata refused with `MEDIA_LOCATION`, deny-by-default reads, Supabase 2 h signed upload URL caveat).
