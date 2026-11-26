@@ -484,3 +484,16 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
   got wrong in every panel: the success message lived in a StatusLine inside the form that the refresh unmounts, and
   focus fell to <body>. → Keep one status line per panel outside the swapped forms (children report via `onResult`),
   focus the panel heading after a decision, and never move focus on a <select> change.
+- L-P23a · 2026-11-26 · reuse/scope · The brief asked to build "Goes well with" with admin CRUD and an audit log, but spec 11
+  (migration 0068/0070) already had it for category pairs → grep the specs' "Built" sections for the feature name before
+  designing; extend the existing table additively (nullable columns + shape CHECKs + coalesced unique index) and keep
+  the old input shape valid so the existing admin screen and tests keep working. · active
+- L-P23b · 2026-11-26 · privacy/shared devices · A browser list that is merged with an account list (recently viewed) leaks
+  across people on a shared device unless sign-out forgets it → every new browser copy of account data gets a line in
+  `lib/auth/sign-out.ts` (inline keys, pinned by a test, so the sign-out button imports nothing new). · active
+- L-P23c · 2026-11-26 · security/analytics · A staff report built from browser events ignored the staff member's city
+  scope (lead's review): browser events carry no city, so a funnel cannot be cut by city → require all-city scope
+  (`cityScopeFrom(...).all`, 403 `ALL_CITIES_REQUIRED`) for any report over client events, with a role-leak test. · active
+- L-P23d · 2026-11-26 · tooling · Multi-statement shell edits (node heredocs touching several files, `cd && sed && git`)
+  are refused in an isolated worktree as "too complex" → put edit scripts in the scratchpad and run one plain
+  `node script.cjs .` per call; never start `python -I -` with an empty heredoc (L-G2c again). · active

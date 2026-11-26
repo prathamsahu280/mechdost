@@ -2394,3 +2394,25 @@ Spec 23 § 21f. Rulings made while building (lead brief + security review of the
   4W → car_suv) so "fits my vehicle" keeps working. Q-segments answered.
 - "fix the test failures": the pre-existing qa-regressions failures (B1 Hindi rejection, theme with full storage,
   QA 13 free-delivery line) are fixed at their root cause.
+
+## 2026-11-26 — Shopping personalisation phases 2 and 3 as built (recently viewed, Back keeps your place, suggestions)
+
+Approved by the founder the same day ("build all 2,3,4"); details in
+`docs/superpowers/specs/2026-11-25-shopping-personalisation-design.md` § "As built".
+
+- **New consent purpose `personalisation`** (Account → Privacy, opt-in, notice `2026-11-26`): only with it does the API
+  keep a signed-in customer's recently viewed list (`recently_viewed`, migration 0102); withdrawing deletes the rows at
+  once; the data export lists them. Everyone else keeps the list in their browser only. Shared devices: sign-out
+  forgets the browser list and its merge mark.
+- **"Goes well with" extended, not rebuilt:** the spec 11 rules table takes product triggers, product suggestions and a
+  `workshop_fitting` suggestion (one link to the workshop finder). Default pairs seeded by data migration 0103 (by
+  slug, idempotent, editable). Migration numbers 0102/0103 because another stream may take 0101 (lead's brief);
+  rechain the drizzle snapshot at merge if it does.
+- **"Similar options" replaces "More in <category>"** on the product page when it finds a same-size, same-segment
+  product of another brand; it never claims fit ("check the fit for your vehicle").
+- **Home gains an admin-orderable section `recent`** (after "Shop by vehicle"); shown only from 2 products.
+- **Performance:** every personal piece (list, storage, sync, tracker, Back restore) is a lazy chunk or server-rendered;
+  pages import only `RecentlyViewedLazy` (guard `apps/web/test/personalisation.test.ts`).
+- **Measurement:** `reco_impression` / `reco_click` per surface and algorithm; add-to-cart and orders are joined to the
+  click by session and slug (`recoFunnel`), no order/cart table change (phase 4 owns those). The funnel endpoint is
+  all-city staff only (security review 2026-11-26: browser events carry no city).

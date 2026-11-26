@@ -443,3 +443,15 @@ meanwhile: unset, so Discover shows no distance bands.
 - **Q-U-D2 (2026-11-26, Ustaad share links, Input):** set `USTAAD_SHARE_SECRET` on the server (`openssl rand -hex 24`,
   `docs/runbooks/deploy.md`). **Default meanwhile:** unset, so "Share on WhatsApp" answers "not available right now"
   (503); everything else in the feed works.
+
+#### Q-P23-1 … 3: shopping personalisation phases 2 and 3 (2026-11-26)
+
+- **Q-P23-1 (Decision, P3) — order attribution of suggestions.** Built: an order counts for a suggestion when the same
+  browser session clicked it and then placed an order holding that product (event join, no order table change).
+  Option: store the suggestion source on each order line (exact, needs the checkout and order tables). Default: keep
+  the event join.
+- **Q-P23-2 (Decision, P3) — recently viewed for guests is on by default (browser only).** Guests can Clear it on every
+  list; the device off switch is on the account page. Option: show the switch to guests too (next to Clear). Default:
+  as built.
+- **Q-P23-3 (Check, P2) — screenshots.** Recently viewed, Similar options and the fitting link at 390 px (light and
+  Hindi) are in the agent report; please confirm the look before it ships. Default meanwhile: as built.
