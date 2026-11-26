@@ -2166,3 +2166,14 @@ Spec `docs/specs/23-ustaad-network.md`, design `docs/superpowers/specs/2026-11-2
 - The best-answer weekly cap is counted from `ustaad_events` (`best_chosen` by the asker in the last 7 days), so no
   extra counter table is needed.
 - Learn self-marks count per IST day; a hosted video completes at ≥ 80 % (spec 23 § 9.2). Details in spec 23 § 21b.
+
+## 2026-11-26 — Ustaad workstream E (local): build rulings
+
+- Distance noise is ± 25 % of the true distance, seeded per pair by HMAC-SHA256 of the sorted member ids; band codes
+  only (SR-29). Zone complementary suppression hides the next-smallest visible cell while hidden cells hold 1–4
+  members, and rounds the total to 5 (SR-31).
+- A pin with no city centre set is checked against the city's PIN code centres (within 15 km); no centre at all →
+  refused (fail closed).
+- Job codes use RFC 4648 base32 to satisfy the existing `ustaad_jobs_code_format` CHECK; the lead may instead align
+  the CHECK with Crockford `publicCode` at merge.
+- The `jobs.enabled` kill switch hides every job surface (404) but never blocks an applicant's withdraw.

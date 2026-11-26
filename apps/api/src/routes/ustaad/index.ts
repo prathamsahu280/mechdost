@@ -19,6 +19,7 @@ import { errorResponses } from '../schemas';
 import { json } from '../service-schemas';
 import { ustaadMediaRoutes } from './media';
 import { ustaadCorrectRoutes } from './correct';
+import { ustaadLocalRoutes } from './local';
 import { ustaadMemberRoutes } from './members';
 import { ustaadQaRoutes } from './qa';
 
@@ -49,7 +50,7 @@ export function ustaadRoutes(deps: AppDeps, sessions: SessionCache, access: Usta
   // B: app.route('/', ustaadProfileRoutes(deps, sessions)); app.route('/', ustaadVerificationRoutes(deps));
   app.route('/', ustaadQaRoutes(deps));
   // D: app.route('/', ustaadPostRoutes(deps)); app.route('/', ustaadFeedRoutes(deps)); …
-  // E: app.route('/', ustaadLocationRoutes(deps)); app.route('/', ustaadJobRoutes(deps));
+  app.route('/', ustaadLocalRoutes(deps));
   app.route('/', ustaadCorrectRoutes(deps));
   // F: app.route('/', ustaadReportRoutes(deps));
   return app;

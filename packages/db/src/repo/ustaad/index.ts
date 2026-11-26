@@ -18,5 +18,7 @@ export * from './admin';
 export * from './qa';
 export * from './learn';
 // D: export * from './posts'; export * from './feed'; export * from './graph'; export * from './threads'; …
-// E: export * from './location'; export * from './zones'; export * from './jobs';
+export * from './location';
+export * from './zones';
+export * from './jobs';
 // F: export * from './reports'; …

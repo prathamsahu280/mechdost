@@ -1242,6 +1242,43 @@ members at the next run. Data dictionary: this § 6.
   "How to use Ustaad Network" course, vehicle-model picker data, and a Hindi `topic` placeholder for
   `question_waiting` (today the notice receives the work/segment **code**; it must be the localized label).
 
+## 21b. Workstream E as built (2026-11-26, branch `worktree-agent-a53f6c8fce669739a`, no migration)
+
+- **Pure rules** `packages/shared/src/ustaad/local.ts`: `noisyDistanceBand(metres, noiseUnit)` (± 25 % stable
+  perturbation, band codes only); `pinChangeDecision` (first pin free; zero-metre save free; GPS worse than
+  `loc.gps_max_m` → `USTAAD_PIN_GPS_WEAK`; move > `loc.big_move_m` without a GPS fix ≤ `loc.big_move_accuracy_m` →
+  `USTAAD_PIN_FIX_REQUIRED`; `loc.pin_changes_per_day` / `_per_30d` → `USTAAD_PIN_LIMIT`, HTTP 429); `bandZone`
+  (floor 5 locked, per-speciality cells banded, complementary suppression: while the hidden cells hold a small non-zero
+  total the smallest visible cell is hidden too, and the total is rounded to 5); `jobScamSignals` (fee phrases en + hi,
+  known UPI PSP handles even before a full stop, any other `handle@word` that is not an email, pay-app asks, plus the
+  admin `scam_phrase` word list; text NFKC-normalised, format characters stripped, digits of every script mapped to
+  ASCII for the filters only).
+- **Repositories** `packages/db/src/repo/ustaad/{location,zones,jobs}.ts`: pin save in one transaction with the member
+  row locked, region check (city centre + radius, else within 15 km of one of the city's PIN centres; fail closed →
+  `USTAAD_REGION`), fixed per-member circle offset drawn once (0–150 m) and kept on moves, a real move clears the
+  signboard check; `ustaadPairNoise` = HMAC-SHA256(secret, sorted ids) → [0, 1); `ustaadDistanceBands` skips hidden and
+  home/roadside members (AT-LOC-3). Zone counts rebuilt under an advisory lock from active, unrestricted, verified
+  (`zones.verified_only`) members with "count me" on and location not hidden, in enabled reach cities; staff reader
+  exact, member reader banded; disabled city → no zones. Jobs: employer = workshop grant on the named workshop or a
+  verified trade account (`USTAAD_EMPLOYER_REQUIRED`, re-checked on resume), attestation (`USTAAD_ADULT_ATTESTATION`),
+  every free-text field (title, description, timing, area labels) through `jobScamSignals` + `screenUstaadContent`
+  (signal → `pending_review`, reason `scam_phrase`, invisible to others), restricted or perk-frozen members can neither
+  post, apply, resume nor move applications (`USTAAD_RESTRICTED`, `USTAAD_PERKS_FROZEN`), `jobs.enabled` off → 404 on
+  every job surface except withdraw, closing / filling / expiring closes live applications with `job_closed`.
+  **Job codes** use RFC 4648 base32 (A–Z, 2–7) because A's CHECK `ustaad_jobs_code_format` is `[A-Z2-7]{6}`, not the
+  Crockford alphabet of `publicCode` (lead: decide whether to align the CHECK instead).
+- **API** `apps/api/src/routes/ustaad/local.ts`: `GET|PUT /ustaad/me/location`, `POST /ustaad/me/location/signboard`,
+  `GET /ustaad/zones?city=` (verified members, bands), `GET /ustaad/jobs` (cursor), `GET /ustaad/jobs/{code}`,
+  `POST /ustaad/jobs`, `POST /ustaad/jobs/{code}/pause|resume|close|fill`, `POST /ustaad/jobs/{code}/apply`,
+  `POST /ustaad/applications/{id}/seen|shortlist|reject|hire|withdraw`. DTOs `packages/shared/src/ustaad/dto/local.ts`.
+- **Worker** (`apps/api/src/worker.ts`): `ustaad_zone_counts` nightly at 02:00 IST; `ustaad_jobs_expire` every 10 min.
+- **Not done in E (next):** web UI (Pin my garage, area map, jobs list / detail / apply sheet / applicants), en + hi
+  `ustaad` locale strings for those screens, `GET /ustaad/jobs/mine`, `PATCH /ustaad/jobs/{code}`, staff
+  `GET /admin/ustaad/zones` and `GET /admin/ustaad/members/{id}/location` (audited), exact-pin display to connections
+  (needs D's connections), "near you" lists (D's Discover calls `ustaadDistanceBands` with a server secret; a
+  `USTAAD_LOCATION_SECRET` env variable is still to be added to config and `.env.example`), notifications on
+  application moves, AT-LOC-1 trilateration simulation.
+
 ## 22. Not built / later
 
 Speech-to-text and transcripts (ruled out), voice search, auto-translation, server video/audio transcoding and the
