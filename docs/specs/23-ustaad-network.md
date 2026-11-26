@@ -1344,6 +1344,8 @@ members at the next run. Data dictionary: this § 6.
   live regions use `empty:sr-only` (never `display: none`). Hosted videos have no captions yet (Q-U-CE7).
 - **Membership gate:** every screen is wrapped in `MemberGate` (no membership → "join" card, `ustaad.shell.join*`).
 - **Permissions-Policy:** `microphone=(self)` (decisions 2026-11-26).
+- **Low data on the pin screen:** the map (MapLibre, style, tiles) loads only once there is a pin (GPS reading, an
+  arrow press from the city centre, or a saved pin).
 - **Not built (API gaps, queued Q-U-CE1…7):** question **photos** (no field in `AskQuestionDto`, no table) — the
   picker exists and is used for the signboard; the employer's **applicants list** and `GET /ustaad/jobs/mine` (no
   route lists applications; `POST /ustaad/applications/{id}/{action}` exists) — so no applicants screen; "already

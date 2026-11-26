@@ -11,8 +11,8 @@ This file is the single source of truth for **where the build is right now**. It
   `/ustaad/area`, `/ustaad/jobs`, `/ustaad/jobs/[code]` (anti-scam banner, apply dialog), `/ustaad/jobs/new`; media
   components in `components/ustaad/media/*` for D; one client seam (API, or labelled sample data in the demo). Spec 23
   § 21c, decision 2026-11-26 "Ustaad C + E web screens", questions Q-U-CE1–5 (photos on questions, applicants list +
-  jobs/mine, workshop employer, work place change, video size / zone names). **Next:** lead merge + a build + the
-  e2e/Hindi crawl rerun (the a11y-review fixes landed after this branch's one build), then the API gaps above.
+  jobs/mine, workshop employer, work place change, video size / zone names). **Next:** lead merge (three web builds were used on this branch to verify the a11y
+  fixes, a deviation from the one-build brief), then the API gaps above and the state-audit rows for the new screens.
 
 - **2026-11-26 (morning): Ustaad workstream C (Q&A + Learn) partly built on branch worktree-agent-a493031f33b2dd989
   (not pushed, no migration).** Done: shared DTOs + `ustaadPublicCode`, repositories `repo/ustaad/{qa,learn}.ts`,

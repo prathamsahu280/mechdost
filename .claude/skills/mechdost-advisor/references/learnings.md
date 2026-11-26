@@ -407,3 +407,8 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
   live regions mounted (`empty:sr-only`, never `empty:hidden`).
 - L-UCE3 · 2026-11-26 · worktree tooling · `next start` warns with `output: standalone` but serves; the worktree
   guard refuses multi-file heredocs → write files with the Write tool and patch with a scratchpad `python -I` script.
+- L-UCE4 · 2026-11-26 · security headers · `Permissions-Policy: microphone=()` silently blocked every voice note on our own
+  pages (getUserMedia rejected, the UI said "microphone blocked"); only the fake-microphone e2e caught it → any feature
+  using a powerful browser API (mic, camera, geolocation) checks `next.config.ts` headers first and gets a real-API e2e.
+- L-UCE5 · 2026-11-26 · e2e · visiting `/hi/...` stores `NEXT_LOCALE=hi`, so a later `goto('/path')` redirects to Hindi →
+  clear the `NEXT_LOCALE` cookie before returning to English in a test.
