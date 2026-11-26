@@ -9,6 +9,7 @@ import {
   createUstaadBadge,
   createUstaadCoachmark,
   createUstaadLevelRule,
+  listUstaadLevelRules,
   createUstaadPromotion,
   createUstaadReason,
   createUstaadTag,
@@ -286,7 +287,7 @@ describe('level rules (SR-8)', () => {
     needsStaffReview: true,
     perkEn: '',
     perkHi: '',
-    coinMultiplierBp: 12_000,
+    coinMultiplierBp: 10_000,
     nameEn: 'Bada Ustaad',
     nameHi: 'बड़ा उस्ताद',
     position: 4,
@@ -312,6 +313,20 @@ describe('level rules (SR-8)', () => {
       'ustaad.level_rule.created',
       'ustaad.level_rule.updated',
     ]);
+  });
+
+  // Spec 23 § 9.2 / spec 20: money perks stay off until PENDING #19 (order-reward guard) is decided.
+  it('a coin multiplier above 1× is COIN_GUARD_REQUIRED on create and on edit', async () => {
+    await expectCode(
+      createUstaadLevelRule(t(), f.staff, { ...rule, ruleGroup: 'C', coinMultiplierBp: 12_000 }),
+      'COIN_GUARD_REQUIRED',
+    );
+    const [r] = await listUstaadLevelRules(t());
+    if (!r) throw new Error('seed');
+    await expectCode(
+      updateUstaadLevelRule(t(), f.staff, r.id, { ...rule, coinMultiplierBp: 10_001, version: r.version }),
+      'COIN_GUARD_REQUIRED',
+    );
   });
 
   it('the same level and group twice is DUPLICATE', async () => {

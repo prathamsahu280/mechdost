@@ -239,6 +239,28 @@ describe('settings', () => {
     expect(await code(bada)).toBe('SETTING_INVARIANT');
   });
 
+  it('spec 20 guard: a Coins multiplier above 1× is 422 COIN_GUARD_REQUIRED', async () => {
+    const r = await req('levels', who.admin ?? {}, 'POST', {
+      level: 'pakka',
+      ruleGroup: 'Z',
+      minFollowers: 1,
+      minBestAnswers: 1,
+      minHelpfulPct: 0,
+      minVerifiedYears: 0,
+      minVideos: 0,
+      minRecommendations: 0,
+      needsStaffReview: false,
+      perkEn: '',
+      perkHi: '',
+      coinMultiplierBp: 15_000,
+      nameEn: 'Pakka Ustaad',
+      nameHi: 'पक्का उस्ताद',
+      position: 3,
+    });
+    expect(r.status).toBe(422);
+    expect(await code(r)).toBe('COIN_GUARD_REQUIRED');
+  });
+
   it('video above 180 s needs a reason code; with one the super admin saves (audited)', async () => {
     const change = { changes: [{ key: 'ustaad.posts.video_max_s', value: 240, version: null }] };
     const without = await req('settings', who.admin ?? {}, 'PATCH', change);

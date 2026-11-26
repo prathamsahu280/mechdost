@@ -1220,7 +1220,8 @@ members at the next run. Data dictionary: this § 6.
   `GET /ustaad/verification-status`, `POST /ustaad/verifications[/{id}/withdraw]`, `POST /ustaad/attestations`,
   `POST /ustaad/vouches[/{id}/give|decline|revoke]`; staff `GET /admin/ustaad/verifications`,
   `POST …/{id}/approve|reject|revoke` (`ustaad:verify`, city scoped); workshop `GET /workshop/ustaad/attestations`,
-  `POST …/{id}/decide`; `POST /partner-applications` with `kind: mechanic` → 410 `MOVED_TO_USTAAD`.
+  `POST …/{id}/decide`; `POST /partner-applications` with `kind: mechanic` → 410 `MOVED_TO_USTAAD` **only while
+  `ustaad.access` = `open`** (the web page follows the same switch; `off`/`staff_preview` keep the old form).
 - **Worker:** one hourly timer (attestation expiry; once a day the ring check then the level recompute).
 - **Migration `0094_ustaad_identity_seed`** (data only): level rules (founder's demo rules), 8 badges, 6 tutorial cards
   and 6 coach-marks, en + hi, `ON CONFLICT DO NOTHING`.
