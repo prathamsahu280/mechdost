@@ -22,6 +22,7 @@
     "./notify-templates/*": "./src/notify-templates/*",
     "./customers": "./src/customers.ts",
     "./cod-eligibility": "./src/cod-eligibility.ts",
+    "./cod-api": "./src/cod-api.ts",
     "./analytics": "./src/analytics.ts",
     "./analytics-path": "./src/analytics-path.ts",
     "./privacy": "./src/privacy.ts",

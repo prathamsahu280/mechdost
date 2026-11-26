@@ -12,6 +12,10 @@ import {
   type CodRevokeReason,
   type CodSwitches,
   type CodUstaadFacts,
+  isCodDecisionReason,
+  isCodRequestReason,
+  isCodRequestState,
+  isCodRevokeReason,
 } from '@mechdost/shared/cod-eligibility';
 import { maskPhone } from '@mechdost/shared/contact-mask';
 import { OPERATIONAL_SETTINGS, type SettingKey } from '@mechdost/shared/settings';
@@ -119,29 +123,25 @@ export interface CodRequestView {
   cityId: string;
   pincode: string;
   status: CodRequestState;
-  reasonCode: string;
+  reasonCode: CodRequestReason;
   note: string | null;
-  decisionReasonCode: string | null;
+  decisionReasonCode: CodDecisionReason | null;
   capPaise: number | null;
   expiresAt: Date | null;
   decidedAt: Date | null;
   revokedAt: Date | null;
-  revokeReasonCode: string | null;
+  revokeReasonCode: CodRevokeReason | null;
   version: number;
   createdAt: Date;
 }
 
 type RequestRow = CodRequestView & { userId: string };
 
-const isState = (s: string): s is CodRequestState =>
-  ['pending', 'approved', 'rejected', 'withdrawn', 'revoked', 'expired'].includes(s);
-
 /** An approval whose end date has passed reads as expired (the row is closed only when a new decision needs it). */
 function effective(row: RequestRow, now: Date): RequestRow {
-  const status = isState(row.status) ? row.status : 'withdrawn';
-  if (status === 'approved' && row.expiresAt && row.expiresAt.getTime() <= now.getTime())
+  if (row.status === 'approved' && row.expiresAt && row.expiresAt.getTime() <= now.getTime())
     return { ...row, status: 'expired' };
-  return { ...row, status };
+  return row;
 }
 
 /** The request that decides this customer's state in this city: pending (any city) → approved here → newest here. */
@@ -162,7 +162,7 @@ async function governingRequest(
     )
     .orderBy(desc(codRequests.createdAt))
     .limit(20);
-  const list = rows.map((r) => effective(r as RequestRow, now));
+  const list = rows.map((r) => effective(typedRow(r), now));
   return (
     list.find((r) => r.status === 'pending') ??
     list.find((r) => r.status === 'approved' && r.cityId === cityId) ??
@@ -242,6 +242,21 @@ function publicView(r: RequestRow): CodRequestView {
   return rest;
 }
 
+/** A database row with its codes narrowed (CHECK constraints keep them valid; unknown ones read as safe values). */
+function typedRow(r: {
+  [K in keyof RequestRow]: K extends 'status' | 'reasonCode' | 'decisionReasonCode' | 'revokeReasonCode'
+    ? string | null
+    : RequestRow[K];
+}): RequestRow {
+  return {
+    ...r,
+    status: isCodRequestState(r.status) ? r.status : 'withdrawn',
+    reasonCode: isCodRequestReason(r.reasonCode) ? r.reasonCode : 'other',
+    decisionReasonCode: isCodDecisionReason(r.decisionReasonCode) ? r.decisionReasonCode : null,
+    revokeReasonCode: isCodRevokeReason(r.revokeReasonCode) ? r.revokeReasonCode : null,
+  };
+}
+
 async function cityOfPincode(db: Tx, pincode: string): Promise<{ cityId: string; cityCode: string }> {
   if (!/^[1-9][0-9]{5}$/.test(pincode))
     throw new ValidationError('Enter a 6-digit PIN code', 'PINCODE_INVALID');
@@ -273,7 +288,7 @@ export async function myCodRequests(db: Tx, userId: string): Promise<CodRequestV
     .where(eq(codRequests.userId, userId))
     .orderBy(desc(codRequests.createdAt))
     .limit(20);
-  return rows.map((r) => publicView(effective(r as RequestRow, now)));
+  return rows.map((r) => publicView(effective(typedRow(r), now)));
 }
 
 async function writeEvent(
@@ -459,7 +474,7 @@ async function scopedRow(tx: Tx, requestId: string, scope: CityScope): Promise<R
     .where(and(eq(codRequests.id, requestId), inScope(scope)))
     .for('update');
   if (!row) throw new NotFoundError('Request not found');
-  return row as RequestRow;
+  return typedRow(row);
 }
 
 const MAX_CAP_PAISE = OPERATIONAL_SETTINGS['checkout.cod_cap_paise'].max;
@@ -720,11 +735,12 @@ export interface AdminCodRequestItem extends CodRequestView {
   deliveredOrders: number;
   cancelledOrders: number;
   ustaadVerified: boolean;
+  cityCode: string;
 }
 
 /**
  * The staff queue (Customers → COD requests): one status at a time, in the staff member's cities. Pending requests
- * oldest first (first come, first decided); decided ones newest first. Keyset cursor on (created_at, id).
+ * oldest first (first come, first decided); decided ones newest first. Keyset cursor on the (time-ordered) id.
  */
 export async function listCodRequests(
   db: Tx,
@@ -738,20 +754,17 @@ export async function listCodRequests(
 ): Promise<{ items: AdminCodRequestItem[]; nextCursor: string | null }> {
   const limit = Math.min(Math.max(input.limit, 1), 100);
   const oldestFirst = input.status === 'pending';
+  // Ids are uuid v7 (time-ordered), so the id alone is the keyset: no timestamp precision traps.
   let after: SQL | undefined;
   if (input.cursor) {
-    const [at, id] = input.cursor.split('|');
-    const when = at ? new Date(at) : null;
-    if (!when || Number.isNaN(when.getTime()) || !id || !/^[0-9a-f-]{36}$/.test(id))
-      throw new ValidationError('Invalid cursor', 'CURSOR');
-    after = oldestFirst
-      ? or(gt(codRequests.createdAt, when), and(eq(codRequests.createdAt, when), gt(codRequests.id, id)))
-      : or(lt(codRequests.createdAt, when), and(eq(codRequests.createdAt, when), lt(codRequests.id, id)));
+    if (!/^[0-9a-f-]{36}$/.test(input.cursor)) throw new ValidationError('Invalid cursor', 'CURSOR');
+    after = oldestFirst ? gt(codRequests.id, input.cursor) : lt(codRequests.id, input.cursor);
   }
   const rows = await db
     .select({
       ...requestView,
       customerName: users.name,
+      cityCode: sql<string>`(select c.code from cities c where c.id = ${codRequests.cityId})`,
       customerPhone: users.phone,
       deliveredOrders: sql<number>`(select count(*)::int from orders o join order_groups g on g.id = o.group_id
         where g.user_id = ${codRequests.userId} and o.status = 'delivered')`,
@@ -763,10 +776,7 @@ export async function listCodRequests(
     .from(codRequests)
     .innerJoin(users, eq(users.id, codRequests.userId))
     .where(and(eq(codRequests.status, input.status), inScope(input.scope), after))
-    .orderBy(
-      oldestFirst ? asc(codRequests.createdAt) : desc(codRequests.createdAt),
-      oldestFirst ? asc(codRequests.id) : desc(codRequests.id),
-    )
+    .orderBy(oldestFirst ? asc(codRequests.id) : desc(codRequests.id))
     .limit(limit + 1);
   const now = new Date();
   const page = rows.slice(0, limit);
@@ -777,21 +787,23 @@ export async function listCodRequests(
         userId,
         customerName,
         customerPhone,
+        cityCode,
         deliveredOrders,
         cancelledOrders,
         ustaadVerified,
         ...rest
       } = r;
       return {
-        ...publicView(effective({ ...rest, userId } as RequestRow, now)),
+        ...publicView(effective(typedRow({ ...rest, userId }), now)),
         customerId: userId,
         customerName,
         customerPhone: input.canReadPii ? customerPhone : maskPhone(customerPhone),
+        cityCode,
         deliveredOrders,
         cancelledOrders,
         ustaadVerified,
       };
     }),
-    nextCursor: rows.length > limit && last ? `${last.createdAt.toISOString()}|${last.id}` : null,
+    nextCursor: rows.length > limit && last ? last.id : null,
   };
 }

@@ -57,7 +57,7 @@ ALTER TABLE "cod_requests" ADD CONSTRAINT "cod_requests_created_by_users_id_fk" 
 CREATE INDEX "cod_request_events_request_id_id_index" ON "cod_request_events" USING btree ("request_id","id");--> statement-breakpoint
 CREATE UNIQUE INDEX "cod_requests_one_pending_uq" ON "cod_requests" USING btree ("user_id") WHERE status = 'pending';--> statement-breakpoint
 CREATE UNIQUE INDEX "cod_requests_one_approved_uq" ON "cod_requests" USING btree ("user_id","city_id") WHERE status = 'approved';--> statement-breakpoint
-CREATE INDEX "cod_requests_queue_idx" ON "cod_requests" USING btree ("status","city_id","created_at");--> statement-breakpoint
+CREATE INDEX "cod_requests_queue_idx" ON "cod_requests" USING btree ("status","id");--> statement-breakpoint
 CREATE INDEX "cod_requests_user_id_created_at_index" ON "cod_requests" USING btree ("user_id","created_at");--> statement-breakpoint
 CREATE INDEX "cod_requests_city_id_index" ON "cod_requests" USING btree ("city_id");--> statement-breakpoint
 CREATE INDEX "cod_requests_decided_by_index" ON "cod_requests" USING btree ("decided_by");--> statement-breakpoint

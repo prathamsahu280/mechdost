@@ -36062,13 +36062,7 @@
               "nulls": "last"
             },
             {
-              "expression": "city_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
+              "expression": "id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

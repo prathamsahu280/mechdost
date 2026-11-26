@@ -96,7 +96,7 @@ export const codRequests = pgTable(
     uniqueIndex('cod_requests_one_approved_uq')
       .on(t.userId, t.cityId)
       .where(sql`status = 'approved'`),
-    index('cod_requests_queue_idx').on(t.status, t.cityId, t.createdAt),
+    index('cod_requests_queue_idx').on(t.status, t.id),
     index().on(t.userId, t.createdAt),
     index().on(t.cityId),
     index().on(t.decidedBy),

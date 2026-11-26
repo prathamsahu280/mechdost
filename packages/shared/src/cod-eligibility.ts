@@ -153,7 +153,7 @@ export function codEligibility(input: CodEligibilityInput): CodEligibility {
   const ustaad = switches.ustaad
     ? ustaadProblem(input.ustaad, switches.ustaadMinLevel, now)
     : 'ustaad_not_member';
-  if (switches.ustaad && ustaad === null)
+  if (ustaad === null)
     return { eligible: true, via: 'ustaad', reason: null, canRequest: false, capPaise: null };
   if (switches.approved && approval.state === 'pending') return no('request_pending');
   // A member who only needs to finish verifying is pointed there before being asked to request.
@@ -182,3 +182,13 @@ export function codCartRule(input: {
 export function effectiveCodCap(cityCapPaise: number, personalCapPaise: number | null): number {
   return personalCapPaise === null ? cityCapPaise : Math.min(cityCapPaise, personalCapPaise);
 }
+
+/** Narrowing guards for codes read back from the database (CHECK constraints keep them in these lists). */
+const member =
+  <T extends string>(list: readonly T[]) =>
+  (v: string | null): v is T =>
+    v !== null && (list as readonly string[]).includes(v);
+export const isCodRequestReason = member(COD_REQUEST_REASONS);
+export const isCodDecisionReason = member(COD_DECISION_REASONS);
+export const isCodRevokeReason = member(COD_REVOKE_REASONS);
+export const isCodRequestState = member(COD_REQUEST_STATES);

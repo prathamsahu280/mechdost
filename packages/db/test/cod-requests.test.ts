@@ -298,7 +298,7 @@ describe('requests and decisions', () => {
   it('staff city scope: another city is a 404 and the queue hides it', async () => {
     const user = await newUser();
     const r = await requestCod(t(), { userId: user, pincode: PIN, reasonCode: 'other', note: null });
-    const elsewhere = { all: false, cityIds: ['00000000-0000-7000-8000-000000000000'] } as const;
+    const elsewhere = { all: false as const, cityIds: ['00000000-0000-7000-8000-000000000000'] };
     await expect(
       decideCodRequest(t(), {
         requestId: r.id,
