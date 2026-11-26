@@ -53,8 +53,6 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             'adminTier2',
             // Admin → Settings: categories, search, save bar and one-line help per setting (design 2026-11-24).
             'adminSettings',
-            // Admin → Settings: the Ustaad Network access switch (spec 23, founder 2026-11-26).
-            'ustaad',
             'coupons',
             'adminExports',
             'refunds',
@@ -62,6 +60,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             'shopGiveUp',
             'supportThread',
             'storefront',
+            // Admin → Ustaad Network (spec 23, task G1) and the access switch in Admin → Settings (A): only the admin
+            // parts of the network's namespace, not the member screens' texts.
+            'ustaad.admin',
+            'ustaad.adminAccess',
           ]}
         >
           <AdminFrame>{children}</AdminFrame>

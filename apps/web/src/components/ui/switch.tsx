@@ -10,6 +10,7 @@ export function Switch({
   onText,
   offText,
   describedBy,
+  disabled = false,
 }: {
   id: string;
   checked: boolean;
@@ -17,14 +18,19 @@ export function Switch({
   onText: string;
   offText: string;
   describedBy?: string;
+  /** Read-only screens: not focusable as a working control and shown dimmed (state still in words). */
+  disabled?: boolean;
 }) {
   return (
-    <label className="inline-flex min-h-11 cursor-pointer items-center gap-3">
+    <label
+      className={`inline-flex min-h-11 items-center gap-3 ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+    >
       <input
         id={id}
         type="checkbox"
         role="switch"
         checked={checked}
+        disabled={disabled}
         aria-describedby={describedBy}
         onChange={(e) => {
           onChange(e.target.checked);

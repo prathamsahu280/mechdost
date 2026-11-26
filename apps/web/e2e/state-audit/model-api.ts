@@ -45,6 +45,8 @@ export const REAL_ADMIN_SECTIONS = [
   'audit',
   'exports',
   'errors',
+  // Ustaad Network settings (spec 23, task G1).
+  'ustaad',
 ] as const;
 
 export const REAL_ACCOUNT_SECTIONS = [
@@ -337,6 +339,29 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
       stress,
     ],
     sweep: 8,
+    note: API_NOTE,
+    realApi: true,
+  },
+  {
+    code: 'API-ADM-USTAAD',
+    page: 'Admin → Ustaad Network → Network settings, real sign-in',
+    component:
+      'Access switch, the ten sections (rows with label, help, range, default; locked rows), the lists of each section (few or empty), read-only for a community manager, load error, long text',
+    path: (r) => `/admin/ustaad?sec=${String(r.sec)}`,
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['admin'] },
+      {
+        name: 'sec',
+        values: ['general', 'levels', 'verify', 'posts', 'corr', 'loc', 'feed', 'promo', 'mod', 'jobs'],
+      },
+      { name: 'ustaad', values: ['defaults', 'readonly', 'error'] },
+      { name: 'lists', values: ['few', 'empty'] },
+      stress,
+    ],
+    sweep: 12,
     note: API_NOTE,
     realApi: true,
   },
