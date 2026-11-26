@@ -18,7 +18,7 @@ import { zoneCell, type DistanceBand } from '@mechdost/shared/ustaad/zones';
 import { ustaadLocations, ustaadMembers, ustaadPinChanges } from '../../schema';
 import { NotFoundError, ValidationError } from '../errors';
 import type { Tx } from '../orders';
-import { rowsOf } from '../sql-rows';
+import { num, rowsOf } from '../sql-rows';
 import { recordUstaadEvent } from './events';
 import { readUstaadSettingValues } from './settings';
 
@@ -70,9 +70,9 @@ function circleOffset(): { dNorthM: number; dEastM: number } {
 
 async function readMine(tx: Tx, memberId: string): Promise<MyUstaadLocation | null> {
   const [row] = rowsOf<{
-    lat: number;
-    lng: number;
-    accuracy_m: number;
+    lat: unknown;
+    lng: unknown;
+    accuracy_m: unknown;
     source: 'gps' | 'manual';
     landmark: string | null;
     zone_cell: string;
@@ -83,7 +83,7 @@ async function readMine(tx: Tx, memberId: string): Promise<MyUstaadLocation | nu
     hidden: boolean;
     verified_at: Date | string | null;
     confirmed_at: Date | string;
-    version: number;
+    version: unknown;
   }>(
     await tx.execute(sql`select ST_Y(location::geometry) as lat, ST_X(location::geometry) as lng, accuracy_m, source,
       landmark, zone_cell, use_for_verify, count_in_zone, share_exact, exact_audience, hidden, verified_at,
@@ -91,9 +91,9 @@ async function readMine(tx: Tx, memberId: string): Promise<MyUstaadLocation | nu
   );
   if (!row) return null;
   return {
-    lat: Number(row.lat),
-    lng: Number(row.lng),
-    accuracyM: Number(row.accuracy_m),
+    lat: num(row.lat),
+    lng: num(row.lng),
+    accuracyM: num(row.accuracy_m),
     source: row.source,
     landmark: row.landmark,
     zoneCell: row.zone_cell,
@@ -104,7 +104,7 @@ async function readMine(tx: Tx, memberId: string): Promise<MyUstaadLocation | nu
     hidden: row.hidden,
     verified: row.verified_at !== null,
     confirmedAt: new Date(row.confirmed_at).toISOString(),
-    version: Number(row.version),
+    version: num(row.version),
   };
 }
 
@@ -152,7 +152,7 @@ export async function saveUstaadLocation(
     if (!inside?.ok || inside.enabled === false)
       throw new ValidationError('This place is outside your city', 'USTAAD_REGION');
 
-    const [prev] = rowsOf<{ move_m: number; circle_dn: number; circle_de: number }>(
+    const [prev] = rowsOf<{ move_m: unknown; circle_dn: unknown; circle_de: unknown }>(
       await tx.execute(sql`select ST_Distance(location, ${point(input.lng, input.lat)})::int as move_m,
           (ST_Y(circle_center::geometry) - ST_Y(location::geometry)) * 110574 as circle_dn,
           (ST_X(circle_center::geometry) - ST_X(location::geometry)) * 111320 * cos(radians(ST_Y(location::geometry))) as circle_de
@@ -171,7 +171,7 @@ export async function saveUstaadLocation(
       {
         source: input.source,
         accuracyM: input.accuracyM,
-        moveM: prev ? Number(prev.move_m) : null,
+        moveM: prev ? num(prev.move_m) : null,
         recentChanges: recent.map((r) => r.at),
         now,
       },
@@ -186,7 +186,7 @@ export async function saveUstaadLocation(
     if (!decision.ok) return decision;
 
     // The circle offset is fixed per member: kept on a move, drawn once for the first pin.
-    const off = prev ? { dNorthM: Number(prev.circle_dn), dEastM: Number(prev.circle_de) } : circleOffset();
+    const off = prev ? { dNorthM: num(prev.circle_dn), dEastM: num(prev.circle_de) } : circleOffset();
     const cLat = input.lat + off.dNorthM / 110_574;
     const cLng = input.lng + off.dEastM / (111_320 * Math.cos((input.lat * Math.PI) / 180));
     const cell = zoneCell(input.lat, input.lng, settingInt(s['ustaad.zones.cell_edge_m'], 1400));
@@ -220,7 +220,7 @@ export async function saveUstaadLocation(
         await tx.insert(ustaadPinChanges).values({
           memberId: actor.memberId,
           changedAt: now,
-          distanceM: Number(prev.move_m),
+          distanceM: num(prev.move_m),
           accuracyM: Math.min(32_767, Math.round(input.accuracyM)),
         });
     } else {
@@ -305,7 +305,7 @@ export async function ustaadDistanceBands(
     otherMemberIds.map((id) => sql`${id}::uuid`),
     sql`, `,
   );
-  const real = rowsOf<{ member_id: string; metres: number }>(
+  const real = rowsOf<{ member_id: string; metres: unknown }>(
     await db.execute(sql`select o.member_id, ST_Distance(v.location, o.location)::int as metres
       from ustaad_locations v
       join ustaad_locations o on o.member_id in (${list})
@@ -316,7 +316,7 @@ export async function ustaadDistanceBands(
   for (const r of real)
     out.set(
       r.member_id,
-      noisyDistanceBand(Number(r.metres), ustaadPairNoise(secret, viewerMemberId, r.member_id)),
+      noisyDistanceBand(num(r.metres), ustaadPairNoise(secret, viewerMemberId, r.member_id)),
     );
   return out;
 }

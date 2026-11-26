@@ -17,6 +17,7 @@ import {
   ustaadApplicationMachine,
   ustaadJobMachine,
   type UstaadApplicationStatus,
+  type UstaadJobStatus,
 } from '@mechdost/shared/state';
 import type { JOB_ROLES, UstaadSegmentCode } from '@mechdost/shared/ustaad/codes';
 import { jobScamSignals, settingBool, settingInt } from '@mechdost/shared/ustaad/local';
@@ -90,7 +91,7 @@ const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 /** `UJ-{CITY}-{YYYY}-{6 base32}`: RFC 4648 letters to match the `ustaad_jobs_code_format` CHECK (A-Z, 2-7). */
 function jobCode(cityCode: string, at: Date): string {
   let tail = '';
-  for (let i = 0; i < 6; i += 1) tail += B32[randomInt(0, 32)];
+  for (let i = 0; i < 6; i += 1) tail += B32.charAt(randomInt(0, 32));
   return `UJ-${cityCode}-${String(istYear(at))}-${tail}`;
 }
 
@@ -111,7 +112,7 @@ async function memberGate(
     .innerJoin(cities, eq(cities.id, ustaadMembers.cityId))
     .where(eq(ustaadMembers.id, memberId))
     .limit(1);
-  if (!m || m.status !== 'active') throw new NotFoundError();
+  if (m?.status !== 'active') throw new NotFoundError();
   if (m.restricted !== 'none')
     throw new ForbiddenError('This is not available on your account right now', 'USTAAD_RESTRICTED');
   if (m.frozen && m.frozen > now)
@@ -184,8 +185,8 @@ function viewOf(j: JobRow, cityCode: string, viewerMemberId: string): UstaadJobV
     areaLabel: j.areaLabel,
     areaLabelHi: j.areaLabelHi,
     cityCode,
-    payMinPaiseMonth: Number(j.payMinPaiseMonth),
-    payMaxPaiseMonth: Number(j.payMaxPaiseMonth),
+    payMinPaiseMonth: j.payMinPaiseMonth,
+    payMaxPaiseMonth: j.payMaxPaiseMonth,
     timing: j.timing,
     experienceMinYears: j.experienceMinYears,
     segmentCodes: j.segmentCodes,
@@ -374,7 +375,7 @@ export async function applyToUstaadJob(
     await assertUstaadJobsEnabled(tx);
     const place = await memberGate(tx, actor.memberId, now);
     const [job] = await tx.select().from(ustaadJobs).where(eq(ustaadJobs.code, code)).limit(1);
-    if (!job || job.cityId !== place.cityId) throw new NotFoundError();
+    if (job?.cityId !== place.cityId) throw new NotFoundError();
     if (job.employerMemberId === actor.memberId)
       throw new ValidationError('You cannot apply to your own job', 'USTAAD_OWN_JOB');
     if (job.status !== 'open') {
@@ -527,9 +528,8 @@ export async function moveUstaadJob(
       await memberGate(tx, actor.memberId, now);
     }
     const [job] = await tx.select().from(ustaadJobs).where(eq(ustaadJobs.code, code)).limit(1);
-    if (!job || job.employerMemberId !== actor.memberId) throw new NotFoundError();
-    const from = job.status as (typeof ustaadJobs.$inferSelect)['status'] &
-      Parameters<typeof ustaadJobMachine.can>[0];
+    if (job?.employerMemberId !== actor.memberId) throw new NotFoundError();
+    const from = job.status as UstaadJobStatus;
     if (!ustaadJobMachine.can(from, to))
       throw new ConflictError('This job cannot move that way', 'INVALID_TRANSITION');
     if (to === 'open') await employerStillValid(tx, actor.userId, job);

@@ -384,3 +384,9 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
 - L-UA2 · 2026-11-26 · security/media · Reviews found, one after another: TOCTOU between check and copy, deny-listed metadata, parser differentials (mvhd anywhere), fragmented MP4, unbounded reads, allow-by-default media reads, leave/rejoin resetting a ban-like standing. → For user uploads: verify a private copy, use structural allowlists that fail closed, cap every read, deny reads by default per host type; for membership: moderation standing must survive leave/rejoin. Do these up front next time. · active
 - L-UA3 · 2026-11-26 · tooling · drizzle-kit cuts a CHECK expression at a `;` (silently truncated SQL); regenerating unapplied migrations needs the journal entries removed and the schema exports re-added step by step. → Spell `;` as a regex escape (`\x3B`) inside CHECK regexes; keep a regen script; never hand-edit generated SQL. Python `open(..., 'w')` on Windows writes CRLF: always pass `newline='\n'`. · active
 - L-UA4 · 2026-11-26 · settings · A large feature-specific settings family (~140 keys) does not belong in `OPERATIONAL_SETTINGS` (the generic admin screen lists every key). → Own registry in the same table, own admin route; the generic screen stays as it is. · active
+- L-UE1 · 2026-11-26 · ids/schema · Workstream A's `ustaad_jobs_code_format` CHECK expects `[A-Z2-7]{6}` but
+  `publicCode` emits Crockford base32 (digits 0-9 included), so inserts failed ~half the time in tests → before using
+  a shared id generator against a new CHECK, test one insert; align generator and CHECK in the same workstream.
+- L-UE2 · 2026-11-26 · security/filters · Scam filters on user text must normalise first (NFKC, strip \p{Cf}, map all
+  script digits) and must not rely on "not followed by ." to tell UPI ids from emails (sentence-ending full stops) →
+  match a known PSP list first, then the generic rule; screen every member-visible free-text field, not just the body.

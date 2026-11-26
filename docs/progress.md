@@ -4,6 +4,14 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-26: Ustaad workstream E (local) API built on branch worktree-agent-a53f6c8fce669739a (not pushed, no
+  migration, no UI).** Pure rules (`ustaad/local.ts`: noisy distance bands, pin-change limits, zone banding with
+  complementary suppression, job scam signals), repositories (location, zones, jobs), API (`routes/ustaad/local.ts`:
+  pin, signboard, zones, jobs list/detail/post/apply/moves, application moves), worker timers (zone counts 02:00 IST,
+  job expiry 10 min), lead review findings fixed (UPI filter, every job text screened, member gate + employer
+  re-check on moves, jobs kill switch). Spec 23 § 21b, decision 2026-11-26 "workstream E". **Next:** E UI screens
+  (pin, area map, jobs) with en + hi strings and screenshots, `USTAAD_LOCATION_SECRET` config, staff zone/location
+  routes, `jobs/mine`, notifications on application moves.
 - **2026-11-26: Ustaad task F1 (smart correction) built on branch worktree-agent-a6d13b26cba34e51b (merged A's
   worktree-agent-ab4a65aaaa99d51c1 first; not pushed, no migration).** `POST /v1/ustaad/correct` (gate before sign-in,
   members only, suggest/auto/off, protected words, per-member limit, daily LLM budget, consent-gated LLM, masked cache),

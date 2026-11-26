@@ -11,7 +11,7 @@ import { zoneCentre } from '@mechdost/shared/ustaad/zones';
 import { cities, ustaadReachCities, ustaadZoneCounts } from '../../schema';
 import { recordServerEvent } from '../events';
 import type { Tx } from '../orders';
-import { rowsOf } from '../sql-rows';
+import { num, rowsOf } from '../sql-rows';
 import { readUstaadSettingValues } from './settings';
 
 export interface UstaadZoneExact {
@@ -46,7 +46,7 @@ export async function buildUstaadZoneCounts(
       USTAAD_SEGMENT_CODES.map((c) => sql`${c}`),
       sql`, `,
     );
-    const rows = rowsOf<{ zone_cell: string; city_id: string; members: number; by_segment: unknown }>(
+    const rows = rowsOf<{ zone_cell: string; city_id: string; members: unknown; by_segment: unknown }>(
       await tx.execute(sql`with counted as (
           select l.member_id, l.zone_cell, m.city_id
           from ustaad_locations l
@@ -79,7 +79,7 @@ export async function buildUstaadZoneCounts(
             zoneCell: r.zone_cell,
             cityId: r.city_id,
             computedAt: now,
-            members: Number(r.members),
+            members: num(r.members),
             bySegment: { schema_version: 1, ...seg },
             center: { lng: c.lng, lat: c.lat },
           };
@@ -104,10 +104,10 @@ async function readZones(db: Tx, cityId: string): Promise<UstaadZoneExact[]> {
   if (!city?.enabled) return [];
   const rows = rowsOf<{
     zone_cell: string;
-    members: number;
+    members: unknown;
     by_segment: unknown;
-    lat: number;
-    lng: number;
+    lat: unknown;
+    lng: unknown;
     computed_at: Date | string;
   }>(
     await db.execute(sql`select zone_cell, members, by_segment, ST_Y(center::geometry) as lat,
@@ -124,9 +124,9 @@ async function readZones(db: Tx, cityId: string): Promise<UstaadZoneExact[]> {
       if (k !== 'schema_version' && typeof v === 'number') bySegment[k] = v;
     return {
       zoneCell: r.zone_cell,
-      members: Number(r.members),
+      members: num(r.members),
       bySegment,
-      center: { lat: Number(r.lat), lng: Number(r.lng) },
+      center: { lat: num(r.lat), lng: num(r.lng) },
       computedAt: new Date(r.computed_at).toISOString(),
     };
   });
