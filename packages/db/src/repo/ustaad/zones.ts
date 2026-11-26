@@ -8,7 +8,7 @@ import { eq, sql } from 'drizzle-orm';
 import { bandZone, settingBool, settingInt, type BandedZone } from '@mechdost/shared/ustaad/local';
 import { USTAAD_SEGMENT_CODES } from '@mechdost/shared/ustaad/codes';
 import { zoneCentre } from '@mechdost/shared/ustaad/zones';
-import { ustaadReachCities, ustaadZoneCounts } from '../../schema';
+import { cities, ustaadReachCities, ustaadZoneCounts } from '../../schema';
 import { recordServerEvent } from '../events';
 import type { Tx } from '../orders';
 import { rowsOf } from '../sql-rows';
@@ -151,4 +151,10 @@ export async function ustaadZonesBanded(db: Tx, cityId: string): Promise<UstaadZ
   };
   const zones = await readZones(db, cityId);
   return zones.map((z) => ({ zoneCell: z.zoneCell, center: z.center, ...bandZone(z, rules) }));
+}
+
+/** The id of a city by its three-letter code (for `GET /ustaad/zones?city=`), or null. */
+export async function ustaadCityIdByCode(db: Tx, code: string): Promise<string | null> {
+  const [row] = await db.select({ id: cities.id }).from(cities).where(eq(cities.code, code)).limit(1);
+  return row?.id ?? null;
 }

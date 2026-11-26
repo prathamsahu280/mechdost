@@ -3,6 +3,7 @@ import {
   accuracyBand,
   bandZone,
   jobScamSignals,
+  normaliseDigits,
   noisyDistanceBand,
   pinChangeDecision,
   type PinChangeRules,
@@ -126,6 +127,16 @@ describe('jobScamSignals (AT-JOB-1)', () => {
   it('holds a UPI id but not an email address', () => {
     expect(jobScamSignals('send to ramesh123@okaxis')).toContain('upi_id');
     expect(jobScamSignals('mail me at owner@garage.in')).not.toContain('upi_id');
+  });
+  it('UPI ids at sentence end, followed by text, or with zero-width characters inside', () => {
+    expect(jobScamSignals('pay 50 to ramesh@ybl.')).toContain('upi_id');
+    expect(jobScamSignals('Send to ramesh@okaxis. Then come')).toContain('upi_id');
+    expect(jobScamSignals('ram\u200besh@ok\u200daxis')).toContain('upi_id');
+    expect(jobScamSignals('id: shop.owner@someupi please')).toContain('upi_id');
+    expect(jobScamSignals('write to hr@mechdost.in or hr@garage.co.in')).not.toContain('upi_id');
+  });
+  it('normalises digits of any script for the filters', () => {
+    expect(normaliseDigits('६३०१ and ৬৩')).toBe('6301 and 63');
   });
   it('holds "paytm karo"', () => {
     expect(jobScamSignals('paytm karo 300')).toContain('pay_app');

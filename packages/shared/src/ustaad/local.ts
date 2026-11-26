@@ -121,9 +121,22 @@ export function bandZone(
   };
 }
 
-/** Devanagari (and other common Indic) digits → ASCII, for the filters only; the stored text is never changed. */
+/**
+ * Text as the filters see it (never stored): NFKC, invisible format characters (zero-width joiners, BOM, soft hyphen)
+ * removed, and every decimal digit of any script mapped to ASCII. The stored text is never changed.
+ */
 export function normaliseDigits(text: string): string {
-  return text.replace(/[०-९]/g, (d) => String(d.charCodeAt(0) - 0x0966));
+  return text
+    .normalize('NFKC')
+    .replace(/[\p{Cf}\u00AD]/gu, '')
+    .replace(/\p{Nd}/gu, (d) => {
+      const cp = d.codePointAt(0) ?? 48;
+      // Unicode decimal digits come in contiguous runs of ten starting at a code point ending in 0 (mod 16 runs).
+      for (let zero = cp; zero >= cp - 9; zero -= 1)
+        if (/\p{Nd}/u.test(String.fromCodePoint(zero)) && !/\p{Nd}/u.test(String.fromCodePoint(zero - 1)))
+          return String(cp - zero);
+      return d;
+    });
 }
 
 const FEE_PATTERNS: readonly RegExp[] = [
@@ -134,7 +147,57 @@ const FEE_PATTERNS: readonly RegExp[] = [
   /(शुल्क|फीस|फ़ीस)\s*(जमा|भरें|भरना|दें|देना)/,
   /(पैसे|रुपये|रुपए)\s*(जमा|भेजो|भेजें|भेजना)/,
 ];
-const UPI_ID = /\b[a-z0-9._-]{2,}@(?!gmail|yahoo|outlook|hotmail|rediffmail)[a-z]{2,}\b(?!\.)/i;
+/** Known UPI PSP handles: matched even when a full stop or more text follows. */
+const UPI_PSPS = [
+  'ybl',
+  'ibl',
+  'axl',
+  'okaxis',
+  'oksbi',
+  'okhdfcbank',
+  'okicici',
+  'paytm',
+  'pthdfc',
+  'ptsbi',
+  'ptyes',
+  'ptaxis',
+  'upi',
+  'apl',
+  'yapl',
+  'rapl',
+  'jupiteraxis',
+  'fbl',
+  'ikwik',
+  'freecharge',
+  'airtel',
+  'axisbank',
+  'icici',
+  'sbi',
+  'hdfcbank',
+  'kotak',
+  'indus',
+  'yesbank',
+  'idfcbank',
+  'waicici',
+  'wahdfcbank',
+  'waaxis',
+  'wasbi',
+  'abfspay',
+  'axisb',
+  'naviaxis',
+  'superyes',
+  'slc',
+  'mbk',
+  'pingpay',
+  'timecosmos',
+  'dbs',
+  'federal',
+  'pnb',
+  'barodampay',
+] as const;
+const UPI_KNOWN = new RegExp(`[a-z0-9._-]{2,}@(${UPI_PSPS.join('|')})(?![a-z0-9])`, 'i');
+/** Any other `handle@word` that is not an email (an email's domain continues with `.tld`). */
+const UPI_GENERIC = /[a-z0-9._-]{2,}@[a-z]{2,}(?![a-z0-9]|[.][a-z])/i;
 const PAY_APP = /\b(paytm|phonepe|gpay|google\s*pay|bhim)\s*(kar|karo|kare|number|no\.?|pe|par|to)\b/i;
 
 export type JobScamSignal = 'fee_phrase' | 'upi_id' | 'pay_app';
@@ -150,7 +213,7 @@ export function jobScamSignals(text: string, extraPhrases: readonly string[] = [
   const lower = t.toLowerCase();
   if (extraPhrases.some((p) => p.trim().length > 2 && lower.includes(p.trim().toLowerCase())))
     out.add('fee_phrase');
-  if (UPI_ID.test(t)) out.add('upi_id');
+  if (UPI_KNOWN.test(t) || UPI_GENERIC.test(t)) out.add('upi_id');
   if (PAY_APP.test(t)) out.add('pay_app');
   return [...out];
 }

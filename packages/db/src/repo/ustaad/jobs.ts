@@ -11,7 +11,8 @@
  * - The phone number is never part of any view here (SR-34); `sharePhone` is a flag the employer UI reads.
  */
 import { and, desc, eq, inArray, lt, or, sql } from 'drizzle-orm';
-import { publicCode } from '@mechdost/shared/ids';
+import { randomInt } from 'node:crypto';
+import { istYear } from '@mechdost/shared/time';
 import {
   ustaadApplicationMachine,
   ustaadJobMachine,
@@ -84,6 +85,14 @@ export interface UstaadJobView {
 }
 
 const CODE_RETRIES = 3;
+const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+
+/** `UJ-{CITY}-{YYYY}-{6 base32}`: RFC 4648 letters to match the `ustaad_jobs_code_format` CHECK (A-Z, 2-7). */
+function jobCode(cityCode: string, at: Date): string {
+  let tail = '';
+  for (let i = 0; i < 6; i += 1) tail += B32[randomInt(0, 32)];
+  return `UJ-${cityCode}-${String(istYear(at))}-${tail}`;
+}
 
 async function memberGate(
   tx: Tx,
@@ -207,7 +216,7 @@ export async function postUstaadJob(
     const expiresAt = new Date(now.getTime() + settingInt(s['ustaad.jobs.expiry_days'], 30) * 86_400_000);
 
     for (let attempt = 0; attempt < CODE_RETRIES; attempt += 1) {
-      const code = publicCode('UJ', place.cityCode, now);
+      const code = jobCode(place.cityCode, now);
       await tx.execute(sql`savepoint ustaad_job_create`);
       try {
         const [row] = await tx
