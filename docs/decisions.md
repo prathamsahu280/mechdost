@@ -2521,3 +2521,12 @@ Approved plan: a daily check, alerts at 70 % and 90 %, an admin page. Build ruli
     migrator skips a migration whose `when` is older than the last applied one (L106). Snapshots rechained
     0101 → 0102 → 0103 → 0104 with each branch's tables carried forward (no table overlap); `drizzle-kit check` clean
     and `generate` reports no schema changes.
+
+## 2026-11-26 — Delivery agents (Q217): design approved
+
+Design `docs/superpowers/specs/2026-11-26-delivery-agents-design.md`, research `docs/research/delivery-agents.md`.
+Founder: agents deliver by default, shops may opt in to self-delivery (admin approves), apply + admin invite by email
+and WhatsApp, PAN + licence + RC (no Aadhaar), vehicle type, photo at pickup and delivery, masked calling later; money,
+pay, COD and dispatch mode decided later. Lead's calls (in the design): admin-assigns dispatch, COD stays with the shop,
+per-order mode, documents after sign-in, per-city switch off by default, load by total weight, failed-delivery refund
+rule (founder accepted). Q217 answered.
