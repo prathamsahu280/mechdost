@@ -277,17 +277,17 @@ export function JobDetail({ code }: { code: string }) {
         ) : null}
         <dl className="grid gap-3 min-[480px]:grid-cols-2">
           {facts.map((f) => (
-            <div key={f.label} className="flex items-start gap-3 rounded-xl bg-surface-alt p-3">
-              <f.icon aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-accent-soft-text" />
-              <div className="min-w-0">
-                <dt className="text-xs font-bold text-muted">{f.label}</dt>
-                <dd
-                  className="text-[15px] font-bold text-ink"
-                  {...(f.user ? { 'data-user-content': true } : {})}
-                >
-                  {f.value}
-                </dd>
-              </div>
+            <div key={f.label} className="grid min-w-0 gap-0.5 rounded-xl bg-surface-alt p-3">
+              <dt className="flex items-center gap-2 text-xs font-bold text-muted">
+                <f.icon aria-hidden="true" className="size-4 shrink-0 text-accent-soft-text" />
+                {f.label}
+              </dt>
+              <dd
+                className="text-[15px] font-bold text-ink"
+                {...(f.user ? { 'data-user-content': true } : {})}
+              >
+                {f.value}
+              </dd>
             </div>
           ))}
         </dl>

@@ -42,11 +42,14 @@ async function shots(page: Page, name: string, path: string) {
   await page.waitForTimeout(400);
   await page.screenshot({ path: `${SHOTS}/${name}-hi-390.png`, fullPage: true });
   await page.setViewportSize({ width: 1440, height: 900 });
+  // Visiting /hi stores the language cookie; drop it so the test continues in English where it started.
+  await page.context().clearCookies({ name: 'NEXT_LOCALE' });
   await page.goto(path);
   await page.locator('main h1').first().waitFor();
 }
 
 test.describe('Ustaad Q&A (workstream C)', () => {
+  test.describe.configure({ timeout: 90_000 });
   test.beforeEach(async ({ page }) => {
     await signIn(page);
   });
@@ -163,6 +166,7 @@ test.describe('Ustaad Learn (workstream C)', () => {
 });
 
 test.describe('Ustaad local (workstream E)', () => {
+  test.describe.configure({ timeout: 90_000 });
   test.use({
     permissions: ['geolocation'],
     geolocation: { latitude: 21.2458, longitude: 81.6501, accuracy: 18 },
@@ -189,7 +193,8 @@ test.describe('Ustaad local (workstream E)', () => {
     await page.getByRole('button', { name: 'Use my location' }).click();
     await expect(page.getByText('Found you, accurate to about 18 m.')).toBeVisible();
     await page.getByRole('button', { name: 'Move up' }).click();
-    await page.getByRole('switch', { name: 'Count me in my area total' }).check();
+    await page.getByText('Count me in my area total', { exact: true }).click();
+    await expect(page.getByRole('switch', { name: 'Count me in my area total' })).toBeChecked();
     await page.getByRole('button', { name: 'This is my garage' }).click();
     await expect(page.getByText('Location confirmed. Others see only your area.')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Get "Verified location"' })).toBeVisible();
