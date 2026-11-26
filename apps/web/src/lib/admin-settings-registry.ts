@@ -80,6 +80,13 @@ export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
 /** Keys whose prefix would put them elsewhere: money going in and out is under Payments. */
 const KEY_CATEGORY: Partial<Record<string, SettingsCategoryId>> = {
   'checkout.cod_cap_paise': 'payments',
+  'checkout.cod_everyone': 'payments',
+  'checkout.cod_approved_customers': 'payments',
+  'checkout.cod_ustaad_verified': 'payments',
+  'checkout.cod_ustaad_min_level': 'payments',
+  'checkout.cod_min_order_paise': 'payments',
+  'checkout.cod_min_items': 'payments',
+  'checkout.cod_request_reapply_days': 'payments',
   'checkout.cod_fee_paise': 'payments',
   'checkout.online_payment_minutes': 'payments',
   'quotes.cod_cap_paise': 'payments',
@@ -108,6 +115,7 @@ export function matchesQuery(haystack: string, query: string): boolean {
  */
 export type RiskReason =
   | 'risk_codOff'
+  | 'risk_codEveryone'
   | 'risk_assistantOff'
   | 'risk_redeemOff'
   | 'risk_verifiedEmail'
@@ -123,6 +131,9 @@ export function riskOfChange(
   switch (key) {
     case 'checkout.cod_cap_paise':
       return to === 0 ? 'risk_codOff' : null;
+    // Founder 2026-11-26: cash handling is the reason COD is not for everyone; turning it on needs a second look.
+    case 'checkout.cod_everyone':
+      return to === true ? 'risk_codEveryone' : null;
     case 'assistant.daily_messages':
       return to === 0 ? 'risk_assistantOff' : null;
     case 'coins.max_redeem_bp':

@@ -10,6 +10,13 @@ import { freeDeliveryMinPaise, groupShippingPaise } from '@mechdost/shared/free-
 import { savingsBreakdown } from '@mechdost/shared/savings';
 import { auditLog, orderGroups, orderItems, orders, settings } from '../schema';
 import { blockEffects } from '@mechdost/shared/customers';
+import {
+  codCartRule,
+  effectiveCodCap,
+  type CodCartReason,
+  type CodEligibility,
+} from '@mechdost/shared/cod-eligibility';
+import { codStatusInCity } from './cod-requests';
 import { setActor } from './actor';
 import { removeOrderedCartLines } from './cart';
 import { queueOrderPlacedEmail } from './email-events';
@@ -119,7 +126,21 @@ export interface CheckoutQuote {
   onlineTotalPaise: number;
   /** Every line can be bought as asked. */
   ok: boolean;
-  cod: { allowed: boolean; reason: 'over_cap' | 'pincode' | null; capPaise: number };
+  /**
+   * Cash on delivery for this cart and person. `reason` keeps its old meaning (PIN rule, cap) for older screens;
+   * `eligibility` says whether this person may pay cash at all (founder ruling 2026-11-26) and `cartReason` whether
+   * the cart meets the admin's minimum order and pieces. `allowed` = all three. `capPaise` is the lower of the city
+   * cap and an approval's personal cap.
+   */
+  cod: {
+    allowed: boolean;
+    reason: 'over_cap' | 'pincode' | null;
+    capPaise: number;
+    eligibility: CodEligibility;
+    cartReason: CodCartReason | null;
+    minOrderPaise: number;
+    minItems: number;
+  };
   /**
    * "Your savings" estimate for this cart (decision 2026-11-26): the printed-MRP saving of the priced lines plus the
    * delivery fee the free-delivery threshold waives. Coupon and Coins are chosen at checkout and are not in it; the
@@ -318,7 +339,7 @@ export async function settingOr(
 
 export async function quoteInternal(
   db: Tx,
-  input: { pincode: string; lines: readonly CartLine[]; locale: CatalogueLocale },
+  input: { pincode: string; lines: readonly CartLine[]; locale: CatalogueLocale; userId?: string | null },
 ): Promise<InternalQuote> {
   validateLines(input.lines);
   const [place] = rowsOf<{
@@ -498,9 +519,18 @@ export async function quoteInternal(
   const shipping = groups.reduce((a, g) => a + g.shippingPaise, 0);
   const tax = groups.reduce((a, g) => a + g.taxPaise, 0);
   const codFee = await settingOr(db, place.city_id, CHECKOUT_SETTINGS.codFeePaise);
-  const cap = await settingOr(db, place.city_id, CHECKOUT_SETTINGS.codCapPaise);
+  const cityCap = await settingOr(db, place.city_id, CHECKOUT_SETTINGS.codCapPaise);
   const totalCod = subtotal + shipping + codFee;
+  // Who may pay cash (founder ruling 2026-11-26): the person, then the cap, the PIN rule and the cart minimums.
+  const codStatus = await codStatusInCity(db, { userId: input.userId ?? null, cityId: place.city_id });
+  const cap = effectiveCodCap(cityCap, codStatus.eligibility.capPaise);
   const reason = !place.cod_allowed ? 'pincode' : totalCod > cap ? 'over_cap' : null;
+  const cartReason = codCartRule({
+    payablePaise: totalCod,
+    pieces: priced.reduce((sum, l) => sum + l.qty, 0),
+    minOrderPaise: codStatus.rules.minOrderPaise,
+    minItems: codStatus.rules.minItems,
+  });
   return {
     cityId: place.city_id,
     priced,
@@ -519,18 +549,30 @@ export async function quoteInternal(
       totalPaise: totalCod,
       onlineTotalPaise: subtotal + shipping,
       ok: lines.every((l) => l.issue === null),
-      cod: { allowed: reason === null, reason, capPaise: cap },
+      cod: {
+        allowed: reason === null && cartReason === null && codStatus.eligibility.eligible,
+        reason,
+        capPaise: cap,
+        eligibility: codStatus.eligibility,
+        cartReason,
+        minOrderPaise: codStatus.rules.minOrderPaise,
+        minItems: codStatus.rules.minItems,
+      },
       savingsEstimate: savingsEstimateOf(priced, groupWaivedPaise),
     },
   };
 }
 
-/** Price a cart for a delivery PIN (no side effects): the COD total and the online total. */
+/**
+ * Price a cart for a delivery PIN (no side effects): the COD total and the online total. `who.userId` (signed in)
+ * makes the COD answer personal; a guest gets `sign_in_required` unless COD is open to everyone.
+ */
 export async function quoteCheckout(
   db: Tx,
   input: { pincode: string; lines: readonly CartLine[]; locale: CatalogueLocale },
+  who: { userId?: string | null } = {},
 ): Promise<CheckoutQuote> {
-  return (await quoteInternal(db, input)).quote;
+  return (await quoteInternal(db, { ...input, userId: who.userId ?? null })).quote;
 }
 
 export interface ShippingAddress {
@@ -679,8 +721,15 @@ function applyQuotePricing(internal: InternalQuote, pricing: QuotePricing): void
   quote.codFeePaise = 0;
   quote.totalPaise = quote.subtotalPaise + quote.shippingPaise;
   quote.onlineTotalPaise = quote.totalPaise;
+  // A bulk quote order is not gated by COD eligibility or the cart minimums (staff agreed it with the customer;
+  // ruling 2026-11-26, queued as a question); its own ceiling is checked when the offer is accepted.
   const pincodeCod = quote.cod.reason !== 'pincode';
-  quote.cod = { allowed: pincodeCod, reason: pincodeCod ? null : 'pincode', capPaise: quote.cod.capPaise };
+  quote.cod = {
+    ...quote.cod,
+    allowed: pincodeCod,
+    reason: pincodeCod ? null : 'pincode',
+    cartReason: null,
+  };
   // A negotiated delivery charge is what was agreed, not a waiver: nothing to count as saved on delivery.
   internal.groupWaivedPaise = internal.groupWaivedPaise.map(() => 0);
   quote.savingsEstimate = savingsEstimateOf(priced, internal.groupWaivedPaise);
@@ -719,6 +768,7 @@ export async function placeOrder(
       pincode: input.address.pincode,
       lines: input.lines,
       locale: input.locale,
+      userId: input.userId,
     });
     const { quote, priced, groupShops, cityId } = internal;
     if (!quote.ok)
@@ -763,16 +813,37 @@ export async function placeOrder(
       throw new ConflictError('The total changed since you reviewed it', 'PRICE_CHANGED');
     // The COD cap applies to what the customer pays at the door (after coins). A quote order has its own ceiling,
     // checked when the offer is accepted (`quotes.cod_cap_paise`, spec 19), so the checkout cap does not apply.
+    // Then the admin's minimum order (on what is paid at the door) and pieces (founder ruling 2026-11-26).
     const codReason =
       quote.cod.reason === 'pincode'
         ? 'pincode'
-        : !input.quotePricing && totalPaise > quote.cod.capPaise
-          ? 'over_cap'
-          : null;
-    if (!online && (codReason !== null || !allowed.cod))
+        : input.quotePricing
+          ? null
+          : totalPaise > quote.cod.capPaise
+            ? 'over_cap'
+            : codCartRule({
+                payablePaise: totalPaise,
+                pieces: input.lines.reduce((sum, l) => sum + l.qty, 0),
+                minOrderPaise: quote.cod.minOrderPaise,
+                minItems: quote.cod.minItems,
+              });
+    if (!online && !allowed.cod)
       throw new ValidationError('Cash on delivery is not available for this order', 'COD_NOT_ALLOWED', {
-        reason: allowed.cod ? codReason : 'customer',
+        reason: 'customer',
         capPaise: quote.cod.capPaise,
+      });
+    // Who may pay cash at all, decided here and never by the client. Bulk quote orders are exempt (see above).
+    if (!online && !input.quotePricing && !quote.cod.eligibility.eligible)
+      throw new ValidationError('Cash on delivery is not available to this account', 'COD_NOT_ELIGIBLE', {
+        reason: quote.cod.eligibility.reason,
+        canRequest: quote.cod.eligibility.canRequest,
+      });
+    if (!online && codReason !== null)
+      throw new ValidationError('Cash on delivery is not available for this order', 'COD_NOT_ALLOWED', {
+        reason: codReason,
+        capPaise: quote.cod.capPaise,
+        minOrderPaise: quote.cod.minOrderPaise,
+        minItems: quote.cod.minItems,
       });
 
     await setActor(tx, { type: 'customer', userId: input.userId });

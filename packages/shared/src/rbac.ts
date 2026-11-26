@@ -55,6 +55,7 @@ export const PERMISSIONS = {
   'customers:read': 'Read customer accounts with masked contact details',
   'customers:read_pii': 'Read unmasked customer phone numbers and emails',
   'customers:block': 'Block or unblock customers',
+  'customers:cod_approve': 'Approve, reject or revoke cash-on-delivery requests from customers (city-scoped)',
   'tickets:create': 'Open support tickets',
   'tickets:read': 'Read support tickets in scope',
   'tickets:reply': 'Reply to support tickets and add internal notes',
@@ -145,6 +146,8 @@ const OPS: readonly Permission[] = [
   'partners:approve',
   'applications:review',
   'customers:read',
+  // Cash-on-delivery requests (founder ruling 2026-11-26): ops and city managers decide them, city-scoped.
+  'customers:cod_approve',
   'tickets:read',
   'tickets:reply',
   'tickets:assign',

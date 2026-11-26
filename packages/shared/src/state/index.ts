@@ -2,6 +2,7 @@ import { defineMachine } from './machine';
 
 export * from './machine';
 export * from './rsa';
+export * from './cod-request';
 // Ustaad Network machines (spec 23 § 7): one file per area; workstreams B–G only read them.
 export * from './ustaad-verification';
 export * from './ustaad-level';

@@ -219,6 +219,9 @@ const USAGE_NONE = [
   'usage_snapshots',
 ];
 
+/** Cash-on-delivery requests (0109): customers and staff only through the API. */
+const COD_NONE = ['cod_request_events', 'cod_requests'];
+
 export const RLS_INVENTORY: Record<string, RlsAccess> = {
   ...Object.fromEntries(PUBLIC.map((n) => [n, 'public' as const])),
   ...Object.fromEntries(OWN.map((n) => [n, 'own' as const])),
@@ -226,4 +229,5 @@ export const RLS_INVENTORY: Record<string, RlsAccess> = {
   ...Object.fromEntries(NONE.map((n) => [n, 'none' as const])),
   ...Object.fromEntries(USTAAD_NONE.map((n) => [n, 'none' as const])),
   ...Object.fromEntries(USAGE_NONE.map((n) => [n, 'none' as const])),
+  ...Object.fromEntries(COD_NONE.map((n) => [n, 'none' as const])),
 };

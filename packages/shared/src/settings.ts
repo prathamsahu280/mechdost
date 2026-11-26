@@ -13,6 +13,20 @@ export type SettingSpec = { globalOnly?: true } & (
 export const OPERATIONAL_SETTINGS = {
   /** Largest cash-on-delivery order total (paise). */
   'checkout.cod_cap_paise': { kind: 'int', min: 0, max: 10_000_000, default: 500_000 },
+  /**
+   * Who may pay cash on delivery (founder ruling 2026-11-26; `cod-eligibility.ts`). Three independent routes, per
+   * city with the global value as fallback: everyone (off: turning it on brings back COD for every customer),
+   * customers the admin approved, verified Ustaad Network members (with a minimum level: 0 Naya … 3 Master).
+   */
+  'checkout.cod_everyone': { kind: 'boolean', default: false },
+  'checkout.cod_approved_customers': { kind: 'boolean', default: true },
+  'checkout.cod_ustaad_verified': { kind: 'boolean', default: true },
+  'checkout.cod_ustaad_min_level': { kind: 'int', min: 0, max: 3, default: 0 },
+  /** For eligible customers: smallest cash order (paise, what is paid at the door) and fewest pieces (0/1 = off). */
+  'checkout.cod_min_order_paise': { kind: 'int', min: 0, max: 10_000_000, default: 0 },
+  'checkout.cod_min_items': { kind: 'int', min: 1, max: 99, default: 1 },
+  /** Days a customer waits after a rejected or revoked request before asking again. */
+  'checkout.cod_request_reapply_days': { kind: 'int', min: 0, max: 90, default: 7, globalOnly: true },
   /** Fee added to cash-on-delivery orders (paise). */
   'checkout.cod_fee_paise': { kind: 'int', min: 0, max: 50_000, default: 0 },
   /** A shop group's delivery is free from this subtotal (paise); null = never free. */

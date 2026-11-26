@@ -32,6 +32,7 @@ export { invalidateSearchVocab, loadSearchVocab, parseCatalogueQuery } from './s
 export * from './content';
 export * from './cursor';
 export * from './checkout';
+export * from './cod-requests';
 export * from './checkout-coupon';
 export * from './coupon-offers';
 export * from './coupons';

@@ -3326,7 +3326,14 @@
     "field_savings_order": "Order page line (keep '{amount}')",
     "field_savings_account": "Account card line (keep '{amount}')",
     "field_savings_cart": "Cart estimate label",
-    "api_set_customers_savings_enabled": "Show “Your savings” to customers (order page, cart, account)"
+    "api_set_customers_savings_enabled": "Show “Your savings” to customers (order page, cart, account)",
+    "api_set_checkout_cod_everyone": "Cash on delivery for every customer",
+    "api_set_checkout_cod_approved_customers": "Cash on delivery for customers you approve",
+    "api_set_checkout_cod_ustaad_verified": "Cash on delivery for verified Ustaad mechanics",
+    "api_set_checkout_cod_ustaad_min_level": "Lowest Ustaad level for cash on delivery",
+    "api_set_checkout_cod_min_order_paise": "Smallest cash-on-delivery order",
+    "api_set_checkout_cod_min_items": "Fewest pieces in a cash-on-delivery order",
+    "api_set_checkout_cod_request_reapply_days": "Wait before asking again after a no"
   },
   "shopGiveUp": {
     "action": "Can't fulfil this order",
@@ -4042,7 +4049,10 @@
     "tpl_rsa_bill_ready": "Roadside bill ready",
     "tpl_rsa_completed": "Roadside request complete",
     "tpl_rsa_cancelled": "Roadside request cancelled",
-    "tpl_rsa_refund_processed": "Roadside refund processed"
+    "tpl_rsa_refund_processed": "Roadside refund processed",
+    "tpl_cod_approved": "Cash on delivery approved",
+    "tpl_cod_rejected": "Cash on delivery not approved",
+    "tpl_cod_revoked": "Cash on delivery turned off"
   },
   "reco": {
     "title": "Goes well with this",
@@ -4442,6 +4452,18 @@
     "staff_ustaad_verification": {
       "title": "Verification waiting",
       "body": "A mechanic verification is ready for review."
+    },
+    "account_cod_approved": {
+      "title": "Cash on delivery approved",
+      "body": "You can now choose cash on delivery at checkout."
+    },
+    "account_cod_rejected": {
+      "title": "Cash on delivery request",
+      "body": "We could not approve cash on delivery yet. You can still pay online."
+    },
+    "account_cod_revoked": {
+      "title": "Cash on delivery turned off",
+      "body": "Cash on delivery is no longer available on your account. You can pay online."
     }
   },
   "adminNotices": {
@@ -6435,7 +6457,15 @@
     "help_api_signed_in_per_minute": "Requests per minute one signed-in account may make. Each person is counted alone, even on shared Wi-Fi.",
     "help_api_guest_per_ip_per_minute": "Requests per minute one internet address may make when not signed in.",
     "help_api_ip_flood_per_minute": "Most requests per minute from one internet address in total. Guards against floods; keep it above the guest limit.",
-    "help_customers_savings_enabled": "Shows what customers saved vs the maker's printed MRP on delivered orders. The figures keep being recorded while it is off."
+    "help_customers_savings_enabled": "Shows what customers saved vs the maker's printed MRP on delivered orders. The figures keep being recorded while it is off.",
+    "help_checkout_cod_everyone": "Off: only approved customers and verified Ustaad mechanics can pay cash. On: every customer can, as before.",
+    "help_checkout_cod_approved_customers": "Customers can ask for cash on delivery and your team approves or rejects each request (Customers → COD requests).",
+    "help_checkout_cod_ustaad_verified": "Verified, active MechDost Ustaad members can pay cash without asking.",
+    "help_checkout_cod_ustaad_min_level": "0 = Naya Ustaad and up, 1 = Pakka, 2 = Bada, 3 = Master.",
+    "help_checkout_cod_min_order_paise": "Cash on delivery only from this amount paid at the door. 0 = no minimum.",
+    "help_checkout_cod_min_items": "Cash on delivery only from this many pieces in one order. 1 = no minimum.",
+    "help_checkout_cod_request_reapply_days": "After a request is turned down or approval is taken back, the customer waits this many days before asking again.",
+    "risk_codEveryone": "Every customer will be able to pay cash on delivery again, even for a single piece. Cash handling at the door is the reason this is off."
   },
   "roadside": {
     "eyebrow": "Roadside help",

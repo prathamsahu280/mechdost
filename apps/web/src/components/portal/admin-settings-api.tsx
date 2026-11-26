@@ -44,6 +44,13 @@ const AdminDemandApi = dynamic(() => import('./admin-demand-api').then((m) => m.
 /** Label per setting key (explicit literals keep next-intl's key checking). */
 const SETTING_LABEL = {
   'checkout.cod_cap_paise': 'api_set_checkout_cod_cap_paise',
+  'checkout.cod_everyone': 'api_set_checkout_cod_everyone',
+  'checkout.cod_approved_customers': 'api_set_checkout_cod_approved_customers',
+  'checkout.cod_ustaad_verified': 'api_set_checkout_cod_ustaad_verified',
+  'checkout.cod_ustaad_min_level': 'api_set_checkout_cod_ustaad_min_level',
+  'checkout.cod_min_order_paise': 'api_set_checkout_cod_min_order_paise',
+  'checkout.cod_min_items': 'api_set_checkout_cod_min_items',
+  'checkout.cod_request_reapply_days': 'api_set_checkout_cod_request_reapply_days',
   'checkout.cod_fee_paise': 'api_set_checkout_cod_fee_paise',
   'checkout.free_delivery_min_paise': 'api_set_checkout_free_delivery_min_paise',
   'checkout.cod_reservation_minutes': 'api_set_checkout_cod_reservation_minutes',
@@ -113,6 +120,13 @@ const UNIT_LABEL = {
 /** One-line help per setting key (messages in `adminSettings`; explicit literals keep next-intl's key checking). */
 const SETTING_HELP = {
   'checkout.cod_cap_paise': 'help_checkout_cod_cap_paise',
+  'checkout.cod_everyone': 'help_checkout_cod_everyone',
+  'checkout.cod_approved_customers': 'help_checkout_cod_approved_customers',
+  'checkout.cod_ustaad_verified': 'help_checkout_cod_ustaad_verified',
+  'checkout.cod_ustaad_min_level': 'help_checkout_cod_ustaad_min_level',
+  'checkout.cod_min_order_paise': 'help_checkout_cod_min_order_paise',
+  'checkout.cod_min_items': 'help_checkout_cod_min_items',
+  'checkout.cod_request_reapply_days': 'help_checkout_cod_request_reapply_days',
   'checkout.cod_fee_paise': 'help_checkout_cod_fee_paise',
   'checkout.free_delivery_min_paise': 'help_checkout_free_delivery_min_paise',
   'checkout.cod_reservation_minutes': 'help_checkout_cod_reservation_minutes',
