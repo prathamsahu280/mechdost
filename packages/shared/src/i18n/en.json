@@ -9561,6 +9561,7 @@
     "partner": "Your MechDost delivery partner",
     "failedBody": "{reason}. MechDost will contact you about the next try.",
     "returnedFull": "Full refund, including delivery, to your original payment method. Coins and coupon are restored.",
+    "returnedRefund": "Your refund goes to your original payment method; the amount is shown under Refunds on this order. Coins and coupon are restored.",
     "returnedParts": "Refund for the parts to your original payment method; the delivery fee is kept because the delivery was refused or no one could be reached. Coins and coupon are restored.",
     "codeNote": "Give your delivery code only when the parcel is in your hands.",
     "callSupport": "Questions? Call MechDost support",

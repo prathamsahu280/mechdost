@@ -19,13 +19,8 @@ const primary =
 const quiet =
   'press inline-flex min-h-11 items-center justify-center rounded-button border border-input-border px-4 text-sm font-bold text-ink hover:bg-pill';
 const RECAPTCHA_ID = 'status-recaptcha';
-/**
- * Delivery-agent applications (spec 24) share the lookup; the shared status schema does not list that kind yet
- * (contract gap), so the screen widens it here.
- */
-type ApplicationStatusView = Omit<SharedStatusView, 'kind'> & {
-  kind: SharedStatusView['kind'] | 'delivery_agent';
-};
+/** Delivery-agent applications (spec 24) share the lookup: the shared status kind includes `delivery_agent` (G3). */
+type ApplicationStatusView = SharedStatusView;
 
 const e164 = (raw: string) => {
   const digits = raw.replace(/[\s-]/g, '');

@@ -61,7 +61,11 @@ export function CustomerDeliveryCard({
       ) : null}
       {view.stage === 'returned' ? (
         <p className="mt-1 text-sm text-ink">
-          {view.refund === 'parts_only' ? t('returnedParts') : t('returnedFull')}
+          {view.refund === 'parts_only'
+            ? t('returnedParts')
+            : view.refund === 'full'
+              ? t('returnedFull')
+              : t('returnedRefund')}
         </p>
       ) : null}
       {view.stage === 'picked_up' || view.stage === 'retrying' ? (

@@ -23,16 +23,6 @@ import { useStatusLine } from './status-line';
 export const AGENT_HANDOVER_STATUSES: readonly string[] = ['packed', 'ready_for_pickup', 'out_for_delivery'];
 
 /**
- * The `delivery` block of a shop order card (`GET /v1/shop/orders`, contract `ShopOrderDelivery`). The shared
- * `ShopOrder` schema does not list it yet (contract gap, backend adds it); until then this reads it when present.
- */
-export function shopDeliveryOf(order: object): ShopOrderDeliveryView | null {
-  if (!('delivery' in order)) return null;
-  const d: unknown = order.delivery;
-  return typeof d === 'object' && d !== null && 'mode' in d ? (d as ShopOrderDeliveryView) : null;
-}
-
-/**
  * The agent part of one shop order card (spec 24, Lead's calls 3, 9): "Mark ready for pickup" (from packed), the pickup
  * code while an agent is on the way (with the agent's first name and vehicle), the return code entry when a parcel
  * comes back, and staff's request to deliver this order itself. Shown only for agent-mode sub-orders; a
