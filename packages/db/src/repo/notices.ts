@@ -242,6 +242,8 @@ const STAFF_PERMISSION = {
   'staff.new_application': 'applications:review',
   'staff.new_ticket': 'tickets:reply',
   'staff.rsa_cash': 'roadside:read',
+  // Usage and free limits (2026-11-26): staff with an all-cities settings read (super admin, operations manager).
+  'staff.usage_alert': 'settings:read',
 } as const satisfies Partial<Record<NoticeKind, Permission>>;
 
 export type StaffNoticeKind = keyof typeof STAFF_PERMISSION;
@@ -257,7 +259,8 @@ export async function queueStaffNotice(
     cityId: string | null;
     entityId: string;
     version: number | string;
-    params?: NoticeParams;
+    /** A function gets each person's language (localized phrases such as a metric's name). */
+    params?: NoticeParams | ((locale: Locale) => NoticeParams);
   },
 ): Promise<number> {
   let written = 0;

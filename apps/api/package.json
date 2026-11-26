@@ -14,6 +14,7 @@
     "test": "vitest run",
     "lint": "eslint . --max-warnings=0",
     "import:catalogue": "tsx --env-file-if-exists=../../.env src/cli/import-catalogue.ts",
+    "usage:check": "tsx --env-file-if-exists=../../.env src/cli/usage-check.ts",
     "import:exide": "tsx --env-file-if-exists=../../.env src/cli/import-exide.ts",
     "import:amaron": "tsx --env-file-if-exists=../../.env src/cli/import-amaron.ts",
     "import:tatagreen": "tsx --env-file-if-exists=../../.env src/cli/import-tatagreen.ts",

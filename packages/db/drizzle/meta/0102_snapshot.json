@@ -1,6 +1,6 @@
 {
   "id": "5618ac01-e20e-4155-9536-e5de94a49014",
-  "prevId": "620e8642-31dc-420d-8fd3-70b13b58fc45",
+  "prevId": "161bdde0-f663-4cfa-bd7e-87f3d7d26c4a",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -7133,6 +7133,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "mrp_paise": {
+          "name": "mrp_paise",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
         "shop_unit_paise": {
           "name": "shop_unit_paise",
           "type": "bigint",
@@ -7285,6 +7291,10 @@
           "name": "order_items_shop_unit_valid",
           "value": "\"order_items\".\"shop_unit_paise\" is null or (\"order_items\".\"shop_unit_paise\" >= 0 and (\"order_items\".\"shop_unit_paise\" <= \"order_items\".\"unit_paise\" or \"order_items\".\"price_source\" = 'quote'))"
         },
+        "order_items_mrp_nonneg": {
+          "name": "order_items_mrp_nonneg",
+          "value": "\"order_items\".\"mrp_paise\" is null or \"order_items\".\"mrp_paise\" >= 0"
+        },
         "order_items_line_discount_max": {
           "name": "order_items_line_discount_max",
           "value": "\"order_items\".\"line_discount_paise\" <= \"order_items\".\"unit_paise\" * \"order_items\".\"qty\""
@@ -7419,6 +7429,13 @@
           "type": "bigint",
           "primaryKey": false,
           "notNull": true
+        },
+        "delivery_waived_paise": {
+          "name": "delivery_waived_paise",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
         },
         "coins_redeemed": {
           "name": "coins_redeemed",
@@ -7745,6 +7762,10 @@
         "orders_amounts_nonneg": {
           "name": "orders_amounts_nonneg",
           "value": "\"orders\".\"subtotal_paise\" >= 0 and \"orders\".\"total_paise\" >= 0 and \"orders\".\"tax_paise\" >= 0 and \"orders\".\"cod_fee_paise\" >= 0"
+        },
+        "orders_delivery_waived_nonneg": {
+          "name": "orders_delivery_waived_nonneg",
+          "value": "\"orders\".\"delivery_waived_paise\" >= 0"
         },
         "orders_total_matches": {
           "name": "orders_total_matches",
@@ -34500,6 +34521,519 @@
         "ustaad_word_lists_replacement": {
           "name": "ustaad_word_lists_replacement",
           "value": "(\"ustaad_word_lists\".\"list\" = 'correction') = (\"ustaad_word_lists\".\"replacement\" is not null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.customer_savings_lines": {
+      "name": "customer_savings_lines",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "customer_savings_lines_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "entry_id": {
+          "name": "entry_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "order_item_id": {
+          "name": "order_item_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mrp_saving_paise": {
+          "name": "mrp_saving_paise",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "customer_savings_lines_order_item_id_index": {
+          "name": "customer_savings_lines_order_item_id_index",
+          "columns": [
+            {
+              "expression": "order_item_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "customer_savings_lines_entry_id_customer_savings_entries_id_fk": {
+          "name": "customer_savings_lines_entry_id_customer_savings_entries_id_fk",
+          "tableFrom": "customer_savings_lines",
+          "tableTo": "customer_savings_entries",
+          "columnsFrom": [
+            "entry_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "customer_savings_lines_order_item_id_order_items_id_fk": {
+          "name": "customer_savings_lines_order_item_id_order_items_id_fk",
+          "tableFrom": "customer_savings_lines",
+          "tableTo": "order_items",
+          "columnsFrom": [
+            "order_item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "customer_savings_lines_entryId_orderItemId_unique": {
+          "name": "customer_savings_lines_entryId_orderItemId_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "entry_id",
+            "order_item_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.customer_savings_entries": {
+      "name": "customer_savings_entries",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "customer_savings_entries_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "order_id": {
+          "name": "order_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "refund_id": {
+          "name": "refund_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "city_id": {
+          "name": "city_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mrp_paise": {
+          "name": "mrp_paise",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "coupon_paise": {
+          "name": "coupon_paise",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "coins_paise": {
+          "name": "coins_paise",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "delivery_paise": {
+          "name": "delivery_paise",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_paise": {
+          "name": "total_paise",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "refund_paise": {
+          "name": "refund_paise",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "counted_lines": {
+          "name": "counted_lines",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "excluded_lines": {
+          "name": "excluded_lines",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "period_at": {
+          "name": "period_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "customer_savings_entries_delivered_once": {
+          "name": "customer_savings_entries_delivered_once",
+          "columns": [
+            {
+              "expression": "order_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"customer_savings_entries\".\"kind\" = 'delivered'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "customer_savings_entries_refund_once": {
+          "name": "customer_savings_entries_refund_once",
+          "columns": [
+            {
+              "expression": "refund_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "customer_savings_entries_user_period_idx": {
+          "name": "customer_savings_entries_user_period_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "period_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "customer_savings_entries_order_id_index": {
+          "name": "customer_savings_entries_order_id_index",
+          "columns": [
+            {
+              "expression": "order_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "customer_savings_entries_city_id_index": {
+          "name": "customer_savings_entries_city_id_index",
+          "columns": [
+            {
+              "expression": "city_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "customer_savings_entries_user_id_users_id_fk": {
+          "name": "customer_savings_entries_user_id_users_id_fk",
+          "tableFrom": "customer_savings_entries",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "customer_savings_entries_order_id_orders_id_fk": {
+          "name": "customer_savings_entries_order_id_orders_id_fk",
+          "tableFrom": "customer_savings_entries",
+          "tableTo": "orders",
+          "columnsFrom": [
+            "order_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "customer_savings_entries_refund_id_refunds_id_fk": {
+          "name": "customer_savings_entries_refund_id_refunds_id_fk",
+          "tableFrom": "customer_savings_entries",
+          "tableTo": "refunds",
+          "columnsFrom": [
+            "refund_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "customer_savings_entries_city_id_cities_id_fk": {
+          "name": "customer_savings_entries_city_id_cities_id_fk",
+          "tableFrom": "customer_savings_entries",
+          "tableTo": "cities",
+          "columnsFrom": [
+            "city_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "customer_savings_entries_kind_valid": {
+          "name": "customer_savings_entries_kind_valid",
+          "value": "\"customer_savings_entries\".\"kind\" in ('delivered','refund')"
+        },
+        "customer_savings_entries_refund_set": {
+          "name": "customer_savings_entries_refund_set",
+          "value": "(\"customer_savings_entries\".\"kind\" = 'refund') = (\"customer_savings_entries\".\"refund_id\" is not null)"
+        },
+        "customer_savings_entries_total": {
+          "name": "customer_savings_entries_total",
+          "value": "\"customer_savings_entries\".\"total_paise\" = \"customer_savings_entries\".\"mrp_paise\" + \"customer_savings_entries\".\"coupon_paise\" + \"customer_savings_entries\".\"coins_paise\" + \"customer_savings_entries\".\"delivery_paise\""
+        },
+        "customer_savings_entries_sign": {
+          "name": "customer_savings_entries_sign",
+          "value": "case \"customer_savings_entries\".\"kind\"\n        when 'delivered' then \"customer_savings_entries\".\"mrp_paise\" >= 0 and \"customer_savings_entries\".\"coupon_paise\" >= 0 and \"customer_savings_entries\".\"coins_paise\" >= 0 and \"customer_savings_entries\".\"delivery_paise\" >= 0 and \"customer_savings_entries\".\"refund_paise\" = 0\n        else \"customer_savings_entries\".\"mrp_paise\" <= 0 and \"customer_savings_entries\".\"coupon_paise\" <= 0 and \"customer_savings_entries\".\"coins_paise\" <= 0 and \"customer_savings_entries\".\"delivery_paise\" <= 0 and \"customer_savings_entries\".\"refund_paise\" > 0 end"
+        },
+        "customer_savings_entries_lines_nonneg": {
+          "name": "customer_savings_entries_lines_nonneg",
+          "value": "\"customer_savings_entries\".\"counted_lines\" >= 0 and \"customer_savings_entries\".\"excluded_lines\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.variant_price_daily": {
+      "name": "variant_price_daily",
+      "schema": "",
+      "columns": {
+        "day": {
+          "name": "day",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "variant_id": {
+          "name": "variant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "city_id": {
+          "name": "city_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mrp_paise": {
+          "name": "mrp_paise",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "min_price_paise": {
+          "name": "min_price_paise",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "offers": {
+          "name": "offers",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "variant_price_daily_variant_id_day_index": {
+          "name": "variant_price_daily_variant_id_day_index",
+          "columns": [
+            {
+              "expression": "variant_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "day",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "variant_price_daily_city_id_index": {
+          "name": "variant_price_daily_city_id_index",
+          "columns": [
+            {
+              "expression": "city_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "variant_price_daily_variant_id_product_variants_id_fk": {
+          "name": "variant_price_daily_variant_id_product_variants_id_fk",
+          "tableFrom": "variant_price_daily",
+          "tableTo": "product_variants",
+          "columnsFrom": [
+            "variant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "variant_price_daily_city_id_cities_id_fk": {
+          "name": "variant_price_daily_city_id_cities_id_fk",
+          "tableFrom": "variant_price_daily",
+          "tableTo": "cities",
+          "columnsFrom": [
+            "city_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "variant_price_daily_day_variant_id_city_id_pk": {
+          "name": "variant_price_daily_day_variant_id_city_id_pk",
+          "columns": [
+            "day",
+            "variant_id",
+            "city_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "variant_price_daily_amounts": {
+          "name": "variant_price_daily_amounts",
+          "value": "(\"variant_price_daily\".\"mrp_paise\" is null or \"variant_price_daily\".\"mrp_paise\" >= 0) and (\"variant_price_daily\".\"min_price_paise\" is null or \"variant_price_daily\".\"min_price_paise\" >= 0) and \"variant_price_daily\".\"offers\" >= 0"
         }
       },
       "isRLSEnabled": false

@@ -49,6 +49,7 @@ import {
 } from '@mechdost/shared/coupon-api';
 import type { AuditCase } from '../cases.ts';
 import { layoutMocks, policyMocks, settingsMocks } from './admin-config-fixtures.ts';
+import { usageMocks } from './usage-fixtures.ts';
 import { homeFinderMocks, homeJobMocks, homeRequestMocks } from './home-fixtures.ts';
 import { adminWorkshopAnalyticsMocks, workshopPerformanceMocks } from './workshop-analytics-fixtures.ts';
 import { customerPhotoMocks, productPhotoMocks, workshopPhotoMocks } from './photo-fixtures.ts';
@@ -1781,6 +1782,8 @@ export function mocksFor(c: AuditCase): Mock[] {
       return queueMocks();
     case 'API-ADM-ERRORS':
       return errorsMocks();
+    case 'API-ADM-USAGE':
+      return [meMock(), ...usageMocks(c)];
     case 'API-ADM-ANALYTICS':
       return analyticsMocks();
     case 'API-ADM-WORKSHOPS':

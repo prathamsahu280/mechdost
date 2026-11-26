@@ -78,3 +78,63 @@ Never use the CI token (`SENTRY_AUTH_TOKEN`) here: it can upload releases. To re
 - **Slow mail (incident 2026-11-16, bug 7):** rows needing attempts 2-3 and 150-250 s were a send-time lookup (template override, company, trust line, bill source) hanging on the shared pool until the 120 s server statement_timeout (57014) while the 120 s lease ran out. Every dispatcher step now has a LOCAL statement_timeout (8 s) and an app deadline (12 s); lookups get 4-10 s then fall back to the default text; the provider call has 30 s. Read: `notify_dispatch_failed` / `notify_tick_stuck` carry `phase` (claim, renew, send, record, event; stuck = no phase change for 45 s); `notify_record_failed_after_send` = the database was slow after the mail went out (retried once, never resent). SQL check: `select count(*) from notification_outbox where last_error = 'lease_expired' or attempts > 1` for recent rows; **any `lease_expired` means a sender hung or the worker died mid-send** and should be rare (none in normal days); `send_timeout` = provider call over 30 s.
 - The dispatcher uses its own 1-connection pool (the other jobs share 2), so exports/copurchase cannot starve it.
 - Error lines from `safeError` now carry `pgCode` (SQLSTATE) and `reason` (the database's or driver's own message of the wrapped cause, max 200 chars, quoted values hidden for data errors; never the query or parameters). A `data_exports_failed` with no `pgCode` and a `reason` like "argument must be of type string" is a driver-side encoding bug, not a database problem.
+
+## Usage & limits (free-plan warnings, founder 2026-11-26)
+
+Founder: "can u list the storage and stuff via these? and like give me warnings when we are about to exceed the free
+limits right". Admin → **Usage & limits** (`/admin/usage`), the daily worker check, and `pnpm usage:check`.
+
+### What is measured
+
+| Metric code                                | Provider | How                                                                                                                | Default limit (free plan, checked 2026-11-26) |
+| ------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- |
+| `r2_storage_bytes`                         | R2       | S3 ListObjectsV2 over the four `R2_BUCKET_*` buckets (SigV4, our signer), sum of sizes                             | 10 GB (10^9 bytes)                            |
+| `r2_objects_count`                         | R2       | same listing                                                                                                       | none (shown only)                             |
+| `r2_class_a_ops_month_count`               | R2       | **estimated**: our own count of uploads, copies, puts and listings (in-memory, flushed every minute)               | 1,000,000 / month                             |
+| `r2_class_b_ops_month_count`               | R2       | **estimated**: our own count of signed reads, heads and range reads                                                | 10,000,000 / month                            |
+| `supabase_db_bytes`                        | Supabase | `pg_database_size(current_database())`                                                                             | 500 MB                                        |
+| `supabase_storage_bytes`, `_objects_count` | Supabase | `sum(metadata->>'size')` and `count(*)` of `storage.objects` (read-only)                                           | 1 GB / none                                   |
+| `server_disk_used_bytes`                   | Server   | `statfs(USAGE_DISK_PATH)` inside the container (the Docker root filesystem on the VPS disk)                        | the measured total                            |
+| `server_memory_used_bytes`                 | Server   | `MemTotal − MemAvailable` from `/proc/meminfo` (host figure); alerts **off** by default (a moment's reading)       | the measured total                            |
+| `resend_emails_month_count`, `_day_count`  | Resend   | **estimated**: emails our dispatcher marked sent this UTC month / in the last 24 h (index `outbox_email_sent_idx`) | 3,000 / month, 100 / day                      |
+
+Sources for the defaults: https://supabase.com/pricing (Free: 500 MB database, 1 GB file storage, 5 GB egress),
+https://developers.cloudflare.com/r2/pricing/ (10 GB-month, 1M Class A, 10M Class B; Class A/B operation lists),
+https://resend.com/pricing (Free: 3,000 emails a month, 100 a day). Decimal units (1 GB = 10^9 bytes) warn a little
+earlier where a provider does not say which it uses. **If a plan changes, edit the limit on the page** (hard rule 8).
+
+**Exact R2 operations (optional):** set `CLOUDFLARE_ANALYTICS_TOKEN` in the server `.env` (Cloudflare → My Profile →
+API Tokens → Create → Custom: permission **Account → Account Analytics → Read**, the MechDost account only). The check
+then reads `r2OperationsAdaptiveGroups` from the GraphQL Analytics API and labels the values "provider" instead of
+"estimated". Without it nothing breaks.
+
+**Not measured (by design):** Upstash Redis usage (needs a separate Upstash management API key; the database token
+cannot read usage) and Resend's own counters (need a full-access key; ours is send-only). Supabase egress is not in
+Postgres; read it in the Supabase dashboard (Usage).
+
+### When it runs and what it sends
+
+- **Daily**: the worker checks every hour (first time 2 minutes after start) and runs when the last daily check
+  finished more than 23 h ago, so a restart never skips a day. Log line `usage_checked {stored, alerts, r2, supabase,
+server, resend}`; failures `usage_check_failed` (never stops the worker).
+- **Check now** (page header): 6 per hour per person and 12 per hour in total (each one lists the R2 buckets).
+- Each provider answers `ok`, `not_configured` (no keys: skipped quietly), `failed` (nothing stored, never a 0) or
+  `partial` (R2 listing cut at 200 pages per bucket or 20 s; outside Supabase the storage schema is missing).
+- **Alerts:** at the warning (default 70 %) and critical (default 90 %) thresholds, one bell notice
+  (`staff.usage_alert`, to staff with an all-cities `settings:read`: super admin, operations manager) and one email
+  (`usage_limit_alert`, Admin → Notifications → Emails → "Emails to the MechDost team") per **metric, level and UTC
+  month**. Crossing both at once sends only critical; a warning after that month's critical sends nothing. Recipients:
+  the addresses typed on the page (in the chosen language), else every active super admin with a confirmed email (in
+  their own language). No recovery note.
+
+### Reading and fixing
+
+- `docker compose logs worker | grep usage_` for the daily line. On the page: "Not set up" = the provider's keys are
+  missing; "Could not be read" = the last check failed (numbers shown are older); "Partly read" = a floor.
+- R2 `failed`: the R2 token needs **Object Read** on every bucket listed (ListObjectsV2 is part of Object Read).
+- `pnpm usage:check` on the server (`docker compose exec api node …` is not needed: run it from a checkout with the
+  production `.env`) prints the table only; `--record` stores the check and sends alerts like the daily job. It never
+  prints keys, tokens or addresses.
+- Tables (migration 0103): `usage_runs`, `usage_snapshots` (append-only, ML-ready: metric code with its unit, bigint
+  value, limit at the time, source, UTC time), `usage_alerts` (append-only, unique per metric + level + month),
+  `usage_limits` and `usage_alert_config` (the admin's, versioned and audited), `usage_counters` (our R2 counts).

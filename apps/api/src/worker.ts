@@ -37,6 +37,7 @@ import {
   releaseDueCoinRewards,
   expireQuotes,
   globalIntSetting,
+  lastUsageRunAt,
   loadBillSource,
   purgeFinishedNotices,
   purgeOldNotices,
@@ -65,6 +66,7 @@ import { startRelay } from './live/relay';
 import { createRtdbPublisher } from './live/rtdb';
 import { log, safeError } from './logger';
 import { startSentry } from './monitoring/sentry';
+import { runUsageCheck, usageSourcesFromConfig } from './usage/check';
 
 let config;
 try {
@@ -698,6 +700,32 @@ const partitions = () => {
 partitions();
 const partitionTimer = setInterval(partitions, 12 * 3_600_000);
 partitionTimer.unref();
+// Usage & limits (founder 2026-11-26; runbook monitoring.md): the daily check. Every hour (and 2 minutes after start)
+// it runs when the last daily check finished more than 23 h ago, so a restart never skips a day. Measuring happens
+// outside any transaction; storing and alerting is one short transaction under an advisory lock (two workers never
+// alert twice: one alert per metric, level and month is a unique row).
+let checkingUsage = false;
+const usageSources = usageSourcesFromConfig(config);
+const dailyUsageCheck = () => {
+  if (checkingUsage) return;
+  checkingUsage = true;
+  void lastUsageRunAt(db, 'schedule')
+    .then(async (last) => {
+      if (last && Date.now() - last.getTime() < 23 * 3_600_000) return;
+      const r = await runUsageCheck(db, usageSources, { trigger: 'schedule', actor: { type: 'system' } });
+      log('info', 'usage_checked', { stored: r.stored, alerts: r.alerts.length, ...r.statuses });
+    })
+    .catch((err: unknown) => {
+      log('error', 'usage_check_failed', safeError(err));
+    })
+    .finally(() => {
+      checkingUsage = false;
+    });
+};
+const usageStart = setTimeout(dailyUsageCheck, 120_000);
+usageStart.unref();
+const usageTimer = setInterval(dailyUsageCheck, 3_600_000);
+usageTimer.unref();
 // PostHog EU (decision 2026-11-14): consented events from the store, every 10 s, never on a request path. Rows
 // wait 60 s (late commits); after a restart the read starts 10 minutes back (PostHog drops duplicates by uuid).
 const posthog = config.posthog
@@ -745,6 +773,8 @@ function shutdown(signal: string) {
   clearInterval(ustaadTimer);
   clearInterval(quoteTimer);
   clearInterval(partitionTimer);
+  clearTimeout(usageStart);
+  clearInterval(usageTimer);
   clearInterval(reminderTimer);
   clearInterval(noticeHourlyTimer);
   clearInterval(retentionTimer);

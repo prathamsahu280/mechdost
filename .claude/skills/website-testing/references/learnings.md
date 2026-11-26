@@ -364,3 +364,8 @@ ustaad-console.test.ts` (held answer/question/comment/post/message, NCII re-hold
 - T-P23c · 2026-11-26 · e2e/ports · The consent fixture's origin is `localhost:3100`; running on another port (to avoid
   other agents' servers) shows the consent banner, which covers element screenshots · seed `mechdost-consent` with
   `addInitScript` for any port.
+- T-USAGE1 · 2026-11-26 · admin UI (usage) · fixture/test bearer tokens shorter than 20 characters fail the
+  `BEARER` regex and every request answers 401, which looks like a permission bug · tokens in
+  `apps/api/test/admin-usage.test.ts` are 20+ chars; reuse the `token-<area>-0000000NN` shape.
+- T-USAGE2 · 2026-11-26 · notices · a new bell kind with placeholders fails `notice-catalogue.test.ts` until its
+  placeholders are in the test's `SAMPLE` (`metric`, `percent` added) · add the sample values in the same change.

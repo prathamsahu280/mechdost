@@ -130,3 +130,4 @@ export * from './roadside-messages';
 export * from './ustaad-correction';
 // Ustaad Network (spec 23): every name carries the `ustaad` prefix.
 export * from './ustaad';
+export * from './usage';

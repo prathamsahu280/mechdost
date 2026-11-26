@@ -548,6 +548,31 @@ export interface ServerEventProps extends UstaadServerEventProps {
   auth_password_changed_notified: {
     outcome: 'queued' | 'duplicate' | 'no_recent_change';
   };
+  /**
+   * Usage and free limits (founder 2026-11-26): one stored check. Provider statuses and counts only; `userId` is the
+   * staff member for "Check now", null for the daily job.
+   */
+  usage_check_run: {
+    runId: string;
+    trigger: 'schedule' | 'manual' | 'cli';
+    metrics: number;
+    alerts: number;
+    r2: string;
+    supabase: string;
+    server: string;
+    resend: string;
+  };
+  /** A metric reached a threshold (one per metric, level and UTC month); `percentBp` 7000 = 70 %. */
+  usage_alert_raised: { metric: string; level: 'warn' | 'critical'; percentBp: number; period: string };
+  /** The admin changed a limit or its alerts (`limit` null = back to the default). */
+  admin_usage_limit_saved: { metric: string; limit: number | null; alerts: boolean };
+  /** The admin changed the thresholds or recipients; counts only, never the addresses. */
+  admin_usage_alerts_saved: {
+    warnPct: number;
+    criticalPct: number;
+    recipients: number;
+    emailLocale: 'en' | 'hi';
+  };
 }
 export type ServerEvent = keyof ServerEventProps;
 

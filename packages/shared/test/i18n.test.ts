@@ -71,6 +71,7 @@ describe('locale messages', () => {
       'portal.cat_add_unit_ml', // units stay Latin (hard rule 10)
       'portal.cat_add_unit_g',
       'portal.cat_add_unit_m',
+      'adminUsage.limit_unit_gb', // units stay Latin (hard rule 10)
     ]);
     for (const [key, value] of hiLeaves) {
       if (allowedLatin.has(key)) continue;

@@ -9,6 +9,7 @@ import type { TurnstileVerifier } from '../src/auth/turnstile';
 import { TokenError, type TokenVerifier, type VerifiedToken } from '../src/auth/token-verifier';
 import { loadConfig } from '../src/config';
 import type { PreviewDeps } from '../src/ustaad/link-preview';
+import type { UsageSources } from '../src/usage/check';
 import type { PhotoByteCache } from '../src/photos/byte-cache';
 import type { PhotoStorage } from '../src/photos/storage';
 import type { RazorpayGateway } from '../src/payments/razorpay';
@@ -169,6 +170,7 @@ export async function buildApp(
     mediaHost?: MediaHost | null;
     safetyClassifier?: ImageSafetyClassifier | null;
     linkPreview?: PreviewDeps | null;
+    usageSources?: UsageSources;
   } = {},
 ) {
   setLogSink(() => undefined);
@@ -199,6 +201,7 @@ export async function buildApp(
     mediaHost: opts.mediaHost ?? null,
     safetyClassifier: opts.safetyClassifier ?? null,
     linkPreview: opts.linkPreview ?? null,
+    ...(opts.usageSources ? { usageSources: opts.usageSources } : {}),
   });
   return { app, db, verifier };
 }

@@ -4,10 +4,12 @@
  */
 import { serve } from '@hono/node-server';
 import { createDb, keepPoolWarm } from '@mechdost/db';
+import { addUsageCounts } from '@mechdost/db/repo';
 import { loadKeyring, type Keyring } from '@mechdost/db/crypto';
 import { createApp } from './app';
 import { r2MediaHost } from './ustaad/media/r2';
 import { supabaseMediaHost } from './ustaad/media/supabase';
+import { countingMediaHost, createUsageCounter } from './usage/counter';
 import { createAnthropicProvider } from './assistant/provider';
 import { createAnthropicCorrection } from './ustaad/correction/anthropic';
 import { memoryCorrectionCache, redisCorrectionCache } from './ustaad/correction/cache';
@@ -78,9 +80,11 @@ else
 
 // Ustaad Network media (spec 23 § 10): R2 when its keys exist and MEDIA_HOST=r2, else Supabase Storage (Q-U1).
 const um = config.ustaadMedia;
+// Usage & limits (founder 2026-11-26): R2 calls are counted in memory (estimated Class A/B) and flushed every minute.
+const usageCounter = createUsageCounter();
 const mediaHost =
   um.host === 'r2' && um.r2
-    ? r2MediaHost({ ...um.r2, buckets: um.buckets })
+    ? countingMediaHost(r2MediaHost({ ...um.r2, buckets: um.buckets }), usageCounter)
     : um.supabase
       ? supabaseMediaHost({ ...um.supabase, buckets: um.buckets })
       : null;
@@ -141,14 +145,28 @@ const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
     });
 });
 
+const flushUsage = () =>
+  usageCounter
+    .flush((period, deltas) => addUsageCounts(db, period, deltas))
+    .catch((err: unknown) => {
+      log('warn', 'usage_counts_flush_failed', safeError(err));
+    });
+const usageFlushTimer = setInterval(() => {
+  void flushUsage();
+}, 60_000);
+usageFlushTimer.unref();
+
 let stopping = false;
 function shutdown(signal: string) {
   if (stopping) return;
   stopping = true;
   log('info', 'shutdown', { signal });
   stopWarm();
+  clearInterval(usageFlushTimer);
   server.close(() => {
-    void Promise.all([sql.end({ timeout: 5 }), sentry.flush()]).finally(() => process.exit(0));
+    void flushUsage()
+      .then(() => Promise.all([sql.end({ timeout: 5 }), sentry.flush()]))
+      .finally(() => process.exit(0));
   });
   setTimeout(() => process.exit(1), 9000).unref();
 }

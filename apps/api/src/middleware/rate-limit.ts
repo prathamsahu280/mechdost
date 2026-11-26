@@ -18,6 +18,10 @@ export const RATE_RULES = {
   adminSearch: { name: 'admin_search', limit: 30, windowSeconds: 60 },
   /** CSV exports (request and download each count): a few per hour per staff member is plenty, a script is not. */
   adminExport: { name: 'admin_export', limit: 40, windowSeconds: 3600 },
+  /** Usage "Check now" (founder 2026-11-26): each one lists the R2 buckets (Class A operations), so few per hour. */
+  usageCheck: { name: 'usage_check', limit: 6, windowSeconds: 3600 },
+  /** The same check for everyone together: several staff pressing it cannot multiply the listing cost. */
+  usageCheckGlobal: { name: 'usage_check_all', limit: 12, windowSeconds: 3600 },
 } as const satisfies Record<string, RateRule>;
 
 /**

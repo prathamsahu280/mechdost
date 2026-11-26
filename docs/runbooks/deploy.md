@@ -398,3 +398,14 @@ those four buckets. Server `.env`: `MEDIA_HOST=r2`, `R2_ACCOUNT_ID`, `R2_ACCESS_
 `deploy/set-env.sh`); GitHub variable `NEXT_PUBLIC_USTAAD_MEDIA_ORIGINS` (the web CSP, compiled at build time — the web
 image must be rebuilt after changing it). Verified: put/head/delete on all four buckets and the CORS preflight from
 mechdost.com. Free tier: 10 GB-month storage, 1M Class A and 10M Class B operations a month.
+
+### Usage & limits (2026-11-26)
+
+- **Migration 0103** (`0104_usage_monitoring`) before the code that reads it (§ 6): six new tables, the notice entity
+  type `platform` and the index `outbox_email_sent_idx` on `notification_outbox`. If 0101/0102 from other streams are
+  merged later, append their journal entries before 0103 or re-stamp `when` so nothing is skipped (L106).
+- **Optional env** (server `.env`, API + worker get it through `env_file`): `CLOUDFLARE_ANALYTICS_TOKEN` (exact R2
+  operation counts) and `USAGE_DISK_PATH` (default `/`). After changing `.env`: `docker compose up -d api worker`.
+- **R2 token:** the check lists the four buckets (ListObjectsV2), which "Object Read & Write" already allows.
+- **After deploy:** Admin → Usage & limits → Check now, or `pnpm usage:check` from a checkout with the production
+  `.env` (prints only). The worker logs `usage_checked` once a day. Details: `docs/runbooks/monitoring.md`.

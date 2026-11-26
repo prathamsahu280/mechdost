@@ -20,6 +20,7 @@ import type { FeedSnapshotStore } from './ustaad/feed/snapshot';
 import type { PreviewDeps } from './ustaad/link-preview';
 import type { MediaHost } from './ustaad/media/host';
 import type { ImageSafetyClassifier } from './ustaad/safety/classifier';
+import type { UsageSources } from './usage/check';
 
 /** Everything the app needs from the outside world — injected so tests use PGlite and fakes. */
 export interface AppDeps {
@@ -59,6 +60,8 @@ export interface AppDeps {
   feedSnapshots?: FeedSnapshotStore;
   /** SSRF-safe link-preview fetcher (spec 23 § 10a); null/absent = no previews (tests, development). */
   linkPreview?: PreviewDeps | null;
+  /** Where Usage & limits reads R2, the disk and email counts (founder 2026-11-26); absent = from `config`. */
+  usageSources?: UsageSources;
 }
 
 export interface AuthContext {

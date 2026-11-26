@@ -79,7 +79,7 @@ export function EmailsPanel() {
     return map;
   }, [rows]);
 
-  const groups = (['customer', 'partner'] as const).map((audience) => ({
+  const groups = (['customer', 'partner', 'staff'] as const).map((audience) => ({
     audience,
     keys: emailTemplateKeys().filter((k) => EMAIL_TEMPLATES[k].audience === audience),
   }));
@@ -111,7 +111,13 @@ export function EmailsPanel() {
         ? groups.map((g) => (
             <section key={g.audience} aria-labelledby={`emails-${g.audience}`} className="space-y-3">
               <h3 id={`emails-${g.audience}`} className="font-heading text-base font-extrabold text-ink">
-                {t(g.audience === 'customer' ? 'group_customer' : 'group_partner')}
+                {t(
+                  g.audience === 'customer'
+                    ? 'group_customer'
+                    : g.audience === 'partner'
+                      ? 'group_partner'
+                      : 'group_staff',
+                )}
               </h3>
               <ul className="grid gap-3">
                 {g.keys.map((key) => (

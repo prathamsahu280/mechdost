@@ -45,6 +45,8 @@ export const REAL_ADMIN_SECTIONS = [
   'audit',
   'exports',
   'errors',
+  // Usage & limits (founder 2026-11-26).
+  'usage',
   // Ustaad Network settings (spec 23, task G1).
   'ustaad',
 ] as const;
@@ -803,6 +805,26 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
       { name: 'errors', values: ['not-connected', 'none', 'issues', 'one-down', 'many-long', 'error'] },
     ],
     sweep: 12,
+    note: API_NOTE,
+    realApi: true,
+  },
+
+  // ─────────────── Admin → Usage & limits (founder 2026-11-26) ───────────────
+  {
+    code: 'API-ADM-USAGE',
+    page: 'Admin → Usage & limits, real sign-in',
+    component:
+      'Bullet bars with warning and critical marks, 30-day sparklines, provider status, inline limit edit, alert settings; never checked, full, read-only, R2 not set up and Supabase failed, read error',
+    path: '/admin/usage',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['admin'] },
+      { name: 'usage', values: ['empty', 'full', 'readonly', 'mixed', 'error'] },
+      stress,
+    ],
+    sweep: 10,
     note: API_NOTE,
     realApi: true,
   },

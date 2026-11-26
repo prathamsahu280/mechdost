@@ -196,6 +196,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ADM-SHOPS              | Admin → Partners → Shops, real sign-in                                                     | Shop list with status filter and one shop open: profile (hours), PIN codes, products, standing, warnings (pause prompt), access                                                                                                                                                 | pairwise | 58       | 0       |
 | API-ADM-QUEUE              | Admin → Orders (needs routing), real sign-in                                               | Reroute queue card with the shop's give-up reason and the "gave this order up before" tag                                                                                                                                                                                       | pairwise | 56       | 0       |
 | API-ADM-ERRORS             | Admin → Errors, real sign-in                                                               | Sentry issues of the website and the API: not connected, none, many, one project down                                                                                                                                                                                           | pairwise | 48       | 0       |
+| API-ADM-USAGE              | Admin → Usage & limits, real sign-in                                                       | Bullet bars with warning and critical marks, 30-day sparklines, provider status, inline limit edit, alert settings; never checked, full, read-only, R2 not set up and Supabase failed, read error                                                                               | pairwise | 40       | 0       |
 | API-ADM-ANALYTICS          | Admin → Analytics, real sign-in                                                            | Dashboard: KPI tiles, daily chart, funnel, top lists, areas, shop and workshop tables, range and city                                                                                                                                                                           | pairwise | 40       | 0       |
 | API-ADM-WORKSHOPS          | Admin → Analytics → Workshops, real sign-in                                                | Workshops tab: city note, totals with city medians, sortable table; no / one / two (no medians) / many workshops, a quiet one among them, a city-scoped staff member, a timeout                                                                                                 | pairwise | 48       | 0       |
 | API-WS-PERFORMANCE         | Workshop portal (/partner/workshop), real sign-in                                          | Performance section behind its button: own numbers beside the anonymised city median, no median below three workshops, nothing in the range, 90 days, a timeout, a staff account refused                                                                                        | pairwise | 48       | 0       |
@@ -217,8 +218,8 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ADM-AUDIT              | Admin → Audit log, real sign-in                                                            | Audit log: filters, entries (closed and open with before/after), more, empty, load error                                                                                                                                                                                        | pairwise | 32       | 0       |
 | API-ADM-EXPORTS            | Admin → Exports, real sign-in                                                              | CSV exports: the form (dataset, city, dates), customers with masked or open contacts, done, empty file, too many rows, expired link, range over 180 days, nothing allowed, load error                                                                                           | pairwise | 80       | 0       |
 | API-ADM-SCROLL             | Admin console, real sign-in                                                                | Scroll geometry: the page is the only vertical scroller, the side bar stays in view under the header after scrolling, never two tall columns stuck (overview, orders, catalogue, customers, settings, audit log)                                                                | cross    | 30       | 0       |
-| API-ADM-HEADER             | Admin console, real sign-in                                                                | Page pattern: one header per section (title = side bar item, one-line description, primary action on the right), status badges, empty states, table boxes; 320 to 1920 px, both themes, English and Hindi                                                                       | pairwise | 144      | 0       |
-| API-NAV-ADMIN              | Navigation, real sign-in                                                                   | Admin section bar with every real-mode section (Analytics, Refunds, Errors included): current item, scroll, walk                                                                                                                                                                | cross    | 192      | 0       |
+| API-ADM-HEADER             | Admin console, real sign-in                                                                | Page pattern: one header per section (title = side bar item, one-line description, primary action on the right), status badges, empty states, table boxes; 320 to 1920 px, both themes, English and Hindi                                                                       | pairwise | 150      | 0       |
+| API-NAV-ADMIN              | Navigation, real sign-in                                                                   | Admin section bar with every real-mode section (Analytics, Refunds, Errors included): current item, scroll, walk                                                                                                                                                                | cross    | 200      | 0       |
 | API-NAV-ACCOUNT            | Navigation, real sign-in                                                                   | Account section bar in a real-sign-in build: current item, scroll, walk                                                                                                                                                                                                         | cross    | 104      | 0       |
 | API-USTAAD-JOIN            | Ustaad join (/ustaad/join; the same flow on /partners/apply/mechanic while access is open) | Five-step join: who are you, what you fix, details, how to verify, choices (one required consent); errors focused                                                                                                                                                               | pairwise | 40       | 0       |
 | API-USTAAD-WELCOME         | Ustaad first-time guide (/ustaad/welcome)                                                  | Guide cards with Listen (staff recording or speech), Next / Back / Skip, the last card, reduced motion                                                                                                                                                                          | pairwise | 40       | 0       |
@@ -237,7 +238,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-USTAAD-NETWORK         | Ustaad My network (/ustaad/network), member                                                | Followers / Following / Connections / Requests / Blocked tab links; Message, Remove, Unfollow, Accept, Decline, Take back, Unblock, Unmute; limits note; empty states; Show more; cap and cooldown words                                                                        | pairwise | 41       | 0       |
 | API-USTAAD-DISCOVER        | Ustaad Discover (/ustaad/discover), member                                                 | Search (submit) with work and level filters; people cards: level chip, verified tick, area and distance band, specialities, helpful / best, New, Follow, Connect, Message; tags; Top this week; no match; Show more                                                             | pairwise | 56       | 0       |
 | API-ADM-APPS-USTAAD        | Admin → Partner applications (/admin/applications), real sign-in                           | Notice "Mechanic applications moved to the Ustaad Network" with the open verification count and the queue link (only for verifying staff while access is open)                                                                                                                  | pairwise | 32       | 0       |
-| **Total**                  |                                                                                            |                                                                                                                                                                                                                                                                                 |          | **6232** | **107** |
+| **Total**                  |                                                                                            |                                                                                                                                                                                                                                                                                 |          | **6286** | **107** |
 
 ## Chrome
 
@@ -5169,6 +5170,53 @@ Pairwise (all pairs of values); 48 states; scope `main`.
 - [ ] API-ADM-ERRORS-047 · 1920px · light · en · admin · world=empty · /admin/errors · errors=many-long · asserts: present inside overlap covered clipped tap hscroll focus console
 - [ ] API-ADM-ERRORS-048 · 1920px · dark · hi · admin · world=empty · /admin/errors · errors=error · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 
+## Admin → Usage & limits, real sign-in
+
+### API-ADM-USAGE — Bullet bars with warning and critical marks, 30-day sparklines, provider status, inline limit edit, alert settings; never checked, full, read-only, R2 not set up and Supabase failed, read error
+
+Pairwise (all pairs of values); 40 states; scope `main`.
+
+- [ ] API-ADM-USAGE-001 · 320px · light · en · admin · world=empty · /admin/usage · usage=empty · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-USAGE-002 · 320px · dark · hi · admin · world=empty · /admin/usage · usage=full · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-USAGE-003 · 390px · light · hi · admin · world=empty · /admin/usage · usage=readonly · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-USAGE-004 · 390px · dark · en · admin · world=empty · /admin/usage · usage=mixed · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-USAGE-005 · 480px · light · en · admin · world=empty · /admin/usage · usage=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-USAGE-006 · 480px · dark · hi · admin · world=empty · /admin/usage · usage=empty · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-USAGE-007 · 768px · light · en · admin · world=empty · /admin/usage · usage=full · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-USAGE-008 · 768px · dark · hi · admin · world=empty · /admin/usage · usage=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-USAGE-009 · 1024px · light · en · admin · world=empty · /admin/usage · usage=readonly · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-USAGE-010 · 1024px · dark · hi · admin · world=empty · /admin/usage · usage=mixed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-USAGE-011 · 1280px · light · en · admin · world=empty · /admin/usage · usage=mixed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-USAGE-012 · 1280px · dark · hi · admin · world=empty · /admin/usage · usage=readonly · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-USAGE-013 · 1440px · light · en · admin · world=empty · /admin/usage · usage=empty · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-USAGE-014 · 1440px · dark · hi · admin · world=empty · /admin/usage · usage=full · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-USAGE-015 · 1920px · light · en · admin · world=empty · /admin/usage · usage=error · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-USAGE-016 · 1920px · dark · hi · admin · world=empty · /admin/usage · usage=empty · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-USAGE-017 · 320px · light · en · admin · world=empty · /admin/usage · usage=readonly · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-USAGE-018 · 320px · dark · hi · admin · world=empty · /admin/usage · usage=mixed · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-USAGE-019 · 320px · light · en · admin · world=empty · /admin/usage · usage=error · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-USAGE-020 · 390px · dark · hi · admin · world=empty · /admin/usage · usage=empty · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-USAGE-021 · 390px · light · en · admin · world=empty · /admin/usage · usage=full · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-USAGE-022 · 390px · dark · hi · admin · world=empty · /admin/usage · usage=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-USAGE-023 · 480px · light · en · admin · world=empty · /admin/usage · usage=full · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-USAGE-024 · 480px · dark · hi · admin · world=empty · /admin/usage · usage=readonly · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-USAGE-025 · 480px · light · en · admin · world=empty · /admin/usage · usage=mixed · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-USAGE-026 · 768px · dark · hi · admin · world=empty · /admin/usage · usage=empty · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-USAGE-027 · 768px · light · en · admin · world=empty · /admin/usage · usage=readonly · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-USAGE-028 · 768px · dark · hi · admin · world=empty · /admin/usage · usage=mixed · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-USAGE-029 · 1024px · light · en · admin · world=empty · /admin/usage · usage=empty · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-USAGE-030 · 1024px · dark · hi · admin · world=empty · /admin/usage · usage=full · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-USAGE-031 · 1024px · light · en · admin · world=empty · /admin/usage · usage=error · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-USAGE-032 · 1280px · dark · hi · admin · world=empty · /admin/usage · usage=empty · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-USAGE-033 · 1280px · light · en · admin · world=empty · /admin/usage · usage=full · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-USAGE-034 · 1280px · dark · hi · admin · world=empty · /admin/usage · usage=error · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-USAGE-035 · 1440px · light · en · admin · world=empty · /admin/usage · usage=readonly · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-USAGE-036 · 1440px · dark · hi · admin · world=empty · /admin/usage · usage=mixed · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-USAGE-037 · 1440px · light · en · admin · world=empty · /admin/usage · usage=error · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-ADM-USAGE-038 · 1920px · dark · hi · admin · world=empty · /admin/usage · usage=full · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-ADM-USAGE-039 · 1920px · light · en · admin · world=empty · /admin/usage · usage=readonly · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-ADM-USAGE-040 · 1920px · dark · hi · admin · world=empty · /admin/usage · usage=mixed · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
 ## Admin → Analytics, real sign-in
 
 ### API-ADM-ANALYTICS — Dashboard: KPI tiles, daily chart, funnel, top lists, areas, shop and workshop tables, range and city
@@ -6141,7 +6189,7 @@ Full cross of the high-risk dimensions, the rest pairwise; 30 states; scope `mai
 
 ### API-ADM-HEADER — Page pattern: one header per section (title = side bar item, one-line description, primary action on the right), status badges, empty states, table boxes; 320 to 1920 px, both themes, English and Hindi
 
-Pairwise (all pairs of values); 144 states; scope `main`.
+Pairwise (all pairs of values); 150 states; scope `main`.
 
 - [ ] API-ADM-HEADER-001 · 320px · light · en · admin · world=empty · /admin · asserts: present adminhead hscroll console axe
 - [ ] API-ADM-HEADER-002 · 320px · dark · hi · admin · world=empty · /admin/analytics · asserts: present adminhead hscroll console hindi
@@ -6166,133 +6214,139 @@ Pairwise (all pairs of values); 144 states; scope `main`.
 - [ ] API-ADM-HEADER-021 · 320px · light · en · admin · world=empty · /admin/audit · asserts: present adminhead hscroll console axe
 - [ ] API-ADM-HEADER-022 · 320px · dark · hi · admin · world=empty · /admin/exports · asserts: present adminhead hscroll console hindi
 - [ ] API-ADM-HEADER-023 · 320px · light · en · admin · world=empty · /admin/errors · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-024 · 320px · dark · hi · admin · world=empty · /admin/ustaad · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-025 · 390px · dark · hi · admin · world=empty · /admin · asserts: present adminhead hscroll console hindi axe
-- [ ] API-ADM-HEADER-026 · 390px · light · en · admin · world=empty · /admin/analytics · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-027 · 390px · dark · en · admin · world=empty · /admin/orders · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-028 · 390px · light · hi · admin · world=empty · /admin/refunds · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-029 · 390px · dark · hi · admin · world=empty · /admin/services · asserts: present adminhead hscroll console hindi axe
-- [ ] API-ADM-HEADER-030 · 390px · light · en · admin · world=empty · /admin/roadside · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-031 · 390px · dark · hi · admin · world=empty · /admin/quotes · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-032 · 390px · light · en · admin · world=empty · /admin/applications · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-033 · 390px · dark · hi · admin · world=empty · /admin/partners · asserts: present adminhead hscroll console hindi axe
-- [ ] API-ADM-HEADER-034 · 390px · light · en · admin · world=empty · /admin/catalogue · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-035 · 390px · dark · hi · admin · world=empty · /admin/customers · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-036 · 390px · light · en · admin · world=empty · /admin/reviews · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-037 · 390px · dark · hi · admin · world=empty · /admin/support · asserts: present adminhead hscroll console hindi axe
-- [ ] API-ADM-HEADER-038 · 390px · light · en · admin · world=empty · /admin/coins · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-039 · 390px · dark · hi · admin · world=empty · /admin/coupons · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-040 · 390px · light · en · admin · world=empty · /admin/content · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-041 · 390px · dark · hi · admin · world=empty · /admin/layout · asserts: present adminhead hscroll console hindi axe
-- [ ] API-ADM-HEADER-042 · 390px · light · en · admin · world=empty · /admin/settings · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-043 · 390px · dark · hi · admin · world=empty · /admin/notifications · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-044 · 390px · light · en · admin · world=empty · /admin/staff · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-045 · 390px · dark · hi · admin · world=empty · /admin/audit · asserts: present adminhead hscroll console hindi axe
-- [ ] API-ADM-HEADER-046 · 390px · light · en · admin · world=empty · /admin/exports · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-047 · 390px · dark · hi · admin · world=empty · /admin/errors · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-048 · 390px · light · en · admin · world=empty · /admin/ustaad · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-049 · 768px · light · en · admin · world=empty · /admin · asserts: present adminhead hscroll console axe
-- [ ] API-ADM-HEADER-050 · 768px · dark · hi · admin · world=empty · /admin/analytics · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-051 · 768px · light · en · admin · world=empty · /admin/orders · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-052 · 768px · dark · hi · admin · world=empty · /admin/refunds · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-053 · 768px · light · en · admin · world=empty · /admin/services · asserts: present adminhead hscroll console axe
-- [ ] API-ADM-HEADER-054 · 768px · dark · hi · admin · world=empty · /admin/roadside · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-055 · 768px · light · en · admin · world=empty · /admin/quotes · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-056 · 768px · dark · hi · admin · world=empty · /admin/applications · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-057 · 768px · light · en · admin · world=empty · /admin/partners · asserts: present adminhead hscroll console axe
-- [ ] API-ADM-HEADER-058 · 768px · dark · hi · admin · world=empty · /admin/catalogue · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-059 · 768px · light · en · admin · world=empty · /admin/customers · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-060 · 768px · dark · hi · admin · world=empty · /admin/reviews · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-061 · 768px · light · en · admin · world=empty · /admin/support · asserts: present adminhead hscroll console axe
-- [ ] API-ADM-HEADER-062 · 768px · dark · hi · admin · world=empty · /admin/coins · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-063 · 768px · light · en · admin · world=empty · /admin/coupons · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-064 · 768px · dark · hi · admin · world=empty · /admin/content · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-065 · 768px · light · en · admin · world=empty · /admin/layout · asserts: present adminhead hscroll console axe
-- [ ] API-ADM-HEADER-066 · 768px · dark · hi · admin · world=empty · /admin/settings · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-067 · 768px · light · en · admin · world=empty · /admin/notifications · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-068 · 768px · dark · hi · admin · world=empty · /admin/staff · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-069 · 768px · light · en · admin · world=empty · /admin/audit · asserts: present adminhead hscroll console axe
-- [ ] API-ADM-HEADER-070 · 768px · dark · hi · admin · world=empty · /admin/exports · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-071 · 768px · light · en · admin · world=empty · /admin/errors · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-072 · 768px · dark · hi · admin · world=empty · /admin/ustaad · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-073 · 1024px · light · en · admin · world=empty · /admin · asserts: present adminhead hscroll console axe
-- [ ] API-ADM-HEADER-074 · 1024px · dark · hi · admin · world=empty · /admin/analytics · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-075 · 1024px · light · en · admin · world=empty · /admin/orders · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-076 · 1024px · dark · hi · admin · world=empty · /admin/refunds · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-077 · 1024px · light · en · admin · world=empty · /admin/services · asserts: present adminhead hscroll console axe
-- [ ] API-ADM-HEADER-078 · 1024px · dark · hi · admin · world=empty · /admin/roadside · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-079 · 1024px · light · en · admin · world=empty · /admin/quotes · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-080 · 1024px · dark · hi · admin · world=empty · /admin/applications · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-081 · 1024px · light · en · admin · world=empty · /admin/partners · asserts: present adminhead hscroll console axe
-- [ ] API-ADM-HEADER-082 · 1024px · dark · hi · admin · world=empty · /admin/catalogue · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-083 · 1024px · light · en · admin · world=empty · /admin/customers · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-084 · 1024px · dark · hi · admin · world=empty · /admin/reviews · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-085 · 1024px · light · en · admin · world=empty · /admin/support · asserts: present adminhead hscroll console axe
-- [ ] API-ADM-HEADER-086 · 1024px · dark · hi · admin · world=empty · /admin/coins · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-087 · 1024px · light · en · admin · world=empty · /admin/coupons · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-088 · 1024px · dark · hi · admin · world=empty · /admin/content · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-089 · 1024px · light · en · admin · world=empty · /admin/layout · asserts: present adminhead hscroll console axe
-- [ ] API-ADM-HEADER-090 · 1024px · dark · hi · admin · world=empty · /admin/settings · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-091 · 1024px · light · en · admin · world=empty · /admin/notifications · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-092 · 1024px · dark · hi · admin · world=empty · /admin/staff · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-093 · 1024px · light · en · admin · world=empty · /admin/audit · asserts: present adminhead hscroll console axe
-- [ ] API-ADM-HEADER-094 · 1024px · dark · hi · admin · world=empty · /admin/exports · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-095 · 1024px · light · en · admin · world=empty · /admin/errors · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-096 · 1024px · dark · hi · admin · world=empty · /admin/ustaad · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-097 · 1440px · light · en · admin · world=empty · /admin · asserts: present adminhead hscroll console axe
-- [ ] API-ADM-HEADER-098 · 1440px · dark · hi · admin · world=empty · /admin/analytics · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-099 · 1440px · light · en · admin · world=empty · /admin/orders · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-100 · 1440px · dark · hi · admin · world=empty · /admin/refunds · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-101 · 1440px · light · en · admin · world=empty · /admin/services · asserts: present adminhead hscroll console axe
-- [ ] API-ADM-HEADER-102 · 1440px · dark · hi · admin · world=empty · /admin/roadside · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-103 · 1440px · light · en · admin · world=empty · /admin/quotes · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-104 · 1440px · dark · hi · admin · world=empty · /admin/applications · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-105 · 1440px · light · en · admin · world=empty · /admin/partners · asserts: present adminhead hscroll console axe
-- [ ] API-ADM-HEADER-106 · 1440px · dark · hi · admin · world=empty · /admin/catalogue · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-107 · 1440px · light · en · admin · world=empty · /admin/customers · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-108 · 1440px · dark · hi · admin · world=empty · /admin/reviews · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-109 · 1440px · light · en · admin · world=empty · /admin/support · asserts: present adminhead hscroll console axe
-- [ ] API-ADM-HEADER-110 · 1440px · dark · hi · admin · world=empty · /admin/coins · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-111 · 1440px · light · en · admin · world=empty · /admin/coupons · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-112 · 1440px · dark · hi · admin · world=empty · /admin/content · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-113 · 1440px · light · en · admin · world=empty · /admin/layout · asserts: present adminhead hscroll console axe
-- [ ] API-ADM-HEADER-114 · 1440px · dark · hi · admin · world=empty · /admin/settings · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-115 · 1440px · light · en · admin · world=empty · /admin/notifications · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-116 · 1440px · dark · hi · admin · world=empty · /admin/staff · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-117 · 1440px · light · en · admin · world=empty · /admin/audit · asserts: present adminhead hscroll console axe
-- [ ] API-ADM-HEADER-118 · 1440px · dark · hi · admin · world=empty · /admin/exports · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-119 · 1440px · light · en · admin · world=empty · /admin/errors · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-120 · 1440px · dark · hi · admin · world=empty · /admin/ustaad · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-121 · 1920px · light · en · admin · world=empty · /admin · asserts: present adminhead hscroll console axe
-- [ ] API-ADM-HEADER-122 · 1920px · dark · hi · admin · world=empty · /admin/analytics · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-123 · 1920px · light · en · admin · world=empty · /admin/orders · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-124 · 1920px · dark · hi · admin · world=empty · /admin/refunds · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-125 · 1920px · light · en · admin · world=empty · /admin/services · asserts: present adminhead hscroll console axe
-- [ ] API-ADM-HEADER-126 · 1920px · dark · hi · admin · world=empty · /admin/roadside · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-127 · 1920px · light · en · admin · world=empty · /admin/quotes · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-128 · 1920px · dark · hi · admin · world=empty · /admin/applications · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-129 · 1920px · light · en · admin · world=empty · /admin/partners · asserts: present adminhead hscroll console axe
-- [ ] API-ADM-HEADER-130 · 1920px · dark · hi · admin · world=empty · /admin/catalogue · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-131 · 1920px · light · en · admin · world=empty · /admin/customers · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-132 · 1920px · dark · hi · admin · world=empty · /admin/reviews · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-133 · 1920px · light · en · admin · world=empty · /admin/support · asserts: present adminhead hscroll console axe
-- [ ] API-ADM-HEADER-134 · 1920px · dark · hi · admin · world=empty · /admin/coins · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-135 · 1920px · light · en · admin · world=empty · /admin/coupons · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-136 · 1920px · dark · hi · admin · world=empty · /admin/content · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-137 · 1920px · light · en · admin · world=empty · /admin/layout · asserts: present adminhead hscroll console axe
-- [ ] API-ADM-HEADER-138 · 1920px · dark · hi · admin · world=empty · /admin/settings · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-139 · 1920px · light · en · admin · world=empty · /admin/notifications · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-140 · 1920px · dark · hi · admin · world=empty · /admin/staff · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-141 · 1920px · light · en · admin · world=empty · /admin/audit · asserts: present adminhead hscroll console axe
-- [ ] API-ADM-HEADER-142 · 1920px · dark · hi · admin · world=empty · /admin/exports · asserts: present adminhead hscroll console hindi
-- [ ] API-ADM-HEADER-143 · 1920px · light · en · admin · world=empty · /admin/errors · asserts: present adminhead hscroll console
-- [ ] API-ADM-HEADER-144 · 1920px · dark · hi · admin · world=empty · /admin/ustaad · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-024 · 320px · dark · hi · admin · world=empty · /admin/usage · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-025 · 320px · light · en · admin · world=empty · /admin/ustaad · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-026 · 390px · dark · hi · admin · world=empty · /admin · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-027 · 390px · light · en · admin · world=empty · /admin/analytics · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-028 · 390px · dark · en · admin · world=empty · /admin/orders · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-029 · 390px · light · hi · admin · world=empty · /admin/refunds · asserts: present adminhead hscroll console hindi axe
+- [ ] API-ADM-HEADER-030 · 390px · dark · hi · admin · world=empty · /admin/services · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-031 · 390px · light · en · admin · world=empty · /admin/roadside · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-032 · 390px · dark · hi · admin · world=empty · /admin/quotes · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-033 · 390px · light · en · admin · world=empty · /admin/applications · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-034 · 390px · dark · hi · admin · world=empty · /admin/partners · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-035 · 390px · light · en · admin · world=empty · /admin/catalogue · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-036 · 390px · dark · hi · admin · world=empty · /admin/customers · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-037 · 390px · light · en · admin · world=empty · /admin/reviews · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-038 · 390px · dark · hi · admin · world=empty · /admin/support · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-039 · 390px · light · en · admin · world=empty · /admin/coins · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-040 · 390px · dark · hi · admin · world=empty · /admin/coupons · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-041 · 390px · light · en · admin · world=empty · /admin/content · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-042 · 390px · dark · hi · admin · world=empty · /admin/layout · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-043 · 390px · light · en · admin · world=empty · /admin/settings · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-044 · 390px · dark · hi · admin · world=empty · /admin/notifications · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-045 · 390px · light · en · admin · world=empty · /admin/staff · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-046 · 390px · dark · hi · admin · world=empty · /admin/audit · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-047 · 390px · light · en · admin · world=empty · /admin/exports · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-048 · 390px · dark · hi · admin · world=empty · /admin/errors · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-049 · 390px · light · en · admin · world=empty · /admin/usage · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-050 · 390px · dark · hi · admin · world=empty · /admin/ustaad · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-051 · 768px · light · en · admin · world=empty · /admin · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-052 · 768px · dark · hi · admin · world=empty · /admin/analytics · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-053 · 768px · light · en · admin · world=empty · /admin/orders · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-054 · 768px · dark · hi · admin · world=empty · /admin/refunds · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-055 · 768px · light · en · admin · world=empty · /admin/services · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-056 · 768px · dark · hi · admin · world=empty · /admin/roadside · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-057 · 768px · light · en · admin · world=empty · /admin/quotes · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-058 · 768px · dark · hi · admin · world=empty · /admin/applications · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-059 · 768px · light · en · admin · world=empty · /admin/partners · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-060 · 768px · dark · hi · admin · world=empty · /admin/catalogue · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-061 · 768px · light · en · admin · world=empty · /admin/customers · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-062 · 768px · dark · hi · admin · world=empty · /admin/reviews · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-063 · 768px · light · en · admin · world=empty · /admin/support · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-064 · 768px · dark · hi · admin · world=empty · /admin/coins · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-065 · 768px · light · en · admin · world=empty · /admin/coupons · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-066 · 768px · dark · hi · admin · world=empty · /admin/content · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-067 · 768px · light · en · admin · world=empty · /admin/layout · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-068 · 768px · dark · hi · admin · world=empty · /admin/settings · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-069 · 768px · light · en · admin · world=empty · /admin/notifications · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-070 · 768px · dark · hi · admin · world=empty · /admin/staff · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-071 · 768px · light · en · admin · world=empty · /admin/audit · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-072 · 768px · dark · hi · admin · world=empty · /admin/exports · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-073 · 768px · light · en · admin · world=empty · /admin/errors · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-074 · 768px · dark · hi · admin · world=empty · /admin/usage · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-075 · 768px · light · en · admin · world=empty · /admin/ustaad · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-076 · 1024px · dark · hi · admin · world=empty · /admin · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-077 · 1024px · light · en · admin · world=empty · /admin/analytics · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-078 · 1024px · dark · hi · admin · world=empty · /admin/orders · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-079 · 1024px · light · en · admin · world=empty · /admin/refunds · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-080 · 1024px · dark · hi · admin · world=empty · /admin/services · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-081 · 1024px · light · en · admin · world=empty · /admin/roadside · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-082 · 1024px · dark · hi · admin · world=empty · /admin/quotes · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-083 · 1024px · light · en · admin · world=empty · /admin/applications · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-084 · 1024px · dark · hi · admin · world=empty · /admin/partners · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-085 · 1024px · light · en · admin · world=empty · /admin/catalogue · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-086 · 1024px · dark · hi · admin · world=empty · /admin/customers · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-087 · 1024px · light · en · admin · world=empty · /admin/reviews · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-088 · 1024px · dark · hi · admin · world=empty · /admin/support · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-089 · 1024px · light · en · admin · world=empty · /admin/coins · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-090 · 1024px · dark · hi · admin · world=empty · /admin/coupons · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-091 · 1024px · light · en · admin · world=empty · /admin/content · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-092 · 1024px · dark · hi · admin · world=empty · /admin/layout · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-093 · 1024px · light · en · admin · world=empty · /admin/settings · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-094 · 1024px · dark · hi · admin · world=empty · /admin/notifications · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-095 · 1024px · light · en · admin · world=empty · /admin/staff · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-096 · 1024px · dark · hi · admin · world=empty · /admin/audit · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-097 · 1024px · light · en · admin · world=empty · /admin/exports · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-098 · 1024px · dark · hi · admin · world=empty · /admin/errors · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-099 · 1024px · light · en · admin · world=empty · /admin/usage · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-100 · 1024px · dark · hi · admin · world=empty · /admin/ustaad · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-101 · 1440px · light · en · admin · world=empty · /admin · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-102 · 1440px · dark · hi · admin · world=empty · /admin/analytics · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-103 · 1440px · light · en · admin · world=empty · /admin/orders · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-104 · 1440px · dark · hi · admin · world=empty · /admin/refunds · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-105 · 1440px · light · en · admin · world=empty · /admin/services · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-106 · 1440px · dark · hi · admin · world=empty · /admin/roadside · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-107 · 1440px · light · en · admin · world=empty · /admin/quotes · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-108 · 1440px · dark · hi · admin · world=empty · /admin/applications · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-109 · 1440px · light · en · admin · world=empty · /admin/partners · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-110 · 1440px · dark · hi · admin · world=empty · /admin/catalogue · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-111 · 1440px · light · en · admin · world=empty · /admin/customers · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-112 · 1440px · dark · hi · admin · world=empty · /admin/reviews · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-113 · 1440px · light · en · admin · world=empty · /admin/support · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-114 · 1440px · dark · hi · admin · world=empty · /admin/coins · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-115 · 1440px · light · en · admin · world=empty · /admin/coupons · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-116 · 1440px · dark · hi · admin · world=empty · /admin/content · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-117 · 1440px · light · en · admin · world=empty · /admin/layout · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-118 · 1440px · dark · hi · admin · world=empty · /admin/settings · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-119 · 1440px · light · en · admin · world=empty · /admin/notifications · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-120 · 1440px · dark · hi · admin · world=empty · /admin/staff · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-121 · 1440px · light · en · admin · world=empty · /admin/audit · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-122 · 1440px · dark · hi · admin · world=empty · /admin/exports · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-123 · 1440px · light · en · admin · world=empty · /admin/errors · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-124 · 1440px · dark · hi · admin · world=empty · /admin/usage · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-125 · 1440px · light · en · admin · world=empty · /admin/ustaad · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-126 · 1920px · dark · hi · admin · world=empty · /admin · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-127 · 1920px · light · en · admin · world=empty · /admin/analytics · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-128 · 1920px · dark · hi · admin · world=empty · /admin/orders · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-129 · 1920px · light · en · admin · world=empty · /admin/refunds · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-130 · 1920px · dark · hi · admin · world=empty · /admin/services · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-131 · 1920px · light · en · admin · world=empty · /admin/roadside · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-132 · 1920px · dark · hi · admin · world=empty · /admin/quotes · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-133 · 1920px · light · en · admin · world=empty · /admin/applications · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-134 · 1920px · dark · hi · admin · world=empty · /admin/partners · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-135 · 1920px · light · en · admin · world=empty · /admin/catalogue · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-136 · 1920px · dark · hi · admin · world=empty · /admin/customers · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-137 · 1920px · light · en · admin · world=empty · /admin/reviews · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-138 · 1920px · dark · hi · admin · world=empty · /admin/support · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-139 · 1920px · light · en · admin · world=empty · /admin/coins · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-140 · 1920px · dark · hi · admin · world=empty · /admin/coupons · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-141 · 1920px · light · en · admin · world=empty · /admin/content · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-142 · 1920px · dark · hi · admin · world=empty · /admin/layout · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-143 · 1920px · light · en · admin · world=empty · /admin/settings · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-144 · 1920px · dark · hi · admin · world=empty · /admin/notifications · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-145 · 1920px · light · en · admin · world=empty · /admin/staff · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-146 · 1920px · dark · hi · admin · world=empty · /admin/audit · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-147 · 1920px · light · en · admin · world=empty · /admin/exports · asserts: present adminhead hscroll console
+- [ ] API-ADM-HEADER-148 · 1920px · dark · hi · admin · world=empty · /admin/errors · asserts: present adminhead hscroll console hindi
+- [ ] API-ADM-HEADER-149 · 1920px · light · en · admin · world=empty · /admin/usage · asserts: present adminhead hscroll console axe
+- [ ] API-ADM-HEADER-150 · 1920px · dark · hi · admin · world=empty · /admin/ustaad · asserts: present adminhead hscroll console hindi
 
 ## Navigation, real sign-in
 
 ### API-NAV-ADMIN — Admin section bar with every real-mode section (Analytics, Refunds, Errors included): current item, scroll, walk
 
-Full cross of the high-risk dimensions, the rest pairwise; 192 states; scope `main nav.overflow-x-auto`.
+Full cross of the high-risk dimensions, the rest pairwise; 200 states; scope `main nav.overflow-x-auto`.
 
 - [ ] API-NAV-ADMIN-001 · 320px · light · en · admin · world=empty · /admin · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
 - [ ] API-NAV-ADMIN-002 · 320px · dark · hi · admin · world=empty · /admin/analytics · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
@@ -6317,175 +6371,183 @@ Full cross of the high-risk dimensions, the rest pairwise; 192 states; scope `ma
 - [ ] API-NAV-ADMIN-021 · 320px · light · en · admin · world=empty · /admin/audit · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
 - [ ] API-NAV-ADMIN-022 · 320px · dark · hi · admin · world=empty · /admin/exports · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
 - [ ] API-NAV-ADMIN-023 · 320px · light · en · admin · world=empty · /admin/errors · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-024 · 320px · dark · hi · admin · world=empty · /admin/ustaad · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-025 · 390px · dark · hi · admin · world=empty · /admin · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi axe
-- [ ] API-NAV-ADMIN-026 · 390px · light · en · admin · world=empty · /admin/analytics · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-027 · 390px · dark · en · admin · world=empty · /admin/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-028 · 390px · light · hi · admin · world=empty · /admin/refunds · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-029 · 390px · dark · hi · admin · world=empty · /admin/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi axe
-- [ ] API-NAV-ADMIN-030 · 390px · light · en · admin · world=empty · /admin/roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-031 · 390px · dark · hi · admin · world=empty · /admin/quotes · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-032 · 390px · light · en · admin · world=empty · /admin/applications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-033 · 390px · dark · hi · admin · world=empty · /admin/partners · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi axe
-- [ ] API-NAV-ADMIN-034 · 390px · light · en · admin · world=empty · /admin/catalogue · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-035 · 390px · dark · hi · admin · world=empty · /admin/customers · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-036 · 390px · light · en · admin · world=empty · /admin/reviews · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-037 · 390px · dark · hi · admin · world=empty · /admin/support · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi axe
-- [ ] API-NAV-ADMIN-038 · 390px · light · en · admin · world=empty · /admin/coins · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-039 · 390px · dark · hi · admin · world=empty · /admin/coupons · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-040 · 390px · light · en · admin · world=empty · /admin/content · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-041 · 390px · dark · hi · admin · world=empty · /admin/layout · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi axe
-- [ ] API-NAV-ADMIN-042 · 390px · light · en · admin · world=empty · /admin/settings · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-043 · 390px · dark · hi · admin · world=empty · /admin/notifications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-044 · 390px · light · en · admin · world=empty · /admin/staff · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-045 · 390px · dark · hi · admin · world=empty · /admin/audit · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi axe
-- [ ] API-NAV-ADMIN-046 · 390px · light · en · admin · world=empty · /admin/exports · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-047 · 390px · dark · hi · admin · world=empty · /admin/errors · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-048 · 390px · light · en · admin · world=empty · /admin/ustaad · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-049 · 480px · light · en · admin · world=empty · /admin · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-050 · 480px · dark · hi · admin · world=empty · /admin/analytics · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-051 · 480px · light · en · admin · world=empty · /admin/orders · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-052 · 480px · dark · hi · admin · world=empty · /admin/refunds · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-053 · 480px · light · en · admin · world=empty · /admin/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-054 · 480px · dark · hi · admin · world=empty · /admin/roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-055 · 480px · light · en · admin · world=empty · /admin/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-056 · 480px · dark · hi · admin · world=empty · /admin/applications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-057 · 480px · light · en · admin · world=empty · /admin/partners · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-058 · 480px · dark · hi · admin · world=empty · /admin/catalogue · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-059 · 480px · light · en · admin · world=empty · /admin/customers · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-060 · 480px · dark · hi · admin · world=empty · /admin/reviews · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-061 · 480px · light · en · admin · world=empty · /admin/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-062 · 480px · dark · hi · admin · world=empty · /admin/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-063 · 480px · light · en · admin · world=empty · /admin/coupons · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-064 · 480px · dark · hi · admin · world=empty · /admin/content · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-065 · 480px · light · en · admin · world=empty · /admin/layout · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-066 · 480px · dark · hi · admin · world=empty · /admin/settings · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-067 · 480px · light · en · admin · world=empty · /admin/notifications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-068 · 480px · dark · hi · admin · world=empty · /admin/staff · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-069 · 480px · light · en · admin · world=empty · /admin/audit · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-070 · 480px · dark · hi · admin · world=empty · /admin/exports · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-071 · 480px · light · en · admin · world=empty · /admin/errors · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-072 · 480px · dark · hi · admin · world=empty · /admin/ustaad · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-073 · 768px · light · en · admin · world=empty · /admin · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-074 · 768px · dark · hi · admin · world=empty · /admin/analytics · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-075 · 768px · light · en · admin · world=empty · /admin/orders · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-076 · 768px · dark · hi · admin · world=empty · /admin/refunds · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-077 · 768px · light · en · admin · world=empty · /admin/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-078 · 768px · dark · hi · admin · world=empty · /admin/roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-079 · 768px · light · en · admin · world=empty · /admin/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-080 · 768px · dark · hi · admin · world=empty · /admin/applications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-081 · 768px · light · en · admin · world=empty · /admin/partners · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-082 · 768px · dark · hi · admin · world=empty · /admin/catalogue · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-083 · 768px · light · en · admin · world=empty · /admin/customers · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-084 · 768px · dark · hi · admin · world=empty · /admin/reviews · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-085 · 768px · light · en · admin · world=empty · /admin/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-086 · 768px · dark · hi · admin · world=empty · /admin/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-087 · 768px · light · en · admin · world=empty · /admin/coupons · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-088 · 768px · dark · hi · admin · world=empty · /admin/content · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-089 · 768px · light · en · admin · world=empty · /admin/layout · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-090 · 768px · dark · hi · admin · world=empty · /admin/settings · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-091 · 768px · light · en · admin · world=empty · /admin/notifications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-092 · 768px · dark · hi · admin · world=empty · /admin/staff · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-093 · 768px · light · en · admin · world=empty · /admin/audit · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-094 · 768px · dark · hi · admin · world=empty · /admin/exports · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-095 · 768px · light · en · admin · world=empty · /admin/errors · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-096 · 768px · dark · hi · admin · world=empty · /admin/ustaad · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-097 · 1024px · light · en · admin · world=empty · /admin · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-098 · 1024px · dark · hi · admin · world=empty · /admin/analytics · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-099 · 1024px · light · en · admin · world=empty · /admin/orders · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-100 · 1024px · dark · hi · admin · world=empty · /admin/refunds · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-101 · 1024px · light · en · admin · world=empty · /admin/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-102 · 1024px · dark · hi · admin · world=empty · /admin/roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-103 · 1024px · light · en · admin · world=empty · /admin/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-104 · 1024px · dark · hi · admin · world=empty · /admin/applications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-105 · 1024px · light · en · admin · world=empty · /admin/partners · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-106 · 1024px · dark · hi · admin · world=empty · /admin/catalogue · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-107 · 1024px · light · en · admin · world=empty · /admin/customers · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-108 · 1024px · dark · hi · admin · world=empty · /admin/reviews · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-109 · 1024px · light · en · admin · world=empty · /admin/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-110 · 1024px · dark · hi · admin · world=empty · /admin/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-111 · 1024px · light · en · admin · world=empty · /admin/coupons · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-112 · 1024px · dark · hi · admin · world=empty · /admin/content · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-113 · 1024px · light · en · admin · world=empty · /admin/layout · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-114 · 1024px · dark · hi · admin · world=empty · /admin/settings · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-115 · 1024px · light · en · admin · world=empty · /admin/notifications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-116 · 1024px · dark · hi · admin · world=empty · /admin/staff · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-117 · 1024px · light · en · admin · world=empty · /admin/audit · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-118 · 1024px · dark · hi · admin · world=empty · /admin/exports · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-119 · 1024px · light · en · admin · world=empty · /admin/errors · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-120 · 1024px · dark · hi · admin · world=empty · /admin/ustaad · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-121 · 1280px · light · en · admin · world=empty · /admin · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-122 · 1280px · dark · hi · admin · world=empty · /admin/analytics · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-123 · 1280px · light · en · admin · world=empty · /admin/orders · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-124 · 1280px · dark · hi · admin · world=empty · /admin/refunds · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-125 · 1280px · light · en · admin · world=empty · /admin/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-126 · 1280px · dark · hi · admin · world=empty · /admin/roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-127 · 1280px · light · en · admin · world=empty · /admin/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-128 · 1280px · dark · hi · admin · world=empty · /admin/applications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-129 · 1280px · light · en · admin · world=empty · /admin/partners · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-130 · 1280px · dark · hi · admin · world=empty · /admin/catalogue · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-131 · 1280px · light · en · admin · world=empty · /admin/customers · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-132 · 1280px · dark · hi · admin · world=empty · /admin/reviews · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-133 · 1280px · light · en · admin · world=empty · /admin/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-134 · 1280px · dark · hi · admin · world=empty · /admin/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-135 · 1280px · light · en · admin · world=empty · /admin/coupons · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-136 · 1280px · dark · hi · admin · world=empty · /admin/content · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-137 · 1280px · light · en · admin · world=empty · /admin/layout · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-138 · 1280px · dark · hi · admin · world=empty · /admin/settings · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-139 · 1280px · light · en · admin · world=empty · /admin/notifications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-140 · 1280px · dark · hi · admin · world=empty · /admin/staff · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-141 · 1280px · light · en · admin · world=empty · /admin/audit · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-142 · 1280px · dark · hi · admin · world=empty · /admin/exports · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-143 · 1280px · light · en · admin · world=empty · /admin/errors · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-144 · 1280px · dark · hi · admin · world=empty · /admin/ustaad · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-145 · 1440px · light · en · admin · world=empty · /admin · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-146 · 1440px · dark · hi · admin · world=empty · /admin/analytics · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-147 · 1440px · light · en · admin · world=empty · /admin/orders · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-148 · 1440px · dark · hi · admin · world=empty · /admin/refunds · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-149 · 1440px · light · en · admin · world=empty · /admin/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-150 · 1440px · dark · hi · admin · world=empty · /admin/roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-151 · 1440px · light · en · admin · world=empty · /admin/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-152 · 1440px · dark · hi · admin · world=empty · /admin/applications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-153 · 1440px · light · en · admin · world=empty · /admin/partners · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-154 · 1440px · dark · hi · admin · world=empty · /admin/catalogue · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-155 · 1440px · light · en · admin · world=empty · /admin/customers · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-156 · 1440px · dark · hi · admin · world=empty · /admin/reviews · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-157 · 1440px · light · en · admin · world=empty · /admin/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-158 · 1440px · dark · hi · admin · world=empty · /admin/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-159 · 1440px · light · en · admin · world=empty · /admin/coupons · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-160 · 1440px · dark · hi · admin · world=empty · /admin/content · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-161 · 1440px · light · en · admin · world=empty · /admin/layout · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-162 · 1440px · dark · hi · admin · world=empty · /admin/settings · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-163 · 1440px · light · en · admin · world=empty · /admin/notifications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-164 · 1440px · dark · hi · admin · world=empty · /admin/staff · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-165 · 1440px · light · en · admin · world=empty · /admin/audit · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-166 · 1440px · dark · hi · admin · world=empty · /admin/exports · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-167 · 1440px · light · en · admin · world=empty · /admin/errors · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-168 · 1440px · dark · hi · admin · world=empty · /admin/ustaad · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-169 · 1920px · light · en · admin · world=empty · /admin · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-170 · 1920px · dark · hi · admin · world=empty · /admin/analytics · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-171 · 1920px · light · en · admin · world=empty · /admin/orders · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-172 · 1920px · dark · hi · admin · world=empty · /admin/refunds · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-173 · 1920px · light · en · admin · world=empty · /admin/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-174 · 1920px · dark · hi · admin · world=empty · /admin/roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-175 · 1920px · light · en · admin · world=empty · /admin/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-176 · 1920px · dark · hi · admin · world=empty · /admin/applications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-177 · 1920px · light · en · admin · world=empty · /admin/partners · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-178 · 1920px · dark · hi · admin · world=empty · /admin/catalogue · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-179 · 1920px · light · en · admin · world=empty · /admin/customers · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-180 · 1920px · dark · hi · admin · world=empty · /admin/reviews · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-181 · 1920px · light · en · admin · world=empty · /admin/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-182 · 1920px · dark · hi · admin · world=empty · /admin/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-183 · 1920px · light · en · admin · world=empty · /admin/coupons · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-184 · 1920px · dark · hi · admin · world=empty · /admin/content · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-185 · 1920px · light · en · admin · world=empty · /admin/layout · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-186 · 1920px · dark · hi · admin · world=empty · /admin/settings · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-187 · 1920px · light · en · admin · world=empty · /admin/notifications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-188 · 1920px · dark · hi · admin · world=empty · /admin/staff · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-189 · 1920px · light · en · admin · world=empty · /admin/audit · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] API-NAV-ADMIN-190 · 1920px · dark · hi · admin · world=empty · /admin/exports · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] API-NAV-ADMIN-191 · 1920px · light · en · admin · world=empty · /admin/errors · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] API-NAV-ADMIN-192 · 1920px · dark · hi · admin · world=empty · /admin/ustaad · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-024 · 320px · dark · hi · admin · world=empty · /admin/usage · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-025 · 320px · light · en · admin · world=empty · /admin/ustaad · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-026 · 390px · dark · hi · admin · world=empty · /admin · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-027 · 390px · light · en · admin · world=empty · /admin/analytics · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-028 · 390px · dark · en · admin · world=empty · /admin/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-029 · 390px · light · hi · admin · world=empty · /admin/refunds · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi axe
+- [ ] API-NAV-ADMIN-030 · 390px · dark · hi · admin · world=empty · /admin/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-031 · 390px · light · en · admin · world=empty · /admin/roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-032 · 390px · dark · hi · admin · world=empty · /admin/quotes · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-033 · 390px · light · en · admin · world=empty · /admin/applications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-034 · 390px · dark · hi · admin · world=empty · /admin/partners · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-035 · 390px · light · en · admin · world=empty · /admin/catalogue · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-036 · 390px · dark · hi · admin · world=empty · /admin/customers · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-037 · 390px · light · en · admin · world=empty · /admin/reviews · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-038 · 390px · dark · hi · admin · world=empty · /admin/support · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-039 · 390px · light · en · admin · world=empty · /admin/coins · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-040 · 390px · dark · hi · admin · world=empty · /admin/coupons · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-041 · 390px · light · en · admin · world=empty · /admin/content · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-042 · 390px · dark · hi · admin · world=empty · /admin/layout · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-043 · 390px · light · en · admin · world=empty · /admin/settings · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-044 · 390px · dark · hi · admin · world=empty · /admin/notifications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-045 · 390px · light · en · admin · world=empty · /admin/staff · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-046 · 390px · dark · hi · admin · world=empty · /admin/audit · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-047 · 390px · light · en · admin · world=empty · /admin/exports · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-048 · 390px · dark · hi · admin · world=empty · /admin/errors · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-049 · 390px · light · en · admin · world=empty · /admin/usage · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-050 · 390px · dark · hi · admin · world=empty · /admin/ustaad · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-051 · 480px · light · en · admin · world=empty · /admin · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-052 · 480px · dark · hi · admin · world=empty · /admin/analytics · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-053 · 480px · light · en · admin · world=empty · /admin/orders · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-054 · 480px · dark · hi · admin · world=empty · /admin/refunds · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-055 · 480px · light · en · admin · world=empty · /admin/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-056 · 480px · dark · hi · admin · world=empty · /admin/roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-057 · 480px · light · en · admin · world=empty · /admin/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-058 · 480px · dark · hi · admin · world=empty · /admin/applications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-059 · 480px · light · en · admin · world=empty · /admin/partners · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-060 · 480px · dark · hi · admin · world=empty · /admin/catalogue · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-061 · 480px · light · en · admin · world=empty · /admin/customers · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-062 · 480px · dark · hi · admin · world=empty · /admin/reviews · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-063 · 480px · light · en · admin · world=empty · /admin/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-064 · 480px · dark · hi · admin · world=empty · /admin/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-065 · 480px · light · en · admin · world=empty · /admin/coupons · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-066 · 480px · dark · hi · admin · world=empty · /admin/content · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-067 · 480px · light · en · admin · world=empty · /admin/layout · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-068 · 480px · dark · hi · admin · world=empty · /admin/settings · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-069 · 480px · light · en · admin · world=empty · /admin/notifications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-070 · 480px · dark · hi · admin · world=empty · /admin/staff · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-071 · 480px · light · en · admin · world=empty · /admin/audit · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-072 · 480px · dark · hi · admin · world=empty · /admin/exports · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-073 · 480px · light · en · admin · world=empty · /admin/errors · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-074 · 480px · dark · hi · admin · world=empty · /admin/usage · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-075 · 480px · light · en · admin · world=empty · /admin/ustaad · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-076 · 768px · dark · hi · admin · world=empty · /admin · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-077 · 768px · light · en · admin · world=empty · /admin/analytics · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-078 · 768px · dark · hi · admin · world=empty · /admin/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-079 · 768px · light · en · admin · world=empty · /admin/refunds · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-080 · 768px · dark · hi · admin · world=empty · /admin/services · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-081 · 768px · light · en · admin · world=empty · /admin/roadside · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-082 · 768px · dark · hi · admin · world=empty · /admin/quotes · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-083 · 768px · light · en · admin · world=empty · /admin/applications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-084 · 768px · dark · hi · admin · world=empty · /admin/partners · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-085 · 768px · light · en · admin · world=empty · /admin/catalogue · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-086 · 768px · dark · hi · admin · world=empty · /admin/customers · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-087 · 768px · light · en · admin · world=empty · /admin/reviews · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-088 · 768px · dark · hi · admin · world=empty · /admin/support · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-089 · 768px · light · en · admin · world=empty · /admin/coins · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-090 · 768px · dark · hi · admin · world=empty · /admin/coupons · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-091 · 768px · light · en · admin · world=empty · /admin/content · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-092 · 768px · dark · hi · admin · world=empty · /admin/layout · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-093 · 768px · light · en · admin · world=empty · /admin/settings · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-094 · 768px · dark · hi · admin · world=empty · /admin/notifications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-095 · 768px · light · en · admin · world=empty · /admin/staff · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-096 · 768px · dark · hi · admin · world=empty · /admin/audit · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-097 · 768px · light · en · admin · world=empty · /admin/exports · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-098 · 768px · dark · hi · admin · world=empty · /admin/errors · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-099 · 768px · light · en · admin · world=empty · /admin/usage · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-100 · 768px · dark · hi · admin · world=empty · /admin/ustaad · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-101 · 1024px · light · en · admin · world=empty · /admin · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-102 · 1024px · dark · hi · admin · world=empty · /admin/analytics · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-103 · 1024px · light · en · admin · world=empty · /admin/orders · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-104 · 1024px · dark · hi · admin · world=empty · /admin/refunds · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-105 · 1024px · light · en · admin · world=empty · /admin/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-106 · 1024px · dark · hi · admin · world=empty · /admin/roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-107 · 1024px · light · en · admin · world=empty · /admin/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-108 · 1024px · dark · hi · admin · world=empty · /admin/applications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-109 · 1024px · light · en · admin · world=empty · /admin/partners · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-110 · 1024px · dark · hi · admin · world=empty · /admin/catalogue · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-111 · 1024px · light · en · admin · world=empty · /admin/customers · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-112 · 1024px · dark · hi · admin · world=empty · /admin/reviews · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-113 · 1024px · light · en · admin · world=empty · /admin/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-114 · 1024px · dark · hi · admin · world=empty · /admin/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-115 · 1024px · light · en · admin · world=empty · /admin/coupons · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-116 · 1024px · dark · hi · admin · world=empty · /admin/content · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-117 · 1024px · light · en · admin · world=empty · /admin/layout · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-118 · 1024px · dark · hi · admin · world=empty · /admin/settings · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-119 · 1024px · light · en · admin · world=empty · /admin/notifications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-120 · 1024px · dark · hi · admin · world=empty · /admin/staff · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-121 · 1024px · light · en · admin · world=empty · /admin/audit · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-122 · 1024px · dark · hi · admin · world=empty · /admin/exports · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-123 · 1024px · light · en · admin · world=empty · /admin/errors · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-124 · 1024px · dark · hi · admin · world=empty · /admin/usage · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-125 · 1024px · light · en · admin · world=empty · /admin/ustaad · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-126 · 1280px · dark · hi · admin · world=empty · /admin · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-127 · 1280px · light · en · admin · world=empty · /admin/analytics · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-128 · 1280px · dark · hi · admin · world=empty · /admin/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-129 · 1280px · light · en · admin · world=empty · /admin/refunds · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-130 · 1280px · dark · hi · admin · world=empty · /admin/services · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-131 · 1280px · light · en · admin · world=empty · /admin/roadside · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-132 · 1280px · dark · hi · admin · world=empty · /admin/quotes · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-133 · 1280px · light · en · admin · world=empty · /admin/applications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-134 · 1280px · dark · hi · admin · world=empty · /admin/partners · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-135 · 1280px · light · en · admin · world=empty · /admin/catalogue · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-136 · 1280px · dark · hi · admin · world=empty · /admin/customers · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-137 · 1280px · light · en · admin · world=empty · /admin/reviews · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-138 · 1280px · dark · hi · admin · world=empty · /admin/support · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-139 · 1280px · light · en · admin · world=empty · /admin/coins · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-140 · 1280px · dark · hi · admin · world=empty · /admin/coupons · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-141 · 1280px · light · en · admin · world=empty · /admin/content · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-142 · 1280px · dark · hi · admin · world=empty · /admin/layout · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-143 · 1280px · light · en · admin · world=empty · /admin/settings · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-144 · 1280px · dark · hi · admin · world=empty · /admin/notifications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-145 · 1280px · light · en · admin · world=empty · /admin/staff · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-146 · 1280px · dark · hi · admin · world=empty · /admin/audit · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-147 · 1280px · light · en · admin · world=empty · /admin/exports · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-148 · 1280px · dark · hi · admin · world=empty · /admin/errors · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-149 · 1280px · light · en · admin · world=empty · /admin/usage · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-150 · 1280px · dark · hi · admin · world=empty · /admin/ustaad · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-151 · 1440px · light · en · admin · world=empty · /admin · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-152 · 1440px · dark · hi · admin · world=empty · /admin/analytics · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-153 · 1440px · light · en · admin · world=empty · /admin/orders · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-154 · 1440px · dark · hi · admin · world=empty · /admin/refunds · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-155 · 1440px · light · en · admin · world=empty · /admin/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-156 · 1440px · dark · hi · admin · world=empty · /admin/roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-157 · 1440px · light · en · admin · world=empty · /admin/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-158 · 1440px · dark · hi · admin · world=empty · /admin/applications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-159 · 1440px · light · en · admin · world=empty · /admin/partners · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-160 · 1440px · dark · hi · admin · world=empty · /admin/catalogue · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-161 · 1440px · light · en · admin · world=empty · /admin/customers · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-162 · 1440px · dark · hi · admin · world=empty · /admin/reviews · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-163 · 1440px · light · en · admin · world=empty · /admin/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-164 · 1440px · dark · hi · admin · world=empty · /admin/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-165 · 1440px · light · en · admin · world=empty · /admin/coupons · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-166 · 1440px · dark · hi · admin · world=empty · /admin/content · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-167 · 1440px · light · en · admin · world=empty · /admin/layout · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-168 · 1440px · dark · hi · admin · world=empty · /admin/settings · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-169 · 1440px · light · en · admin · world=empty · /admin/notifications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-170 · 1440px · dark · hi · admin · world=empty · /admin/staff · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-171 · 1440px · light · en · admin · world=empty · /admin/audit · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-172 · 1440px · dark · hi · admin · world=empty · /admin/exports · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-173 · 1440px · light · en · admin · world=empty · /admin/errors · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-174 · 1440px · dark · hi · admin · world=empty · /admin/usage · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-175 · 1440px · light · en · admin · world=empty · /admin/ustaad · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-176 · 1920px · dark · hi · admin · world=empty · /admin · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-177 · 1920px · light · en · admin · world=empty · /admin/analytics · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-178 · 1920px · dark · hi · admin · world=empty · /admin/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-179 · 1920px · light · en · admin · world=empty · /admin/refunds · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-180 · 1920px · dark · hi · admin · world=empty · /admin/services · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-181 · 1920px · light · en · admin · world=empty · /admin/roadside · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-182 · 1920px · dark · hi · admin · world=empty · /admin/quotes · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-183 · 1920px · light · en · admin · world=empty · /admin/applications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-184 · 1920px · dark · hi · admin · world=empty · /admin/partners · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-185 · 1920px · light · en · admin · world=empty · /admin/catalogue · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-186 · 1920px · dark · hi · admin · world=empty · /admin/customers · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-187 · 1920px · light · en · admin · world=empty · /admin/reviews · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-188 · 1920px · dark · hi · admin · world=empty · /admin/support · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-189 · 1920px · light · en · admin · world=empty · /admin/coins · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-190 · 1920px · dark · hi · admin · world=empty · /admin/coupons · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-191 · 1920px · light · en · admin · world=empty · /admin/content · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-192 · 1920px · dark · hi · admin · world=empty · /admin/layout · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-193 · 1920px · light · en · admin · world=empty · /admin/settings · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-194 · 1920px · dark · hi · admin · world=empty · /admin/notifications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-195 · 1920px · light · en · admin · world=empty · /admin/staff · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-196 · 1920px · dark · hi · admin · world=empty · /admin/audit · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-197 · 1920px · light · en · admin · world=empty · /admin/exports · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] API-NAV-ADMIN-198 · 1920px · dark · hi · admin · world=empty · /admin/errors · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] API-NAV-ADMIN-199 · 1920px · light · en · admin · world=empty · /admin/usage · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] API-NAV-ADMIN-200 · 1920px · dark · hi · admin · world=empty · /admin/ustaad · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
 
 ### API-NAV-ACCOUNT — Account section bar in a real-sign-in build: current item, scroll, walk
 

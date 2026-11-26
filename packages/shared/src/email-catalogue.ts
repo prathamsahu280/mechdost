@@ -20,7 +20,8 @@ export interface EmailCopy {
 export interface EmailTemplateDef {
   purpose: EmailPurpose;
   category: 'transactional' | 'promotional';
-  audience: 'customer' | 'partner';
+  /** `staff`: MechDost's own team (usage alerts, 2026-11-26). */
+  audience: 'customer' | 'partner' | 'staff';
   /** Placeholders usable in the text. */
   text: readonly string[];
   /** Every payload key the template reads. */
@@ -42,6 +43,7 @@ const partnerHome = () => '/partner/shop';
 const T = {
   customer: 'customer',
   partner: 'partner',
+  staff: 'staff',
 } as const;
 
 const def = (d: EmailTemplateDef): EmailTemplateDef => d;
@@ -1019,6 +1021,31 @@ export const EMAIL_CATALOGUE = {
       heading: 'MechDost की तरफ़ से एक नोट',
       body: 'नमस्ते {name},\n\nहम आपको बताना चाहते हैं कि {reason}। यह एक नोट है, कोई जुर्माना नहीं, और यह आपके रिकॉर्ड में है ताकि आप भी इसे देख सकें।\n\nपिछले {windowDays} दिनों में आपके {count} नोट हैं। इनमें से कई छोटे बदलावों से टल सकते हैं, और हम मदद करने को तैयार हैं। अगर आपको लगता है कि यह नोट गलती से आया है, तो इस ईमेल का जवाब दें या सहायता को कॉल करें।',
       button: 'अपने नोट देखें',
+    },
+  }),
+  /**
+   * Usage and free limits (founder 2026-11-26): a metric reached the warning or the critical threshold. Once per
+   * metric, level and month; to the configured addresses or the super admins. Numbers come formatted.
+   */
+  usage_limit_alert: def({
+    purpose: 'system',
+    category: 'transactional',
+    audience: T.staff,
+    text: ['metric', 'percent', 'value', 'limit'],
+    params: ['metric', 'percent', 'value', 'limit'],
+    button: () => '/admin/usage',
+    sample: { metric: 'Cloudflare R2 storage', percent: '72', value: '7.2 GB', limit: '10 GB' },
+    en: {
+      subject: 'MechDost usage: {metric} at {percent}%',
+      heading: 'A free limit is filling up',
+      body: '{metric} has reached {percent}% of its limit ({value} of {limit}).\n\nOpen Usage & limits to see the trend, raise the limit if the plan changed, or free some space. This email comes once a month for each level.',
+      button: 'Open Usage & limits',
+    },
+    hi: {
+      subject: 'MechDost उपयोग: {metric} {percent}% पर',
+      heading: 'एक मुफ़्त सीमा भरने वाली है',
+      body: '{metric} अपनी सीमा के {percent}% तक पहुँच गया है ({limit} में से {value})।\n\nरुझान देखने, प्लान बदला हो तो सीमा बढ़ाने, या जगह खाली करने के लिए "उपयोग और सीमाएँ" खोलें। हर स्तर के लिए यह ईमेल महीने में एक बार आता है।',
+      button: 'उपयोग और सीमाएँ खोलें',
     },
   }),
 } as const satisfies Record<string, EmailTemplateDef>;

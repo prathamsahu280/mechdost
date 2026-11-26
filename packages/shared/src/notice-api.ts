@@ -21,6 +21,8 @@ export const NOTICE_ENTITY_TYPES = [
   'account',
   // Ustaad Network (spec 23 § 12): one entity type; the kind says what it is about.
   'ustaad',
+  // The platform itself (usage and free limits, 2026-11-26).
+  'platform',
 ] as const;
 export type NoticeEntityType = (typeof NOTICE_ENTITY_TYPES)[number];
 
@@ -101,6 +103,7 @@ export const NOTICE_PRIORITY_OF_KIND = {
   'staff.ustaad_media_budget': 'urgent',
   'staff.ustaad_verification': 'action',
   // Staff
+  'staff.usage_alert': 'urgent',
   'staff.rsa_cash': 'info',
   'staff.order_needs_routing': 'urgent',
   'staff.shop_declined': 'urgent',

@@ -194,6 +194,18 @@ const schema = z
     R2_DOCS_HOST: z.string().optional(),
     /** The Supabase project's per-file upload limit in MB (free plan 50); caps are clamped to it. */
     SUPABASE_MAX_UPLOAD_MB: z.coerce.number().int().min(5).max(5000).default(50),
+    /**
+     * Usage & limits (founder 2026-11-26): optional Cloudflare API token with "Account Analytics: Read" for exact R2
+     * Class A/B counts (else our own estimate), and the path whose filesystem is the server disk (default `/`).
+     */
+    CLOUDFLARE_ANALYTICS_TOKEN: z
+      .string()
+      .regex(/^[A-Za-z0-9_-]{20,200}$/, 'expected a Cloudflare API token')
+      .optional(),
+    USAGE_DISK_PATH: z
+      .string()
+      .regex(/^\/[^\0]{0,200}$/, 'expected an absolute path')
+      .default('/'),
     /** PostHog ingestion host; EU cloud by default (decision 2026-11-14). */
     POSTHOG_HOST: z.url().default('https://eu.i.posthog.com'),
     /** Megabytes of public product-photo bytes kept in memory (0 = off; capped so it fits the container, decision 2026-11-24). */ PHOTO_CACHE_MB:
@@ -377,6 +389,10 @@ function toConfig(env: z.infer<typeof schema>) {
     defaultCityCode: env.DEFAULT_CITY_CODE,
     /** Private Storage bucket for job photos; null = photos unavailable (503), everything else works. */
     photoCacheBytes: env.PHOTO_CACHE_MB * 1024 * 1024,
+    usage: {
+      cloudflareAnalyticsToken: env.CLOUDFLARE_ANALYTICS_TOKEN ?? null,
+      diskPath: env.USAGE_DISK_PATH,
+    },
     photoStorage:
       env.SUPABASE_URL && env.SUPABASE_SECRET_KEY
         ? { url: env.SUPABASE_URL, secretKey: env.SUPABASE_SECRET_KEY, bucket: 'service-photos' }

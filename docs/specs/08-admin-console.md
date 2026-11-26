@@ -495,3 +495,29 @@ the community manager console of G2 joins the same group). Screen (`components/p
   being written.
 - Content → **Savings wording** (en + hi side by side): `savings.order` and `savings.account` must keep `{amount}`
   (an override without it falls back to the default), `savings.cart` is the cart row label; up to 160 characters.
+
+## Usage & limits (2026-11-26, founder: "list the storage and stuff … give me warnings when we are about to exceed the free limits")
+
+- **Who:** verified staff with an all-cities `settings:read` grant (super admin, operations manager) read the page and
+  may press **Check now**; changing a limit, the thresholds or the recipients needs `settings:write` (super admin).
+  A city manager gets 404 (platform-wide data, like Admin → Errors); other roles 403. Real sign-in builds only
+  (`REAL_SIGN_IN_ONLY`); System group of the side bar, lucide `Gauge`; `components/portal/admin-usage-api.tsx`
+  loaded with `next/dynamic`.
+- **What:** one card per provider (Cloudflare R2 for Ustaad media, Supabase, the server, Resend) with its status
+  (Measured / Not set up / Could not be read / Partly read) and one row per metric: name, "Estimated" label where the
+  number is our own count, "X of Y" with the level badge (OK / Warning / Critical + percent), a bullet bar
+  (`role="meter"`, the warning and critical marks drawn on it and stated in one line of text above the cards), a
+  30-day sparkline (inline SVG, no chart library) with a "Daily values" table behind a disclosure, and **Edit** for
+  super admins (inline form: limit in GB or count, empty = default; "Send warnings for this"). Below the cards the
+  warning settings: warning % and critical % (whole numbers, warning lower), up to 10 email recipients (empty = every
+  super admin with a confirmed email), email language. Operations managers see the settings as text.
+- **API:** `GET /v1/admin/usage` (`UsageView`), `POST /v1/admin/usage/check` (rate limits `usage_check` 6/h per
+  person and `usage_check_all` 12/h overall; returns the view), `PUT /v1/admin/usage/limits/{metric}`
+  (`{limit|null, alerts, expectedVersion}`), `PUT /v1/admin/usage/alerts` (`{warnPct, criticalPct, recipients,
+emailLocale, expectedVersion}`); compare-and-set on `version`, 409 when stale, audit rows `usage.limit_saved` and
+  `usage.alerts_saved`. Measurement, alert rules and providers: runbook `monitoring.md` "Usage & limits".
+- **Analytics:** clicks `admin_usage_check_now`, `admin_usage_limit_edit`, `admin_usage_limit_save`,
+  `admin_usage_alerts_save`; server events in spec 12.
+- **Tests:** `packages/db/test/usage.test.ts`, `apps/api/test/admin-usage.test.ts`, `packages/shared/test/usage.test.ts`,
+  state-audit row `API-ADM-USAGE`, `e2e/state-audit/usage.shots.ts` (`playwright.usage.config.ts`).
+- **Later:** a recovery note when a metric drops back; Upstash and Supabase egress numbers (need other keys).
