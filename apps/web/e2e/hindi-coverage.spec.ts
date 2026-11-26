@@ -139,6 +139,7 @@ const PUBLIC_PAGES = [
   '/',
   '/shop',
   '/shop?category=batteries',
+  '/shop?segment=two_wheeler', // the Kind of vehicle chips, the shop's only vehicle filter (2026-11-26)
   '/shop?q=बैटरी',
   '/workshops',
   '/offers',
