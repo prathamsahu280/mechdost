@@ -201,3 +201,72 @@ Hindi coverage, state-audit rows, JS budget for the new portal.
 
 Exact table/column names, migration split, UI layout within the design system, offer-timer defaults, ranking
 weights, photo compression settings — following the conventions in CLAUDE.md and the codebase study.
+
+## Contract (builder, 2026-11-26)
+
+Shared code: machines `packages/shared/src/state/delivery.ts` (`deliveryJobMachine`, `deliveryOfferMachine`,
+`agentStatusMachine`) and the order machine in `state/index.ts`; codes and pure rules
+`packages/shared/src/delivery/codes.ts` (`@mechdost/shared/delivery/codes`, Zod-free); DTOs
+`packages/shared/src/delivery/api.ts` (`@mechdost/shared/delivery/api`); copy `delivery.*` in `i18n/en.json` + `hi.json`.
+Deviations from the text above are in `docs/decisions.md` 2026-11-26 "Delivery agents: contract".
+
+### States
+
+- **Order** (sub-order) adds `ready_for_pickup` (after `packed`) and the terminal `returned`. Agent-mode path:
+  `packed →(shop) ready_for_pickup →(agent pickup; admin override) out_for_delivery →(agent; admin override)
+delivered`. Hand-back: `out_for_delivery →(shop with return code; admin override) ready_for_pickup` (retry with
+  another agent) or `returned` (close, refund). Switch to the shop's own delivery: `ready_for_pickup →(shop confirms)
+packed`. Staff cancel `ready_for_pickup → cancelled`. Actor `delivery_agent` added.
+- **Delivery job:** `needs_agent → offered → accepted → picked_up → delivered`; `offered|accepted → needs_agent`
+  (decline, expire, withdraw, give up); `picked_up → failed`; `failed →(admin) picked_up` (retry, same agent) or
+  `returning →(shop code) returned`; `needs_agent|offered|accepted → cancelled`. One active job per sub-order.
+- **Offer:** `offered → accepted | declined | expired | withdrawn`; `accepted → given_up | withdrawn`.
+- **Agent:** `onboarding → active ↔ paused`, `→ suspended`, `→ offboarded` (reason codes, history).
+
+### API routes (all under `/v1`; bodies `.strict()`; DTO names from `delivery/api.ts`)
+
+| Method + path                                                                           | Who (permission)           | Body → response                                           | Limits / notes                                             |
+| --------------------------------------------------------------------------------------- | -------------------------- | --------------------------------------------------------- | ---------------------------------------------------------- |
+| POST `/delivery-agent-applications`                                                     | public                     | `DeliveryAgentApplySubmit` → `DeliveryAgentApplyReceived` | Turnstile; 5/h per IP; 3/day per phone                     |
+| GET `/delivery-invites/{token}`                                                         | public                     | → `AgentInvitePreview`                                    | 30/h per IP                                                |
+| POST `/me/delivery-invites/accept`                                                      | signed in (phone verified) | `AgentInviteAccept` → `AgentInviteAccepted`               | OTP phone must equal the invite phone; single use          |
+| GET `/agent/me`                                                                         | `deliveries:read`          | → `AgentProfile`                                          |                                                            |
+| POST `/agent/me/online`                                                                 | `deliveries:respond`       | `AgentOnlineInput` → `AgentProfile`                       | active agents only                                         |
+| PUT `/agent/me/documents`                                                               | `deliveries:fulfil`        | `AgentDocumentInput` → `AgentProfile`                     | 12-digit numbers refused                                   |
+| POST `/agent/photos`                                                                    | `deliveries:fulfil`        | multipart `file`, `purpose` → `AgentPhotoUploaded`        | media pipeline, 30/10 min                                  |
+| GET `/agent/jobs?view=offers\|active\|done`                                             | `deliveries:read`          | → `AgentJobPage`                                          | cursor paging                                              |
+| GET `/agent/jobs/{jobId}`                                                               | `deliveries:read`          | → `AgentJobDetail`                                        | 404 unless offered to / held by this agent; reveal audited |
+| POST `/agent/offers/{offerId}/accept`                                                   | `deliveries:respond`       | `OfferAcceptInput` → `AgentJobDetail`                     | 409 when expired/taken                                     |
+| POST `/agent/offers/{offerId}/decline`                                                  | `deliveries:respond`       | `OfferDeclineInput` → 204                                 |                                                            |
+| POST `/agent/jobs/{jobId}/give-up`                                                      | `deliveries:respond`       | `GiveUpInput` → 204                                       | accepted only                                              |
+| POST `/agent/jobs/{jobId}/pickup`                                                       | `deliveries:fulfil`        | `PickupInput` → `CodeStepResult`                          | 20/10 min per user; 5 tries per code                       |
+| POST `/agent/jobs/{jobId}/deliver`                                                      | `deliveries:fulfil`        | `DeliverInput` → `CodeStepResult`                         | same as pickup; existing delivery-code rules               |
+| POST `/agent/jobs/{jobId}/fail`                                                         | `deliveries:fulfil`        | `FailInput` → `AgentJobDetail`                            |                                                            |
+| GET `/shop/orders` (existing)                                                           | `orders:read`              | items gain `delivery: ShopOrderDelivery`                  | pickup code only to the shop                               |
+| POST `/shop/orders/{code}/advance` (existing)                                           | `orders:fulfil`            | `step: 'ready_for_pickup'` added                          | agent-mode only; COD refused                               |
+| POST `/shop/orders/{code}/return-received`                                              | `orders:fulfil`            | `ReturnReceivedInput` → 204                               | 5 tries                                                    |
+| POST `/shop/orders/{code}/delivery-switch/{id}/confirm\|decline`                        | `orders:fulfil`            | `SwitchConfirmInput` / `SwitchDeclineInput`               |                                                            |
+| GET `/shop/delivery-mode/{shopId}`                                                      | `orders:read`              | → `ShopDeliveryModeView`                                  | own shop                                                   |
+| POST `/shop/delivery-mode/{shopId}/requests`                                            | `orders:fulfil` (owner)    | `ShopModeRequestInput` → row                              | one pending per shop                                       |
+| POST `/shop/delivery-mode/{shopId}/requests/{id}/withdraw`                              | `orders:fulfil`            | → 204                                                     |                                                            |
+| GET `/admin/delivery/agents`                                                            | `delivery_agents:manage`   | → `AdminAgentPage`                                        | city-scoped                                                |
+| GET `/admin/delivery/agents/{id}`                                                       | `delivery_agents:manage`   | → `AdminAgentDetail`                                      |                                                            |
+| PATCH `/admin/delivery/agents/{id}`                                                     | `delivery_agents:manage`   | `AgentEditInput`                                          |                                                            |
+| POST `/admin/delivery/agents/{id}/status`                                               | `delivery_agents:manage`   | `AgentStatusInput`                                        | reason required except `active`                            |
+| GET `/admin/delivery/agents/{id}/documents/{kind}`                                      | `delivery_agents:manage`   | → `AdminDocumentView`                                     | audited view                                               |
+| POST `/admin/delivery/agents/{id}/documents/{kind}/verify\|reject`                      | `delivery_agents:manage`   | `DocumentDecisionInput`                                   |                                                            |
+| GET/POST `/admin/delivery/invites`, POST `/admin/delivery/invites/{id}/revoke`          | `delivery_agents:manage`   | `AgentInviteInput` → `AgentInviteCreated`                 | email + WhatsApp                                           |
+| GET `/admin/delivery/applications` (= partner applications `kind=delivery_agent`)       | `delivery_agents:manage`   | existing `ApplicationPage`                                | reject with the existing reasons                           |
+| GET `/admin/delivery/jobs?view=…`                                                       | `delivery_jobs:assign`     | → `AdminJobPage`                                          | city-scoped                                                |
+| GET `/admin/delivery/jobs/{jobId}`                                                      | `delivery_jobs:assign`     | → `AdminJobDetail` (suggestions)                          |                                                            |
+| POST `/admin/delivery/jobs/{jobId}/offer`                                               | `delivery_jobs:assign`     | `JobOfferInput`                                           | vehicle must carry the load                                |
+| POST `/admin/delivery/jobs/{jobId}/withdraw`                                            | `delivery_jobs:assign`     | `JobWithdrawInput`                                        |                                                            |
+| POST `/admin/delivery/jobs/{jobId}/failure-decision`                                    | `delivery_jobs:assign`     | `FailureDecisionInput`                                    | retry limit                                                |
+| POST `/admin/delivery/jobs/{jobId}/override-pickup\|override-delivery\|override-return` | `delivery_jobs:assign`     | `JobOverrideInput`                                        | audited                                                    |
+| POST `/admin/orders/{code}/delivery-switch`                                             | `delivery_jobs:assign`     | `DeliverySwitchInput` → `DeliverySwitchRow`               |                                                            |
+| GET `/admin/delivery/shop-mode-requests`, POST `…/{id}/approve\|reject`                 | `delivery_agents:manage`   | `ShopModeDecisionInput`                                   |                                                            |
+| PUT `/admin/shops/{shopId}/delivery-mode`                                               | `delivery_agents:manage`   | `ShopModeSetInput`                                        | history kept                                               |
+| GET `/admin/delivery/kpis`                                                              | `delivery_jobs:assign`     | → `DeliveryKpis`                                          |                                                            |
+
+Customer order view: agent-mode sub-orders gain `delivery: CustomerDeliveryBlock` (first name + vehicle; never the shop
+or the agent's phone). Settings: `delivery.*` keys in `OPERATIONAL_SETTINGS` (Admin → Settings → Partners for now).

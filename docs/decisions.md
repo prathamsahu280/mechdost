@@ -2530,3 +2530,36 @@ and WhatsApp, PAN + licence + RC (no Aadhaar), vehicle type, photo at pickup and
 pay, COD and dispatch mode decided later. Lead's calls (in the design): admin-assigns dispatch, COD stays with the shop,
 per-order mode, documents after sign-in, per-city switch off by default, load by total weight, failed-delivery refund
 rule (founder accepted). Q217 answered.
+
+## 2026-11-26 — Delivery agents: contract (builder's choices within the approved design)
+
+Contract and route table: design doc § "Contract (builder, 2026-11-26)". Where the builder filled a gap or changed a
+word of the design:
+
+- **Agent statuses** `onboarding → active ↔ paused → suspended → offboarded` (design: applied|approved|active|…). The
+  application keeps its own statuses (`partner_applications`, kind `delivery_agent`); the agent row exists from the
+  accepted invite on; `active` = documents verified by admin (the design's "approved + verified"). Offers go only to
+  active agents who are online, in a city with `delivery.agents_enabled` on.
+- **Retry model:** retry with the **same** agent is `failed → picked_up` (the parcel never left them). Retry with
+  **another** agent goes through the shop: `failed → returning`, the shop types the agent's 4-digit **return code**
+  (`returned`), the order goes back to `ready_for_pickup` and a new job waits for an agent. Close = the same hand-back,
+  then the order ends `returned` with the last failure reason as its reason code and the refund per Lead's call 13
+  (`returnRefundKind`). Attempts per sub-order: setting `delivery.max_attempts` (default 2 = one free retry).
+- **Contact by stage:** `failed` keeps the customer visible to the agent (admin may send them again), `returning` shows
+  the shop only; delivered / returned / cancelled show nothing (Lead's call 6 otherwise unchanged).
+- **Documents** are stored in the existing private media host (`media_objects`, private Supabase Storage bucket,
+  served only through the API), not R2 (design text); R2 stays Ustaad-only. Numbers encrypted (`*_enc`) with a
+  blind index; any 12-digit number refused (Aadhaar).
+- **Invites** have their own table (`delivery_agent_invites`): email optional (WhatsApp may be the only channel),
+  phone-bound, single use, `delivery.invite_hours` (default 72). Seller invites (`partner_invites`) unchanged.
+- **Dispatch mode** is a code list (`DELIVERY_DISPATCH_MODES = ['admin']`), not an admin setting: the settings registry
+  holds ints and booleans only (L-USAGE3) and a switch that does nothing would mislead; `broadcast` is added when the
+  founder decides.
+- **Vehicle loads** are per-city int settings in kg (`delivery.max_load_<vehicle>_kg`; defaults 20/20/300/1000);
+  `load_class` (light/heavy/bulky) is the fallback for lines without a variant weight; bike and scooter carry light
+  only, three-wheeler light + heavy, goods vehicle all.
+- **Permissions:** agent role `delivery_agent` (scope self) holds `deliveries:read|respond|fulfil` plus account and
+  ticket basics; staff `delivery_agents:manage`, `delivery_jobs:assign` on ops_manager and city_manager (super_admin
+  via ALL). `cityScopeFrom` additionally ignores non-staff grants (defence in depth).
+- **Settings screen:** the `delivery.*` settings are listed under Admin → Settings → Partners until the Delivery
+  section has its own screen (web agent).

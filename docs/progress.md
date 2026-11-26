@@ -2,6 +2,18 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-26 (night) — delivery agents backend (branch worktree-agent-aa4e4463a8d74ac65, not pushed)
+
+- **Step 1 done: contract** ("feat(delivery): contract"): job/offer/agent machines, order machine
+  (`ready_for_pickup`, `returned`, actor `delivery_agent`), codes + rules (`@mechdost/shared/delivery/codes`), DTOs
+  (`@mechdost/shared/delivery/api`), role `delivery_agent` + staff permissions, `delivery.*` settings, `delivery.*`
+  copy en + hi, route table in the design doc, decisions "Delivery agents: contract". Plan:
+  `docs/superpowers/plans/2026-11-26-delivery-agents.md` (advisor brief inside).
+- **Known gap until migration 0105:** the database CHECKs (`orders_status_valid`, `order_events_actor_valid`) do not
+  yet accept the new states/actor; nothing writes them before the repositories land.
+- **Next:** migrations 0105+ → repositories → API + worker → notifications/analytics → docs (spec 24 + 04/05/07/08/
+  10/12/13/14) → gates. Web screens: second agent, from the contract.
+
 ## 2026-11-26 (night) — four fixes agent (branch worktree-agent-a3b1a256dd1a31849, not pushed, no migration)
 
 - **Shop:** the 2W/3W/4W "Vehicle type" select is retired (founder ruling, Q-segments answered); old `?vehicle=` links

@@ -3326,7 +3326,18 @@
     "field_savings_order": "ऑर्डर पेज की लाइन ('{amount}' रखें)",
     "field_savings_account": "अकाउंट कार्ड की लाइन ('{amount}' रखें)",
     "field_savings_cart": "कार्ट में अनुमान का लेबल",
-    "api_set_customers_savings_enabled": "ग्राहकों को “आपकी बचत” दिखाएँ (ऑर्डर पेज, कार्ट, अकाउंट)"
+    "api_set_customers_savings_enabled": "ग्राहकों को “आपकी बचत” दिखाएँ (ऑर्डर पेज, कार्ट, अकाउंट)",
+    "api_set_delivery_agents_enabled": "प्रीपेड ऑर्डर MechDost डिलीवरी एजेंट पहुँचाते हैं",
+    "api_set_delivery_offer_timeout_min": "एजेंट के पास काम स्वीकार करने का समय",
+    "api_set_delivery_max_active_jobs": "एक एजेंट एक साथ कितने काम रख सकता है",
+    "api_set_delivery_photos_required": "एजेंट को पिकअप और डिलीवरी की फ़ोटो लेनी होगी",
+    "api_set_delivery_max_attempts": "हर ऑर्डर पर डिलीवरी की कोशिशें",
+    "api_set_delivery_invite_hours": "एजेंट का न्योता कितने घंटे मान्य रहेगा",
+    "api_set_delivery_document_retention_days": "हटाए गए एजेंट के दस्तावेज़ कितने दिन रखें",
+    "api_set_delivery_max_load_bike_kg": "मोटरसाइकिल पर अधिकतम वज़न (kg)",
+    "api_set_delivery_max_load_scooter_kg": "स्कूटर पर अधिकतम वज़न (kg)",
+    "api_set_delivery_max_load_three_wheeler_kg": "तिपहिया पर अधिकतम वज़न (kg)",
+    "api_set_delivery_max_load_goods_vehicle_kg": "मालवाहक गाड़ी पर अधिकतम वज़न (kg)"
   },
   "shopGiveUp": {
     "action": "यह ऑर्डर पूरा नहीं कर सकते",
@@ -5068,7 +5079,9 @@
       "customer_block_expired_closed": "ग्राहक का ब्लॉक समाप्त हुआ",
       "auth_locked": "साइन-इन लॉक हुआ"
     },
-    "audit_wholeValue": "पूरा मान"
+    "audit_wholeValue": "पूरा मान",
+    "ostatus_ready_for_pickup": "पिकअप के लिए तैयार",
+    "ostatus_returned": "दुकान को वापस"
   },
   "adminExports": {
     "title": "एक्सपोर्ट",
@@ -6435,7 +6448,18 @@
     "help_api_signed_in_per_minute": "एक साइन-इन खाता प्रति मिनट कितने अनुरोध कर सकता है। साझा वाई-फ़ाई पर भी हर व्यक्ति अलग गिना जाता है।",
     "help_api_guest_per_ip_per_minute": "साइन-इन किए बिना एक इंटरनेट पता प्रति मिनट कितने अनुरोध कर सकता है।",
     "help_api_ip_flood_per_minute": "एक इंटरनेट पते से प्रति मिनट कुल अधिकतम अनुरोध। बाढ़ से बचाव; इसे अतिथि सीमा से ऊपर रखें।",
-    "help_customers_savings_enabled": "डिलीवर हुए ऑर्डर पर निर्माता के छपे MRP की तुलना में ग्राहक की बचत दिखाता है। बंद रहने पर भी आँकड़े दर्ज होते रहते हैं।"
+    "help_customers_savings_enabled": "डिलीवर हुए ऑर्डर पर निर्माता के छपे MRP की तुलना में ग्राहक की बचत दिखाता है। बंद रहने पर भी आँकड़े दर्ज होते रहते हैं।",
+    "help_delivery_agents_enabled": "बंद: हर दुकान अपने ऑर्डर ख़ुद पहुँचाती है, पहले की तरह। कैश ऑन डिलीवरी ऑर्डर हमेशा दुकान के पास रहते हैं।",
+    "help_delivery_offer_timeout_min": "इतने मिनट में जवाब न मिले तो ऑफ़र वापस कतार में चला जाता है।",
+    "help_delivery_max_active_jobs": "जिस एजेंट के पास इतने काम हैं उसे और काम के लिए नहीं सुझाया जाता।",
+    "help_delivery_photos_required": "पिकअप पर, डिलीवरी पर और डिलीवरी न होने पर एक फ़ोटो।",
+    "help_delivery_max_attempts": "2 का मतलब एक मुफ़्त दोबारा कोशिश; उसके बाद पार्सल दुकान को वापस जाता है।",
+    "help_delivery_invite_hours": "ईमेल और WhatsApp से भेजा गया साइन-इन लिंक इसके बाद काम नहीं करता।",
+    "help_delivery_document_retention_days": "एजेंट के जाने के इतने दिन बाद पैन, लाइसेंस और आरसी मिटा दिए जाते हैं, जब तक कोई विवाद खुला न हो।",
+    "help_delivery_max_load_bike_kg": "इससे भारी ऑर्डर मोटरसाइकिल को नहीं दिए जाते।",
+    "help_delivery_max_load_scooter_kg": "इससे भारी ऑर्डर स्कूटर को नहीं दिए जाते।",
+    "help_delivery_max_load_three_wheeler_kg": "इससे भारी ऑर्डर तिपहिया को नहीं दिए जाते।",
+    "help_delivery_max_load_goods_vehicle_kg": "इससे भारी ऑर्डर मालवाहक गाड़ी को नहीं दिए जाते।"
   },
   "roadside": {
     "eyebrow": "रोडसाइड मदद",
@@ -8816,5 +8840,172 @@
     "err_order": "चेतावनी का स्तर गंभीर से कम होना चाहिए।",
     "read_only": "सीमाएँ और चेतावनियाँ सिर्फ़ सुपर एडमिन बदल सकते हैं।",
     "default_recipients": "कन्फ़र्म ईमेल वाले सभी सुपर एडमिन"
+  },
+  "delivery": {
+    "orderStatus": {
+      "ready_for_pickup": "पिकअप के लिए तैयार",
+      "returned": "दुकान को वापस"
+    },
+    "jobStatus": {
+      "needs_agent": "एजेंट चाहिए",
+      "offered": "ऑफ़र भेजा गया",
+      "accepted": "स्वीकार किया",
+      "picked_up": "पिकअप हो गया",
+      "delivered": "डिलीवर हो गया",
+      "failed": "डिलीवरी नहीं हो पाई",
+      "returning": "दुकान पर वापस आ रहा है",
+      "returned": "वापस पहुँचा",
+      "cancelled": "रद्द"
+    },
+    "offerStatus": {
+      "offered": "एजेंट के जवाब का इंतज़ार",
+      "accepted": "स्वीकार किया",
+      "declined": "मना किया",
+      "expired": "समय ख़त्म",
+      "withdrawn": "वापस लिया गया",
+      "given_up": "छोड़ दिया"
+    },
+    "agentStatus": {
+      "onboarding": "जुड़ रहे हैं",
+      "active": "सक्रिय",
+      "paused": "रोका गया",
+      "suspended": "निलंबित",
+      "offboarded": "हटाया गया"
+    },
+    "agentStatusReason": {
+      "documents_expired": "दस्तावेज़ की मियाद ख़त्म",
+      "documents_invalid": "दस्तावेज़ मान्य नहीं",
+      "customer_complaint": "ग्राहक की शिकायत",
+      "repeated_declines": "बहुत ज़्यादा ऑफ़र मना किए",
+      "repeated_failures": "बहुत सी डिलीवरी नहीं हो पाईं",
+      "safety_incident": "सुरक्षा से जुड़ी घटना",
+      "fraud_suspected": "धोखाधड़ी का शक",
+      "agent_request": "एजेंट के कहने पर",
+      "inactive": "लंबे समय से सक्रिय नहीं",
+      "other": "अन्य"
+    },
+    "vehicle": {
+      "bike": "मोटरसाइकिल",
+      "scooter": "स्कूटर",
+      "three_wheeler": "तिपहिया",
+      "goods_vehicle": "मालवाहक गाड़ी"
+    },
+    "loadClass": {
+      "light": "हल्का (दोपहिया)",
+      "heavy": "भारी (तिपहिया या बड़ी गाड़ी)",
+      "bulky": "बड़ा सामान (मालवाहक गाड़ी)"
+    },
+    "failReason": {
+      "customer_unreachable": "ग्राहक से संपर्क नहीं हुआ",
+      "customer_refused": "ग्राहक ने पार्सल लेने से मना किया",
+      "wrong_address": "पता ग़लत या अधूरा",
+      "unsafe_location": "जगह सुरक्षित नहीं",
+      "vehicle_issue": "गाड़ी में दिक़्क़त",
+      "other": "अन्य"
+    },
+    "declineReason": {
+      "too_far": "बहुत दूर है",
+      "vehicle_unsuitable": "मेरी गाड़ी में नहीं आएगा",
+      "busy": "दूसरे काम में व्यस्त",
+      "going_offline": "ऑफ़लाइन जा रहा हूँ",
+      "other": "अन्य"
+    },
+    "giveUpReason": {
+      "vehicle_issue": "गाड़ी में दिक़्क़त",
+      "emergency": "आपातकाल",
+      "shop_closed": "दुकान बंद है",
+      "parcel_not_ready": "पार्सल तैयार नहीं",
+      "other": "अन्य"
+    },
+    "withdrawReason": {
+      "agent_unresponsive": "एजेंट जवाब नहीं दे रहा",
+      "reassigning": "दूसरे एजेंट को दे रहे हैं",
+      "order_changed": "ऑर्डर बदल गया",
+      "other": "अन्य"
+    },
+    "document": {
+      "kind": {
+        "pan": "पैन कार्ड",
+        "driving_licence": "ड्राइविंग लाइसेंस",
+        "vehicle_rc": "गाड़ी का रजिस्ट्रेशन (आरसी)"
+      },
+      "status": {
+        "submitted": "जाँच बाक़ी",
+        "verified": "सत्यापित",
+        "rejected": "स्वीकार नहीं हुआ"
+      },
+      "rejectReason": {
+        "unreadable": "फ़ोटो साफ़ नहीं",
+        "name_mismatch": "नाम मेल नहीं खाता",
+        "expired": "मियाद ख़त्म",
+        "wrong_document": "ग़लत दस्तावेज़",
+        "number_mismatch": "नंबर फ़ोटो से मेल नहीं खाता",
+        "other": "अन्य"
+      }
+    },
+    "switchReason": {
+      "no_vehicle_for_load": "किसी एजेंट की गाड़ी में नहीं आएगा",
+      "no_agent_available": "कोई एजेंट उपलब्ध नहीं",
+      "repeated_failures": "डिलीवरी एक से ज़्यादा बार नहीं हो पाई",
+      "customer_request": "ग्राहक ने कहा",
+      "other": "अन्य"
+    },
+    "switchDeclineReason": {
+      "no_rider": "हमारे पास पहुँचाने वाला कोई नहीं",
+      "too_far": "हमारे लिए बहुत दूर",
+      "too_busy": "अभी बहुत व्यस्त हैं",
+      "other": "अन्य"
+    },
+    "shopMode": {
+      "agents": "MechDost डिलीवरी एजेंट",
+      "self": "हम ख़ुद डिलीवर करते हैं"
+    },
+    "shopModeRequestReason": {
+      "own_riders": "हमारे अपने डिलीवरी कर्मचारी हैं",
+      "faster_local_delivery": "पास में हम जल्दी पहुँचा सकते हैं",
+      "customer_relationship": "हम अपने ग्राहकों से मिलना चाहते हैं",
+      "agents_unreliable": "एजेंट की डिलीवरी भरोसेमंद नहीं रही",
+      "other": "अन्य"
+    },
+    "shopModeRejectReason": {
+      "agents_cover_area": "आपके इलाक़े में एजेंट अच्छी तरह पहुँचते हैं",
+      "service_quality": "डिलीवरी की गुणवत्ता को लेकर चिंता",
+      "incomplete_request": "अनुरोध अधूरा है",
+      "other": "अन्य"
+    },
+    "shopModeRequestStatus": {
+      "pending": "MechDost के जवाब का इंतज़ार",
+      "approved": "मंज़ूर",
+      "rejected": "मंज़ूर नहीं",
+      "withdrawn": "वापस लिया"
+    },
+    "customerStage": {
+      "finding_agent": "डिलीवरी पार्टनर ढूँढ रहे हैं",
+      "agent_assigned": "{name} आपका ऑर्डर पिकअप करेंगे",
+      "picked_up": "{name} ({vehicle}) ने पिकअप किया",
+      "attempt_failed": "आज डिलीवरी नहीं हो पाई",
+      "retrying": "हम फिर से डिलीवरी करेंगे",
+      "returning": "आपका ऑर्डर वापस जा रहा है",
+      "delivered": "डिलीवर हो गया",
+      "returned": "वापस गया, रिफ़ंड आ रहा है"
+    },
+    "deliveryPartner": "MechDost डिलीवरी पार्टनर",
+    "errors": {
+      "AGENTS_DISABLED": "इस शहर में डिलीवरी एजेंट अभी चालू नहीं हैं।",
+      "JOB_CHANGED": "इस बीच यह काम बदल गया। रीफ़्रेश करके फिर कोशिश करें।",
+      "OFFER_EXPIRED": "इस ऑफ़र का समय ख़त्म हो गया।",
+      "TOO_MANY_ACTIVE_JOBS": "आपके पास पहले से उतने काम हैं जितने रख सकते हैं।",
+      "AGENT_NOT_ACTIVE": "आपका खाता अभी डिलीवरी के लिए चालू नहीं है।",
+      "PHOTO_REQUIRED": "पहले फ़ोटो लें।",
+      "WRONG_CODE": "यह कोड सही नहीं है। {attemptsLeft} कोशिशें बाक़ी।",
+      "CODE_LOCKED": "बहुत बार ग़लत कोड डाला गया। MechDost सहायता को फ़ोन करें।",
+      "RETRY_LIMIT": "अब और कोशिश नहीं बची; दुकान को वापस भेजें।",
+      "VEHICLE_CANNOT_CARRY": "इस एजेंट की गाड़ी में यह ऑर्डर नहीं आएगा।",
+      "COD_STAYS_WITH_SHOP": "कैश ऑन डिलीवरी ऑर्डर दुकान ही पहुँचाती है।",
+      "INVITE_PHONE_MISMATCH": "यह न्योता किसी दूसरे फ़ोन नंबर के लिए है।",
+      "INVITE_EXPIRED": "इस न्योते का समय ख़त्म हो गया। MechDost से नया माँगें।",
+      "DOCUMENT_AADHAAR": "यहाँ आधार नंबर न डालें।",
+      "DOCUMENT_FORMAT": "नंबर जाँचकर फिर कोशिश करें।"
+    }
   }
 }

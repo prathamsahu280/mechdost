@@ -3326,7 +3326,18 @@
     "field_savings_order": "Order page line (keep '{amount}')",
     "field_savings_account": "Account card line (keep '{amount}')",
     "field_savings_cart": "Cart estimate label",
-    "api_set_customers_savings_enabled": "Show “Your savings” to customers (order page, cart, account)"
+    "api_set_customers_savings_enabled": "Show “Your savings” to customers (order page, cart, account)",
+    "api_set_delivery_agents_enabled": "MechDost delivery agents deliver prepaid orders",
+    "api_set_delivery_offer_timeout_min": "Time an agent has to accept a job",
+    "api_set_delivery_max_active_jobs": "Jobs an agent may hold at once",
+    "api_set_delivery_photos_required": "Agents must take pickup and delivery photos",
+    "api_set_delivery_max_attempts": "Delivery attempts per order",
+    "api_set_delivery_invite_hours": "Hours an agent invite stays valid",
+    "api_set_delivery_document_retention_days": "Days agent documents are kept after offboarding",
+    "api_set_delivery_max_load_bike_kg": "Most a motorcycle carries (kg)",
+    "api_set_delivery_max_load_scooter_kg": "Most a scooter carries (kg)",
+    "api_set_delivery_max_load_three_wheeler_kg": "Most a three-wheeler carries (kg)",
+    "api_set_delivery_max_load_goods_vehicle_kg": "Most a goods vehicle carries (kg)"
   },
   "shopGiveUp": {
     "action": "Can't fulfil this order",
@@ -5068,7 +5079,9 @@
       "customer_block_expired_closed": "Customer block ended",
       "auth_locked": "Sign-in locked"
     },
-    "audit_wholeValue": "whole value"
+    "audit_wholeValue": "whole value",
+    "ostatus_ready_for_pickup": "Ready for pickup",
+    "ostatus_returned": "Returned to the shop"
   },
   "adminExports": {
     "title": "Exports",
@@ -6435,7 +6448,18 @@
     "help_api_signed_in_per_minute": "Requests per minute one signed-in account may make. Each person is counted alone, even on shared Wi-Fi.",
     "help_api_guest_per_ip_per_minute": "Requests per minute one internet address may make when not signed in.",
     "help_api_ip_flood_per_minute": "Most requests per minute from one internet address in total. Guards against floods; keep it above the guest limit.",
-    "help_customers_savings_enabled": "Shows what customers saved vs the maker's printed MRP on delivered orders. The figures keep being recorded while it is off."
+    "help_customers_savings_enabled": "Shows what customers saved vs the maker's printed MRP on delivered orders. The figures keep being recorded while it is off.",
+    "help_delivery_agents_enabled": "Off: every shop delivers its own orders, as before. Cash-on-delivery orders always stay with the shop.",
+    "help_delivery_offer_timeout_min": "After this many minutes an unanswered offer goes back to the queue.",
+    "help_delivery_max_active_jobs": "An agent with this many jobs is not suggested for more.",
+    "help_delivery_photos_required": "A photo at pickup, at delivery and with a failed delivery.",
+    "help_delivery_max_attempts": "2 means one free retry; after that the parcel goes back to the shop.",
+    "help_delivery_invite_hours": "The sign-in link sent by email and WhatsApp stops working after this.",
+    "help_delivery_document_retention_days": "PAN, licence and RC are deleted this many days after an agent leaves, unless a dispute is open.",
+    "help_delivery_max_load_bike_kg": "Orders heavier than this are not offered to motorcycles.",
+    "help_delivery_max_load_scooter_kg": "Orders heavier than this are not offered to scooters.",
+    "help_delivery_max_load_three_wheeler_kg": "Orders heavier than this are not offered to three-wheelers.",
+    "help_delivery_max_load_goods_vehicle_kg": "Orders heavier than this are not offered to goods vehicles."
   },
   "roadside": {
     "eyebrow": "Roadside help",
@@ -8816,5 +8840,172 @@
     "err_order": "The warning must be lower than critical.",
     "read_only": "Only a super admin can change limits and warnings.",
     "default_recipients": "Every super admin with a confirmed email"
+  },
+  "delivery": {
+    "orderStatus": {
+      "ready_for_pickup": "Ready for pickup",
+      "returned": "Returned to the shop"
+    },
+    "jobStatus": {
+      "needs_agent": "Needs an agent",
+      "offered": "Offered",
+      "accepted": "Accepted",
+      "picked_up": "Picked up",
+      "delivered": "Delivered",
+      "failed": "Delivery failed",
+      "returning": "Coming back to the shop",
+      "returned": "Returned",
+      "cancelled": "Cancelled"
+    },
+    "offerStatus": {
+      "offered": "Waiting for the agent",
+      "accepted": "Accepted",
+      "declined": "Declined",
+      "expired": "Expired",
+      "withdrawn": "Taken back",
+      "given_up": "Given up"
+    },
+    "agentStatus": {
+      "onboarding": "Onboarding",
+      "active": "Active",
+      "paused": "Paused",
+      "suspended": "Suspended",
+      "offboarded": "Offboarded"
+    },
+    "agentStatusReason": {
+      "documents_expired": "Documents expired",
+      "documents_invalid": "Documents not valid",
+      "customer_complaint": "Customer complaint",
+      "repeated_declines": "Declines too many offers",
+      "repeated_failures": "Too many failed deliveries",
+      "safety_incident": "Safety incident",
+      "fraud_suspected": "Suspected fraud",
+      "agent_request": "Agent asked for it",
+      "inactive": "Inactive",
+      "other": "Other"
+    },
+    "vehicle": {
+      "bike": "Motorcycle",
+      "scooter": "Scooter",
+      "three_wheeler": "Three-wheeler",
+      "goods_vehicle": "Goods vehicle"
+    },
+    "loadClass": {
+      "light": "Light (two-wheeler)",
+      "heavy": "Heavy (three-wheeler or bigger)",
+      "bulky": "Bulky (goods vehicle)"
+    },
+    "failReason": {
+      "customer_unreachable": "Customer not reachable",
+      "customer_refused": "Customer refused the parcel",
+      "wrong_address": "Wrong or incomplete address",
+      "unsafe_location": "Location not safe",
+      "vehicle_issue": "Vehicle problem",
+      "other": "Other"
+    },
+    "declineReason": {
+      "too_far": "Too far",
+      "vehicle_unsuitable": "My vehicle can't carry it",
+      "busy": "Busy with another job",
+      "going_offline": "Going offline",
+      "other": "Other"
+    },
+    "giveUpReason": {
+      "vehicle_issue": "Vehicle problem",
+      "emergency": "Emergency",
+      "shop_closed": "Shop is closed",
+      "parcel_not_ready": "Parcel not ready",
+      "other": "Other"
+    },
+    "withdrawReason": {
+      "agent_unresponsive": "Agent not responding",
+      "reassigning": "Giving it to another agent",
+      "order_changed": "The order changed",
+      "other": "Other"
+    },
+    "document": {
+      "kind": {
+        "pan": "PAN card",
+        "driving_licence": "Driving licence",
+        "vehicle_rc": "Vehicle registration (RC)"
+      },
+      "status": {
+        "submitted": "Waiting for review",
+        "verified": "Verified",
+        "rejected": "Not accepted"
+      },
+      "rejectReason": {
+        "unreadable": "Photo not readable",
+        "name_mismatch": "Name does not match",
+        "expired": "Expired",
+        "wrong_document": "Wrong document",
+        "number_mismatch": "Number does not match the photo",
+        "other": "Other"
+      }
+    },
+    "switchReason": {
+      "no_vehicle_for_load": "No agent vehicle can carry it",
+      "no_agent_available": "No agent available",
+      "repeated_failures": "Delivery failed more than once",
+      "customer_request": "Customer asked",
+      "other": "Other"
+    },
+    "switchDeclineReason": {
+      "no_rider": "We have no one to deliver it",
+      "too_far": "Too far for us",
+      "too_busy": "Too busy right now",
+      "other": "Other"
+    },
+    "shopMode": {
+      "agents": "MechDost delivery agents",
+      "self": "We deliver ourselves"
+    },
+    "shopModeRequestReason": {
+      "own_riders": "We have our own delivery staff",
+      "faster_local_delivery": "We can deliver faster nearby",
+      "customer_relationship": "We want to meet our customers",
+      "agents_unreliable": "Agent deliveries were not reliable",
+      "other": "Other"
+    },
+    "shopModeRejectReason": {
+      "agents_cover_area": "Agents already cover your area well",
+      "service_quality": "Delivery quality concerns",
+      "incomplete_request": "Request incomplete",
+      "other": "Other"
+    },
+    "shopModeRequestStatus": {
+      "pending": "Waiting for MechDost",
+      "approved": "Approved",
+      "rejected": "Not approved",
+      "withdrawn": "Withdrawn"
+    },
+    "customerStage": {
+      "finding_agent": "Finding a delivery partner",
+      "agent_assigned": "{name} will pick up your order",
+      "picked_up": "Picked up by {name} ({vehicle})",
+      "attempt_failed": "We couldn't deliver today",
+      "retrying": "We'll try delivering again",
+      "returning": "Your order is going back",
+      "delivered": "Delivered",
+      "returned": "Returned, refund on its way"
+    },
+    "deliveryPartner": "MechDost delivery partner",
+    "errors": {
+      "AGENTS_DISABLED": "Delivery agents are not switched on in this city.",
+      "JOB_CHANGED": "This job changed meanwhile. Refresh and try again.",
+      "OFFER_EXPIRED": "This offer has expired.",
+      "TOO_MANY_ACTIVE_JOBS": "You already have the most jobs you can hold.",
+      "AGENT_NOT_ACTIVE": "Your account is not active for deliveries yet.",
+      "PHOTO_REQUIRED": "Take a photo first.",
+      "WRONG_CODE": "That code is not right. {attemptsLeft} tries left.",
+      "CODE_LOCKED": "Too many wrong codes. Call MechDost support.",
+      "RETRY_LIMIT": "No more attempts left; send it back to the shop.",
+      "VEHICLE_CANNOT_CARRY": "This agent's vehicle can't carry this order.",
+      "COD_STAYS_WITH_SHOP": "Cash-on-delivery orders are delivered by the shop.",
+      "INVITE_PHONE_MISMATCH": "This invite is for a different phone number.",
+      "INVITE_EXPIRED": "This invite has expired. Ask MechDost for a new one.",
+      "DOCUMENT_AADHAAR": "Do not enter an Aadhaar number here.",
+      "DOCUMENT_FORMAT": "Check the number and try again."
+    }
   }
 }

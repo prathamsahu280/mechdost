@@ -92,6 +92,15 @@ export const PERMISSIONS = {
   'ustaad:promotions': 'Create and schedule MechDost promotions in network slots',
   'ustaad:settings': 'Edit every network setting and its admin tables (levels, badges, tags, words)',
   'ustaad:takedown': 'Execute a legal takedown order on network content (fast path)',
+  // Delivery agents (spec 24). Agent permissions are their own `deliveries:*` keys and never `orders:*`: a grant with
+  // no shop or workshop holding an `orders:*` permission would read as a staff city scope (`cityScopeFrom`).
+  'deliveries:read': 'Read own delivery offers and jobs (contact details by stage)',
+  'deliveries:respond': 'Accept or decline delivery offers and go online or offline',
+  'deliveries:fulfil': 'Pick up, deliver or report a failed delivery for own jobs; upload own documents',
+  'delivery_agents:manage':
+    'Review delivery-agent applications, invite agents, verify documents, pause or suspend agents, set shop delivery mode',
+  'delivery_jobs:assign':
+    'Offer delivery jobs to agents, withdraw offers, decide failed deliveries and overrides',
 } as const satisfies Record<string, string>;
 
 export type Permission = keyof typeof PERMISSIONS;
@@ -151,6 +160,8 @@ const OPS: readonly Permission[] = [
   'settings:read',
   'analytics:read',
   'coins:read',
+  'delivery_agents:manage',
+  'delivery_jobs:assign',
 ];
 
 export const ROLES = {
@@ -332,6 +343,21 @@ export const ROLES = {
       'ustaad:answer',
       'ustaad:vouch',
       'ustaad:jobs_post',
+    ],
+  },
+  delivery_agent: {
+    name: 'Delivery agent',
+    description: 'MechDost delivery agent: own offers and jobs only (spec 24; accepting an invite grants it)',
+    // Self scope: the agent's city and jobs come from `delivery_agents` and the job rows, never from the grant.
+    scope: 'self',
+    staff: false,
+    permissions: [
+      'account:read',
+      'account:write',
+      'tickets:create',
+      'deliveries:read',
+      'deliveries:respond',
+      'deliveries:fulfil',
     ],
   },
   customer: {

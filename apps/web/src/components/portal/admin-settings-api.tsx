@@ -97,6 +97,17 @@ const SETTING_LABEL = {
   'api.signed_in_per_minute': 'api_set_api_signed_in_per_minute',
   'api.guest_per_ip_per_minute': 'api_set_api_guest_per_ip_per_minute',
   'api.ip_flood_per_minute': 'api_set_api_ip_flood_per_minute',
+  'delivery.agents_enabled': 'api_set_delivery_agents_enabled',
+  'delivery.offer_timeout_min': 'api_set_delivery_offer_timeout_min',
+  'delivery.max_active_jobs': 'api_set_delivery_max_active_jobs',
+  'delivery.photos_required': 'api_set_delivery_photos_required',
+  'delivery.max_attempts': 'api_set_delivery_max_attempts',
+  'delivery.invite_hours': 'api_set_delivery_invite_hours',
+  'delivery.document_retention_days': 'api_set_delivery_document_retention_days',
+  'delivery.max_load_bike_kg': 'api_set_delivery_max_load_bike_kg',
+  'delivery.max_load_scooter_kg': 'api_set_delivery_max_load_scooter_kg',
+  'delivery.max_load_three_wheeler_kg': 'api_set_delivery_max_load_three_wheeler_kg',
+  'delivery.max_load_goods_vehicle_kg': 'api_set_delivery_max_load_goods_vehicle_kg',
 } as const satisfies Record<SettingKey, string>;
 
 const UNIT_LABEL = {
@@ -166,6 +177,17 @@ const SETTING_HELP = {
   'api.signed_in_per_minute': 'help_api_signed_in_per_minute',
   'api.guest_per_ip_per_minute': 'help_api_guest_per_ip_per_minute',
   'api.ip_flood_per_minute': 'help_api_ip_flood_per_minute',
+  'delivery.agents_enabled': 'help_delivery_agents_enabled',
+  'delivery.offer_timeout_min': 'help_delivery_offer_timeout_min',
+  'delivery.max_active_jobs': 'help_delivery_max_active_jobs',
+  'delivery.photos_required': 'help_delivery_photos_required',
+  'delivery.max_attempts': 'help_delivery_max_attempts',
+  'delivery.invite_hours': 'help_delivery_invite_hours',
+  'delivery.document_retention_days': 'help_delivery_document_retention_days',
+  'delivery.max_load_bike_kg': 'help_delivery_max_load_bike_kg',
+  'delivery.max_load_scooter_kg': 'help_delivery_max_load_scooter_kg',
+  'delivery.max_load_three_wheeler_kg': 'help_delivery_max_load_three_wheeler_kg',
+  'delivery.max_load_goods_vehicle_kg': 'help_delivery_max_load_goods_vehicle_kg',
 } as const satisfies Record<SettingKey, string>;
 
 type KnownRow = AdminSettingRowDto & { key: SettingKey };

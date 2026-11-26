@@ -9,26 +9,34 @@ export * from './ustaad-content';
 export * from './ustaad-job';
 export * from './ustaad-media';
 export * from './ustaad-graph';
+export * from './delivery';
 
-/** Sub-order status (docs/specs/04-orders-routing-fulfilment.md). Parent order status is derived. */
+/**
+ * Sub-order status (docs/specs/04-orders-routing-fulfilment.md). Parent order status is derived.
+ * `ready_for_pickup` and `returned` exist for agent-delivered sub-orders only (spec 24): packed → ready for pickup
+ * (pickup code issued to the shop) → out for delivery at the agent's pickup → delivered, or returned to the shop after
+ * a failed delivery (terminal; refund per spec 05).
+ */
 export const ORDER_STATES = [
   'placed',
   'awaiting_shop',
   'needs_rerouting',
   'confirmed',
   'packed',
+  'ready_for_pickup',
   'shipped',
   'out_for_delivery',
   'delivered',
   'cancelled',
   'rejected',
+  'returned',
 ] as const;
 export type OrderStatus = (typeof ORDER_STATES)[number];
 
 export const orderMachine = /* @__PURE__ */ defineMachine(
   'order',
   ORDER_STATES,
-  ['delivered', 'cancelled', 'rejected'],
+  ['delivered', 'cancelled', 'rejected', 'returned'],
   [
     { from: 'placed', to: 'awaiting_shop', by: ['admin', 'system'] },
     // system: an online order whose payment never completed (the worker, after the payment window).
@@ -49,7 +57,18 @@ export const orderMachine = /* @__PURE__ */ defineMachine(
     { from: 'shipped', to: 'out_for_delivery', by: ['shop', 'system'] },
     { from: 'shipped', to: 'delivered', by: ['shop', 'system'] },
     // Staff confirm without the customer's code only through the audited override (spec 04, review B2).
-    { from: 'out_for_delivery', to: 'delivered', by: ['shop', 'system', 'admin'] },
+    { from: 'out_for_delivery', to: 'delivered', by: ['shop', 'system', 'admin', 'delivery_agent'] },
+    // Agent-delivered sub-orders (spec 24). The shop marks a packed order ready; the agent's pickup (shop's code +
+    // photo) sends it out; 'admin' only through the audited pickup override.
+    { from: 'packed', to: 'ready_for_pickup', by: ['shop'] },
+    { from: 'ready_for_pickup', to: 'out_for_delivery', by: ['delivery_agent', 'admin'] },
+    // The shop confirms a switch to its own delivery (Lead's call 9): back to packed, then today's flow.
+    { from: 'ready_for_pickup', to: 'packed', by: ['shop'] },
+    { from: 'ready_for_pickup', to: 'cancelled', by: ['admin', 'system'] },
+    // A failed delivery comes back: the shop confirms the hand-back with the agent's return code ('admin' through the
+    // audited override). Retry with another agent → ready again; close → returned (refund per spec 05).
+    { from: 'out_for_delivery', to: 'ready_for_pickup', by: ['shop', 'admin'] },
+    { from: 'out_for_delivery', to: 'returned', by: ['shop', 'admin'] },
   ],
 );
 
