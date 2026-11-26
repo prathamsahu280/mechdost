@@ -27,7 +27,7 @@ const SHORTCUTS: readonly { key: ShortcutKey; icon: UstaadIconName; path: string
   { key: 'network', icon: 'network', path: '/ustaad/network' },
   { key: 'area', icon: 'area', path: '/ustaad/area' },
   { key: 'saved', icon: 'saved', path: '/ustaad/saved' },
-  { key: 'pin', icon: 'pin', path: '/ustaad/pin' },
+  { key: 'pin', icon: 'pin', path: '/ustaad/me/location' },
   { key: 'card', icon: 'card', path: '/ustaad/me' },
 ];
 
@@ -180,7 +180,7 @@ export default async function UstaadHome({ params, searchParams }: Props) {
         <div>
           <h2 id="ustaad-pin" className="font-heading text-base font-extrabold text-ink">
             <Link
-              href={href('/ustaad/pin')}
+              href={href('/ustaad/me/location')}
               data-track="ustaad_home_pin"
               className="underline-offset-4 hover:underline"
             >

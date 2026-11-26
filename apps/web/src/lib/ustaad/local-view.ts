@@ -43,6 +43,29 @@ export function nudge(p: LatLng, dir: NudgeDir, metres = NUDGE_M): LatLng {
   }
 }
 
+/** Great-circle distance in metres (haversine; plenty for metres around a garage). */
+export function distanceM(a: LatLng, b: LatLng): number {
+  const R = 6_371_000;
+  const rad = (d: number) => (d * Math.PI) / 180;
+  const dLat = rad(b.lat - a.lat);
+  const dLng = rad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+/**
+ * Where the pin came from, as the API stores it (`source`): `gps` while the pin stays inside a good fix's accuracy
+ * circle (at least 30 m, so a nudge or two keeps it), else `manual` (the member placed it; a landmark is then needed).
+ */
+export function pinSource(
+  fix: (LatLng & { accuracyM: number }) | null,
+  pin: LatLng,
+  gpsMaxM: number,
+): 'gps' | 'manual' {
+  if (!fix || gpsIsWeak(fix.accuracyM, gpsMaxM)) return 'manual';
+  return distanceM(fix, pin) <= Math.max(fix.accuracyM, 30) ? 'gps' : 'manual';
+}
+
 export type Banded = { kind: 'few' } | { kind: 'band'; value: number } | { kind: 'exact'; value: number };
 
 /** What the area card says: "Few mechanics nearby", "5+ mechanics" or "25 mechanics". */

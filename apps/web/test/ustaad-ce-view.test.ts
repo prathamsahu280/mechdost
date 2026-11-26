@@ -5,7 +5,9 @@ import { createWatchMeter } from '../src/lib/ustaad/learn-meter';
 import {
   accuracyBand,
   gpsIsWeak,
+  distanceM,
   nudge,
+  pinSource,
   payRangeText,
   rupeesToPaise,
   zoneShade,
@@ -66,6 +68,21 @@ describe('Pin my garage', () => {
     const right = nudge(p, 'right');
     expect(right.lat).toBe(p.lat);
     expect(right.lng).toBeGreaterThan(p.lng);
+  });
+});
+
+describe('pin source: GPS while the pin stays inside the fix', () => {
+  const fix = { lat: 21.25, lng: 81.63, accuracyM: 25 };
+  it('distance is in metres', () => {
+    expect(distanceM({ lat: 21.25, lng: 81.63 }, { lat: 21.2509, lng: 81.63 })).toBeCloseTo(100, -1);
+  });
+  it('a small nudge keeps the GPS reading; a move past the circle is placed by hand', () => {
+    expect(pinSource(fix, nudge(fix, 'up'), 100)).toBe('gps');
+    expect(pinSource(fix, { lat: 21.2509, lng: 81.63 }, 100)).toBe('manual');
+  });
+  it('no fix, or a weak fix, is always by hand', () => {
+    expect(pinSource(null, fix, 100)).toBe('manual');
+    expect(pinSource({ ...fix, accuracyM: 140 }, fix, 100)).toBe('manual');
   });
 });
 
