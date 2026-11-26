@@ -297,7 +297,7 @@ The product card and the product page carry a staff-only "Edit" link after hydra
 
 - The shop's 2W/3W/4W "Vehicle type" select is gone (web, demo and API mode); the "Kind of vehicle" chips are the only
   vehicle filter. The filter form is search · category · sort · Search (`tab`: search on its own row; `nav`: one row).
-- **Old links keep working:** `/shop?vehicle=2W|3W|4W` (and `/hi/shop?…`) answer **308** to the same URL with the
+- **Old links keep working:** `/shop?vehicle=2W|3W|4W` (and `/hi/shop?…`) are sent on (Next `permanentRedirect` in the page: the streamed response is HTTP 200 with a `<meta http-equiv="refresh">` plus a client replace, so it works without JavaScript; a true HTTP 308 in `proxy.ts` is not built) to the same URL with the
   matching segment added to any chosen ones (2W → `two_wheeler`, 3W → `three_wheeler`, 4W → `car_suv`; shared order)
   and every other parameter kept (`q`, `category`, `sort`, `pages`); an unknown value is dropped. Code
   `legacyVehicleRedirect` (`apps/web/src/lib/catalogue/shop-state.ts`), unit test

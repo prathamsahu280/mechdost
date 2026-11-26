@@ -2399,7 +2399,7 @@ Spec 23 § 21f. Rulings made while building (lead brief + security review of the
 
 - **Shop (founder ruling above, Q-segments):** the 2W/3W/4W select, its `?vehicle=` URL state and click ids
   `shop_vehicle_<type>` are gone from the web; the "Kind of vehicle" chips are the only vehicle filter. Old
-  `/shop?vehicle=2W|3W|4W` links answer 308 to `?segment=two_wheeler|three_wheeler|car_suv` (merged with chosen
+  `/shop?vehicle=2W|3W|4W` links are sent on (page-level `permanentRedirect`: HTTP 200 + meta refresh + client replace, not an HTTP 308) to `?segment=two_wheeler|three_wheeler|car_suv` (merged with chosen
   segments, other parameters kept). The catalogue API keeps `?vehicle=` for other clients. Spec 02 "Vehicle type select
   retired". **Correction to the ruling's wording:** "fits my vehicle" never used the select (the per-size fit matches the
   saved vehicle's type, make and model against each size's fitment), so nothing had to move; results under a chip

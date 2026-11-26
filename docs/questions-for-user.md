@@ -251,6 +251,10 @@ The shop now has the new vehicle chips ("Kind of vehicle": two-wheeler, three-wh
 
 **ANSWERED 2026-11-26 (founder): "yes we can replace the old vehicle type drop down".** Built: the select is gone, old `?vehicle=` links redirect to the matching chip (2W → two-wheeler, 3W → three-wheeler, 4W → car & SUV). Correction to the note above: the dropdown never drove saved-vehicle fit — "Fits your vehicle" on multi-size products compares the saved vehicle's type, make and model with each size's fitment and is unchanged (spec 02 "Vehicle type select retired").
 
+### Q-QA13: the demo checkout says "You will see them at checkout" on the checkout page (2026-11-26, default: leave as is)
+
+Q196 (2026-11-16) removed the city free-delivery amount from the cart and from the checkout when there is no server quote, so the demo checkout shows a ₹49 delivery fee with the line "Delivery charges depend on your PIN code. You will see them at checkout." — the second sentence is odd on the checkout itself. The live site (real API) shows the per-shop line "Free delivery on this part of your order at ₹… or more" instead. The test qa-regressions QA 13 now follows Q196 (commit f4297131). Options: (a) leave it (demo only), (b) a checkout-only line without the second sentence, (c) bring back the city amount in the demo. **Default meanwhile: (a).**
+
 ### Q-segments-2: who tags the general-category products? (2026-11-25, default: untagged until staff do it)
 
 Greases, gear oils, coolants, filters, bearings, accessories and similar categories are not mapped to a segment on purpose; their products take a segment only from their vehicle types and otherwise stay untagged (they show in "All vehicles" only). Staff can tag them one by one in the product editor (Fit & specs, "Vehicle segments") or you can send a category-to-segment ruling to add to the mapping table.

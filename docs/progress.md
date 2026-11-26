@@ -5,7 +5,7 @@ This file is the single source of truth for **where the build is right now**. It
 ## 2026-11-26 (night) — four fixes agent (branch worktree-agent-a3b1a256dd1a31849, not pushed, no migration)
 
 - **Shop:** the 2W/3W/4W "Vehicle type" select is retired (founder ruling, Q-segments answered); old `?vehicle=` links
-  308 to the matching segment chip. "Fits your vehicle" never used the select (unchanged). Spec 02, spec 12, design
+  redirect to the matching segment chip (meta refresh + client replace; an HTTP 308 in `proxy.ts` is not built). "Fits your vehicle" never used the select (unchanged). Spec 02, spec 12, design
   doc, design system, SEO runbook, decisions; e2e `demo-flows` + Hindi crawl `/shop?segment=two_wheeler`.
 - **Admin Ustaad lists:** the page widened at 320 px because `.sr-only` text escaped the table scroll box (absolute,
   no positioned ancestor) → `AdminTable` / `ScrollRegion` are `relative`; rows read by their Hindi name on /hi, typed
