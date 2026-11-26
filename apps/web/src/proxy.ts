@@ -24,6 +24,8 @@ export default function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Everything except API routes, Next internals, Vercel internals and files with an extension.
-  matcher: '/((?!api|_next|_vercel|.*\\..*).*)',
+  // Everything except API routes, Next internals, Vercel internals and files with an extension; plus the Ustaad share
+  // teaser, whose token has a dot (`{22}.{22}`) and would otherwise look like a file and skip the locale rewrite
+  // (404, found by e2e 2026-11-26).
+  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)', '/ustaad/s/:token', '/hi/ustaad/s/:token'],
 };

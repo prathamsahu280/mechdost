@@ -7067,7 +7067,7 @@
       "pollVotes": "{count, plural, one {# vote} other {# votes}}",
       "pollClosed": "Poll closed",
       "pollYours": "Your vote",
-      "pollVote": "Vote: {option}",
+      "pollVote": "Vote:",
       "officialBadge": "MechDost",
       "loadMore": "Show more",
       "feedEnd": "You have seen everything for now.",

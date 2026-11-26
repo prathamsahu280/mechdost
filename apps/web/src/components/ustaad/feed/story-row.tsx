@@ -69,7 +69,6 @@ export function StoryRow() {
                   opener.current = e.currentTarget;
                   setOpen(i);
                 }}
-                aria-label={`${t('storyOpen', { name: r.mine ? t('yourStory') : who })}, ${r.allSeen ? t('storySeenMark') : t('storyNewMark')}`}
                 className={ringBtn}
               >
                 <span
@@ -81,6 +80,9 @@ export function StoryRow() {
                 </span>
                 <span data-user-content={r.mine ? undefined : true} className="line-clamp-1 w-full">
                   {r.mine ? t('yourStory') : who.split(' ')[0]}
+                </span>
+                <span className="sr-only">
+                  {`, ${r.mine ? '' : `${who}, `}${r.allSeen ? t('storySeenMark') : t('storyNewMark')}`}
                 </span>
               </button>
             </li>

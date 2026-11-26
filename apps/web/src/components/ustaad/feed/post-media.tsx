@@ -37,11 +37,13 @@ export function PhotoGallery({ media, eager = false }: { media: PostMediaView[];
     <div className="relative">
       <ul
         ref={strip}
+        tabIndex={0}
+        aria-label={t('kind_photo')}
         onScroll={(e) => {
           const w = e.currentTarget.clientWidth;
           if (w > 0) setIndex(Math.round(e.currentTarget.scrollLeft / w));
         }}
-        className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none]"
+        className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] focus-visible:outline-3 focus-visible:-outline-offset-4 focus-visible:outline-focus"
       >
         {media.map((m, i) => (
           <li key={m.mediaId} className="relative w-full shrink-0 snap-start">
@@ -220,7 +222,7 @@ function LinkCard({ link }: { link: NonNullable<PostView['link']> }) {
           </span>
         ) : null}
         <span className="text-sm text-muted">
-          <span lang="en" data-user-content className="font-bold text-accent-soft-text">
+          <span lang="en" data-user-content className="font-bold text-ink underline">
             {link.host ?? link.url}
           </span>{' '}
           · {t('linkOutside')}
@@ -273,9 +275,10 @@ function Poll({ poll, onVote }: { poll: NonNullable<PostView['poll']>; onVote: (
               voted.current = true;
               onVote(o.id);
             }}
-            aria-label={t('pollVote', { option: o.label })}
             className="press min-h-12 rounded-xl border-2 border-accent bg-surface px-4 text-left font-bold text-accent-soft-text hover:bg-accent-soft focus-visible:outline-3 focus-visible:outline-focus"
           >
+            {/* The option is member text: no aria-label (it would carry it out of `data-user-content`). */}
+            <span className="sr-only">{t('pollVote')} </span>
             <span data-user-content>{o.label}</span>
           </button>
         ),

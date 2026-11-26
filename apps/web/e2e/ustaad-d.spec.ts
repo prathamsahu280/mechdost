@@ -61,7 +61,7 @@ test.describe('Ustaad feed and social (workstream D web)', () => {
     page,
   }) => {
     await page.goto('/ustaad');
-    await expect(page.getByRole('button', { name: /Open stories by Suresh Verma/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Suresh Verma, new/ })).toBeVisible();
     const card = firstCard(page);
     await expect(card).toBeVisible();
     await expect(page.getByText('Sample data').first()).toBeVisible();
@@ -137,7 +137,7 @@ test.describe('Ustaad feed and social (workstream D web)', () => {
     await firstCard(page).getByRole('button', { name: 'Share on WhatsApp' }).click();
     const tab = await popup;
     const url = decodeURIComponent(tab.url());
-    expect(url).toContain('wa.me');
+    expect(url).toMatch(/wa\.me|api\.whatsapp\.com/);
     expect(url).toMatch(/\/ustaad\/s\/[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{22}/);
     expect(url).not.toContain('Splendor self start');
     await tab.close();
@@ -145,21 +145,22 @@ test.describe('Ustaad feed and social (workstream D web)', () => {
 
   test('Story viewer: pause, next, close; focus returns to the ring', async ({ page }) => {
     await page.goto('/ustaad');
-    const ring = page.getByRole('button', { name: /Open stories by Suresh Verma/ });
+    // After both stories are seen the ring's name says 'seen', so match the person only.
+    const ring = page.getByRole('button', { name: /Suresh Verma, (new|seen)/ });
     await ring.click();
     const viewer = page.getByRole('dialog', { name: 'Story by Suresh Verma' });
     await expect(viewer).toBeVisible();
-    await expect(viewer.getByText('1 of 2')).toBeVisible();
+    await expect(viewer.getByRole('status')).toHaveText(/1 of 2/);
     const pause = viewer.getByRole('button', { name: 'Pause' });
     await pause.click();
     await expect(pause).toHaveAttribute('aria-pressed', 'true');
     await viewer.getByRole('button', { name: 'Next story' }).click();
-    await expect(viewer.getByText('2 of 2')).toBeVisible();
+    await expect(viewer.getByRole('status')).toHaveText(/2 of 2/);
     await viewer.getByRole('button', { name: 'Close stories' }).click();
     await expect(viewer).toBeHidden();
     await expect(ring).toBeFocused();
     // My own story shows "Seen by".
-    await page.getByRole('button', { name: /Open stories by Your story/ }).click();
+    await page.getByRole('button', { name: /^Your story/ }).click();
     await expect(page.getByText('Seen by 14 mechanics')).toBeVisible();
     await page.keyboard.press('Escape');
   });
@@ -209,8 +210,11 @@ test.describe('Ustaad feed and social (workstream D web)', () => {
     await expect(follow).toHaveAttribute('aria-pressed', 'false');
     await follow.click();
     await expect(follow).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.getByRole('link', { name: 'Message' })).toHaveAttribute('href', /\/ustaad\/messages/);
-    await page.getByRole('button', { name: 'More' }).click();
+    await expect(page.getByRole('link', { name: 'Message', exact: true })).toHaveAttribute(
+      'href',
+      /\/ustaad\/messages/,
+    );
+    await page.getByRole('button', { name: 'More', exact: true }).click();
     await expect(
       page.getByRole('dialog', { name: 'More' }).getByRole('button', { name: 'Block' }),
     ).toBeVisible();

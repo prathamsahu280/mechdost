@@ -55,6 +55,7 @@ export function ReportForm({
   return (
     <form
       className="grid gap-4"
+      noValidate
       onSubmit={(e) => {
         e.preventDefault();
         void send();

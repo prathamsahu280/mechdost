@@ -22,7 +22,7 @@ import { silentWav } from './ustaad';
  * Hindi. Pictures are drawn tiles (no photos of people or number plates).
  */
 
-const ok = <T>(data: T): Promise<ApiResult<T>> => Promise.resolve({ ok: true, data });
+const ok = <T>(data: T): Promise<ApiResult<T>> => Promise.resolve({ ok: true, data: structuredClone(data) });
 const fail = <T>(status: number, code: string): Promise<ApiResult<T>> =>
   Promise.resolve({ ok: false, status, code });
 
