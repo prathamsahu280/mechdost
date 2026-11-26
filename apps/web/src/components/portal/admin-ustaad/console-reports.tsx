@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useLocale } from 'next-intl';
-import { useCallback, useEffect, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { REPORT_REASONS, REPORT_TARGETS } from '@mechdost/shared/ustaad/codes';
 import {
   ModerationResultDto,
@@ -61,6 +61,7 @@ export function ReportsSection({ queue, caps, headId }: { queue: Queue; caps: Co
   const [target, setTarget] = useState('');
   const [city, setCity] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
+  const [listMsg, setListMsg] = useState<string | null>(null);
 
   const load = useCallback(
     async (cursor?: string) => {
@@ -79,9 +80,14 @@ export function ReportsSection({ queue, caps, headId }: { queue: Queue; caps: Co
         return;
       }
       setLoadError(null);
-      setItems((prev) => (cursor && prev ? [...prev, ...res.data.items] : res.data.items));
+      setItems((prev) => {
+        const all = cursor && prev ? [...prev, ...res.data.items] : res.data.items;
+        setListMsg(c('list_count', { count: all.length }));
+        return all;
+      });
       setNext(res.data.nextCursor);
     },
+    // `c` is a stable translator for the page's language.
     [locale, queue, reason, target, city],
   );
 
@@ -159,6 +165,8 @@ export function ReportsSection({ queue, caps, headId }: { queue: Queue; caps: Co
 
       {queue === 'appealed' && caps.moderate ? <LinkAppeal onLinked={() => void load()} /> : null}
 
+      <StatusLine tone={null}>{listMsg}</StatusLine>
+      {items !== null && loadError ? <LoadState error={loadError} onRetry={() => void load()} /> : null}
       {items === null ? (
         <LoadState error={loadError} onRetry={() => void load()} />
       ) : (
@@ -252,6 +260,8 @@ function ReportPanel({
   const [d, setD] = useState<ReportDetail | null>(null);
   const [loadError, setLoadError] = useState<CommonErrorKey | null>(null);
   const [viewReason, setViewReason] = useState<ViewReason>('report_review');
+  const [result, setResult] = useState<Status>(null);
+  const [focusTitle, setFocusTitle] = useState(true);
 
   const load = useCallback(async () => {
     const res = await adminApi(locale, `/admin/ustaad/moderation/reports/${code}`, ReportDetailDto);
@@ -267,19 +277,28 @@ function ReportPanel({
     void load();
   }, [load]);
 
+  // Opening a report (and finishing a decision) puts the keyboard on the report's heading.
+  useEffect(() => {
+    if (!focusTitle || !d) return;
+    document.getElementById(titleId)?.focus();
+    setFocusTitle(false);
+  }, [focusTitle, d, titleId]);
+
   if (!d) return <LoadState error={loadError} onRetry={() => void load()} />;
   const refresh = () => {
     void load();
     onChanged();
+    setFocusTitle(true);
   };
   const decisions = queue === 'appealed' ? [] : decisionsFor(d, caps, queue === 'held' ? 'held' : 'open');
 
   return (
     <article aria-labelledby={titleId} className={`${adminCard} space-y-4`}>
       <header className="space-y-2">
-        <h4 id={titleId} className="font-heading text-base font-extrabold text-ink">
+        <h4 id={titleId} tabIndex={-1} className="font-heading text-base font-extrabold text-ink">
           {c('detail_title', { code: d.code })}
         </h4>
+        {loadError ? <LoadState error={loadError} onRetry={() => void load()} /> : null}
         <div className="flex flex-wrap items-center gap-2">
           <ClockBadge clock={d.clock} dueAt={d.dueAt} createdAt={d.createdAt} />
           <StatusBadge code={d.status}>{c(`status_${d.status}`)}</StatusBadge>
@@ -385,18 +404,25 @@ function ReportPanel({
       </section>
 
       {d.pendingBan ? (
-        <PendingBan detail={d} caps={caps} onDone={refresh} />
+        <PendingBan detail={d} caps={caps} onDone={refresh} onResult={setResult} />
       ) : decisions.length > 0 ? (
-        <DecisionForm detail={d} decisions={decisions} held={queue === 'held'} onDone={refresh} />
+        <DecisionForm
+          detail={d}
+          decisions={decisions}
+          held={queue === 'held'}
+          onDone={refresh}
+          onResult={setResult}
+        />
       ) : null}
 
       {queue === 'appealed' && d.status === 'appealed' ? (
         canDecideAppeal(d, caps) ? (
-          <AppealDecision detail={d} onDone={refresh} />
+          <AppealDecision detail={d} onDone={refresh} onResult={setResult} />
         ) : caps.moderate ? (
           <p className="rounded-tile bg-warning-bg p-3 text-sm text-warning">{c('appeal_yours')}</p>
         ) : null
       ) : null}
+      <StatusLine tone={result?.tone ?? null}>{result?.text}</StatusLine>
     </article>
   );
 }
@@ -420,6 +446,13 @@ function MediaTile({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const errorText = useErrorText();
+  const shown = useRef<HTMLElement | null>(null);
+  const keep = (el: HTMLElement | null) => {
+    shown.current = el;
+  };
+  useEffect(() => {
+    if (file) shown.current?.focus();
+  }, [file]);
 
   async function show() {
     if (busy) return;
@@ -469,14 +502,22 @@ function MediaTile({
           <track kind="captions" />
         </video>
       ) : file.kind === 'audio' ? (
-        <audio src={file.url} controls preload="none" className="w-full" />
+        <audio ref={keep} src={file.url} controls preload="none" className="w-full" />
       ) : (
-        <a href={file.url} download target="_blank" rel="noopener noreferrer" className={portalQuiet}>
+        <a
+          ref={keep}
+          href={file.url}
+          download
+          target="_blank"
+          rel="noopener noreferrer"
+          className={portalQuiet}
+        >
           {c('media_download', { n })}
         </a>
       )}
       {file && (file.kind === 'image' || file.kind === 'video') ? (
         <button
+          ref={keep}
           type="button"
           aria-pressed={clear}
           className={portalQuiet}
@@ -502,13 +543,21 @@ function ThreadRead({ code, reason }: { code: string; reason: ViewReason }) {
     { id: string; sender: string; body: string | null; at: string; reported: boolean }[] | null
   >(null);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const list = useRef<HTMLOListElement>(null);
+  useEffect(() => {
+    if (messages) list.current?.focus();
+  }, [messages]);
 
   async function read() {
+    if (busy) return;
+    setBusy(true);
     const res = await adminApi(
       locale,
       `/admin/ustaad/moderation/reports/${code}/thread?reason=${reason}`,
       ThreadReadDto,
     );
+    setBusy(false);
     track('admin_ustaad_console_action', { action: 'thread_read', outcome: res.ok ? 'ok' : 'refused' });
     if (!res.ok) {
       setError(errorText(res.code));
@@ -521,11 +570,11 @@ function ThreadRead({ code, reason }: { code: string; reason: ViewReason }) {
     <section className="space-y-2">
       <p className="text-xs text-muted">{c('thread_note')}</p>
       {messages === null ? (
-        <button type="button" className={portalQuiet} onClick={() => void read()}>
+        <button type="button" aria-disabled={busy} className={portalQuiet} onClick={() => void read()}>
           {c('thread_read')}
         </button>
       ) : (
-        <ol aria-label={c('thread_title')} className="space-y-2">
+        <ol ref={list} tabIndex={-1} aria-label={c('thread_title')} className="space-y-2">
           {messages.map((m) => (
             <li
               key={m.id}
@@ -555,11 +604,13 @@ function DecisionForm({
   decisions,
   held,
   onDone,
+  onResult,
 }: {
   detail: ReportDetail;
   decisions: ModerationDecision[];
   held: boolean;
   onDone: () => void;
+  onResult: (s: Status) => void;
 }) {
   const c = useConsoleT();
   const locale = useLocale();
@@ -572,7 +623,6 @@ function DecisionForm({
   const [days, setDays] = useState('7');
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState<Status>(null);
 
   function choose(a: ModerationDecision) {
     setAction(a);
@@ -583,6 +633,7 @@ function DecisionForm({
     setConfirming(false);
     if (busy) return;
     setBusy(true);
+    onResult(null);
     const res = await adminApi(
       locale,
       `/admin/ustaad/moderation/reports/${detail.code}/act`,
@@ -601,11 +652,11 @@ function DecisionForm({
     setBusy(false);
     track('admin_ustaad_console_action', { action, outcome: res.ok ? 'ok' : 'refused' });
     if (!res.ok) {
-      setStatus({ tone: 'error', text: errorText(res.code) });
+      onResult({ tone: 'error', text: errorText(res.code) });
       if (res.code.startsWith('STALE_')) onDone();
       return;
     }
-    setStatus({ tone: 'ok', text: res.data.pendingBan ? c('act_proposed') : c('saved') });
+    onResult({ tone: 'ok', text: res.data.pendingBan ? c('act_proposed') : c('saved') });
     onDone();
   }
 
@@ -687,6 +738,7 @@ function DecisionForm({
       </div>
       <label className="block space-y-1">
         <span className={labelClass}>{c('act_note')}</span>
+        <span className="block text-xs text-muted">{c('note_hint')}</span>
         <textarea
           className={`${portalField} min-h-20`}
           maxLength={500}
@@ -699,7 +751,6 @@ function DecisionForm({
       <button type="submit" aria-disabled={busy} className={portalPrimary}>
         {action === 'keep' ? label('keep') : c('act_submit')}
       </button>
-      <StatusLine tone={status?.tone ?? null}>{status?.text}</StatusLine>
       <ConfirmDialog
         open={confirming}
         title={c('act_confirm_title')}
@@ -724,22 +775,24 @@ function PendingBan({
   detail,
   caps,
   onDone,
+  onResult,
 }: {
   detail: ReportDetail;
   caps: ConsoleCaps;
   onDone: () => void;
+  onResult: (s: Status) => void;
 }) {
   const c = useConsoleT();
   const locale = useLocale();
   const errorText = useErrorText();
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState<Status>(null);
   const p = detail.pendingBan;
   if (!p) return null;
 
   async function approve() {
     if (busy || !p) return;
     setBusy(true);
+    onResult(null);
     const res = await adminApi(
       locale,
       `/admin/ustaad/moderation/reports/${detail.code}/ban/confirm`,
@@ -748,7 +801,7 @@ function PendingBan({
     );
     setBusy(false);
     track('admin_ustaad_console_action', { action: 'ban_confirm', outcome: res.ok ? 'ok' : 'refused' });
-    setStatus(res.ok ? { tone: 'ok', text: c('saved') } : { tone: 'error', text: errorText(res.code) });
+    onResult(res.ok ? { tone: 'ok', text: c('saved') } : { tone: 'error', text: errorText(res.code) });
     onDone();
   }
 
@@ -764,12 +817,19 @@ function PendingBan({
           {c('ban_confirm')}
         </button>
       ) : null}
-      <StatusLine tone={status?.tone ?? null}>{status?.text}</StatusLine>
     </div>
   );
 }
 
-function AppealDecision({ detail, onDone }: { detail: ReportDetail; onDone: () => void }) {
+function AppealDecision({
+  detail,
+  onDone,
+  onResult,
+}: {
+  detail: ReportDetail;
+  onDone: () => void;
+  onResult: (s: Status) => void;
+}) {
   const c = useConsoleT();
   const locale = useLocale();
   const errorText = useErrorText();
@@ -777,11 +837,11 @@ function AppealDecision({ detail, onDone }: { detail: ReportDetail; onDone: () =
   const [outcome, setOutcome] = useState<'upheld' | 'overturned'>('upheld');
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState<Status>(null);
 
   async function send() {
     if (busy) return;
     setBusy(true);
+    onResult(null);
     const res = await adminApi(
       locale,
       `/admin/ustaad/moderation/reports/${detail.code}/appeal/decide`,
@@ -793,7 +853,7 @@ function AppealDecision({ detail, onDone }: { detail: ReportDetail; onDone: () =
     );
     setBusy(false);
     track('admin_ustaad_console_action', { action: 'appeal_decide', outcome: res.ok ? 'ok' : 'refused' });
-    setStatus(res.ok ? { tone: 'ok', text: c('saved') } : { tone: 'error', text: errorText(res.code) });
+    onResult(res.ok ? { tone: 'ok', text: c('saved') } : { tone: 'error', text: errorText(res.code) });
     onDone();
   }
 
@@ -825,6 +885,7 @@ function AppealDecision({ detail, onDone }: { detail: ReportDetail; onDone: () =
       </fieldset>
       <label className="block space-y-1">
         <span className={labelClass}>{c('act_note')}</span>
+        <span className="block text-xs text-muted">{c('note_hint')}</span>
         <textarea
           className={`${portalField} min-h-20`}
           maxLength={500}
@@ -837,7 +898,6 @@ function AppealDecision({ detail, onDone }: { detail: ReportDetail; onDone: () =
       <button type="submit" aria-disabled={busy} className={portalPrimary}>
         {c('appeal_submit')}
       </button>
-      <StatusLine tone={status?.tone ?? null}>{status?.text}</StatusLine>
     </form>
   );
 }
@@ -852,16 +912,21 @@ function LinkAppeal({ onLinked }: { onLinked: () => void }) {
   const [ticket, setTicket] = useState('');
   const [status, setStatus] = useState<Status>(null);
   const [busy, setBusy] = useState(false);
+  const [bad, setBad] = useState<'report' | 'ticket' | null>(null);
 
   async function send() {
     const r = report.trim().toUpperCase();
     const tk = ticket.trim().toUpperCase();
-    if (!USTAAD_REPORT_CODE_RE.test(r) || !TICKET_CODE_RE.test(tk)) {
+    const wrong = !USTAAD_REPORT_CODE_RE.test(r) ? 'report' : !TICKET_CODE_RE.test(tk) ? 'ticket' : null;
+    setBad(wrong);
+    if (wrong) {
       setStatus({ tone: 'error', text: c('appeal_bad_code') });
+      document.getElementById(`${id}-${wrong}`)?.focus();
       return;
     }
     if (busy) return;
     setBusy(true);
+    setStatus(null);
     const d = await adminApi(locale, `/admin/ustaad/moderation/reports/${r}`, ReportDetailDto);
     const res = d.ok
       ? await adminApi(locale, `/admin/ustaad/moderation/reports/${r}/appeal`, ModerationResultDto, {
@@ -900,6 +965,10 @@ function LinkAppeal({ onLinked }: { onLinked: () => void }) {
         <label className="space-y-1">
           <span className={labelClass}>{c('appeal_report')}</span>
           <input
+            id={`${id}-report`}
+            required
+            aria-invalid={bad === 'report' ? true : undefined}
+            aria-describedby={`${id}-report-hint`}
             className={portalField}
             value={report}
             onChange={(e) => {
@@ -908,10 +977,17 @@ function LinkAppeal({ onLinked }: { onLinked: () => void }) {
             autoComplete="off"
             spellCheck={false}
           />
+          <span id={`${id}-report-hint`} className="block text-xs text-muted">
+            {c('appeal_report_hint')}
+          </span>
         </label>
         <label className="space-y-1">
           <span className={labelClass}>{c('appeal_ticket')}</span>
           <input
+            id={`${id}-ticket`}
+            required
+            aria-invalid={bad === 'ticket' ? true : undefined}
+            aria-describedby={`${id}-ticket-hint`}
             className={portalField}
             value={ticket}
             onChange={(e) => {
@@ -920,6 +996,9 @@ function LinkAppeal({ onLinked }: { onLinked: () => void }) {
             autoComplete="off"
             spellCheck={false}
           />
+          <span id={`${id}-ticket-hint`} className="block text-xs text-muted">
+            {c('appeal_ticket_hint')}
+          </span>
         </label>
       </div>
       <button type="submit" aria-disabled={busy} className={portalQuiet}>

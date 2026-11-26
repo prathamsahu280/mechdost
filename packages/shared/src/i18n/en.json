@@ -8025,7 +8025,7 @@
       "act_reason": "Reason",
       "act_note": "Note for the record (optional)",
       "act_days": "Ban length in days",
-      "act_days_help": "Leave empty for a permanent ban. Long bans need a second staff member.",
+      "act_days_help": "1 to 36500 days. Leave empty for a permanent ban. Long bans need a second staff member.",
       "act_submit": "Save decision",
       "act_confirm_title": "Confirm this decision",
       "act_confirm_lead": "The member is told why, in their language, with the appeal route.",
@@ -8202,7 +8202,17 @@
       "err_self": "You cannot decide on your own account or content.",
       "err_legal_hold": "This item is under a legal order or hold.",
       "err_pending": "This already waits for approval.",
-      "err_not_sanctioned": "This member has no ban or restriction."
+      "err_not_sanctioned": "This member has no ban or restriction.",
+      "list_count": "{count, plural, =0 {No reports} one {# report} other {# reports}}",
+      "m_count": "{count, plural, =0 {No members found} one {# member found} other {# members found}}",
+      "note_hint": "Up to 500 characters.",
+      "note_required": "Required for “Other”: at least 3 characters, up to 500.",
+      "appeal_report_hint": "Starts with UR-, as on the report.",
+      "appeal_ticket_hint": "Starts with REQ-, as on the support ticket.",
+      "td_id_hint": "The item’s full id (36 characters), from the report.",
+      "td_reference_hint": "At least 3 characters.",
+      "n_name_hint": "At least 2 letters.",
+      "n_too_short": "Type at least 2 letters."
     }
   }
 }

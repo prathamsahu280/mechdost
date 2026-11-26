@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale } from 'next-intl';
-import { useCallback, useEffect, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { USTAAD_VERIFY_REJECT_REASONS } from '@mechdost/shared/ustaad/codes';
 import {
   OwnerAttestationQueueDto,
@@ -50,6 +50,7 @@ export function VerifySection({ headId }: { headId: string }) {
   const [items, setItems] = useState<VerificationQueueItem[] | null>(null);
   const [loadError, setLoadError] = useState<CommonErrorKey | null>(null);
   const [owners, setOwners] = useState<Owner[]>([]);
+  const [result, setResult] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const [res, own] = await Promise.all([
@@ -72,6 +73,7 @@ export function VerifySection({ headId }: { headId: string }) {
   return (
     <div className="space-y-4">
       <SectionHead id={headId} title={c('sec_verify')} help={c('sec_verify_help')} />
+      <StatusLine tone={result ? 'ok' : null}>{result}</StatusLine>
       <label className={`${adminCard} block max-w-sm space-y-1`}>
         <span className={labelClass}>{c('v_list')}</span>
         <select
@@ -88,6 +90,7 @@ export function VerifySection({ headId }: { headId: string }) {
           ))}
         </select>
       </label>
+      {items !== null && loadError ? <LoadState error={loadError} onRetry={() => void load()} /> : null}
       {items === null ? (
         <LoadState error={loadError} onRetry={() => void load()} />
       ) : items.length === 0 ? (
@@ -96,7 +99,14 @@ export function VerifySection({ headId }: { headId: string }) {
         <ul className="space-y-3">
           {items.map((v) => (
             <li key={v.id}>
-              <VerificationCard v={v} onDone={() => void load()} />
+              <VerificationCard
+                v={v}
+                onDone={(message) => {
+                  setResult(message);
+                  void load();
+                  document.getElementById(headId)?.focus();
+                }}
+              />
             </li>
           ))}
         </ul>
@@ -106,7 +116,7 @@ export function VerifySection({ headId }: { headId: string }) {
   );
 }
 
-function VerificationCard({ v, onDone }: { v: VerificationQueueItem; onDone: () => void }) {
+function VerificationCard({ v, onDone }: { v: VerificationQueueItem; onDone: (message: string) => void }) {
   const c = useConsoleT();
   const locale = useLocale();
   const when = useFormatWhen();
@@ -120,14 +130,19 @@ function VerificationCard({ v, onDone }: { v: VerificationQueueItem; onDone: () 
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<Status>(null);
+  const [noteBad, setNoteBad] = useState(false);
 
   async function send() {
     if (mode === 'reject' && reason === 'other' && note.trim().length < 3) {
       setStatus({ tone: 'error', text: c('v_note_needed') });
+      setNoteBad(true);
+      document.getElementById(`${id}-note`)?.focus();
       return;
     }
     if (busy) return;
+    setNoteBad(false);
     setBusy(true);
+    setStatus(null);
     const res = await adminApi(locale, `/admin/ustaad/verifications/${v.id}/${mode}`, VerificationViewDto, {
       method: 'POST',
       body:
@@ -144,8 +159,7 @@ function VerificationCard({ v, onDone }: { v: VerificationQueueItem; onDone: () 
       setStatus({ tone: 'error', text: errorText(res.code) });
       return;
     }
-    setStatus({ tone: 'ok', text: c(mode === 'approve' ? 'v_approved' : 'v_rejected') });
-    onDone();
+    onDone(c(mode === 'approve' ? 'v_approved' : 'v_rejected'));
   }
 
   const proofs = v.proofKinds.map((p) => c(`proof_${p}`)).join(', ');
@@ -234,13 +248,20 @@ function VerificationCard({ v, onDone }: { v: VerificationQueueItem; onDone: () 
               <label className="space-y-1">
                 <span className={labelClass}>{c('v_note')}</span>
                 <input
+                  id={`${id}-note`}
                   className={portalField}
+                  required={reason === 'other'}
+                  aria-invalid={noteBad ? true : undefined}
+                  aria-describedby={`${id}-note-hint`}
                   maxLength={500}
                   value={note}
                   onChange={(e) => {
                     setNote(e.target.value);
                   }}
                 />
+                <span id={`${id}-note-hint`} className="block text-xs text-muted">
+                  {reason === 'other' ? c('note_required') : c('note_hint')}
+                </span>
               </label>
             </div>
           )}
@@ -264,11 +285,20 @@ function OwnerLinks({ owners, onIssued }: { owners: Owner[]; onIssued: () => voi
   const [issued, setIssued] = useState<{ url: string; expiresAt: string; ownerPhone: string } | null>(null);
   const [status, setStatus] = useState<Status>(null);
   const [copied, setCopied] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const linkHead = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (issued) linkHead.current?.focus();
+  }, [issued]);
 
   async function issue(o: Owner) {
+    if (busy) return;
+    setBusy(true);
+    setStatus(null);
     const res = await adminApi(locale, `/admin/ustaad/attestations/${o.id}/owner-link`, OwnerLinkDto, {
       method: 'POST',
     });
+    setBusy(false);
     track('admin_ustaad_console_action', { action: 'owner_link', outcome: res.ok ? 'ok' : 'refused' });
     if (!res.ok) {
       setStatus({ tone: 'error', text: errorText(res.code) });
@@ -281,12 +311,14 @@ function OwnerLinks({ owners, onIssued }: { owners: Owner[]; onIssued: () => voi
 
   return (
     <section aria-labelledby={`${id}-t`} className={`${adminCard} space-y-3`}>
-      <h4 id={`${id}-t`} className="font-heading text-base font-extrabold text-ink">
+      <h4 id={`${id}-t`} tabIndex={-1} className="font-heading text-base font-extrabold text-ink">
         {c('owner_title')}
       </h4>
       {issued ? (
         <div className="space-y-2 rounded-tile bg-info-bg p-3 text-sm text-info">
-          <p className="font-bold">{c('owner_link_title')}</p>
+          <p ref={linkHead} tabIndex={-1} className="font-bold">
+            {c('owner_link_title')}
+          </p>
           <p>{c('owner_link_lead', { date: when(issued.expiresAt) })}</p>
           <p className="break-all font-mono text-ink" lang="en">
             {issued.url}
@@ -311,6 +343,7 @@ function OwnerLinks({ owners, onIssued }: { owners: Owner[]; onIssued: () => voi
               className={portalQuiet}
               onClick={() => {
                 setIssued(null);
+                document.getElementById(`${id}-t`)?.focus();
               }}
             >
               {c('close')}
@@ -326,7 +359,7 @@ function OwnerLinks({ owners, onIssued }: { owners: Owner[]; onIssued: () => voi
           {owners.map((o) => (
             <li key={o.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
               <div className="text-sm">
-                <p className="font-bold text-ink" data-user-content>
+                <p id={`${id}-${o.id}`} className="font-bold text-ink" data-user-content>
                   {o.memberName} (@{o.memberHandle})
                 </p>
                 <p className="text-muted">
@@ -334,7 +367,13 @@ function OwnerLinks({ owners, onIssued }: { owners: Owner[]; onIssued: () => voi
                   {o.linkIssuedAt ? ` · ${c('owner_issued', { date: when(o.linkIssuedAt) })}` : ''}
                 </p>
               </div>
-              <button type="button" className={portalQuiet} onClick={() => void issue(o)}>
+              <button
+                type="button"
+                aria-disabled={busy}
+                aria-describedby={`${id}-${o.id}`}
+                className={portalQuiet}
+                onClick={() => void issue(o)}
+              >
                 {c(o.linkIssuedAt ? 'owner_reissue' : 'owner_issue')}
               </button>
             </li>

@@ -83,7 +83,7 @@ export function AdminUstaadConsole() {
   function go(next: Place, via: 'list' | 'select') {
     setPlace(next);
     if (next.kind === 'settings') setSettingsOpened(true);
-    setFocusHead(next.kind === 'community');
+    setFocusHead(next.kind === 'community' && via === 'list');
     try {
       const q =
         next.kind === 'settings' ? `?section=settings&sec=${next.section}` : `?section=${next.section}`;
@@ -162,7 +162,7 @@ export function AdminUstaadConsole() {
               </p>
               <ul
                 aria-labelledby={`${baseId}-g1`}
-                className="flex gap-2 overflow-x-auto pb-1 min-[1200px]:flex-col min-[1200px]:gap-1 min-[1200px]:overflow-visible min-[1200px]:pb-0"
+                className="flex gap-2 overflow-x-auto p-1.5 min-[1200px]:flex-col min-[1200px]:gap-1 min-[1200px]:overflow-visible min-[1200px]:pb-0"
               >
                 {community.map((s) => item({ kind: 'community', section: s }, c(`sec_${s}`)))}
               </ul>
@@ -174,7 +174,7 @@ export function AdminUstaadConsole() {
                 </p>
                 <ul
                   aria-labelledby={`${baseId}-g2`}
-                  className="flex gap-2 overflow-x-auto pb-1 min-[1200px]:flex-col min-[1200px]:gap-1 min-[1200px]:overflow-visible min-[1200px]:pb-0"
+                  className="flex gap-2 overflow-x-auto p-1.5 min-[1200px]:flex-col min-[1200px]:gap-1 min-[1200px]:overflow-visible min-[1200px]:pb-0"
                 >
                   {USTAAD_ADMIN_SECTIONS.map((s) =>
                     item({ kind: 'settings', section: s }, t(adminMessage(`sec_${s}`))),

@@ -473,3 +473,12 @@ the community manager console of G2 joins the same group). Screen (`components/p
   row per key, the reason code on the video row; `ustaad.<entity>.<action>` for the lists) and the events
   `admin_ustaad_settings_saved`, `admin_ustaad_invariant_refused`, `admin_ustaad_access_changed`,
   `admin_ustaad_table_saved` (server) and `admin_ustaad_change` (client).
+- **Community console (task G2, 2026-11-26; spec 23 § 21g):** the same page and switcher gain a Community group:
+  Queue (reports by clock, filters by reason / where / city, blurred audited files, the conversation only through
+  an audited read, decisions with a reason code, remove/warn/restrict/ban confirmed, "Waiting for approval" for
+  four-eyes bans), Holds (release or remove), Appeals (link a `REQ-…` ticket, decided by someone who took no part),
+  Verify (B's queue, owner link), Members (handle search, history, restrict / ban / lift with four-eyes; never a
+  phone or email), Takedowns and legal holds, Reserved names, My actions (own audit rows). Capabilities from
+  `GET /admin/ustaad/console` hide what the API would refuse; community managers are city scoped, have no
+  exports and no `audit:read`. Events `admin_ustaad_console_viewed {section}`, `admin_ustaad_console_action
+{action, outcome}`. `?section=verify` opens Verify (Partners › Applications notice).

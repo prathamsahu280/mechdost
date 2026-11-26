@@ -75,6 +75,7 @@ export function LegalSection({ caps, headId }: { caps: ConsoleCaps; headId: stri
     <div className="space-y-4">
       <SectionHead id={headId} title={c('sec_legal')} help={c('sec_legal_help')} />
       {caps.takedown ? <TakedownForm onDone={() => void load()} /> : null}
+      {data && loadError ? <LoadState error={loadError} onRetry={() => void load()} /> : null}
       {!data ? (
         <LoadState error={loadError} onRetry={() => void load()} />
       ) : (
@@ -151,23 +152,22 @@ function TakedownForm({ onDone }: { onDone: () => void }) {
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<Status>(null);
+  const [bad, setBad] = useState<'id' | 'reference' | null>(null);
 
   function check(): boolean {
-    if (!UUID.test(targetId.trim())) {
-      setStatus({ tone: 'error', text: c('td_bad_id') });
-      return false;
-    }
-    if (reference.trim().length < 3) {
-      setStatus({ tone: 'error', text: c('td_bad_reference') });
-      return false;
-    }
-    return true;
+    const wrong = !UUID.test(targetId.trim()) ? 'id' : reference.trim().length < 3 ? 'reference' : null;
+    setBad(wrong);
+    if (!wrong) return true;
+    setStatus({ tone: 'error', text: c(wrong === 'id' ? 'td_bad_id' : 'td_bad_reference') });
+    document.getElementById(`${id}-${wrong}`)?.focus();
+    return false;
   }
 
   async function send() {
     setConfirming(false);
     if (busy) return;
     setBusy(true);
+    setStatus(null);
     const res = await adminApi(locale, '/admin/ustaad/moderation/takedowns', TakedownResultDto, {
       method: 'POST',
       body: { targetType, targetId: targetId.trim(), basis, reference: reference.trim() },
@@ -219,6 +219,10 @@ function TakedownForm({ onDone }: { onDone: () => void }) {
         <label className="space-y-1">
           <span className={labelClass}>{c('td_id')}</span>
           <input
+            id={`${id}-id`}
+            required
+            aria-invalid={bad === 'id' ? true : undefined}
+            aria-describedby={`${id}-id-hint`}
             className={portalField}
             value={targetId}
             onChange={(e) => {
@@ -227,6 +231,9 @@ function TakedownForm({ onDone }: { onDone: () => void }) {
             autoComplete="off"
             spellCheck={false}
           />
+          <span id={`${id}-id-hint`} className="block text-xs text-muted">
+            {c('td_id_hint')}
+          </span>
         </label>
         <label className="space-y-1">
           <span className={labelClass}>{c('td_basis')}</span>
@@ -247,6 +254,11 @@ function TakedownForm({ onDone }: { onDone: () => void }) {
         <label className="space-y-1">
           <span className={labelClass}>{c('td_reference')}</span>
           <input
+            id={`${id}-reference`}
+            required
+            minLength={3}
+            aria-invalid={bad === 'reference' ? true : undefined}
+            aria-describedby={`${id}-reference-hint`}
             className={portalField}
             value={reference}
             maxLength={120}
@@ -255,6 +267,9 @@ function TakedownForm({ onDone }: { onDone: () => void }) {
             }}
             autoComplete="off"
           />
+          <span id={`${id}-reference-hint`} className="block text-xs text-muted">
+            {c('td_reference_hint')}
+          </span>
         </label>
       </div>
       <button type="submit" aria-disabled={busy} className={portalPrimary}>
@@ -304,7 +319,12 @@ export function NamesSection({ caps, headId }: { caps: ConsoleCaps; headId: stri
   }, [load]);
 
   async function add() {
-    if (name.trim().length < 2) return;
+    if (name.trim().length < 2) {
+      setStatus({ tone: 'error', text: c('n_too_short') });
+      document.getElementById(`${id}-name`)?.focus();
+      return;
+    }
+    setStatus(null);
     const res = await adminApi(locale, '/admin/ustaad/reserved-names', ReservedNamesDto.shape.names.element, {
       method: 'POST',
       body: { name: name.trim() },
@@ -346,6 +366,9 @@ export function NamesSection({ caps, headId }: { caps: ConsoleCaps; headId: stri
             <span className={labelClass}>{c('n_add')}</span>
             <input
               id={`${id}-name`}
+              required
+              minLength={2}
+              aria-describedby={`${id}-name-hint`}
               className={portalField}
               value={name}
               maxLength={60}
@@ -353,6 +376,9 @@ export function NamesSection({ caps, headId }: { caps: ConsoleCaps; headId: stri
                 setName(e.target.value);
               }}
             />
+            <span id={`${id}-name-hint`} className="block text-xs text-muted">
+              {c('n_name_hint')}
+            </span>
           </label>
           <button type="submit" className={portalPrimary}>
             {c('n_add_btn')}

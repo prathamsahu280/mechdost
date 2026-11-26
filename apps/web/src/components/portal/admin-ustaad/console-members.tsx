@@ -60,7 +60,7 @@ export function MembersSection({ caps, headId }: { caps: ConsoleCaps; headId: st
       setStatus({ tone: 'error', text: errorText(res.code) });
       return;
     }
-    setStatus(null);
+    setStatus({ tone: 'ok', text: c('m_count', { count: res.data.items.length }) });
     setRows(res.data.items);
   }
 
@@ -151,6 +151,8 @@ function MemberPanel({ memberId, caps }: { memberId: string; caps: ConsoleCaps }
   const titleId = useId();
   const [m, setM] = useState<StaffMemberDetail | null>(null);
   const [loadError, setLoadError] = useState<CommonErrorKey | null>(null);
+  const [result, setResult] = useState<Status>(null);
+  const [focusTitle, setFocusTitle] = useState(true);
 
   const load = useCallback(async () => {
     const res = await adminApi(locale, `/admin/ustaad/members/${memberId}`, StaffMemberDetailDto);
@@ -166,7 +168,18 @@ function MemberPanel({ memberId, caps }: { memberId: string; caps: ConsoleCaps }
     void load();
   }, [load]);
 
+  // Opening a member (and finishing an action) puts the keyboard on the member's heading.
+  useEffect(() => {
+    if (!focusTitle || !m) return;
+    document.getElementById(titleId)?.focus();
+    setFocusTitle(false);
+  }, [focusTitle, m, titleId]);
+
   if (!m) return <LoadState error={loadError} onRetry={() => void load()} />;
+  const done = () => {
+    void load();
+    setFocusTitle(true);
+  };
   const until = m.status === 'banned' ? m.bannedUntil : m.status === 'restricted' ? m.restrictedUntil : null;
   const sanctioned = m.status === 'banned' || m.status === 'restricted';
   const frozen = m.restrictedMode === 'review';
@@ -174,7 +187,7 @@ function MemberPanel({ memberId, caps }: { memberId: string; caps: ConsoleCaps }
   return (
     <article aria-labelledby={titleId} className={`${adminCard} space-y-4`}>
       <header className="space-y-1">
-        <h4 id={titleId} className="font-heading text-base font-extrabold text-ink">
+        <h4 id={titleId} tabIndex={-1} className="font-heading text-base font-extrabold text-ink">
           <span data-user-content>
             {m.displayName} (@{m.handle})
           </span>
@@ -236,18 +249,28 @@ function MemberPanel({ memberId, caps }: { memberId: string; caps: ConsoleCaps }
 
       {caps.moderate && frozen ? <p className="text-sm text-muted">{c('m_frozen_note')}</p> : null}
       {caps.moderate && m.pendingUnban ? (
-        <PendingUnban m={m} onDone={() => void load()} />
+        <PendingUnban m={m} onDone={done} onResult={setResult} />
       ) : caps.moderate && sanctioned && !frozen ? (
-        <Unban m={m} onDone={() => void load()} />
+        <Unban m={m} onDone={done} onResult={setResult} />
       ) : null}
       {caps.moderate && m.status !== 'banned' && !frozen ? (
-        <Sanction m={m} onDone={() => void load()} />
+        <Sanction m={m} onDone={done} onResult={setResult} />
       ) : null}
+      {loadError ? <LoadState error={loadError} onRetry={() => void load()} /> : null}
+      <StatusLine tone={result?.tone ?? null}>{result?.text}</StatusLine>
     </article>
   );
 }
 
-function Sanction({ m, onDone }: { m: StaffMemberDetail; onDone: () => void }) {
+function Sanction({
+  m,
+  onDone,
+  onResult,
+}: {
+  m: StaffMemberDetail;
+  onDone: () => void;
+  onResult: (s: Status) => void;
+}) {
   const c = useConsoleT();
   const locale = useLocale();
   const errorText = useErrorText();
@@ -258,12 +281,12 @@ function Sanction({ m, onDone }: { m: StaffMemberDetail; onDone: () => void }) {
   const [note, setNote] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState<Status>(null);
 
   async function send() {
     setConfirming(false);
     if (busy) return;
     setBusy(true);
+    onResult(null);
     const res = await adminApi(locale, `/admin/ustaad/members/${m.memberId}/sanction`, ModerationResultDto, {
       method: 'POST',
       body: {
@@ -277,11 +300,11 @@ function Sanction({ m, onDone }: { m: StaffMemberDetail; onDone: () => void }) {
     setBusy(false);
     track('admin_ustaad_console_action', { action: 'sanction', outcome: res.ok ? 'ok' : 'refused' });
     if (!res.ok) {
-      setStatus({ tone: 'error', text: errorText(res.code) });
+      onResult({ tone: 'error', text: errorText(res.code) });
       onDone();
       return;
     }
-    setStatus({ tone: 'ok', text: res.data.pendingBan ? c('act_proposed') : c('saved') });
+    onResult({ tone: 'ok', text: res.data.pendingBan ? c('act_proposed') : c('saved') });
     onDone();
   }
 
@@ -350,6 +373,7 @@ function Sanction({ m, onDone }: { m: StaffMemberDetail; onDone: () => void }) {
       </div>
       <label className="block space-y-1">
         <span className={labelClass}>{c('act_note')}</span>
+        <span className="block text-xs text-muted">{c('note_hint')}</span>
         <textarea
           className={`${portalField} min-h-20`}
           maxLength={500}
@@ -362,7 +386,6 @@ function Sanction({ m, onDone }: { m: StaffMemberDetail; onDone: () => void }) {
       <button type="submit" aria-disabled={busy} className={portalPrimary}>
         {c(action === 'ban' ? 'act_ban' : 'act_restrict')}
       </button>
-      <StatusLine tone={status?.tone ?? null}>{status?.text}</StatusLine>
       <ConfirmDialog
         open={confirming}
         title={c('act_confirm_title')}
@@ -378,7 +401,15 @@ function Sanction({ m, onDone }: { m: StaffMemberDetail; onDone: () => void }) {
   );
 }
 
-function Unban({ m, onDone }: { m: StaffMemberDetail; onDone: () => void }) {
+function Unban({
+  m,
+  onDone,
+  onResult,
+}: {
+  m: StaffMemberDetail;
+  onDone: () => void;
+  onResult: (s: Status) => void;
+}) {
   const c = useConsoleT();
   const locale = useLocale();
   const errorText = useErrorText();
@@ -386,15 +417,18 @@ function Unban({ m, onDone }: { m: StaffMemberDetail; onDone: () => void }) {
   const [reason, setReason] = useState<string>(USTAAD_UNBAN_REASONS[0]);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState<Status>(null);
+  const [noteBad, setNoteBad] = useState(false);
 
   async function send() {
     if (reason === 'other' && !note.trim()) {
-      setStatus({ tone: 'error', text: c('v_note_needed') });
+      onResult({ tone: 'error', text: c('v_note_needed') });
+      setNoteBad(true);
+      document.getElementById(`${id}-note`)?.focus();
       return;
     }
     if (busy) return;
     setBusy(true);
+    onResult(null);
     const res = await adminApi(locale, `/admin/ustaad/members/${m.memberId}/unban`, UnbanResultDto, {
       method: 'POST',
       body: { reasonCode: reason, ...(note.trim() ? { note: note.trim() } : {}), version: m.version },
@@ -402,10 +436,10 @@ function Unban({ m, onDone }: { m: StaffMemberDetail; onDone: () => void }) {
     setBusy(false);
     track('admin_ustaad_console_action', { action: 'unban', outcome: res.ok ? 'ok' : 'refused' });
     if (!res.ok) {
-      setStatus({ tone: 'error', text: errorText(res.code) });
+      onResult({ tone: 'error', text: errorText(res.code) });
       return;
     }
-    setStatus({ tone: 'ok', text: res.data.pendingUnban ? c('m_unban_proposed') : c('m_lifted') });
+    onResult({ tone: 'ok', text: res.data.pendingUnban ? c('m_unban_proposed') : c('m_lifted') });
     onDone();
   }
 
@@ -441,43 +475,57 @@ function Unban({ m, onDone }: { m: StaffMemberDetail; onDone: () => void }) {
         <label className="space-y-1">
           <span className={labelClass}>{c('v_note')}</span>
           <input
+            id={`${id}-note`}
             className={portalField}
+            required={reason === 'other'}
+            aria-invalid={noteBad ? true : undefined}
+            aria-describedby={`${id}-note-hint`}
             maxLength={500}
             value={note}
             onChange={(e) => {
               setNote(e.target.value);
             }}
           />
+          <span id={`${id}-note-hint`} className="block text-xs text-muted">
+            {reason === 'other' ? c('note_required') : c('note_hint')}
+          </span>
         </label>
       </div>
       <button type="submit" aria-disabled={busy} className={portalQuiet}>
         {c('m_unban')}
       </button>
-      <StatusLine tone={status?.tone ?? null}>{status?.text}</StatusLine>
     </form>
   );
 }
 
 /** Four-eyes: lifting a long ban waits; only someone else (not involved) approves. */
-function PendingUnban({ m, onDone }: { m: StaffMemberDetail; onDone: () => void }) {
+function PendingUnban({
+  m,
+  onDone,
+  onResult,
+}: {
+  m: StaffMemberDetail;
+  onDone: () => void;
+  onResult: (s: Status) => void;
+}) {
   const c = useConsoleT();
   const locale = useLocale();
   const errorText = useErrorText();
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState<Status>(null);
   const p = m.pendingUnban;
   if (!p) return null;
 
   async function approve() {
     if (busy || !p) return;
     setBusy(true);
+    onResult(null);
     const res = await adminApi(locale, `/admin/ustaad/members/${m.memberId}/unban/confirm`, UnbanResultDto, {
       method: 'POST',
       body: { proposalId: p.proposalId, version: m.version },
     });
     setBusy(false);
     track('admin_ustaad_console_action', { action: 'unban_confirm', outcome: res.ok ? 'ok' : 'refused' });
-    setStatus(res.ok ? { tone: 'ok', text: c('m_lifted') } : { tone: 'error', text: errorText(res.code) });
+    onResult(res.ok ? { tone: 'ok', text: c('m_lifted') } : { tone: 'error', text: errorText(res.code) });
     onDone();
   }
 
@@ -493,7 +541,6 @@ function PendingUnban({ m, onDone }: { m: StaffMemberDetail; onDone: () => void 
           {c('m_unban_confirm')}
         </button>
       )}
-      <StatusLine tone={status?.tone ?? null}>{status?.text}</StatusLine>
     </div>
   );
 }
