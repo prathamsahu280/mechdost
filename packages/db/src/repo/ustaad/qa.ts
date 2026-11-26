@@ -147,7 +147,11 @@ export async function askUstaadQuestion(
     if (input.reach === 'state' && !s['ustaad.general.all_state'])
       throw new ValidationError('Questions reach your city only', 'USTAAD_REGION');
     if (input.voiceMediaId) await assertOwnVoice(tx, me.id, input.voiceMediaId, s['ustaad.qa.voice_max_s']);
-    const [city] = await tx.select({ code: cities.code }).from(cities).where(eq(cities.id, me.cityId)).limit(1);
+    const [city] = await tx
+      .select({ code: cities.code })
+      .from(cities)
+      .where(eq(cities.id, me.cityId))
+      .limit(1);
     if (!city) throw new NotFoundError('City not found');
     const screen = await screenUstaadContent(tx, {
       kind: 'question',
@@ -311,7 +315,11 @@ export async function answerUstaadQuestion(
         .update(ustaadQuestions)
         .set({ status: 'answered' })
         .where(
-          and(eq(ustaadQuestions.id, q.id), eq(ustaadQuestions.status, 'open'), eq(ustaadQuestions.version, q.version)),
+          and(
+            eq(ustaadQuestions.id, q.id),
+            eq(ustaadQuestions.status, 'open'),
+            eq(ustaadQuestions.version, q.version),
+          ),
         );
       await recordUstaadEvent(tx, {
         entityType: 'question',
@@ -405,7 +413,8 @@ export async function voteUstaadAnswerHelpful(
   return db.transaction(async (tx) => {
     const me = await memberRow(tx, actor.memberId);
     const { answer, question } = await visibleAnswer(tx, me, answerId);
-    if (answer.authorId === me.id) throw new ValidationError('You cannot vote for yourself', 'USTAAD_SELF_VOTE');
+    if (answer.authorId === me.id)
+      throw new ValidationError('You cannot vote for yourself', 'USTAAD_SELF_VOTE');
     const inserted = await tx
       .insert(ustaadAnswerVotes)
       .values({ answerId, voterId: me.id })
@@ -476,7 +485,13 @@ export async function chooseUstaadBestAnswer(
     const [a] = await tx
       .select()
       .from(ustaadAnswers)
-      .where(and(eq(ustaadAnswers.id, answerId), eq(ustaadAnswers.questionId, q.id), eq(ustaadAnswers.status, 'visible')))
+      .where(
+        and(
+          eq(ustaadAnswers.id, answerId),
+          eq(ustaadAnswers.questionId, q.id),
+          eq(ustaadAnswers.status, 'visible'),
+        ),
+      )
       .limit(1);
     if (!a) throw new NotFoundError('Answer not found');
     if (q.status !== 'answered')
@@ -507,7 +522,8 @@ export async function chooseUstaadBestAnswer(
         ),
       )
       .returning({ id: ustaadQuestions.id });
-    if (moved.length === 0) throw new ConflictError('A best answer is already chosen', 'USTAAD_ALREADY_SOLVED');
+    if (moved.length === 0)
+      throw new ConflictError('A best answer is already chosen', 'USTAAD_ALREADY_SOLVED');
     await tx
       .update(ustaadMemberCounters)
       .set({ bestAnswers: sql`${ustaadMemberCounters.bestAnswers} + 1` })
@@ -521,7 +537,12 @@ export async function chooseUstaadBestAnswer(
       await recordIzzat(
         tx,
         { userId: author?.userId ?? null },
-        { memberId: a.authorId, reason: 'best_answer', source: { type: 'answer', id: a.id }, idemKey: `best:${a.id}` },
+        {
+          memberId: a.authorId,
+          reason: 'best_answer',
+          source: { type: 'answer', id: a.id },
+          idemKey: `best:${a.id}`,
+        },
       );
       await recomputeUstaadLevel(tx, a.authorId);
     }
@@ -585,7 +606,9 @@ export async function setUstaadAnswerParts(
     if (productIds.length > 0)
       await tx
         .insert(ustaadAnswerParts)
-        .values([...new Set(productIds)].map((productId) => ({ answerId, productId, addedBy: actor.userId })));
+        .values(
+          [...new Set(productIds)].map((productId) => ({ answerId, productId, addedBy: actor.userId })),
+        );
     await recordUstaadEvent(tx, {
       entityType: 'answer',
       entityId: answerId,
@@ -691,10 +714,18 @@ function cardOf(
 }
 
 /** The thread: question, visible answers (best first, then most helpful, then oldest), parts, what I may do. */
-export async function ustaadQuestionDetail(db: Tx, actor: UstaadActor, code: string): Promise<QuestionDetail> {
+export async function ustaadQuestionDetail(
+  db: Tx,
+  actor: UstaadActor,
+  code: string,
+): Promise<QuestionDetail> {
   const me = await memberRow(db, actor.memberId);
   const q = await visibleQuestion(db, me, code);
-  const [asker] = await db.select(authorCols).from(ustaadMembers).where(eq(ustaadMembers.id, q.askerId)).limit(1);
+  const [asker] = await db
+    .select(authorCols)
+    .from(ustaadMembers)
+    .where(eq(ustaadMembers.id, q.askerId))
+    .limit(1);
   if (!asker) throw new NotFoundError('Question not found');
   const [model] = q.vehicleModelId
     ? await db
@@ -715,7 +746,10 @@ export async function ustaadQuestionDetail(db: Tx, actor: UstaadActor, code: str
     .where(
       and(
         eq(ustaadAnswers.questionId, q.id),
-        or(eq(ustaadAnswers.status, 'visible'), and(eq(ustaadAnswers.status, 'held'), eq(ustaadAnswers.authorId, me.id))),
+        or(
+          eq(ustaadAnswers.status, 'visible'),
+          and(eq(ustaadAnswers.status, 'held'), eq(ustaadAnswers.authorId, me.id)),
+        ),
         notBlocked(me.id, sql`${ustaadAnswers.authorId}`),
       ),
     )

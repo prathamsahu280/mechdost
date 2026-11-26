@@ -67,7 +67,12 @@ async function member(track: 'apprentice' | 'ustaad', level?: string, specialiti
       yearsClaimed: 5,
       workPlace: 'shop',
       verifyMethods: [],
-      consents: { ustaad_profile: true, ustaad_directory: false, ustaad_training: false, ustaad_offers: false },
+      consents: {
+        ustaad_profile: true,
+        ustaad_directory: false,
+        ustaad_training: false,
+        ustaad_offers: false,
+      },
       turnstileToken: 'human-token-123',
     },
     { via: 'ustaad' },
@@ -111,7 +116,12 @@ const ask = (m: M, over: Record<string, unknown> = {}) =>
     ...over,
   });
 const answer = (m: M, code: string, over: Record<string, unknown> = {}) =>
-  answerUstaadQuestion(t(), m, code, { body: 'Carburettor saaf karo', correction: 'none', idemKey: key(), ...over });
+  answerUstaadQuestion(t(), m, code, {
+    body: 'Carburettor saaf karo',
+    correction: 'none',
+    idemKey: key(),
+    ...over,
+  });
 
 beforeAll(async () => {
   ({ db, client } = await createTestDb());
@@ -122,7 +132,10 @@ beforeAll(async () => {
   ustaad = await member('ustaad', 'naya');
   pending = await member('ustaad');
   chhotu2 = await member('apprentice');
-  const [cat] = await db.insert(s.categories).values({ slug: 'spark', name: 'Spark plugs', sort: 1 }).returning();
+  const [cat] = await db
+    .insert(s.categories)
+    .values({ slug: 'spark', name: 'Spark plugs', sort: 1 })
+    .returning();
   const [brand] = await db.insert(s.brands).values({ slug: 'ngk', name: 'NGK' }).returning();
   const [p] = await db
     .insert(s.products)
@@ -184,7 +197,9 @@ describe('ask', () => {
       }),
     ).rejects.toMatchObject({ code: 'USTAAD_MEDIA_INVALID' });
     await expect(
-      ask(asker, { voiceMediaId: await audio(asker.memberId, { status: 'pending_upload', bucket: 'quarantine' }) }),
+      ask(asker, {
+        voiceMediaId: await audio(asker.memberId, { status: 'pending_upload', bucket: 'quarantine' }),
+      }),
     ).rejects.toMatchObject({ code: 'USTAAD_MEDIA_INVALID' });
     await expect(
       ask(asker, { voiceMediaId: await audio(asker.memberId, { durationMs: 121_000 }) }),
@@ -197,7 +212,10 @@ describe('ask', () => {
 
   it('queues question_waiting to matching Ustaads (speciality + city), never to the asker', async () => {
     const q = await ask(asker);
-    const rows = await db.select().from(s.notifications).where(eq(s.notifications.kind, 'ustaad.question_waiting'));
+    const rows = await db
+      .select()
+      .from(s.notifications)
+      .where(eq(s.notifications.kind, 'ustaad.question_waiting'));
     const forQ = rows.filter((r) => JSON.stringify(r).includes(q.code));
     expect(forQ.map((r) => r.userId)).toContain(ustaad.userId);
     expect(forQ.map((r) => r.userId)).not.toContain(asker.userId);
@@ -238,7 +256,9 @@ describe('answer gate and levels', () => {
     const notes = await db
       .select()
       .from(s.notifications)
-      .where(and(eq(s.notifications.kind, 'ustaad.answer_received'), eq(s.notifications.userId, asker.userId)));
+      .where(
+        and(eq(s.notifications.kind, 'ustaad.answer_received'), eq(s.notifications.userId, asker.userId)),
+      );
     expect(notes.length).toBeGreaterThan(0);
   });
 
@@ -257,7 +277,9 @@ describe('helpful votes', () => {
     const a = await answer(ustaad, q.code);
     expect(await voteUstaadAnswerHelpful(t(), asker, a.id)).toEqual({ helpfulCount: 1, voted: true });
     expect(await voteUstaadAnswerHelpful(t(), asker, a.id)).toEqual({ helpfulCount: 1, voted: false });
-    await expect(voteUstaadAnswerHelpful(t(), ustaad, a.id)).rejects.toMatchObject({ code: 'USTAAD_SELF_VOTE' });
+    await expect(voteUstaadAnswerHelpful(t(), ustaad, a.id)).rejects.toMatchObject({
+      code: 'USTAAD_SELF_VOTE',
+    });
     const [c] = await db
       .select()
       .from(s.ustaadMemberCounters)
@@ -271,7 +293,9 @@ describe('best answer', () => {
     const q = await ask(asker);
     const a = await answer(ustaad, q.code);
     const b = await answer(pending, q.code);
-    await expect(chooseUstaadBestAnswer(t(), ustaad, q.code, a.id)).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    await expect(chooseUstaadBestAnswer(t(), ustaad, q.code, a.id)).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
     await chooseUstaadBestAnswer(t(), asker, q.code, a.id);
     await expect(chooseUstaadBestAnswer(t(), asker, q.code, b.id)).rejects.toMatchObject({
       code: 'USTAAD_ALREADY_SOLVED',
@@ -291,7 +315,9 @@ describe('best answer', () => {
     const q1 = await ask(asker);
     const q2 = await ask(asker);
     const a2 = await answer(ustaad, q2.code);
-    await expect(chooseUstaadBestAnswer(t(), asker, q1.code, a2.id)).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    await expect(chooseUstaadBestAnswer(t(), asker, q1.code, a2.id)).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
   });
 
   it('≤ qa.best_per_week best answers a week per asker', async () => {
@@ -317,7 +343,9 @@ describe('parts used in this fix', () => {
       code: 'USTAAD_NOT_BEST',
     });
     await chooseUstaadBestAnswer(t(), asker, q.code, a.id);
-    await expect(setUstaadAnswerParts(t(), asker, a.id, [productId])).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    await expect(setUstaadAnswerParts(t(), asker, a.id, [productId])).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
     await setUstaadAnswerParts(t(), ustaad, a.id, [productId]);
     const d = await ustaadQuestionDetail(t(), chhotu2, q.code);
     expect(d.answerList.find((x) => x.id === a.id)?.parts.map((p) => p.slug)).toEqual(['ngk-spark-plug']);
@@ -360,7 +388,11 @@ describe('learn', () => {
   beforeAll(async () => {
     const [course] = await db
       .insert(s.ustaadCourses)
-      .values({ code: 'how_to_use', titleEn: 'How to use Ustaad Network', titleHi: 'उस्ताद नेटवर्क कैसे चलाएँ' })
+      .values({
+        code: 'how_to_use',
+        titleEn: 'How to use Ustaad Network',
+        titleHi: 'उस्ताद नेटवर्क कैसे चलाएँ',
+      })
       .returning();
     const media = await audio(ustaad.memberId, {
       kind: 'video',
@@ -380,7 +412,12 @@ describe('learn', () => {
           mediaId: media,
           label: 'mechdost_training',
         },
-        { kind: 'external_link', titleEn: 'Spark plug basics', titleHi: 'स्पार्क प्लग की बातें', url: 'https://example.com/x' },
+        {
+          kind: 'external_link',
+          titleEn: 'Spark plug basics',
+          titleHi: 'स्पार्क प्लग की बातें',
+          url: 'https://example.com/x',
+        },
       ])
       .returning();
     video = rows[0]?.id ?? '';
@@ -389,7 +426,9 @@ describe('learn', () => {
 
   it('a hosted video completes at ≥ 80 % watched; watched seconds never go down', async () => {
     expect((await writeUstaadLearnProgress(t(), asker, video, { watchedSeconds: 79 })).completed).toBe(false);
-    expect((await writeUstaadLearnProgress(t(), asker, video, { watchedSeconds: 10 })).watchedSeconds).toBe(79);
+    expect((await writeUstaadLearnProgress(t(), asker, video, { watchedSeconds: 10 })).watchedSeconds).toBe(
+      79,
+    );
     expect((await writeUstaadLearnProgress(t(), asker, video, { watchedSeconds: 80 })).completed).toBe(true);
     const [c] = await db
       .select()
@@ -426,7 +465,9 @@ describe('learn', () => {
       .returning();
     const m = await member('apprentice');
     for (const r of extra.slice(0, 5)) await writeUstaadLearnProgress(t(), m, r.id, { selfMark: true });
-    await expect(writeUstaadLearnProgress(t(), m, extra[5]?.id ?? '', { selfMark: true })).rejects.toMatchObject({
+    await expect(
+      writeUstaadLearnProgress(t(), m, extra[5]?.id ?? '', { selfMark: true }),
+    ).rejects.toMatchObject({
       code: 'USTAAD_DAILY_CAP',
     });
   });

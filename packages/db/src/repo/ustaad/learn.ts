@@ -7,7 +7,12 @@
  */
 import { and, asc, eq, isNotNull, sql } from 'drizzle-orm';
 import type { LearnProgress, LearnResourceView, LearnView } from '@mechdost/shared/ustaad/dto/qa';
-import { ustaadCourses, ustaadLearningProgress, ustaadLearningResources, ustaadMemberCounters } from '../../schema';
+import {
+  ustaadCourses,
+  ustaadLearningProgress,
+  ustaadLearningResources,
+  ustaadMemberCounters,
+} from '../../schema';
 import { NotFoundError, ValidationError } from '../errors';
 import type { Tx } from '../orders';
 import { recordIzzat } from './izzat';
@@ -103,7 +108,10 @@ export async function writeUstaadLearnProgress(
         .select({ c: ustaadLearningProgress.completedAt })
         .from(ustaadLearningProgress)
         .where(
-          and(eq(ustaadLearningProgress.memberId, actor.memberId), eq(ustaadLearningProgress.resourceId, r.id)),
+          and(
+            eq(ustaadLearningProgress.memberId, actor.memberId),
+            eq(ustaadLearningProgress.resourceId, r.id),
+          ),
         )
         .limit(1);
       if (!already?.c && (today?.n ?? 0) >= s['ustaad.learn.self_mark_daily_cap'])
@@ -115,7 +123,9 @@ export async function writeUstaadLearnProgress(
     const [before] = await tx
       .select({ c: ustaadLearningProgress.completedAt })
       .from(ustaadLearningProgress)
-      .where(and(eq(ustaadLearningProgress.memberId, actor.memberId), eq(ustaadLearningProgress.resourceId, r.id)))
+      .where(
+        and(eq(ustaadLearningProgress.memberId, actor.memberId), eq(ustaadLearningProgress.resourceId, r.id)),
+      )
       .for('update')
       .limit(1);
     const [row] = await tx

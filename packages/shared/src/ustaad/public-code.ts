@@ -6,7 +6,11 @@ import { istYear } from '../time';
 
 const RFC4648 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
-export function ustaadPublicCode(prefix: 'UQ' | 'UJ' | 'UR', cityCode: string, at: Date = new Date()): string {
+export function ustaadPublicCode(
+  prefix: 'UQ' | 'UJ' | 'UR',
+  cityCode: string,
+  at: Date = new Date(),
+): string {
   if (!/^[A-Z]{3}$/.test(cityCode)) throw new RangeError(`Invalid city code: ${cityCode}`);
   const bytes = new Uint8Array(6);
   globalThis.crypto.getRandomValues(bytes);
