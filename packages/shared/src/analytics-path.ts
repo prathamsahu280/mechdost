@@ -5,8 +5,21 @@
  * Dependency-free so the browser `track()` can use it without the Zod registry.
  */
 // The delivery-agent invite `/partners/delivery-invite/<token>` too (spec 24, 2026-11-26).
-const SECRET_SEGMENTS =
-  /^((?:\/hi)?\/(?:partners\/invite|partners\/delivery-invite|ustaad-attest|ustaad\/s))\/[^/?#]+(?:\/[^?#]*)?/u;
+/**
+ * Web routes whose next segment is a bearer token. `deploy/Caddyfile` must redact the same routes in the access log
+ * (URI and Referer); `apps/web/test/caddy-secret-paths.test.ts` checks every entry against it.
+ */
+export const SECRET_ROUTES = [
+  'partners/invite',
+  'partners/delivery-invite',
+  'ustaad-attest',
+  'ustaad/s',
+] as const;
+const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+const SECRET_SEGMENTS = new RegExp(
+  `^((?:\\/hi)?\\/(?:${SECRET_ROUTES.map(escape).join('|')}))\\/[^/?#]+(?:\\/[^?#]*)?`,
+  'u',
+);
 
 export function redactPath(path: string): string {
   return path.replace(SECRET_SEGMENTS, '$1/:token');

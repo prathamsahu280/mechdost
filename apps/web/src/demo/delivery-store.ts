@@ -199,7 +199,7 @@ export interface DemoDeliverySettings {
   maxAttempts: number;
   maxLoadKg: Record<AgentVehicleType, number>;
 }
-interface DeliveryState {
+export interface DeliveryState {
   agents: DemoAgent[];
   jobs: DemoJob[];
   applications: DemoAgentApplication[];
@@ -229,7 +229,8 @@ const verifiedDocs = (pan: string, dl: string, rc: string): DemoAgentDoc[] =>
     ] as const
   ).map(([kind, number]) => ({ kind, number, status: 'verified', rejectReason: null, submittedAt: SEED_AT }));
 
-function seedState(): DeliveryState {
+/** The seeded demo state (two agents, one application, Gupta Lubes & Spares in agents mode); e2e fixtures build on it. */
+export function demoDeliverySeed(): DeliveryState {
   return {
     agents: [
       {
@@ -324,7 +325,7 @@ export function deliveryState(): DeliveryState {
       ratings: Array.isArray(stored.ratings) ? stored.ratings : [],
       payouts: Array.isArray(stored.payouts) ? stored.payouts : [],
     };
-  seeded ??= seedState();
+  seeded ??= demoDeliverySeed();
   return seeded;
 }
 function save(next: DeliveryState): void {
