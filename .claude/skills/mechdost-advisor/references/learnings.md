@@ -411,3 +411,4 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
 - L-UF3 · 2026-11-26 · tooling/windows · Python scripts that rewrite repo files on Windows wrote CRLF and broke the
   prettier pre-commit; the worktree guard also refuses long `&&` chains with heredocs → open files with `newline=''`,
   keep scripts in the scratchpad, run them as one plain command.
+- L-B5 · 2026-11-26 · migrations/merge · Regenerating an unapplied migration after merging another stream's migration: drizzle-kit numbers the new file and its snapshot by journal count, so the new snapshot overwrote the other stream's `0096_snapshot.json` → after `generate`, rename both the SQL and the snapshot to the reserved number and `git checkout main -- <their snapshot>`; check the new SQL holds only your changes. · active

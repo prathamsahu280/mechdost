@@ -1298,7 +1298,7 @@ reserved_names}`); a look-alike of an existing name is 409 `NAME_EXISTS`. A db t
     notice only on an inserted row; badge name in the member's language; a "tag" = the question's work or vehicle
     code) → evidence purge. No pg-boss queue: the worker's timers with a busy flag and idempotent SQL.
   - **Voucher trust (security review 2026-11-26):** `vouchRefusal()` refuses `VOUCH_NOT_TRUSTED` unless the voucher is
-    `verified` and `active`. `ustaadVoucherLostTrust()` (called by staff revoke; F's ban must call it): the voucher's
+    `verified` and `active`. `ustaadVoucherLostTrust()` (called by staff revoke and by F2's ban in `applySanction`): the voucher's
     requested vouches expire, given vouches are revoked (`voucher_untrusted`, recommendations follow), vouchees with an
     open request in review get `evidence_withdrawn`, and a verified vouchee whose approved verification no longer has
     enough evidence gets a new `in_review` re-check row (`recheck_queued` event) for staff.

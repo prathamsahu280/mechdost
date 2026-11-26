@@ -10,7 +10,7 @@ This file is the single source of truth for **where the build is right now**. It
   public `/ustaad-attest/[token]`, evidence purge, counter reconcile, 30-day counters, stored qualified followers,
   badge awards, voucher trust (lead's security finding), Partners notice, Ustaad copy on Apply as a mechanic, state
   audit rows. Spec 23 § 21b round 3, decisions 2026-11-26 "B round 3", Q-UB1. **Next:** lead merge + apply 0098/0099;
-  F's ban must call `ustaadVoucherLostTrust`; D2 writes `followed/unfollowed` events per the contract; G2 builds the
+  D2 writes `followed/unfollowed` events per the contract; G2 builds the
   verification queue screen and the reserved-names list; profile/choices web screens; screenshots.
 - **2026-11-26: Ustaad F2 (reports, moderation, appeals, takedown clocks, child safety) + F3 (compliance docs) built**
   (branch worktree-agent-a65a759c1bdf03b2b on main d06c6ba5 + merge of main with B's 0094; not pushed; migration
