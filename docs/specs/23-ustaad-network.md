@@ -1778,6 +1778,20 @@ new_threads | connect_requests`; one conditional upsert `n + k where n < cap`, n
   sheet focus return, report + mute, WhatsApp link shape, story viewer, composer errors + tag + post, post / tag /
   profile / teaser with axe on `main`). State-audit rows `API-USTAAD-{FEED,POST-SHEETS,CREATE,STORY-VIEWER,TAG-SAVED,
 PROFILE,TEASER}` (fixtures owed, Q-U-DW3).
+- **Found in testing (fixed, 2026-11-26):** the teaser token has a dot (`{22}.{22}`), so the locale proxy's "files
+  with an extension" exclusion skipped it and `/ustaad/s/…` answered 404 → `proxy.ts` matcher adds `/ustaad/s/:token`
+  and `/hi/ustaad/s/:token` (e2e `ustaad-d.spec.ts` guards it). Poll option text moved out of `aria-label` (member text
+  must stay inside `data-user-content`, Hindi crawl). A11y review (aria/keyboard, modal/live regions, forms/media):
+  focus goes back to the opener only after the native dialog is closed (in `Sheet` / `StoryViewer` cleanup), every
+  in-sheet step focuses its first control, poll and video keep focus, the photo strip is a named focusable region and
+  its counter speaks only on button use, story rings say new / seen in words, reduced motion starts stories paused.
+- **JS (measured on the build, before the split below):** `/ustaad` 226.8 KB gz first load vs `/ustaad/learn` 175.2 (the
+  shared Ustaad frame is already over § 17's 150 KB target before D). Zod (31 KB) came in through the correction
+  schemas (`EditedText`) and the composer rules; fixed by `lib/ustaad/correction-text.ts` and
+  `lib/ustaad/feed-format.ts` (source guard in `ustaad-feed-view.test.ts`). The re-measure needs the next build (the
+  lead allowed one build this round), queued in progress. Storefront unchanged: `/shop` 178.6, product 178.4 KB.
+- **Accepted gaps (a11y):** member videos have no captions and voice notes no transcript (speech-to-text is ruled out,
+  § 22); the post text is the text alternative. Story captions are linked by position, not `aria-describedby`.
 - **Not built here:** messages / network / Discover (other agent), resumable video upload (Q-U-DW1), a lasting
   per-member hide (Q-U-DW2), photo avatars (no profile photo upload on the web yet), offline drafts in IndexedDB
   (§ 17), link-preview images (D1 has no og:image yet), 1440 screenshots (lead: 390 + Hindi 390 only this round).

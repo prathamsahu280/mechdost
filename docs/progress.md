@@ -11,7 +11,10 @@ This file is the single source of truth for **where the build is right now**. It
   `/ustaad/u/[handle]` (renamed from `/m/`), the shell-free share teaser `/ustaad/s/[token]`, header Messages + rail
   entries; new reads `GET /ustaad/profiles/{handle}` and `GET /ustaad/members/{id}/posts`. Spec 23 § 21g, spec 12,
   decisions 2026-11-26 "Ustaad feed web screens", Q-U-DW1–4. Messages / network / Discover screens: separate agent
-  (lead's split). **Next:** lead merge; the other agent's three screens; state-audit fixtures (Q-U-DW3).
+  (lead's split). Verified: e2e `ustaad-d.spec.ts` 7/7 + `ustaad-shell` 4/4 (desktop, dev server after the one
+  build), Hindi crawl (Ustaad + admin sets) 2/2, web vitest 1588/1588, shared 949/949, db + api Ustaad tests 73 + 22.
+  **Next:** lead merge; re-measure `/ustaad` JS on the next build (Zod split landed after the build; the shared Ustaad
+  frame is already 175 KB vs § 17's 150 KB target); the other agent's three screens; state-audit fixtures (Q-U-DW3).
 - **2026-11-26 (afternoon): Ustaad workstream B round 3** (branch worktree-agent-ab7b78a32bea2c97c, not pushed,
   migrations **0098_ustaad_identity_b3** (schema) and **0099_ustaad_reserved_names_seed** (data) written, NOT applied).
   Reserved/look-alike names, `PATCH /ustaad/me`, specialities, choices, SR-2 freeze, garage-owner link (staff-issued) and

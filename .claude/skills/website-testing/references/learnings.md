@@ -323,3 +323,9 @@ T203 · 2026-11-24 · notifications · the WhatsApp approval gate is per event (
 - 2026-11-26 · Ustaad D web · New bug class "focus lost after a modal closes": a native `<dialog>` keeps the page inert
   until it unmounts, so `opener.focus()` called in the close handler does nothing. Test: open a sheet, press Escape,
   `expect(opener).toBeFocused()` (e2e `ustaad-d.spec.ts` comments sheet and story viewer).
+- 2026-11-26 · Ustaad D web · A route param with a dot (`/ustaad/s/{22}.{22}`) was treated as a static file by the
+  locale proxy matcher (`.*\..*` excluded) → 404 in every locale. Guard: e2e opens the teaser; any new route whose
+  segment may contain a dot gets an explicit matcher entry in `proxy.ts`.
+- 2026-11-26 · Ustaad D web · `aria-label` built from member text (poll options) leaks English into `/hi` pages because
+  the Hindi crawl reads attributes outside `data-user-content` → put member text in the button's content and the
+  fixed words in an sr-only span.
