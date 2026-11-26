@@ -261,7 +261,7 @@ action; Hindi default for new members (`general.default_lang`), English switch i
 | `/ustaad`                                                  | Home: greeting, stories row, shortcuts (Ask, Jobs, Dukaan, Learn, My network, Area map, Saved, Pin garage, My card), "Questions waiting for you" (Ustaad) or "Your questions" (Chhotu), feed For you / Following, pin prompt |
 | `/ustaad/join`, `/partners/apply/mechanic`                 | The 5-step join (one component; non-members land here from any `/ustaad` link); then the tutorial                                                                                                                            |
 | `/ustaad/welcome`                                          | First-time tutorial cards (flow 15); replay from Me › Help / Kaise use karein                                                                                                                                                |
-| `/ustaad/s/[token]`                                        | Share teaser for non-members (sign in to see; no content)                                                                                                                                                                    |
+| `/ustaad/s/[token]`                                        | Share teaser for non-members (sign in to see; no content; no gate or shell, § 21g)                                                                                                                                           |
 | `/partners/status`                                         | For mechanics: verification progress (§ 4a)                                                                                                                                                                                  |
 | `/ustaad/ask`, `/ustaad/ask/new`                           | Q&A list (All, For you, Mine, No answer yet) and the composer sheet                                                                                                                                                          |
 | `/ustaad/q/[code]`                                         | Question thread with answers, best answer, parts used, report                                                                                                                                                                |
@@ -270,7 +270,7 @@ action; Hindi default for new members (`general.default_lang`), English switch i
 | `/ustaad/stories/[memberId]`                               | Full-screen story viewer                                                                                                                                                                                                     |
 | `/ustaad/discover`                                         | Search, filters, top helpers, tags                                                                                                                                                                                           |
 | `/ustaad/tags/[slug]`                                      | Tag page (posts, questions, follow tag)                                                                                                                                                                                      |
-| `/ustaad/m/[handle]`                                       | Member card and profile (posts, answers, badges, level ladder with "You are here")                                                                                                                                           |
+| `/ustaad/u/[handle]`                                       | Member profile (card, counts, Follow / Connect / Message, posts; was `/m/`, § 21g)                                                                                                                                           |
 | `/ustaad/me`                                               | My card (share as image, QR), stats, level ladder, badges, my work, settings and my choices                                                                                                                                  |
 | `/ustaad/me/verify`                                        | Get verified                                                                                                                                                                                                                 |
 | `/ustaad/network`                                          | Requests, near you, mentors / my shagirds, connected                                                                                                                                                                         |
@@ -1707,6 +1707,80 @@ new_threads | connect_requests`; one conditional upsert `n + k where n < cap`, n
   applied" state on a job (not in `JobDto`); posting for a **MechDost workshop** (needs a workshop picker); changing
   **shop vs home/roadside** on the pin screen (`PATCH /ustaad/me`, B); vehicle **model** picker (no data); video **size**
   on Learn (no bytes in `LearnResourceView`; duration is shown); zone **names** (cells are numbered "Area 1…").
+
+## 21g. Workstream D web screens (feed + social) as built (2026-11-26)
+
+- **Scope split (lead, 2026-11-26):** this pass built the feed, post cards, composer, comments, stories, post page, tag
+  page, Saved, the member profile, the share teaser and the shell entries. `/ustaad/messages`, `/ustaad/network` and
+  `/ustaad/discover` are built by a separate agent in their own files and namespaces (`ustaad.messages`,
+  `ustaad.network`, `ustaad.discover`); the profile and the shell link to them.
+- **Routes** (`apps/web/src/app/[locale]/ustaad/`): `/ustaad` (Home now shows the story ring and the feed islands),
+  `create` (`?story=1` adds a story), `p/[id]` (uuid or 404), `saved`, `tags/[slug]` (`TAG_SLUG_RE` or 404),
+  `u/[handle]` (**renamed from `/m/[handle]`**, brief 2026-11-26), `s/[token]` (`{22}.{22}` or 404). Server shells
+  with one client island each, inside A's layout; `noindex`.
+- **New read API for the profile** (the D2 routes had no read by handle): `GET /ustaad/profiles/{handle}` →
+  `ProfileViewDto` (card, specialities, followers/following only when `feed.show_follower_counts`, posts, helpful and
+  best answers, my relationship, null on my own) and `GET /ustaad/members/{memberId}/posts` (feed visibility rule,
+  keyset, no stories; mutes do not hide a member's own profile). Both in `routes/ustaad/social.ts` behind the gate and
+  member guard, member-read rate rule; repository `repo/ustaad/profile-view.ts`; 404 for unknown, left, banned,
+  restricted or blocked either way. Tests: `packages/db/test/ustaad-profile-view.test.ts` (5),
+  `apps/api/test/ustaad-social-api.test.ts` (role leak on both routes, flow, no phone, 404 after a block).
+- **Seam:** `lib/ustaad/social-client.ts` (interface, dynamic import) → `social-api.ts` (every answer checked with the
+  shared schemas; inline route shapes now named in `shared/ustaad/dto/responses.ts`) or `demo/ustaad-social.ts`
+  (labelled sample data, in memory; drawn picture tiles; demo share tokens have the real `{22}.{22}` shape). Uploads and
+  the voice note stay on the C + E seam (`client.ts`, `MediaDeclare.kind` now also `video` and `document`).
+- **Post card** (`components/ustaad/feed/post-card.tsx`): author (link to the profile), level chip or MechDost badge,
+  time, segment; the locked Sponsored label (`SPONSORED_LABEL`) when `contentType = sponsored`; held note on one's own
+  post; template chip; corrected text with "see original" (`EditedText`); fix log as a definition list; media
+  (`post-media.tsx`: swipe gallery with scroll-snap + Previous / Next + "Photo 1 of 3" live text, before/after chips,
+  video cover with duration and size that loads nothing before the tap, voice note, PDF chip, link card "opens outside
+  MechDost" with the registrable host, poll with whole-percent bars that add to 100); tags as links; four actions with
+  icons and words: Like + count (`aria-pressed`, rolls back on refusal; no count when the admin hides likes), Comment +
+  count, Save (`aria-pressed`), WhatsApp (teaser link via `POST …/share`; `wa.me` in a new tab; no post text leaves the
+  network). ⋯ opens one sheet: Copy link, Report (F2 reasons, pick-a-reason error, optional note), Hide (this screen
+  only, Q-U-DW2), Mute, Block (asks first), Delete for one's own post (asks first). Removing a card for mute or block
+  drops every card by that member; one live region per card and per list.
+- **Lists** (`feed-list.tsx`): For you / Following tabs stay links; Show more by cursor; an expired For you snapshot
+  (410 `USTAAD_FEED_EXPIRED`) restarts from the top silently; one served promotion after the third card (Q-U-DW4) with
+  "Hide this" asking a reason code; empty states with one action.
+- **Sheets** (`sheet.tsx`): native modal `<dialog>`, bottom sheet under 760 px, Escape and backdrop close, focus back
+  to the opener; content swaps in place (no stacked dialogs). Comments (`comments-sheet.tsx`): one level of replies,
+  text (auto smart correction on send, original kept), voice (recorder, 60 s) or photo (picker), held note, delete
+  own; the post page shows the same panel inline. The sheets, the story viewer and the comments load with
+  `next/dynamic` on first open.
+- **Stories** (`story-row.tsx`, `story-viewer.tsx`): ring row (orange = new, grey = all seen; Add story); full-screen
+  dialog with progress bars, photo stories advance after 6 s, hold to pause, a Pause button (WCAG 2.2.2), invisible
+  left/right halves as Previous/Next buttons, swipe down or Close; voice and video play only on tap; "Seen by N" on
+  one's own; Reply in messages → `/ustaad/messages?to={handle}`; each story viewed is reported once.
+- **Composer** (`composer.tsx`): kind tiles (Voice, Photos, Video, Write, Poll, Link, PDF) and quick start (Fix log,
+  Tip, Before / After), "Have a question? Ask an Ustaad"; photos up to 10 (re-encoded on the phone, EXIF gone; before /
+  after roles), video and PDF with size shown (≤ 16 MB single PUT, Q-U-DW1), poll 2–4 options, link field, smart
+  correction (suggest while typing, auto on send), curated tag picker (search, max 5), progress, one primary button;
+  `buildPostInput` (pure, tested) mirrors `CreatePostDto`; API codes in words (`USTAAD_DAILY_CAP`, links locked or
+  blocked, unknown tag, media limits, stories locked). Story mode: photo / voice / video + a one-line caption.
+- **Profile** (`profile-screen.tsx`): initial avatar, name, level, Verified, area (Hindi when given), helpful / best /
+  posts (followers and following only when shown), "Works on" chips, Follow (`aria-pressed`), Connect → Request sent /
+  Accept (links to `/ustaad/network`) / Connected, Message (thread or `/ustaad/messages?to=`), More sheet (Mute /
+  Unmute, Block with confirm, Report member), then the member's posts. Own profile: "This is your profile" + My card.
+- **Teaser** (`share-teaser.tsx`, page `s/[token]`): rendered without the network gate and shell
+  (`UstaadPublicSwitch` in the layout, `lib/ustaad/public-paths.ts`); a signed-in member goes to the post
+  (`GET /ustaad/shares/{token}` → `router.replace`); otherwise the public `GET /ustaad/s/{token}` decides between the
+  generic card (Sign in) and "This link is not working any more". `referrer: no-referrer`; the token is redacted from
+  analytics paths (`redactPath`) and from the Caddy access log.
+- **Shell:** the five-tab dock is unchanged; the phone header gains Messages next to the bell; the desktop rail gains My
+  network, Messages and Saved (`ustaad.shell.{network,messages,saved}`).
+- **Copy:** `ustaad.feed` and `ustaad.social` (profile keys only), en + hi; WhatsApp, MechDost and PDF allowed in Latin
+  (`packages/shared/test/i18n.test.ts`). Hindi crawl pages added (`/ustaad?tab=following`, `create`, `create?story=1`,
+  a post, `saved`, a tag, a profile, the teaser).
+- **Tests:** `apps/web/test/ustaad-feed-view.test.ts` (17: poll shares, first-message rule, WhatsApp link, story
+  stepping, media labels, composer body for every template, 410), `packages/shared/test/analytics-path.test.ts`
+  (teaser redaction), e2e `apps/web/e2e/ustaad-d.spec.ts` (Home kinds + promo label + like/save/poll + Saved, comments
+  sheet focus return, report + mute, WhatsApp link shape, story viewer, composer errors + tag + post, post / tag /
+  profile / teaser with axe on `main`). State-audit rows `API-USTAAD-{FEED,POST-SHEETS,CREATE,STORY-VIEWER,TAG-SAVED,
+PROFILE,TEASER}` (fixtures owed, Q-U-DW3).
+- **Not built here:** messages / network / Discover (other agent), resumable video upload (Q-U-DW1), a lasting
+  per-member hide (Q-U-DW2), photo avatars (no profile photo upload on the web yet), offline drafts in IndexedDB
+  (§ 17), link-preview images (D1 has no og:image yet), 1440 screenshots (lead: 390 + Hindi 390 only this round).
 
 ## 22. Not built / later
 

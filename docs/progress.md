@@ -4,6 +4,14 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-26 (afternoon): Ustaad workstream D web screens (feed + social)** (branch
+  worktree-agent-a7e40993294570795 on main c6e2eaf8, not pushed, no migration). Home feed with story ring, post cards
+  of every kind (like / comment / save / WhatsApp teaser / ⋯ report-hide-mute-block-delete), comments sheet, composer
+  (`/ustaad/create`, `?story=1`), story viewer, `/ustaad/p/[id]`, `/ustaad/tags/[slug]`, `/ustaad/saved`,
+  `/ustaad/u/[handle]` (renamed from `/m/`), the shell-free share teaser `/ustaad/s/[token]`, header Messages + rail
+  entries; new reads `GET /ustaad/profiles/{handle}` and `GET /ustaad/members/{id}/posts`. Spec 23 § 21g, spec 12,
+  decisions 2026-11-26 "Ustaad feed web screens", Q-U-DW1–4. Messages / network / Discover screens: separate agent
+  (lead's split). **Next:** lead merge; the other agent's three screens; state-audit fixtures (Q-U-DW3).
 - **2026-11-26 (afternoon): Ustaad workstream B round 3** (branch worktree-agent-ab7b78a32bea2c97c, not pushed,
   migrations **0098_ustaad_identity_b3** (schema) and **0099_ustaad_reserved_names_seed** (data) written, NOT applied).
   Reserved/look-alike names, `PATCH /ustaad/me`, specialities, choices, SR-2 freeze, garage-owner link (staff-issued) and

@@ -2328,3 +2328,20 @@ Spec 23 § 21f. Rulings made while building (lead brief + security review of the
   the two apart (a location oracle). Ruling: `verify.attest_distance_tries` default **1** — any confirmation closes the
   link; a failed distance check leaves the attestation for staff, who may issue a new link. Admin can raise it (1–5)
   accepting the oracle. Tests: `packages/db/test/ustaad-identity-jobs.test.ts` (single and parallel attempts).
+
+## 2026-11-26 - Ustaad feed web screens (workstream D web): build rulings
+
+- **Profile route is `/ustaad/u/[handle]`** (brief), not `/ustaad/m/[handle]` (spec 23 § 5 updated). The D2 API had
+  no read by handle, so two thin member-guarded reads were added: `GET /ustaad/profiles/{handle}` and
+  `GET /ustaad/members/{memberId}/posts` (compose `ustaadVisibleMember`, `ustaadMemberCard`, `ustaadRelationship` and
+  the feed visibility rule; 404 for left, banned, restricted or blocked; no phone, garage or location).
+- **The share teaser stays at `/ustaad/s/[token]`** (the path D1 returns) and renders without the network gate and
+  shell through a client switch in the layout, rather than moving every `/ustaad` page into a route group (other
+  workstreams add pages there in parallel). Its token is redacted like the other bearer links (analytics + Caddy).
+- **Native `<dialog>` sheets and CSS scroll-snap gallery, no new dependency** (no `components.json`; vaul / embla would
+  add weight to a 150 KB feed budget). One sheet at a time; a step inside a sheet replaces its content.
+- **Low data:** a picture's signed URL is asked for only when its box nears the screen; video, voice and PDF load only
+  on tap; the comments sheet, post menu and story viewer are `next/dynamic` imports.
+- **Hide on other people's posts is screen-only** until a per-member hide exists (Q-U-DW2); videos over 16 MB wait for
+  the resumable upload client (Q-U-DW1); the feed shows at most one promotion, after the third card (Q-U-DW4).
+- **Scope split (lead):** messages, network and Discover screens are another agent's; this pass links to them.

@@ -387,6 +387,20 @@ liked member posts in the member's city over 7 days, `GET /ustaad/discover/top-p
 in Discover, drop it, or rank it by saves only (helpfulness) instead of saves and likes? Default meanwhile: Discover
 only, saves × 2 + likes, never in the feed.
 
+#### Q-U-DW1 … DW4: Ustaad feed web screens (workstream D web, 2026-11-26)
+
+- **Q-U-DW1 (Decision, P2) — videos over 16 MB.** The composer uploads with one signed PUT (≤ 16 MB); the resumable
+  `/ustaad/media/{id}/parts` path (up to 150 MB, SR-15) has no web client yet. **Default meanwhile:** "This file is too
+  big" for larger videos; short clips only.
+- **Q-U-DW2 (Decision, P3) — "Hide this post" for other people's posts.** The API has no per-member hide (only the
+  author's own delete). **Default meanwhile:** ⋯ › Hide removes the card from the screen the member is on (it can come
+  back on the next load); Mute and Block are the lasting choices. Add `POST /ustaad/posts/{id}/hide` (a row per member)?
+- **Q-U-DW3 (Task, P3) — state-audit fixtures for the D screens.** Rows `API-USTAAD-FEED`, `-POST-SHEETS`, `-CREATE`,
+  `-STORY-VIEWER`, `-TAG-SAVED`, `-PROFILE`, `-TEASER` are in the model; their real-API fixtures are owed.
+- **Q-U-DW4 (Decision, P3) — where the feed's promotion sits.** `promo.every_n` is not readable by members. **Default
+  meanwhile:** one promotion after the third post of the first page (the server still applies caps, first day and
+  restricted-mode rules).
+
 #### Q-U-D2b: set `USTAAD_LOCATION_SECRET` on the server (Input, P2, default: unset, no distance bands)
 
 Discover can show a rough distance band ("under 2 km", "2–5 km"…) to other mechanics, never a number (SR-29). It needs

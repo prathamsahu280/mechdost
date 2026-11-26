@@ -256,3 +256,15 @@ phone) and the smart-correction events; every control also carries `data-track` 
 `ustaad_voice_*`, `ustaad_learn_*`, `ustaad_pin_*`, `ustaad_area_zone`, `ustaad_job_*`). Questions asked, answers,
 votes, best answers, job posts, applications and pin confirmations are counted server-side (spec 23 § 16). Never
 text, names, phones or locations.
+
+## Ustaad feed and social screens (2026-11-26, spec 23 § 21g)
+
+No new event names: the feed web screens send the catalogue's client events `ustaad_feed_viewed { tab }` (once per tab
+shown), `ustaad_post_liked {}` and `ustaad_post_saved {}` (only when turned on), `ustaad_post_shared { channel }`
+(`whatsapp`; Copy link sends no event), `ustaad_story_viewed {}` (once per story seen, not one's own),
+`ustaad_video_played { secondsBand }` (feed and story videos, on tap), `ustaad_voice_played {}`, `ustaad_tag_opened {}`,
+`ustaad_promo_impression { promo, slot }`, `ustaad_promo_click { promo }` and `ustaad_promo_hidden { reason }`, plus
+the smart-correction events from the composer and comments. Controls carry `data-track` (`ustaad_post_*`,
+`ustaad_story_add`, `ustaad_header_messages`, `ustaad_rail_{network,messages,saved}`, `ustaad_teaser_*`). Posts,
+stories, comments, follows, connections, blocks, mutes and reports are counted server-side (spec 23 § 16). Never
+text, names, phones, tokens or locations; the teaser path is redacted to `/ustaad/s/:token` (`redactPath`).
