@@ -4,7 +4,7 @@
  * phone number, garage or location (SR-34); counts follow `feed.show_follower_counts`.
  */
 import { z } from 'zod';
-import { USTAAD_LEVELS, USTAAD_TRACKS } from '../codes';
+import { USTAAD_LEVELS, USTAAD_SPECIALITY_CODES, USTAAD_TRACKS } from '../codes';
 import { USTAAD_CONNECTION_STATUSES } from '../../state';
 
 export const MemberIdParamDto = z.object({ memberId: z.uuid() });
@@ -92,3 +92,25 @@ export const BlockListDto = z.object({
   blocked: z.array(MemberCardDto),
   muted: z.array(MemberCardDto),
 });
+
+/** `/ustaad/u/{handle}` (web) → `GET /ustaad/profiles/{handle}`: handles are `[a-z0-9_]{3,24}`, matched case-blind. */
+export const HandleParamDto = z.object({ handle: z.string().regex(/^[A-Za-z0-9_]{3,24}$/) });
+
+/**
+ * Another member's profile as a member sees it (web screen `/ustaad/u/[handle]`, workstream D web): the card, the
+ * specialities, the public helpfulness counts and the caller's relationship (null on one's own profile). No phone,
+ * garage or location (SR-34); follower counts follow `feed.show_follower_counts` (null when off). 404 when the member
+ * left, is banned, restricted or blocked either way (SR-35).
+ */
+export const ProfileViewDto = z.object({
+  member: MemberCardDto,
+  mine: z.boolean(),
+  specialities: z.array(z.enum(USTAAD_SPECIALITY_CODES)),
+  followers: z.number().int().nullable(),
+  following: z.number().int().nullable(),
+  posts: z.number().int(),
+  helpfulAnswers: z.number().int(),
+  bestAnswers: z.number().int(),
+  relationship: RelationshipDto.nullable(),
+});
+export type ProfileView = z.infer<typeof ProfileViewDto>;

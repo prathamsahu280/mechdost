@@ -12,6 +12,7 @@ import {
   blockUstaadMember,
   followUstaadMember,
   listUstaadBlocks,
+  listUstaadMemberPosts,
   listUstaadConnections,
   listUstaadFollows,
   moveUstaadConnection,
@@ -20,6 +21,7 @@ import {
   requestUstaadConnection,
   unblockUstaadMember,
   unfollowUstaadMember,
+  ustaadProfileByHandle,
   ustaadRelationship,
 } from '@mechdost/db/repo';
 import {
@@ -30,10 +32,13 @@ import {
   ConnectRequestDto,
   FollowListQueryDto,
   FollowResultDto,
+  HandleParamDto,
   MemberIdParamDto,
   MemberPageDto,
+  ProfileViewDto,
   RelationshipDto,
 } from '@mechdost/shared/ustaad/dto/social';
+import { FeedPageDto, PageQueryDto } from '@mechdost/shared/ustaad/dto/feed';
 import { USTAAD_CONNECTION_STATUSES } from '@mechdost/shared/state';
 import { ApiError } from '../../errors';
 import { requireUstaadMember } from '../../middleware/ustaad-member';
@@ -184,9 +189,28 @@ const r = {
     request: { params: MemberIdParamDto },
     responses: { 200: json(z.object({ muted: z.boolean() }), 'Unmuted'), ...errorResponses },
   }),
+  profile: createRoute({
+    method: 'get',
+    path: '/ustaad/profiles/{handle}',
+    tags,
+    security: sec,
+    summary: "A member's profile by handle: card, specialities, counts, my relationship (404 when hidden)",
+    request: { params: HandleParamDto },
+    responses: { 200: json(ProfileViewDto, 'Profile'), ...errorResponses },
+  }),
+  memberPosts: createRoute({
+    method: 'get',
+    path: '/ustaad/members/{memberId}/posts',
+    tags,
+    security: sec,
+    summary: "A member's posts, newest first (feed visibility rule; 404 when the member is hidden)",
+    request: { params: MemberIdParamDto, query: PageQueryDto },
+    responses: { 200: json(FeedPageDto, 'Posts'), ...errorResponses },
+  }),
 };
 
 const PREFIXES = [
+  '/ustaad/profiles',
   '/ustaad/follows',
   '/ustaad/followers',
   '/ustaad/members',
@@ -203,7 +227,7 @@ export function ustaadSocialRoutes(deps: AppDeps) {
   app.use('/ustaad/*', onUstaadPaths(PREFIXES, requireUstaadMember(deps)));
   app.on(
     'GET',
-    ['/ustaad/follows', '/ustaad/members/*', '/ustaad/connections', '/ustaad/blocks'],
+    ['/ustaad/follows', '/ustaad/members/*', '/ustaad/profiles/*', '/ustaad/connections', '/ustaad/blocks'],
     limit(USTAAD_RATE_RULES.memberReads),
   );
   app.on('PUT', '/ustaad/follows/*', limit(USTAAD_RATE_RULES.follows));
@@ -254,5 +278,19 @@ export function ustaadSocialRoutes(deps: AppDeps) {
     )
     .openapi(r.unmute, async (c) =>
       c.json(await muteUstaadMember(deps.db, ustaadActor(c), c.req.valid('param').memberId, false), 200),
+    )
+    .openapi(r.profile, async (c) =>
+      c.json(await ustaadProfileByHandle(deps.db, ustaadActor(c), c.req.valid('param').handle), 200),
+    )
+    .openapi(r.memberPosts, async (c) =>
+      c.json(
+        await listUstaadMemberPosts(
+          deps.db,
+          ustaadActor(c),
+          c.req.valid('param').memberId,
+          c.req.valid('query'),
+        ),
+        200,
+      ),
     );
 }

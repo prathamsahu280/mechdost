@@ -125,6 +125,8 @@ const ROUTES: [string, string, unknown][] = [
   ['GET', '/ustaad/follows', undefined],
   ['DELETE', `/ustaad/followers/${ZERO}`, undefined],
   ['GET', `/ustaad/members/${ZERO}/relationship`, undefined],
+  ['GET', '/ustaad/profiles/somebody', undefined],
+  ['GET', `/ustaad/members/${ZERO}/posts`, undefined],
   ['POST', '/ustaad/connections', { nonsense: true }],
   ['GET', '/ustaad/connections', undefined],
   ['POST', `/ustaad/connections/${ZERO}/accept`, undefined],
@@ -240,6 +242,29 @@ describe('follow, connect, message (flow 7)', () => {
     );
     const blocks = await call(c, 'GET', '/ustaad/blocks');
     expect((blocks.body.blocked as { id: string }[]).map((x) => x.id)).toEqual([d.memberId]);
+  });
+
+  it('profile by handle and member posts (web /ustaad/u/[handle]); no phone; 404 both ways after a block', async () => {
+    const c = await memberOf('Profile Owner');
+    const d = await memberOf('Profile Viewer');
+    const relOf = await call(d, 'GET', `/ustaad/members/${c.memberId}/relationship`);
+    expect(relOf.status).toBe(200);
+    const [row] = await ctx.db
+      .select({ handle: s.ustaadMembers.handle })
+      .from(s.ustaadMembers)
+      .where((await import('@mechdost/db/testing')).eq(s.ustaadMembers.id, c.memberId));
+    const handle = row?.handle ?? '';
+    const prof = await call(d, 'GET', `/ustaad/profiles/${handle}`);
+    expect(prof.status).toBe(200);
+    expect((prof.body.member as { id: string }).id).toBe(c.memberId);
+    expect(JSON.stringify(prof.body)).not.toMatch(/\+91|phone/);
+    const posts = await call(d, 'GET', `/ustaad/members/${c.memberId}/posts`);
+    expect(posts.status).toBe(200);
+    expect(posts.body.items).toEqual([]);
+    expect([400, 422]).toContain((await call(d, 'GET', '/ustaad/profiles/bad-handle')).status);
+    expect((await call(c, 'PUT', `/ustaad/blocks/${d.memberId}`)).status).toBe(200);
+    expect((await call(d, 'GET', `/ustaad/profiles/${handle}`)).status).toBe(404);
+    expect((await call(d, 'GET', `/ustaad/members/${c.memberId}/posts`)).status).toBe(404);
   });
 
   it('the 21st follow in a day → 429 with Retry-After (AT-RATE-1)', async () => {

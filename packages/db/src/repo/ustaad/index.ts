@@ -40,6 +40,8 @@ export * from './blocks';
 export * from './messages';
 export * from './discover';
 export * from './promotions';
+// D web: another member's profile and posts.
+export * from './profile-view';
 export * from './location';
 export * from './zones';
 export * from './jobs';
