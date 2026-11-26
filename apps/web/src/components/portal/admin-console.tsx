@@ -157,11 +157,14 @@ const AdminAuditApi = dynamic(() => import('./admin-audit-api').then((m) => m.Ad
   ssr: false,
   loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
 });
-/** Real sign-in: Admin → Ustaad Network settings and tables (spec 23, task G1); demo builds never load it. */
-const AdminUstaadApi = dynamic(() => import('./admin-ustaad/ustaad-settings').then((m) => m.AdminUstaadApi), {
-  ssr: false,
-  loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
-});
+/** Real sign-in: Admin → Ustaad Network: the community console (G2) and the settings and tables (G1); demo builds never load it. */
+const AdminUstaadApi = dynamic(
+  () => import('./admin-ustaad/ustaad-console').then((m) => m.AdminUstaadConsole),
+  {
+    ssr: false,
+    loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
+  },
+);
 /** Real sign-in: CSV exports (design 2026-11-15 item 4); demo builds never load it. */
 const AdminExportsApi = dynamic(() => import('./admin-exports-api').then((m) => m.AdminExportsApi), {
   ssr: false,

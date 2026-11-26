@@ -58,7 +58,19 @@ const ACCESS_MODES = ['off', 'staff_preview', 'open'] as const;
  * the access switch, switching the network off and a video above 180 s are confirmed first. Locked items (staff
  * final approval, the Sponsored label, the distance bands, the locked switches) are shown read-only.
  */
-export function AdminUstaadApi() {
+export function AdminUstaadApi({
+  controlled,
+}: {
+  /**
+   * G2: the community console owns the section switcher (one switcher for the community sections and these ten);
+   * then this screen shows only the chosen section, and the audit link only to those who can read the audit log.
+   */
+  controlled?: {
+    section: UstaadAdminSection;
+    onSection: (s: UstaadAdminSection) => void;
+    showAuditLink: boolean;
+  };
+} = {}) {
   const t = useTranslations('ustaad.admin');
   const p = useTranslations('portal');
   const locale = useLocale();
@@ -68,7 +80,12 @@ export function AdminUstaadApi() {
   const [protectedWords, setProtectedWords] = useState(0);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [reason, setReason] = useState('');
-  const [section, setSection] = useState<UstaadAdminSection>('general');
+  const [ownSection, setOwnSection] = useState<UstaadAdminSection>('general');
+  const section = controlled?.section ?? ownSection;
+  const setSection = (s: UstaadAdminSection) => {
+    if (controlled) controlled.onSection(s);
+    else setOwnSection(s);
+  };
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<Status>(null);
   const [serverProblem, setServerProblem] = useState<{ key: string; code: string } | null>(null);
@@ -106,9 +123,12 @@ export function AdminUstaadApi() {
   }, [status]);
 
   // `?sec=promo` opens that section (a refresh or a shared link keeps the place).
+  // A controlled screen gets its section from the console instead.
+  const isControlled = controlled !== undefined;
   useEffect(() => {
-    setSection(sectionFromQuery(new URLSearchParams(window.location.search).get('sec')));
-  }, []);
+    if (!isControlled)
+      setOwnSection(sectionFromQuery(new URLSearchParams(window.location.search).get('sec')));
+  }, [isControlled]);
 
   const rows = useMemo(() => data?.settings ?? [], [data]);
   const canEdit = data?.canEdit ?? false;
@@ -271,8 +291,14 @@ export function AdminUstaadApi() {
         }}
       />
 
-      <div className="grid gap-4 min-[1200px]:grid-cols-[230px_minmax(0,1fr)] min-[1200px]:items-start">
-        <div className="min-w-0">
+      <div
+        className={
+          controlled
+            ? 'min-w-0'
+            : 'grid gap-4 min-[1200px]:grid-cols-[230px_minmax(0,1fr)] min-[1200px]:items-start'
+        }
+      >
+        <div className={controlled ? 'hidden' : 'min-w-0'}>
           <div className="tab:hidden">
             <label htmlFor={`${baseId}-sec`} className="text-sm font-bold text-ink">
               {t('nav_select')}
@@ -366,12 +392,14 @@ export function AdminUstaadApi() {
 
           {section === 'general' ? <LaterCard /> : null}
 
-          <PortalNavLink
-            href={`${locale === 'hi' ? '/hi' : ''}/admin/audit`}
-            className="inline-flex min-h-11 items-center text-sm font-bold text-accent-soft-text underline-offset-4 hover:underline"
-          >
-            {t('audit_link')}
-          </PortalNavLink>
+          {controlled && !controlled.showAuditLink ? null : (
+            <PortalNavLink
+              href={`${locale === 'hi' ? '/hi' : ''}/admin/audit`}
+              className="inline-flex min-h-11 items-center text-sm font-bold text-accent-soft-text underline-offset-4 hover:underline"
+            >
+              {t('audit_link')}
+            </PortalNavLink>
+          )}
         </section>
       </div>
 

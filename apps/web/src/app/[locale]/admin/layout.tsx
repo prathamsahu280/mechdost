@@ -64,6 +64,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             // parts of the network's namespace, not the member screens' texts.
             'ustaad.admin',
             'ustaad.adminAccess',
+            // G2: the community manager console (queue, holds, appeals, verify, members, legal, names, own actions).
+            'ustaad.console',
           ]}
         >
           <AdminFrame>{children}</AdminFrame>

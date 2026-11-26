@@ -4,7 +4,10 @@
  */
 import { z } from 'zod';
 import { REPORT_REASONS, USTAAD_UNBAN_REASONS } from '../codes';
-import { DM_READ_REASONS } from './moderation';
+import { DM_READ_REASONS, ReportQueueItemDto } from './moderation';
+import { OwnerLinkDto, VerificationQueueItemDto, VerificationViewDto } from './verification';
+
+export { OwnerLinkDto, VerificationViewDto };
 
 const version = z.number().int().min(1);
 const note = z.string().trim().min(1).max(500);
@@ -149,3 +152,56 @@ export type OwnActions = z.infer<typeof OwnActionsDto>;
 
 /** Four-eyes: a second staff member confirms an unban proposal. */
 export const ConfirmUnbanDto = z.object({ proposalId: z.uuid(), version }).strict();
+
+// ── Response shapes the console reads (the browser checks every answer, hard rule 4) ──────────────────────────
+
+export const ReportQueuePageDto = z.object({
+  items: z.array(ReportQueueItemDto),
+  nextCursor: z.string().nullable(),
+});
+export const ModerationResultDto = z.object({
+  code: z.string(),
+  status: z.string(),
+  pendingBan: z.object({ proposalId: z.string() }).optional(),
+});
+export const ThreadReadDto = z.object({
+  reportCode: z.string(),
+  messages: z.array(
+    z.object({
+      id: z.string(),
+      sender: z.string(),
+      body: z.string().nullable(),
+      at: z.string(),
+      reported: z.boolean(),
+    }),
+  ),
+});
+export const VerificationQueuePageDto = z.object({
+  items: z.array(VerificationQueueItemDto),
+  next: z.string().nullable(),
+});
+export const OwnerAttestationQueueDto = z.object({
+  items: z.array(
+    z.object({
+      id: z.string(),
+      memberHandle: z.string(),
+      memberName: z.string(),
+      sinceYear: z.number().int().nullable(),
+      linkIssuedAt: z.string().nullable(),
+      expiresAt: z.string(),
+    }),
+  ),
+});
+export const ReservedNamesDto = z.object({
+  names: z.array(
+    z.object({ id: z.string(), name: z.string(), active: z.boolean(), version: z.number().int() }),
+  ),
+});
+export const TakedownResultDto = ModerationResultDto.extend({ seconds: z.number().int() });
+export const UnbanResultDto = z.object({
+  memberId: z.string(),
+  status: z.string(),
+  pendingUnban: z.object({ proposalId: z.string() }).optional(),
+});
+
+export const StaffMemberSearchDto = z.object({ items: z.array(StaffMemberRowDto) });
