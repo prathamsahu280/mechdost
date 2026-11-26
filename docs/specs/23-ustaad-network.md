@@ -1197,6 +1197,41 @@ members at the next run. Data dictionary: this § 6.
   (compress, recorders, trim, blur, upload) and the `ustaad_media_purge` worker job (the repository functions
   `dueUstaadMediaPurges` / `markUstaadMediaPurged` exist), Supabase TUS resumable uploads, the state-audit rows.
 
+## 21b. Workstream B as built (2026-11-26, partial)
+
+- **Engines (pure, `packages/shared/src/ustaad/`):** `levels.ts` (`qualifiedFollowers()`, `levelFor()` one step at a
+  time with OR groups, Bada/Master always a staff review even if a rule row says otherwise, Naya without a verification
+  opens a request, never a drop; `levelRuleRefusal()` = `COIN_GUARD_REQUIRED` above 10000 bp, `perksActive()`),
+  `izzat.ts` (`izzatPoints()`: settings, sponsored 0, strike −500…−50), `verify.ts` (SR-6/SR-7 refusal codes,
+  `vouchesSufficient()` = needed givers from ≥ 2 garages), `rings.ts` (24 h reciprocal bursts > 30 % of new followers,
+  dense clusters ≥ 3 with ≥ 60 % mutual pairs), `badges.ts` (typed rules, same `count` shape as G1's admin DTO).
+- **Repositories (`packages/db/src/repo/ustaad/`):** real `recordIzzat` (idempotent ledger, counter moves only on
+  insert) and `recomputeUstaadLevel`; `verification.ts` (request, withdraw, vouches, partner-workshop attestations,
+  staff approve/reject/revoke with CAS, `SELF_MODERATION`, four-eyes revoke, `audit_log`, back-fill of **visible**
+  answers only); `onboarding.ts` (tutorial progress, reset, cards in the member's language); `application-links.ts`
+  (§ 4a mapping + invite check by phone hash); `runUstaadRingDetect`, `expireUstaadAttestations`.
+- **Security review fixes (2026-11-26):** vouch cap and reciprocity count given **and revoked** vouches; an expired vouch
+  request is refused (`VOUCH_EXPIRED`); a revoke that breaks the evidence of a request in review writes an
+  `evidence_withdrawn` event for staff (the machine has no way back to `requested`); `SELF_ATTESTATION` (403) on request
+  and on confirm; only `approved` workshops see, confirm or are asked (paused/suspended/pending → 404).
+- **Level reviews for Bada/Master** are rows of `ustaad_verifications` with `requested_level` bada/master (no new table).
+  **Ring flags** are `ustaad_follows.counted = false` + a `ring_flagged` event (no new table).
+- **API:** member routes `GET|PUT /ustaad/onboarding`, `POST /ustaad/onboarding/reset`, `GET /ustaad/tutorial`,
+  `GET /ustaad/verification-status`, `POST /ustaad/verifications[/{id}/withdraw]`, `POST /ustaad/attestations`,
+  `POST /ustaad/vouches[/{id}/give|decline|revoke]`; staff `GET /admin/ustaad/verifications`,
+  `POST …/{id}/approve|reject|revoke` (`ustaad:verify`, city scoped); workshop `GET /workshop/ustaad/attestations`,
+  `POST …/{id}/decide`; `POST /partner-applications` with `kind: mechanic` → 410 `MOVED_TO_USTAAD`.
+- **Worker:** one hourly timer (attestation expiry; once a day the ring check then the level recompute).
+- **Migration `0094_ustaad_identity_seed`** (data only): level rules (founder's demo rules), 8 badges, 6 tutorial cards
+  and 6 coach-marks, en + hi, `ON CONFLICT DO NOTHING`.
+- **Web:** `/ustaad/join` and `/partners/apply/mechanic` render the same 5-step `UstaadJoinFlow` (`ustaad.join` en + hi).
+- **Script:** `pnpm db:ustaad:map-mechanic-applications [--dry-run]` (links only; partner application rows untouched
+  because their status list has no "closed").
+- **Not built yet (B):** `/ustaad/welcome` tutorial screen and coach-marks UI, ID card / Me / level ladder / badges UI,
+  `/partners/status` progress, profile/choices/specialities routes (`PATCH /ustaad/me`, `PUT …/choices`), reserved-name
+  TR39 skeleton (A's stub still), SR-2 security freeze, non-partner owner one-time link + public attest page, evidence
+  purge, badge award job, counter reconcile and 30-day counters, admin Partners notice, screenshots.
+
 ## 22. Not built / later
 
 Speech-to-text and transcripts (ruled out), voice search, auto-translation, server video/audio transcoding and the

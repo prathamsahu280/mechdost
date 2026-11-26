@@ -4,6 +4,7 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-26 (morning): Ustaad Network workstream B (identity) partial** (branch worktree-agent-a08ecec98c37890df, not pushed, migration **0094_ustaad_identity_seed** data only, not applied). Engines, Izzat, levels, verification with staff final approval, vouches, workshop attestations, ring check, tutorial progress API, staff/workshop verification routes, 410 for old mechanic applications, invite mapping script, 5-step join UI. Security review fixes in. Not built: tutorial UI, ID card/Me UI, /partners/status, profile/choices routes, reserved names, SR-2 freeze, non-partner attest link (spec 23 § 21b).
 - **2026-11-26: Ustaad task F1 (smart correction) built on branch worktree-agent-a6d13b26cba34e51b (merged A's
   worktree-agent-ab4a65aaaa99d51c1 first; not pushed, no migration).** `POST /v1/ustaad/correct` (gate before sign-in,
   members only, suggest/auto/off, protected words, per-member limit, daily LLM budget, consent-gated LLM, masked cache),
