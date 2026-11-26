@@ -622,7 +622,7 @@ export async function submitAgentDocument(
       await releaseAgentWork(tx, {
         agentId: a.id,
         jobs: work,
-        all: false,
+        mode: 'offers',
         actor: 'system',
         actorId: input.userId,
       });
@@ -837,12 +837,12 @@ export async function setAgentStatus(
       .returning({ version: deliveryAgents.version });
     if (!row) throw new ConflictError('The agent changed meanwhile', 'STALE');
     if (leaving) {
-      // Suspended or offboarded: accepted jobs go back to the queue and carried parcels are flagged; a pause only
-      // withdraws open offers (security review 2026-11-26).
+      // Every held job is flagged for staff; accepted jobs go back to the queue; a paused agent may finish parcels
+      // already picked up, a suspended or offboarded one may not (lead rulings 2026-11-26).
       await releaseAgentWork(tx, {
         agentId: a.id,
         jobs: work,
-        all: input.to === 'suspended' || input.to === 'offboarded',
+        mode: input.to === 'paused' ? 'pause' : 'stop',
         actor: 'admin',
         actorId: input.staffUserId,
       });
@@ -1055,3 +1055,181 @@ export async function resumePausedAgents(db: Tx): Promise<number> {
 }
 
 export type { AgentRow };
+
+// ?? photos (pickup, delivery, failure, documents) ????????????????????????????????????????????????????????????????
+
+export type AgentUploadPurpose = 'pickup' | 'delivery' | 'failure' | 'document';
+
+/**
+ * Who owns an upload before any image work: a job photo belongs to a job the active agent holds (404 otherwise); a
+ * document photo belongs to the agent. Returns the media owner for `saveAgentMedia`.
+ */
+export async function prepareAgentUpload(
+  db: Tx,
+  input: { userId: string; purpose: AgentUploadPurpose; jobId?: string | undefined },
+): Promise<{ ownerKind: 'delivery_photo' | 'agent_document'; ownerId: string }> {
+  const a = await agentOfUser(db, input.userId);
+  if (input.purpose === 'document') {
+    if (a.status === 'offboarded' || a.status === 'suspended')
+      throw new ForbiddenError('Documents cannot be changed now', 'AGENT_NOT_ACTIVE');
+    return { ownerKind: 'agent_document', ownerId: a.id };
+  }
+  if (a.status !== 'active')
+    throw new ForbiddenError('Your account is not active for deliveries', 'AGENT_NOT_ACTIVE');
+  if (!input.jobId) throw new ValidationError('Which job is this photo for?', 'JOB_REQUIRED');
+  const [j] = await db
+    .select({ id: deliveryJobs.id, agentId: deliveryJobs.agentId, status: deliveryJobs.status })
+    .from(deliveryJobs)
+    .where(eq(deliveryJobs.id, input.jobId))
+    .limit(1);
+  if (!j || j.agentId !== a.id || !['accepted', 'picked_up'].includes(j.status))
+    throw new NotFoundError('Delivery job not found');
+  return { ownerKind: 'delivery_photo', ownerId: j.id };
+}
+
+export async function saveAgentMedia(
+  db: Tx,
+  input: {
+    userId: string;
+    ownerKind: 'delivery_photo' | 'agent_document';
+    ownerId: string;
+    image: {
+      mediaId: string;
+      bucket: string;
+      path: string;
+      thumbPath: string;
+      width: number;
+      height: number;
+      bytes: number;
+      thumbBytes: number;
+      sha256: string;
+    };
+  },
+): Promise<{ mediaId: string }> {
+  const img = input.image;
+  await db.insert(mediaObjects).values({
+    id: img.mediaId,
+    ownerKind: input.ownerKind,
+    ownerId: input.ownerId,
+    bucket: img.bucket,
+    path: img.path,
+    thumbPath: img.thumbPath,
+    width: img.width,
+    height: img.height,
+    bytes: img.bytes,
+    thumbBytes: img.thumbBytes,
+    sha256: img.sha256,
+    uploadedBy: input.userId,
+  });
+  return { mediaId: img.mediaId };
+}
+
+/** A delivery or document photo to serve (the API checks the signed URL first; only staff get those URLs). */
+export async function deliveryMediaForServing(db: Tx, mediaId: string) {
+  const [m] = await db
+    .select({ bucket: mediaObjects.bucket, path: mediaObjects.path, thumbPath: mediaObjects.thumbPath })
+    .from(mediaObjects)
+    .where(
+      and(
+        eq(mediaObjects.id, mediaId),
+        inArray(mediaObjects.ownerKind, ['delivery_photo', 'agent_document']),
+        sql`${mediaObjects.deletedAt} is null`,
+      ),
+    )
+    .limit(1);
+  return m ?? null;
+}
+
+// ?? applications (staff) ?????????????????????????????????????????????????????????????????????????????????????????
+
+export async function listAgentApplications(
+  db: Tx,
+  input: {
+    scope: CityScope;
+    status: 'new' | 'in_review' | 'approved' | 'rejected';
+    limit: number;
+    before?: Date | null;
+  },
+) {
+  const rows = await db
+    .select({
+      id: partnerApplications.id,
+      code: partnerApplications.code,
+      name: partnerApplications.name,
+      phone: partnerApplications.phone,
+      cityId: partnerApplications.cityId,
+      cityCode: cities.code,
+      vehicleType: partnerApplications.vehicleType,
+      status: partnerApplications.status,
+      reasonCode: partnerApplications.reasonCode,
+      createdAt: partnerApplications.createdAt,
+      version: partnerApplications.version,
+    })
+    .from(partnerApplications)
+    .innerJoin(cities, eq(cities.id, partnerApplications.cityId))
+    .where(
+      and(
+        eq(partnerApplications.kind, 'delivery_agent'),
+        eq(partnerApplications.status, input.status),
+        input.scope.all
+          ? undefined
+          : inArray(
+              partnerApplications.cityId,
+              input.scope.cityIds.length ? input.scope.cityIds : ['00000000-0000-0000-0000-000000000000'],
+            ),
+        input.before ? lt(partnerApplications.createdAt, input.before) : undefined,
+      ),
+    )
+    .orderBy(desc(partnerApplications.createdAt))
+    .limit(input.limit + 1);
+  return {
+    items: rows.slice(0, input.limit).map((r) => ({ ...r, phone: maskPhone(r.phone) })),
+    more: rows.length > input.limit,
+  };
+}
+
+export async function rejectAgentApplication(
+  db: Tx,
+  input: {
+    scope: CityScope;
+    staffUserId: string;
+    code: string;
+    reasonCode: string;
+    note?: string | undefined;
+    expectedVersion: number;
+  },
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    const [app] = await tx
+      .select()
+      .from(partnerApplications)
+      .where(and(eq(partnerApplications.code, input.code), eq(partnerApplications.kind, 'delivery_agent')))
+      .for('update');
+    if (!app?.cityId || !inScope(input.scope, app.cityId)) throw new NotFoundError('Application not found');
+    const done = await tx
+      .update(partnerApplications)
+      .set({
+        status: 'rejected',
+        reasonCode: input.reasonCode,
+        reviewNote: input.note ?? null,
+        reviewedBy: input.staffUserId,
+      })
+      .where(
+        and(
+          eq(partnerApplications.id, app.id),
+          eq(partnerApplications.version, input.expectedVersion),
+          inArray(partnerApplications.status, ['new', 'in_review']),
+        ),
+      )
+      .returning({ id: partnerApplications.id });
+    if (done.length === 0) throw new ConflictError('The application changed meanwhile', 'STALE');
+    await auditDelivery(tx, {
+      actorUserId: input.staffUserId,
+      actorRole: 'staff',
+      action: 'delivery_agent.application_rejected',
+      entity: 'delivery_agent',
+      entityId: app.id,
+      after: { reasonCode: input.reasonCode },
+    });
+  });
+}

@@ -1006,7 +1006,10 @@ export async function deliverDeliveryJob(
   if (!keyring)
     throw new ConflictError('Delivery codes are not configured on this server', 'DELIVERY_CODES_UNAVAILABLE');
   return db.transaction(async (tx) => {
-    const agent = await activeAgentOfUser(tx, input.userId);
+    const agent = await agentOfUser(tx, input.userId);
+    // A paused agent may finish a parcel already picked up (lead ruling 2026-11-26); suspended or offboarded may not.
+    if (agent.status !== 'active' && agent.status !== 'paused')
+      throw new ForbiddenError('Your account is not active for deliveries', 'AGENT_NOT_ACTIVE');
     const { job, order } = await lockOwnJob(tx, agent.id, input.jobId);
     if (job.status !== 'picked_up' || order.status !== 'out_for_delivery')
       throw new ConflictError(`The job is ${job.status}`, 'WRONG_STEP');
@@ -1120,7 +1123,9 @@ export async function failDeliveryJob(
   if (input.reasonCode === 'other' && !input.note?.trim())
     throw new ValidationError('Add a note', 'NOTE_REQUIRED');
   return db.transaction(async (tx) => {
-    const agent = await activeAgentOfUser(tx, input.userId);
+    const agent = await agentOfUser(tx, input.userId);
+    if (agent.status !== 'active' && agent.status !== 'paused')
+      throw new ForbiddenError('Your account is not active for deliveries', 'AGENT_NOT_ACTIVE');
     const { job } = await lockOwnJob(tx, agent.id, input.jobId);
     if (job.status !== 'picked_up') throw new ConflictError(`The job is ${job.status}`, 'WRONG_STEP');
     const settings = await deliverySettings(tx, job.cityId);
@@ -1639,9 +1644,12 @@ export async function getAgentJob(db: Tx, input: { userId: string; jobId: string
       .limit(1);
     const mine = j.agentId === agent.id;
     if (!mine && !openOffer) throw new NotFoundError('Delivery job not found');
-    // Only an active agent sees jobs; a paused or suspended agent may still show the return code of a parcel they are
-    // carrying back to the shop (stock safety, security review 2026-11-26), with the shop only.
-    if (agent.status !== 'active' && !(mine && j.status === 'returning'))
+    // Only an active agent sees jobs; a paused agent still sees the parcels they hold so they can finish them (lead
+    // ruling 2026-11-26); a suspended or offboarded agent sees nothing (staff take over).
+    if (
+      agent.status !== 'active' &&
+      !(agent.status === 'paused' && mine && ['picked_up', 'failed', 'returning'].includes(j.status))
+    )
       throw new ForbiddenError('Your account is not active for deliveries', 'AGENT_NOT_ACTIVE');
     const stage = mine ? contactStage(j.status as DeliveryJobStatus) : openOffer ? 'pickup' : 'none';
     const [o] = await tx.select().from(orders).where(eq(orders.id, j.orderId)).limit(1);
@@ -2107,16 +2115,18 @@ export async function lockAgentWork(tx: Tx, agentId: string): Promise<JobRow[]> 
 }
 
 /**
- * Takes work away from an agent whose standing or documents changed: open offers are withdrawn (job back to the
- * queue); with `all`, accepted jobs go back to the queue too and parcels already picked up are flagged for staff
- * (a person must take over; nothing moves by itself). Call after `lockAgentWork`.
+ * Takes work away from an agent whose standing or documents changed (lead rulings 2026-11-26). Open offers are
+ * always withdrawn (job back to the queue). `pause` and `stop` (suspend, offboard): every job the agent holds gets an
+ * `agent_unavailable` event and a staff notice; accepted jobs (not picked up) go back to the queue; parcels already
+ * picked up stay — a paused agent may finish them (deliver, fail, return), a stopped one may not (staff take over).
+ * `offers` (a document replaced): only open offers. Call after `lockAgentWork`.
  */
 export async function releaseAgentWork(
   tx: Tx,
   input: {
     agentId: string;
     jobs: readonly JobRow[];
-    all: boolean;
+    mode: 'offers' | 'pause' | 'stop';
     actor: 'admin' | 'system';
     actorId: string | null;
   },
@@ -2154,7 +2164,21 @@ export async function releaseAgentWork(
       }
       continue;
     }
-    if (!input.all || job.agentId !== input.agentId) continue;
+    if (input.mode === 'offers' || job.agentId !== input.agentId) continue;
+    await jobEvent(tx, {
+      job,
+      kind: 'agent_unavailable',
+      agentId: input.agentId,
+      actor: input.actor,
+      actorId: input.actorId,
+    });
+    await queueStaffNotice(tx, {
+      kind: 'staff.delivery_agent_unavailable',
+      cityId: job.cityId,
+      entityId: job.id,
+      version: `unavailable:${job.version}`,
+      params: { orderCode: o.code },
+    });
     if (job.status === 'accepted') {
       await tx
         .update(deliveryJobOffers)
@@ -2173,21 +2197,6 @@ export async function releaseAgentWork(
         cityId: job.cityId,
         entityId: job.id,
         version: job.version + 1,
-        params: { orderCode: o.code },
-      });
-    } else {
-      await jobEvent(tx, {
-        job,
-        kind: 'agent_unavailable',
-        agentId: input.agentId,
-        actor: input.actor,
-        actorId: input.actorId,
-      });
-      await queueStaffNotice(tx, {
-        kind: 'staff.delivery_agent_unavailable',
-        cityId: job.cityId,
-        entityId: job.id,
-        version: `unavailable:${job.version}`,
         params: { orderCode: o.code },
       });
     }
