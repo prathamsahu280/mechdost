@@ -247,6 +247,12 @@ Server `admin_ustaad_settings_saved { keys }`, `admin_ustaad_invariant_refused {
 promotions|tutorial_cards|coachmarks`, `create|update|merge|move`); client `admin_ustaad_change { area, action,
 fields }` from Admin → Network settings. Codes and counts only, never the values or the words of a list.
 
+Community console (G2, 2026-11-26): client `admin_ustaad_console_viewed { section }` (`queue|holds|appeals|verify|
+members|legal|names|audit|settings`) and `admin_ustaad_console_action { action, outcome }` (`keep|remove|warn|
+restrict|ban|ban_confirm|appeal_link|appeal_decide|media_view|thread_read|verify_approve|verify_reject|owner_link|
+sanction|unban|unban_confirm|takedown|name_add|name_toggle`, `ok|refused`). Never ids, handles, names or text; the
+server records each decision itself (`ustaad_moderation_action`, audit rows).
+
 ## Ustaad Q&A, Learn, pin, area and jobs screens (2026-11-26, spec 23 § 21c)
 
 No new event names. The screens send the catalogue's client events `ustaad_voice_played {}` (a voice note in a

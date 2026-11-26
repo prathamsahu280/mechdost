@@ -18,15 +18,14 @@ import {
   authorShown,
   feedMember,
   feedWriter,
-  istDay,
   notBlockedWith,
   ownUnusedMedia,
   visibleUstaadPost,
   type UstaadActor,
 } from './feed-common';
-import { screenUstaadContent } from './moderation';
+import { openUstaadAutoHoldReport, screenUstaadContent } from './moderation';
+import { publishUstaadComment } from './publish';
 import { ustaadScreenText, ustaadStoredOriginal } from './screen-text';
-import { notifyUstaad } from './notify';
 import { authorColumns } from './posts';
 import { readUstaadSettingValues } from './settings';
 
@@ -48,7 +47,6 @@ export async function commentOnUstaadPost(
       .where(and(eq(ustaadComments.authorId, me.id), eq(ustaadComments.idemKey, input.idemKey)))
       .limit(1);
     if (existing) return existing;
-    let parentAuthor: string | null = null;
     if (input.parentId) {
       const [parent] = await tx
         .select({
@@ -69,7 +67,6 @@ export async function commentOnUstaadPost(
       if (!parent) throw new NotFoundError('Comment not found');
       if (parent.parentId !== null)
         throw new ValidationError('Reply to the first comment', 'USTAAD_REPLY_DEPTH');
-      parentAuthor = parent.authorId;
     }
     let mediaKind: string | null = null;
     if (input.mediaId) {
@@ -112,11 +109,6 @@ export async function commentOnUstaadPost(
       })
       .returning({ id: ustaadComments.id, status: ustaadComments.status });
     if (!row) throw new ConflictError('Could not save the reply');
-    if (status === 'visible')
-      await tx
-        .update(ustaadPostCounters)
-        .set({ comments: sql`${ustaadPostCounters.comments} + 1` })
-        .where(eq(ustaadPostCounters.postId, post.id));
     await recordUstaadEvent(
       tx,
       {
@@ -141,25 +133,15 @@ export async function commentOnUstaadPost(
         },
       },
     );
-    if (status === 'visible') {
-      const targets = [
-        ...new Set([post.authorId, parentAuthor].filter((x): x is string => x !== null)),
-      ].filter((id) => id !== me.id);
-      const users = targets.length
-        ? await tx
-            .select({ userId: ustaadMembers.userId })
-            .from(ustaadMembers)
-            .where(and(inArray(ustaadMembers.id, targets), eq(ustaadMembers.status, 'active')))
-        : [];
-      for (const u of users)
-        await notifyUstaad(tx, 'ustaad.reply', {
-          userId: u.userId,
-          entityId: post.id,
-          version: `d${istDay()}`,
-          params: { memberName: me.displayName },
-          linkParams: { postId: post.id },
-        });
-    }
+    // Held replies reach the moderation queue (G2); a visible one goes out now (count, notices).
+    if (status === 'held')
+      await openUstaadAutoHoldReport(tx, {
+        targetType: 'comment',
+        targetId: row.id,
+        authorId: me.id,
+        kind: 'comment',
+      });
+    else await publishUstaadComment(tx, row.id);
     return row;
   });
 }

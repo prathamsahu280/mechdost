@@ -425,6 +425,14 @@ meanwhile: unset, so Discover shows no distance bands.
   CloudWatch Logs in Mumbai with 180-day retention (small monthly cost). **Default meanwhile:** nothing changes on the
   server (an outward change waits for you); `audit_log`, `ustaad_events` and moderation actions in Postgres stay the
   durable record. Runbook `docs/runbooks/ustaad.md` § 8.
+- **Q-UG2 (2026-11-26, Ustaad G2 console, Decision, P2, defaults as built):**
+  (a) **Unban:** lifting a ban of `mod.four_eyes_from_ban_days` or more (or permanent) needs a second staff member, and
+  nobody who proposed, confirmed or decided it may lift it (lead's security review); shorter bans and restrictions are
+  lifted by one staff member who took no part. Keep? (b) **Removed files on appeal:** a removed item's files move to the
+  evidence vault, which the console never shows (two-person ops step), so an appeal is decided on the text and history
+  only. Should a reviewer see removed (not POCSO, not legal-hold) files, blurred and audited? Default: no. (c) **Member
+  code:** members have no public code today; staff search by handle only. Add a code (like `UM-…`) to the ID card and
+  search? Default: handle only.
 - **Q-UF2 (2026-11-26, Ustaad F2, Decision, P2):** should a removed job be restorable on an overturned appeal? Spec
   § 7.7 makes `removed` terminal for jobs. **Default meanwhile:** no; the appeal overturns the strikes and sanctions
   only, and the employer posts the job again.

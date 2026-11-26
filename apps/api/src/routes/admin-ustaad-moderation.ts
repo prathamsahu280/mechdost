@@ -19,6 +19,7 @@ import {
   listUstaadModerationQueue,
   openUstaadAppeal,
   readUstaadReportedThread,
+  staffUstaadMediaView,
   ustaadReportDetail,
   type ModerationResult,
   type UstaadStaff,
@@ -37,7 +38,8 @@ import {
   USTAAD_REPORT_CODE_RE,
 } from '@mechdost/shared/ustaad/dto/moderation';
 import type { SessionCache } from '../auth/session-cache';
-import { Forbidden } from '../errors';
+import { StaffMediaQueryDto, StaffMediaUrlDto } from '@mechdost/shared/ustaad/dto/console';
+import { ApiError, Forbidden } from '../errors';
 import { authenticate, requireVerified } from '../middleware/auth';
 import { rateLimit } from '../middleware/rate-limit';
 import { USTAAD_RATE_RULES } from '../rate-limit/ustaad-rules';
@@ -49,6 +51,9 @@ import { errorResponses } from './schemas';
 import { body, conflict, json } from './service-schemas';
 
 const OWN = /\/admin\/ustaad\/moderation(\/|$)/;
+const MEDIA_PATH = /\/moderation\/reports\/[^/]+\/media\//;
+/** Staff media URLs live 2 minutes and are signed per view (never cached), so each view is one audit row. */
+const STAFF_MEDIA_TTL_SEC = 120;
 const meta = { tags: ['ustaad-admin'], security: [{ bearerAuth: [] }] };
 const Code = z.object({
   code: z
@@ -129,6 +134,18 @@ const R = {
     request: { params: Code, query: DmReadQueryDto },
     responses: ok(z.any(), 'Thread'),
   }),
+  media: createRoute({
+    ...meta,
+    method: 'get',
+    path: '/admin/ustaad/moderation/reports/{code}/media/{mediaId}',
+    summary:
+      'A file of the reported item (moderators only; blurred in the console, short-lived URL, every view audited)',
+    request: {
+      params: Code.extend({ mediaId: z.uuid().openapi({ param: { name: 'mediaId', in: 'path' } }) }),
+      query: StaffMediaQueryDto,
+    },
+    responses: ok(StaffMediaUrlDto.openapi('UstaadStaffMediaUrl'), 'Signed URL'),
+  }),
   takedown: createRoute({
     ...meta,
     method: 'post',
@@ -147,7 +164,8 @@ function requireAny(c: Context<AppEnv>, perms: readonly Permission[]): void {
 
 const permissionGuard: MiddlewareHandler<AppEnv> = async (c, next) => {
   if (c.req.path.endsWith('/moderation/takedowns')) requireAny(c, ['ustaad:takedown']);
-  else if (c.req.method === 'GET' && !c.req.path.endsWith('/thread'))
+  // G2: files of a reported item, like message content, are for moderators only (never `ustaad:read`).
+  else if (c.req.method === 'GET' && !c.req.path.endsWith('/thread') && !MEDIA_PATH.test(c.req.path))
     requireAny(c, ['ustaad:moderate', 'ustaad:read']);
   else requireAny(c, ['ustaad:moderate']);
   await next();
@@ -216,7 +234,13 @@ export function adminUstaadModerationRoutes(deps: AppDeps, cache: SessionCache) 
           )
         : null;
       return c.json(
-        await listUstaadModerationQueue(deps.db, staff, { queue: q.queue, cityId, cursor: q.cursor }),
+        await listUstaadModerationQueue(deps.db, staff, {
+          queue: q.queue,
+          cityId,
+          cursor: q.cursor,
+          reason: q.reason,
+          target: q.target,
+        }),
         200,
       );
     })
@@ -271,6 +295,34 @@ export function adminUstaadModerationRoutes(deps: AppDeps, cache: SessionCache) 
         200,
       ),
     )
+    .openapi(R.media, async (c) => {
+      if (!deps.mediaHost) throw new ApiError(503, 'MEDIA_UNAVAILABLE', 'Files are not available right now');
+      const { code, mediaId } = c.req.valid('param');
+      const m = await staffUstaadMediaView(deps.db, staffOf(c, 'ustaad:moderate'), {
+        code,
+        mediaId,
+        reason: c.req.valid('query').reason,
+      });
+      const url = await deps.mediaHost.presignGet(
+        m.bucket as 'media' | 'docs',
+        m.objectKey,
+        STAFF_MEDIA_TTL_SEC,
+        {
+          // PDFs are always a download, never rendered inline (SR-16).
+          ...(m.kind === 'document' ? { disposition: 'attachment' as const, filename: 'document.pdf' } : {}),
+        },
+      );
+      c.header('Cache-Control', 'private, no-store');
+      return c.json(
+        {
+          url,
+          expiresAt: new Date(Date.now() + STAFF_MEDIA_TTL_SEC * 1000).toISOString(),
+          kind: m.kind,
+          mime: m.mime,
+        },
+        200,
+      );
+    })
     .openapi(R.takedown, async (c) => {
       const r = await executeUstaadTakedown(deps.db, staffOf(c, 'ustaad:takedown'), c.req.valid('json'));
       return c.json({ ...(await move(r, 'evidence')), seconds: r.seconds }, 200);

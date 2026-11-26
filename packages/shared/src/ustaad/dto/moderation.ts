@@ -23,7 +23,8 @@ export type CreateReportBody = z.infer<typeof CreateReportDto>;
 
 export const ReportCreatedDto = z.object({ code: z.string(), status: z.string() });
 
-export const MODERATION_QUEUES = ['open', 'appealed', 'decided'] as const;
+/** `held` (G2): open reports from the automatic first pass only (the console's Holds section). */
+export const MODERATION_QUEUES = ['open', 'held', 'appealed', 'decided'] as const;
 export const ModerationQueueQueryDto = z
   .object({
     queue: z.enum(MODERATION_QUEUES).default('open'),
@@ -33,6 +34,9 @@ export const ModerationQueueQueryDto = z
       .regex(/^[A-Z]{3}$/)
       .optional(),
     cursor: z.string().max(200).optional(),
+    /** G2 filters: one reason code, one surface (target type). */
+    reason: z.enum(REPORT_REASONS).optional(),
+    target: z.enum(REPORT_TARGETS).optional(),
   })
   .strict();
 export type ModerationQueueQuery = z.infer<typeof ModerationQueueQueryDto>;
@@ -106,6 +110,10 @@ export const ReportQueueItemDto = z.object({
   minor: z.boolean(),
   version: z.number().int(),
   cityCode: z.string().nullable(),
+  /** G2 four-eyes in the UI: a ban waits for a second staff member; whether the caller proposed it or decided. */
+  banWaiting: z.boolean(),
+  proposedByMe: z.boolean(),
+  decidedByMe: z.boolean(),
 });
 export type ReportQueueItem = z.infer<typeof ReportQueueItemDto>;
 
@@ -126,7 +134,9 @@ export const ReportDetailDto = ReportQueueItemDto.extend({
     .nullable(),
   /** Moderator protection: media previews are blurred by default; ids only (signed through the staff path). */
   mediaIds: z.array(z.string()),
-  pendingBan: z.object({ proposalId: z.string(), days: z.number().int().nullable() }).nullable(),
+  pendingBan: z
+    .object({ proposalId: z.string(), days: z.number().int().nullable(), proposedByMe: z.boolean() })
+    .nullable(),
   actions: z.array(
     z.object({
       action: z.string(),

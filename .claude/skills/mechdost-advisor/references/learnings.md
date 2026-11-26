@@ -469,3 +469,18 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
   never add zod to the web bundle for it. · active
 - L-UDM3 · 2026-11-26 · i18n · sr-only text is crawled by the Hindi gate too (`Enter`/`Shift` key names, a model name
   in a tag) → Hindi copy spells key names in Devanagari (एंटर, शिफ़्ट); demo tags carry a transliterated `nameHi`. · active
+- L-G2a · 2026-11-26 · ustaad/moderation · A "keep" on held content only flipped the status: the answer stayed
+  uncounted, the asker was never told, a held message never reached its receiver, and posts/comments/messages held
+  by the screen never even reached the queue (only Q&A and jobs opened an auto report). → Every hold opens its queue
+  entry in the writer; publish side effects live in one module both the writer and moderation call, gated on "never
+  published" (creation event `toStatus = visible` or a `released` event), so a later re-hold (NCII) is not re-notified.
+- L-G2b · 2026-11-26 · security/four-eyes · The first unban let one staff member lift a four-eyes ban alone (lead's
+  review). → Any reversal of a four-eyes action is itself four-eyes, refuses anyone involved in the original, and
+  recomputes status from what still stands instead of setting `active`. Check the reverse path of every four-eyes
+  action when building it.
+- L-G2c · 2026-11-26 · tooling · `python -I -` with no heredoc body (or a stray `<<'EOF'`) starts the interactive
+  REPL and hangs the shell for two minutes on Windows. → Run scratchpad scripts as `python -I file.py args < /dev/null`.
+- L-G2d · 2026-11-26 · a11y · The four specialists (aria, keyboard, forms, live regions) agreed on one pattern the code
+  got wrong in every panel: the success message lived in a StatusLine inside the form that the refresh unmounts, and
+  focus fell to <body>. → Keep one status line per panel outside the swapped forms (children report via `onResult`),
+  focus the panel heading after a decision, and never move focus on a <select> change.

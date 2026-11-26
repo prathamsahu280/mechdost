@@ -1799,6 +1799,7 @@ export function mocksFor(c: AuditCase): Mock[] {
     case 'API-ADM-RECO':
       return adminRecoMocks(c);
     case 'API-ADM-USTAAD':
+    case 'API-ADM-USTAAD-CONSOLE':
       return [meMock(), ...ustaadAdminMocks(c)];
     case 'API-SVC-HOMEFIND':
       return homeFinderMocks(c);

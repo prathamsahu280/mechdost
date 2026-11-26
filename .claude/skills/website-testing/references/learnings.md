@@ -338,3 +338,7 @@ T203 · 2026-11-24 · notifications · the WhatsApp approval gate is per event (
   "searched" event counted the old 4 results and the old cards flashed. Root cause: the loader reset to "loading" in an
   effect (after render). Fix: the answer remembers its key and reads as loading when the key differs (`useSocial` in
   `components/ustaad/messages/shared.tsx`). Guard: e2e `ustaad-dm.spec.ts` asserts `ustaad_discover_searched` = [1].
+- T-G2a · 2026-11-26 · ustaad/moderation · Keep on held content was a status flip only (no counts, Izzat, notices, thread time; held posts/comments/messages never queued) · publish side effects lived only in the writers · moderation releases of held content must run
+  the publish side effects once (counters, Izzat, notices, thread time). Regression tests: `packages/db/test/
+ustaad-console.test.ts` (held answer/question/comment/post/message, NCII re-hold not double-counted). New class
+  "reversal bypasses four-eyes": test the undo path of every four-eyes action (unban suite in the same file + API).

@@ -151,3 +151,14 @@ nothing twice; each run writes one `audit_log` row (`ustaad.rules_reminder`).
 
 Significant social media intermediary duties start at 50 lakh registered users. The admin overview shows the Ustaad
 member count with an alert at 40 lakh (spec 23 § 13; the overview tile is G2's).
+
+## Community console (G2)
+
+- Admin → Ustaad Network → Community: Queue (by clock), Holds (release or remove), Appeals, Verify, Members,
+  Takedowns and legal holds, Reserved names, My actions. A city-A community manager sees city A only.
+- Files of a reported item stay hidden until you choose a reason and ask; each view is recorded
+  (`audit_log ustaad.media_view`). Evidence-vault files are not viewable in the console (two-person ops step, § 6).
+- A long or permanent ban, and lifting one, needs a second staff member: the item shows "Waiting for approval" until
+  someone who took no part approves it. A child-safety freeze is never lifted from Members (Grievance Officer, § 6).
+- Restricting or banning from Members opens a staff report (source `staff`) so the decision is on record like any
+  other.

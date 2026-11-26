@@ -46,6 +46,16 @@ This file is the single source of truth for **where the build is right now**. It
 NETWORK|DISCOVER` + regenerated checklist. Accessibility review (six specialists) fixes in. Spec 23 § 21g, decisions
   2026-11-26 "messages, My network and Discover web", Q-U-DM1 (handle lookup route). **Next:** lead merge; the profile
   agent links "Message" to `/ustaad/messages?to=<handle>` and adds the shell nav entries; handle route (Q-U-DM1).
+- **2026-11-26 (evening): Ustaad workstream G2 (community manager console) built** (branch
+  worktree-agent-a8aee6b650d9ce1e4, not pushed; migration **0100_ustaad_console_g2** written, NOT applied). API: keep
+  runs the publish side effects once (`repo/ustaad/publish.ts`), held posts/stories/comments/messages reach the queue,
+  held messages released by keep, audited staff media view, queue `held` + reason/target filters + four-eyes flags,
+  members for staff (search, detail, sanction, four-eyes unban per the lead's security review), legal list, own audit
+  trail, capabilities. Web: Community group in the `/admin/ustaad` switcher (Queue, Holds, Appeals, Verify, Members,
+  Takedowns and legal holds, Reserved names, My actions) beside G1's settings; en + hi; client events. Spec 23 § 21g,
+  spec 08, spec 12, decisions 2026-11-26 "G2", Q-UG2. E2e `ustaad-console.shots.ts` 16/16 and the state-audit rows
+  `API-ADM-USTAAD` / `API-ADM-USTAAD-CONSOLE` run on the API-mode build. **Next:** lead merge + apply 0100; zone
+  counts / exact pin view; shared `LoadState` live region; queue filters in the URL; 768 px / dark screenshots.
 - **2026-11-26 (afternoon): Ustaad workstream B round 3** (branch worktree-agent-ab7b78a32bea2c97c, not pushed,
   migrations **0098_ustaad_identity_b3** (schema) and **0099_ustaad_reserved_names_seed** (data) written, NOT applied).
   Reserved/look-alike names, `PATCH /ustaad/me`, specialities, choices, SR-2 freeze, garage-owner link (staff-issued) and

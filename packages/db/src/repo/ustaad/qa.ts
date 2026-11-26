@@ -8,7 +8,6 @@
  */
 import { and, desc, eq, inArray, lt, ne, or, sql, type SQL } from 'drizzle-orm';
 import { ustaadQuestionMachine } from '@mechdost/shared/state';
-import type { UstaadSpecialityCode } from '@mechdost/shared/ustaad/codes';
 import {
   VOICE_ONLY_TITLE,
   type AnswerInput,
@@ -29,7 +28,6 @@ import {
   ustaadMedia,
   ustaadMemberCounters,
   ustaadMembers,
-  ustaadMemberSpecialities,
   ustaadQuestions,
   vehicleModels,
 } from '../../schema';
@@ -41,6 +39,7 @@ import { recomputeUstaadLevel } from './levels';
 import { openUstaadAutoHoldReport, screenUstaadContent } from './moderation';
 import { ustaadScreenText, ustaadStoredOriginal } from './screen-text';
 import { notifyUstaad } from './notify';
+import { publishUstaadAnswer, publishUstaadQuestion } from './publish';
 import { readUstaadSettingValues } from './settings';
 
 /** Who is acting: the signed-in user and their member row (the API guard read it fresh). */
@@ -109,36 +108,6 @@ async function assertOwnVoice(tx: Tx, memberId: string, mediaId: string, maxS: n
 
 function inputOf(x: { voiceMediaId?: string | undefined }): 'voice' | 'text' {
   return x.voiceMediaId ? 'voice' : 'text';
-}
-
-/** Up to `qa.notify_ustaads` verified Ustaads in the city with a matching speciality, most helpful first. */
-async function matchingUstaads(
-  tx: Tx,
-  q: { cityId: string; askerId: string; codes: string[]; limit: number },
-): Promise<{ userId: string; memberId: string }[]> {
-  if (q.codes.length === 0) return [];
-  return tx
-    .selectDistinct({
-      userId: ustaadMembers.userId,
-      memberId: ustaadMembers.id,
-      helpful: ustaadMemberCounters.helpfulVotes,
-    })
-    .from(ustaadMembers)
-    .innerJoin(ustaadMemberSpecialities, eq(ustaadMemberSpecialities.memberId, ustaadMembers.id))
-    .leftJoin(ustaadMemberCounters, eq(ustaadMemberCounters.memberId, ustaadMembers.id))
-    .where(
-      and(
-        eq(ustaadMembers.cityId, q.cityId),
-        eq(ustaadMembers.status, 'active'),
-        eq(ustaadMembers.track, 'ustaad'),
-        sql`${ustaadMembers.level} not in ('apprentice', 'ustaad_pending')`,
-        ne(ustaadMembers.id, q.askerId),
-        inArray(ustaadMemberSpecialities.code, q.codes),
-        notBlocked(q.askerId, sql`${ustaadMembers.id}`),
-      ),
-    )
-    .orderBy(desc(ustaadMemberCounters.helpfulVotes))
-    .limit(q.limit);
 }
 
 /** Ask (idempotent on `idemKey`). Refuses `USTAAD_REGION` (state-wide while off), `USTAAD_MEDIA_INVALID`. */
@@ -246,26 +215,7 @@ export async function askUstaadQuestion(
         authorId: me.id,
         kind: 'question',
       });
-    if (screen === 'ok') {
-      const codes = [input.segmentCode, input.workCode].filter((c): c is UstaadSpecialityCode => Boolean(c));
-      const targets = await matchingUstaads(tx, {
-        cityId: me.cityId,
-        askerId: me.id,
-        codes,
-        limit: Number(s['ustaad.qa.notify_ustaads']),
-      });
-      for (const target of targets)
-        await notifyUstaad(tx, 'ustaad.question_waiting', {
-          userId: target.userId,
-          entityId: row.id,
-          version: 1,
-          params: {
-            memberName: me.displayName,
-            topic: input.workCode ?? input.segmentCode ?? '',
-            questionCode: row.code,
-          },
-        });
-    }
+    if (screen === 'ok') await publishUstaadQuestion(tx, row.id);
     return row;
   });
 }
@@ -356,40 +306,6 @@ export async function answerUstaadQuestion(
       .update(ustaadMemberCounters)
       .set({ answers: sql`${ustaadMemberCounters.answers} + 1` })
       .where(eq(ustaadMemberCounters.memberId, me.id));
-    if (status === 'visible' && q.status === 'open') {
-      ustaadQuestionMachine.assert('open', 'answered', 'system');
-      await tx
-        .update(ustaadQuestions)
-        .set({ status: 'answered' })
-        .where(
-          and(
-            eq(ustaadQuestions.id, q.id),
-            eq(ustaadQuestions.status, 'open'),
-            eq(ustaadQuestions.version, q.version),
-          ),
-        );
-      await recordUstaadEvent(tx, {
-        entityType: 'question',
-        entityId: q.id,
-        kind: 'first_answer',
-        fromStatus: 'open',
-        toStatus: 'answered',
-        actorId: null,
-        actorRole: 'system',
-        cityId: q.cityId,
-      });
-    }
-    if (counts && status === 'visible')
-      await recordIzzat(
-        tx,
-        { userId: actor.userId },
-        {
-          memberId: me.id,
-          reason: 'answer_posted',
-          source: { type: 'answer', id: row.id },
-          idemKey: `answer:${row.id}`,
-        },
-      );
     await recordUstaadEvent(
       tx,
       {
@@ -409,20 +325,7 @@ export async function answerUstaadQuestion(
         props: { answerId: row.id, input: inputOf(input) },
       },
     );
-    if (status === 'visible') {
-      const [askerUser] = await tx
-        .select({ userId: ustaadMembers.userId })
-        .from(ustaadMembers)
-        .where(eq(ustaadMembers.id, q.askerId))
-        .limit(1);
-      if (askerUser)
-        await notifyUstaad(tx, 'ustaad.answer_received', {
-          userId: askerUser.userId,
-          entityId: row.id,
-          version: 1,
-          params: { memberName: me.displayName, questionCode: q.code },
-        });
-    }
+    if (status === 'visible') await publishUstaadAnswer(tx, row.id);
     return row;
   });
 }

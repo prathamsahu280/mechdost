@@ -267,6 +267,49 @@ export const USTAAD_CLIENT_EVENT_SCHEMAS = {
       fields: count,
     })
     .strict(),
+  /** Admin → Ustaad community console (G2): a section opened (codes only, never ids, names or text). */
+  admin_ustaad_console_viewed: z
+    .object({
+      section: z.enum([
+        'queue',
+        'holds',
+        'appeals',
+        'verify',
+        'members',
+        'legal',
+        'names',
+        'audit',
+        'settings',
+      ]),
+    })
+    .strict(),
+  /** Admin → Ustaad community console (G2): a staff action and whether the API took it. */
+  admin_ustaad_console_action: z
+    .object({
+      action: z.enum([
+        'keep',
+        'remove',
+        'warn',
+        'restrict',
+        'ban',
+        'ban_confirm',
+        'appeal_link',
+        'appeal_decide',
+        'media_view',
+        'thread_read',
+        'verify_approve',
+        'verify_reject',
+        'owner_link',
+        'sanction',
+        'unban',
+        'unban_confirm',
+        'takedown',
+        'name_add',
+        'name_toggle',
+      ]),
+      outcome: z.enum(['ok', 'refused']),
+    })
+    .strict(),
   /** Shell navigation (A): which bottom tab was opened. */
   ustaad_tab_opened: z.object({ tab: z.enum(['home', 'discover', 'create', 'learn', 'me']) }).strict(),
 } as const;

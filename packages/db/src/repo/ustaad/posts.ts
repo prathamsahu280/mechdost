@@ -42,7 +42,7 @@ import {
   type UstaadActor,
   type UstaadMemberRow,
 } from './feed-common';
-import { screenUstaadContent } from './moderation';
+import { openUstaadAutoHoldReport, screenUstaadContent } from './moderation';
 import { ustaadScreenText, ustaadStoredOriginal } from './screen-text';
 import { ustaadLinkPreviewsFor } from './previews';
 import { readUstaadSettingValues } from './settings';
@@ -282,6 +282,14 @@ export async function createUstaadPost(db: Tx, actor: UstaadActor, input: Create
         },
       },
     );
+    // Held posts reach the moderation queue with a clock (G2; F2's contract for D).
+    if (status === 'held')
+      await openUstaadAutoHoldReport(tx, {
+        targetType: 'post',
+        targetId: row.id,
+        authorId: me.id,
+        kind: 'post',
+      });
     return { id: row.id, status: row.status, linkUrl, created: true };
   });
 }

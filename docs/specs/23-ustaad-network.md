@@ -376,14 +376,14 @@ the Supabase allow-list without checking).
 
 ### 6.7 Moderation
 
-| Table                       | Key columns                                                                                                                                                                                                                                                                                                                                                     | Constraints                                                                              |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `ustaad_reports`            | `code`, `target_type` (`post\|story\|comment\|question\|answer\|member\|job\|message`), `target_id`, `reporter_id` (null for staff/legal), `source` (`member\|auto_word\|auto_scam\|auto_safety\|legal_order\|grievance`), `reason_code`, `note`, `clock` (`intimate_2h\|legal_3h\|removal_36h\|standard_24h\|grievance_7d`), `due_at`, `status`, `assigned_to` | partial unique (`target_type`,`target_id`,`reporter_id`) WHERE open; (`status`,`due_at`) |
-| `ustaad_moderation_actions` | append-only: `report_id` null, `target_type`, `target_id`, `action` (`keep\|hold\|remove\|restore\|warn\|restrict\|ban\|unban\|strike\|level_review\|takedown`), `reason_code`, `days`, `actor_id`, `second_actor_id`, `note`                                                                                                                                   | (`target_type`,`target_id`,`created_at`)                                                 |
-| `ustaad_strikes`            | `member_id`, `reason_code`, `izzat_delta`, `expires_at`, `appeal_ticket_id`, `status` (`active\|overturned\|expired`)                                                                                                                                                                                                                                           | (`member_id`,`status`)                                                                   |
-| `ustaad_word_lists`         | admin: `list` (`banned\|scam_phrase\|protected\|pii_pattern`), `phrase`, `phrase_norm`, `lang`, `active`                                                                                                                                                                                                                                                        | unique (`list`,`phrase_norm`)                                                            |
-| `ustaad_report_reasons`     | admin: `code` (fixed codes for analytics: `wrong_unsafe\|illegal_modification\|abuse\|spam\|privacy\|minor\|not_work\|fake\|job_scam\|ip\|ncii_impersonation\|other`), `label_en`, `label_hi`, `active`, `default_clock`                                                                                                                                        | unique `code`; `other` cannot be turned off                                              |
-| `ustaad_removed_archive`    | `target_type`, `target_id`, `snapshot` jsonb (text + media keys), `removed_at`, `retain_until` (removed_at + `mod.retention_days`)                                                                                                                                                                                                                              | purge job deletes after `retain_until` unless a legal hold is set                        |
+| Table                       | Key columns                                                                                                                                                                                                                                                                                                                                                            | Constraints                                                                              |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `ustaad_reports`            | `code`, `target_type` (`post\|story\|comment\|question\|answer\|member\|job\|message`), `target_id`, `reporter_id` (null for staff/legal), `source` (`member\|auto_word\|auto_scam\|auto_safety\|legal_order\|grievance\|staff`), `reason_code`, `note`, `clock` (`intimate_2h\|legal_3h\|removal_36h\|standard_24h\|grievance_7d`), `due_at`, `status`, `assigned_to` | partial unique (`target_type`,`target_id`,`reporter_id`) WHERE open; (`status`,`due_at`) |
+| `ustaad_moderation_actions` | append-only: `report_id` null, `target_type`, `target_id`, `action` (`keep\|hold\|remove\|restore\|warn\|restrict\|ban\|unban\|strike\|level_review\|takedown`), `reason_code`, `days`, `actor_id`, `second_actor_id`, `note`                                                                                                                                          | (`target_type`,`target_id`,`created_at`)                                                 |
+| `ustaad_strikes`            | `member_id`, `reason_code`, `izzat_delta`, `expires_at`, `appeal_ticket_id`, `status` (`active\|overturned\|expired`)                                                                                                                                                                                                                                                  | (`member_id`,`status`)                                                                   |
+| `ustaad_word_lists`         | admin: `list` (`banned\|scam_phrase\|protected\|pii_pattern`), `phrase`, `phrase_norm`, `lang`, `active`                                                                                                                                                                                                                                                               | unique (`list`,`phrase_norm`)                                                            |
+| `ustaad_report_reasons`     | admin: `code` (fixed codes for analytics: `wrong_unsafe\|illegal_modification\|abuse\|spam\|privacy\|minor\|not_work\|fake\|job_scam\|ip\|ncii_impersonation\|other`), `label_en`, `label_hi`, `active`, `default_clock`                                                                                                                                               | unique `code`; `other` cannot be turned off                                              |
+| `ustaad_removed_archive`    | `target_type`, `target_id`, `snapshot` jsonb (text + media keys), `removed_at`, `retain_until` (removed_at + `mod.retention_days`)                                                                                                                                                                                                                                     | purge job deletes after `retain_until` unless a legal hold is set                        |
 
 ### 6.8 Settings storage
 
@@ -1853,6 +1853,80 @@ members/{id}/relationship,connections,blocks,mutes,discover,discover/tags,discov
 - **Not built:** a handle lookup route (Q-U-DM1), following state on Discover cards, my own follower/following
   counts, "Suggest me to others" (choices page, B), the city filter (no city list served), mentorship, message
   delete/unsend, live updates (screens refresh after each write; RTDB pings later), a thread-opened client event.
+
+## 21g. Workstream G2 as built (2026-11-26: community manager console + the API F2 left)
+
+- **Migration `0100_ustaad_console_g2`** (hand-written: drizzle-kit refuses to generate while the 0096/0097 snapshots
+  collide, L-B5): report source `staff` (a community manager restricted or banned a member from Members). Not applied.
+- **Keep runs the publish side effects (F2 not-done item).** `repo/ustaad/publish.ts` is the one place both sides use
+  (no import cycle): the writers call `publishUstaadQuestion` / `publishUstaadAnswer` / `publishUstaadComment` /
+  `publishUstaadMessage` when an item goes out at once; `actOnUstaadReport(keep)` calls `releaseUstaadHeldTarget`
+  after the move. Exactly once: an item whose creation event already reached `visible`, or that has a `released`
+  event, is only made visible again (an NCII-hidden answer kept later is not re-notified or counted twice); Izzat uses
+  the writer's key `answer:{id}`. Questions have no `held` status, so the release reads the `asked` event's
+  `screen = hold`. A held post or story also clears `held_reason_code`.
+- **Held messages (staff release).** `loadUstaadTarget` now reports a message with `held_reason_code` as `held`;
+  keep releases it (`held_reason_code` cleared with a conditional UPDATE), moves `last_message_at` (never backwards)
+  and sends the request or message notice unless the receiver muted the thread; remove deletes it for both. No
+  separate release route: keep covers it.
+- **Holds reach the queue.** Posts, stories, comments and messages now call `openUstaadAutoHoldReport` when held
+  (only Q&A and jobs did); a message held by D2's own fee-phrase check opens an `auto_scam` report (`scam: true`).
+- **Staff media view.** `GET /v1/admin/ustaad/moderation/reports/{code}/media/{mediaId}?reason=` — `ustaad:moderate`
+  only (the `ustaad:read` GET pass-through excludes this path), city scoped through the report, only a file of that
+  report's item (404 otherwise), never a message's file (DM content only through the audited thread read), never a
+  file in quarantine or the evidence vault, on legal hold or not verified/archived (403 `USTAAD_MEDIA_RESTRICTED`;
+  evidence reads stay the two-person ops step). Every call writes `audit_log` `ustaad.media_view` (reason code)
+  before the URL is signed; 120 s URL, signed per view, `Cache-Control: private, no-store`; PDFs as attachments. The
+  console shows "Hidden for your protection" until the moderator asks (that is the audited view), then a blurred
+  preview with "Show clearly" (`aria-pressed`).
+- **Queue filters and four-eyes flags.** Queue `held` (open reports from `auto_word | auto_scam | auto_safety`),
+  `reason` and `target` filters; rows and detail carry `banWaiting`, `proposedByMe`, `decidedByMe` (booleans, never
+  staff ids) so the UI shows "Waiting for approval" and hides Approve from the proposer and Decide from the decider.
+- **Members for staff** (`routes/admin-ustaad-console.ts`, exact paths only, L-UD3): `GET /admin/ustaad/console`
+  (capabilities + city codes the UI uses to hide sections), `GET /admin/ustaad/members?q=` (handle prefix, 20,
+  city scoped, no phone or email), `GET /admin/ustaad/members/{id}` (status, sanction end, restricted mode, strikes,
+  moderation history of the member and their content, open reports, `pendingUnban`), `POST …/{id}/sanction`
+  (restrict or ban through a `staff` report and the queue's own decision path, so long bans are proposed for a second
+  staff member), `POST …/{id}/unban` and `POST …/{id}/unban/confirm`.
+- **Unban follows four-eyes (lead security review 2026-11-26).** Unban lifts the member's standing bans (or, with no
+  ban, the standing restrictions): a ban at or above `mod.four_eyes_from_ban_days` (or permanent) is only proposed
+  (`unban_proposed` event, `audit_log ustaad.unban_proposed`) and a different staff member confirms; nobody who
+  proposed, confirmed or decided a sanction being lifted may propose or confirm (403 `FOUR_EYES`); only those
+  sanctions' strikes are overturned and the status is recomputed from what still stands (a restriction from another
+  report stays); a child-safety freeze (`review`) is never lifted here (409 `USTAAD_MEMBER_FROZEN`) and a minor-report
+  mode stays until its report is decided; append-only `unban` action with the second actor + `audit_log` + event.
+- **Legal list** `GET /admin/ustaad/legal` (`ustaad:takedown | ustaad:moderate`): takedowns and grievances
+  (source `legal_order | grievance`, basis from the takedown action, 100 newest) and archive rows on legal hold with
+  how many of their files sit in the evidence vault, city scoped through the report on the item.
+- **Own audit trail** `GET /admin/ustaad/my-actions` (any Ustaad staff permission): the caller's own `ustaad.*`
+  audit rows, keyset on the audit id, 30 a page. Community managers have no `audit:read`, so G1's link to Admin →
+  Audit is shown only to staff with `ustaad:settings`.
+- **Web** (`components/portal/admin-ustaad/ustaad-console.tsx`, `console-*.tsx`, `lib/admin-ustaad-console.ts`): one
+  switcher with two groups, Community (Queue, Holds, Appeals, Verify, Members, Takedowns and legal holds, Reserved
+  names, My actions) and Network settings (G1's ten sections, G1 rendered in a controlled mode and kept mounted so
+  unsaved edits survive). `?section=verify` (Partners › Applications) opens Verify; `?section=settings&sec=mod` a
+  settings section. Clock badges say the time left or overdue in words (amber under half the clock, red overdue).
+  Decisions with a reason code and note; remove, warn, restrict and ban confirm first; holds offer Release or Remove;
+  appeals: link a `REQ-…` ticket to a decided report, decide upheld / overturned. Verify: the B queue with proof,
+  vouches and the owner's answer; approve a level no higher than asked or reject with a reason; issue the owner link
+  (shown once with the owner's number for the call, as B built it). Reserved names: read for every reader, add and
+  switch with `ustaad:settings`. Strings `ustaad.console.*` en + hi; client events `admin_ustaad_console_viewed
+{section}`, `admin_ustaad_console_action {action, outcome}`.
+- **Accessibility (specialists 2026-11-26: aria, keyboard, forms, live regions):** section heading focused after a
+  switch from the list (never on a select change), the report/member heading focused when opened and after each
+  decision, one status line per panel that survives the form swaps, result counts announced, owner link focused when
+  it appears and Close returns to the section, per-field hints, `aria-invalid` and focus for the appeal, takedown,
+  verify-note and unban-note fields, busy guards on the audited reads and the owner link.
+- **Tests:** db `ustaad-console.test.ts` (22), api `ustaad-console-api.test.ts` (7), web `admin-ustaad-console.test.ts`;
+  e2e `e2e/state-audit/ustaad-console.shots.ts` (`playwright.ustaad-console.config.ts`, the API-mode build, a Raipur
+  community manager: every section's heading, focus on open, holds offer only Release/Remove, no phone or email,
+  no unmocked call; screenshots with `USTAAD_CONSOLE_SHOTS=<dir>`); state-audit row `API-ADM-USTAAD-CONSOLE` (the
+  settings row now opens `?section=settings&sec=…`).
+- **Not done (G2):** zone counts and the exact-pin view (`ustaad:location_exact`) in the console; a staff read of
+  evidence-vault files (two-person ops step); setting or clearing a legal hold by hand (holds come from takedowns and
+  the classifier); the `ustaad_grievance` ticket kind; the shared `LoadState` live-region pattern (admin-wide);
+  "Show more" keeps focus on the last row; queue filters are not in the URL; the full `API-ADM-USTAAD-CONSOLE` audit
+  sweep and 768 px / dark screenshots (lead's speed-up: 1440 light + Hindi only).
 
 ## 22. Not built / later
 

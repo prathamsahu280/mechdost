@@ -230,7 +230,13 @@ export const REPORT_SOURCES = [
   'auto_safety',
   'legal_order',
   'grievance',
+  // G2: a community manager restricted or banned a member from Members (no member report behind it).
+  'staff',
 ] as const;
+/** Automatic holds (the console's Holds section). */
+export const AUTO_REPORT_SOURCES = ['auto_word', 'auto_scam', 'auto_safety'] as const;
+/** Why staff lifted a ban or restriction from Members (G2); `other` needs a note. */
+export const USTAAD_UNBAN_REASONS = ['sanction_served', 'mistake', 'appeal_upheld', 'other'] as const;
 export type UstaadReportSource = (typeof REPORT_SOURCES)[number];
 export const REPORT_REASONS = [
   'wrong_unsafe',

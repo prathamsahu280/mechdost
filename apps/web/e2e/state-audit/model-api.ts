@@ -347,7 +347,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     page: 'Admin → Ustaad Network → Network settings, real sign-in',
     component:
       'Access switch, the ten sections (rows with label, help, range, default; locked rows), the lists of each section (few or empty), read-only for a community manager, load error, long text',
-    path: (r) => `/admin/ustaad?sec=${String(r.sec)}`,
+    path: (r) => `/admin/ustaad?section=settings&sec=${String(r.sec)}`,
     scope: 'main',
     strategy: 'pairwise',
     params: [
@@ -362,6 +362,29 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
       stress,
     ],
     sweep: 12,
+    note: API_NOTE,
+    realApi: true,
+  },
+  {
+    code: 'API-ADM-USTAAD-CONSOLE',
+    page: 'Admin → Ustaad Network → Community console, real sign-in (spec 23 § 21g, task G2)',
+    component:
+      'Queue, Holds, Appeals (list + report panel), Verify (queue + owner links), Members (search), Takedowns and legal holds, Reserved names, My actions; super admin or a Raipur community manager; few or empty lists',
+    path: (r) => `/admin/ustaad?section=${String(r.section)}`,
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['admin'] },
+      {
+        name: 'section',
+        values: ['queue', 'holds', 'appeals', 'verify', 'members', 'legal', 'names', 'audit'],
+      },
+      { name: 'ustaad', values: ['defaults', 'readonly'] },
+      { name: 'lists', values: ['few', 'empty'] },
+      stress,
+    ],
+    sweep: 8,
     note: API_NOTE,
     realApi: true,
   },

@@ -2362,3 +2362,22 @@ Spec 23 § 21f. Rulings made while building (lead brief + security review of the
   open the thread through that report (SR-38).
 - **Profile links use `/ustaad/u/<handle>`** (the profile route being built in parallel); § 5's `/ustaad/m/[handle]`
   row is left for that agent to update.
+
+## 2026-11-26 - Ustaad G2 community manager console: build rulings
+
+- **Keep runs the publish side effects once**, from one module (`repo/ustaad/publish.ts`) that the writers and
+  moderation both use; an item that already went out (created visible, or released before) is only made visible
+  again. Keep also releases held messages (no separate release route).
+- **Staff media view** is moderators only (`ustaad:moderate`, never `ustaad:read`), per report item, audited per view
+  before signing (120 s, no-store); evidence-vault, quarantine and legal-hold files are refused (two-person ops step).
+- **Member sanctions from the console go through a staff report** (new report source `staff`, migration 0100) so the
+  queue's decision path, four-eyes, strikes, notices and audit apply unchanged.
+- **Unban is four-eyes** (lead security review): long or permanent bans need a proposal and a different confirmer;
+  anyone who proposed, confirmed or decided a lifted sanction is refused; strikes of the lifted sanctions are
+  overturned and the status recomputed from what still stands; never a child-safety freeze.
+- **Own audit trail instead of `audit:read`** for community managers (`GET /admin/ustaad/my-actions`); G1's audit link
+  shows only with `ustaad:settings`.
+- **One switcher**: the console's Community group and G1's settings group share the `/admin/ustaad` switcher
+  (`?section=` for the console, `?sec=` kept for settings); no new colours, fonts or radii (admin tokens).
+- **Accessibility specialists** (aria, keyboard, forms, live regions) ran as one batch; serious and moderate findings
+  fixed in the console; the shared `LoadState` live-region pattern is an admin-wide follow-up.
