@@ -373,3 +373,5 @@ ustaad-console.test.ts` (held answer/question/comment/post/message, NCII re-hold
   agent could keep acting on held jobs, and a replaced document kept a verified agent working → test every action per
   status × stage, and test that a changed document unverifies. Pinned by `packages/db/test/delivery-agents.test.ts`,
   block "security review 2026-11-26: standing and documents". · active
+
+T-DA2 · 2026-11-27 · API/OpenAPI · a shared path-param schema (.openapi({ param: { name: 'code' } })) reused as a query field broke /openapi.json (500 'Conflicting names for parameter') while every route test passed · a schema with param metadata names one parameter only; query fields get their own schema · test/platform.test.ts 'publishes the OpenAPI document'

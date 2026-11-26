@@ -1088,7 +1088,10 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
       r('get', '/admin/delivery/jobs', 'Delivery queue by view', 'admin-delivery', {
         query: z.object({
           view: z.enum(ADMIN_JOB_VIEWS).default('needs_agent'),
-          orderCode: OrderCode.optional(),
+          orderCode: z
+            .string()
+            .regex(/^MD-[A-Z]{3}-\d{4}-[0-9A-Z]{6}-\d{1,2}$/)
+            .optional(),
           limit: Limit,
           before: Before,
           /** The previous page's `nextCursor` (same as `before`). */
