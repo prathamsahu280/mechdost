@@ -105,37 +105,31 @@ test('everyone off: a normal customer asks, an admin approves, cash on delivery 
 test('a verified Ustaad member has cash on delivery without asking; others do not', async ({ page }) => {
   await page.goto('/');
   // The demo network is not tied to accounts: mark the demo customer as a verified member in the demo store.
-  await page.evaluate(
-    ([key]) => {
-      window.localStorage.setItem(
-        key,
-        JSON.stringify({
-          switches: { everyone: false, approved: true, ustaad: true, ustaadMinLevel: 0 },
-          requests: [],
-          ustaad: { 'demo-customer': { verificationState: 'pending_verification', level: 'naya' } },
-        }),
-      );
-    },
-    [COD_KEY],
-  );
+  await page.evaluate((key: string) => {
+    window.localStorage.setItem(
+      key,
+      JSON.stringify({
+        switches: { everyone: false, approved: true, ustaad: true, ustaadMinLevel: 0 },
+        requests: [],
+        ustaad: { 'demo-customer': { verificationState: 'pending_verification', level: 'naya' } },
+      }),
+    );
+  }, COD_KEY);
   await signIn(page, CUSTOMER);
   await toCheckout(page);
   await expect(codRadio(page)).toBeDisabled();
   await expect(page.getByRole('link', { name: 'Get verified on Ustaad' })).toBeVisible();
 
-  await page.evaluate(
-    ([key]) => {
-      window.localStorage.setItem(
-        key,
-        JSON.stringify({
-          switches: { everyone: false, approved: true, ustaad: true, ustaadMinLevel: 0 },
-          requests: [],
-          ustaad: { 'demo-customer': { verificationState: 'verified', level: 'pakka' } },
-        }),
-      );
-    },
-    [COD_KEY],
-  );
+  await page.evaluate((key: string) => {
+    window.localStorage.setItem(
+      key,
+      JSON.stringify({
+        switches: { everyone: false, approved: true, ustaad: true, ustaadMinLevel: 0 },
+        requests: [],
+        ustaad: { 'demo-customer': { verificationState: 'verified', level: 'pakka' } },
+      }),
+    );
+  }, COD_KEY);
   await page.reload();
   await expect(codRadio(page)).toBeEnabled();
   await page.goto('/account/payments');
@@ -144,18 +138,15 @@ test('a verified Ustaad member has cash on delivery without asking; others do no
 
 test('Hindi: the checkout line and the request panel are in Hindi', async ({ page }) => {
   await page.goto('/hi');
-  await page.evaluate(
-    ([key]) => {
-      window.localStorage.setItem(
-        key,
-        JSON.stringify({
-          switches: { everyone: false, approved: true, ustaad: true, ustaadMinLevel: 0 },
-          requests: [],
-        }),
-      );
-    },
-    [COD_KEY],
-  );
+  await page.evaluate((key: string) => {
+    window.localStorage.setItem(
+      key,
+      JSON.stringify({
+        switches: { everyone: false, approved: true, ustaad: true, ustaadMinLevel: 0 },
+        requests: [],
+      }),
+    );
+  }, COD_KEY);
   await signIn(page, CUSTOMER);
   await page.goto('/hi/shop/exide-xltz4a-2w-battery');
   await page.getByRole('button', { name: 'कार्ट में डालें' }).first().click();
