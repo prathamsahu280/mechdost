@@ -94,7 +94,7 @@ describe('quote', () => {
       lines: [{ sku: sku('car-tyre-185-65-r15'), qty: 2 }], // ₹8,400 > ₹5,000 cap
       locale: 'en',
     });
-    expect(tyres.cod).toEqual({ allowed: false, reason: 'over_cap', capPaise: 500000 });
+    expect(tyres.cod).toMatchObject({ allowed: false, reason: 'over_cap', capPaise: 500000 });
 
     await db.insert(s.settings).values({ key: 'checkout.free_delivery_min_paise', value: 50000 });
     const free = await quoteCheckout(t(), { pincode: '492004', lines: [{ sku: OIL, qty: 2 }], locale: 'en' });

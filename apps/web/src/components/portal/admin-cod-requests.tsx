@@ -395,6 +395,7 @@ export function AdminCodRequests({ actor }: { actor: string }) {
                               setCap(e.target.value.replace(/\D/g, '').slice(0, 6));
                             }}
                             inputMode="numeric"
+                            autoComplete="off"
                             aria-invalid={error === 'errCap'}
                             aria-describedby={`${formId}-cap-hint${error === 'errCap' ? ` ${formId}-error` : ''}`}
                             className={portalField}
