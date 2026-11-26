@@ -4,6 +4,7 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-26 (midday): Ustaad workstream B round 2** (branch worktree-agent-a08ecec98c37890df, not pushed). Apply-as-a-mechanic follows `ustaad.access` (old form unless `open`), level-rule Coins guard, `/ustaad/welcome` guide, coach-mark, `/ustaad/me` card + ladder + badges, `/partners/status` progress, `GET /ustaad/me/card`. Left: QR, profile/choices routes, reserved names, SR-2 freeze, non-partner attest link, badge award job, counter reconcile, screenshots.
 - **2026-11-26 (morning): Ustaad Network workstream B (identity) partial** (branch worktree-agent-a08ecec98c37890df, not pushed, migration **0094_ustaad_identity_seed** data only, not applied). Engines, Izzat, levels, verification with staff final approval, vouches, workshop attestations, ring check, tutorial progress API, staff/workshop verification routes, 410 for old mechanic applications, invite mapping script, 5-step join UI. Security review fixes in. Not built: tutorial UI, ID card/Me UI, /partners/status, profile/choices routes, reserved names, SR-2 freeze, non-partner attest link (spec 23 § 21b).
 - **2026-11-26 (morning): Ustaad workstream C (Q&A + Learn) partly built on branch worktree-agent-a493031f33b2dd989
   (not pushed, no migration).** Done: shared DTOs + `ustaadPublicCode`, repositories `repo/ustaad/{qa,learn}.ts`,

@@ -211,11 +211,12 @@ export function MyCardScreen() {
       </p>
     );
 
-  const stats: [string, string | number][] = [
-    ['stat_izzat', card.izzat],
+  const nf = new Intl.NumberFormat(locale === 'hi' ? 'hi-IN' : 'en-IN');
+  const stats: [string, string][] = [
+    ['stat_izzat', nf.format(card.izzat)],
     ['stat_followers', card.followers],
-    ['stat_best', card.bestAnswers],
-    ['stat_answers', card.answers],
+    ['stat_best', nf.format(card.bestAnswers)],
+    ['stat_answers', nf.format(card.answers)],
   ];
   const verified = card.member.verificationState === 'verified';
   return (
@@ -232,7 +233,7 @@ export function MyCardScreen() {
           {stats.map(([k, v]) => (
             <div key={k} className="rounded-card border border-line-card bg-surface p-3 text-center">
               <dt className="text-sm text-ink-muted">{t(k as 'stat_izzat')}</dt>
-              <dd className="font-heading text-2xl font-extrabold text-ink">{v}</dd>
+              <dd className="font-heading text-2xl font-extrabold tabular-nums text-ink">{v}</dd>
             </div>
           ))}
         </dl>

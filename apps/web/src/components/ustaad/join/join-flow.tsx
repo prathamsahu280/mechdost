@@ -116,6 +116,7 @@ function Field({
       </label>
       <input
         id={id}
+        name={id}
         value={value}
         inputMode={inputMode}
         autoComplete={autoComplete}
