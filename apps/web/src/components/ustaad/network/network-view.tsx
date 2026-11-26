@@ -3,7 +3,7 @@
 import { Check, MessageCircle, Search, UserMinus, X } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode, type RefObject } from 'react';
 import { localePath } from '@/lib/locale-path';
 import type { ConnectionView, MemberCard } from '@/lib/ustaad/messages-api';
 import { LoadFailed, LoadingBlock, SampleNote, btnPrimary, btnQuiet } from '../common';
@@ -11,7 +11,9 @@ import {
   Avatar,
   LiveNote,
   MemberLine,
+  MoreButton,
   TabLinks,
+  Who,
   useAct,
   useDmErrorText,
   useMemberName,
@@ -21,12 +23,16 @@ import {
 import { NETWORK_TABS, type NetworkTab } from '../messages/view';
 
 const small = 'min-h-12 px-3.5 text-[14px]';
+const h2Class =
+  'rounded-sm font-heading text-lg font-extrabold text-ink focus-visible:outline-3 focus-visible:outline-focus';
 
 /**
  * My network (spec 23 § 5 `/ustaad/network`; § 4 flow 7): Followers, Following, Connections, Requests (to me: accept
  * or decline; mine: withdraw) and Blocked (unblock, unmute). The address keeps the tab; every list pages by the API's
  * keyset cursor ("Show more", no totals: the API serves none). Limits come back as words: the daily cap on new requests
- * and the wait after a withdrawn or declined request (`USTAAD_DAILY_CAP`, `USTAAD_CONNECT_COOLDOWN`).
+ * and the wait after a withdrawn or declined request (`USTAAD_DAILY_CAP`, `USTAAD_CONNECT_COOLDOWN`). Each row's
+ * buttons carry the member's name for screen readers, and when an action removes the row, focus goes to the list's
+ * heading (accessibility review 2026-11-26).
  */
 export function NetworkView({ tab }: { tab: NetworkTab }) {
   const t = useTranslations('ustaad.network');
@@ -50,28 +56,35 @@ export function NetworkView({ tab }: { tab: NetworkTab }) {
         track="ustaad_network_tab"
       />
       {tab === 'followers' || tab === 'following' ? <FollowList kind={tab} /> : null}
-      {tab === 'connections' ? <ConnectionList box="connected" /> : null}
+      {tab === 'connections' ? <ConnectionList box="connected" title={t('tab_connections')} hidden /> : null}
       {tab === 'requests' ? (
         <>
           <p role="note" className="rounded-xl bg-info-bg p-4 text-[15px] leading-relaxed text-ink">
             {t('requestsRule')}
           </p>
-          <section className="grid gap-3" aria-labelledby="net-incoming">
-            <h2 id="net-incoming" className="font-heading text-lg font-extrabold text-ink">
-              {t('incoming')}
-            </h2>
-            <ConnectionList box="incoming" />
-          </section>
-          <section className="grid gap-3" aria-labelledby="net-outgoing">
-            <h2 id="net-outgoing" className="font-heading text-lg font-extrabold text-ink">
-              {t('outgoing')}
-            </h2>
-            <ConnectionList box="outgoing" />
-          </section>
+          <ConnectionList box="incoming" title={t('incoming')} />
+          <ConnectionList box="outgoing" title={t('outgoing')} />
         </>
       ) : null}
       {tab === 'blocked' ? <BlockedList /> : null}
     </div>
+  );
+}
+
+/** A list heading that can take focus (where focus goes when the acted-on row leaves). */
+function ListHeading({
+  text,
+  hidden = false,
+  innerRef,
+}: {
+  text: string;
+  hidden?: boolean;
+  innerRef: RefObject<HTMLHeadingElement | null>;
+}) {
+  return (
+    <h2 ref={innerRef} tabIndex={-1} className={hidden ? 'sr-only' : h2Class}>
+      {text}
+    </h2>
   );
 }
 
@@ -88,10 +101,10 @@ function Row({ m, children }: { m: MemberCard; children: ReactNode }) {
   return (
     <li className="flex flex-wrap items-center gap-3 px-4 py-3">
       <Avatar name={name} />
-      <span className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1">
         <MemberLine m={m} />
-      </span>
-      <span className="flex flex-wrap gap-2">{children}</span>
+      </div>
+      <div className="flex flex-wrap gap-2">{children}</div>
     </li>
   );
 }
@@ -114,26 +127,10 @@ function Empty({ text }: { text: string }) {
   );
 }
 
-function More({ next, busy, onMore }: { next: string | null; busy: boolean; onMore: () => void }) {
-  const t = useTranslations('ustaad.network');
-  if (!next) return null;
-  return (
-    <button
-      type="button"
-      className={`${btnQuiet} justify-self-center`}
-      onClick={onMore}
-      aria-disabled={busy}
-      aria-busy={busy}
-      data-track="ustaad_network_more"
-    >
-      {t('loadMore')}
-    </button>
-  );
-}
-
 function MessageLink({ m }: { m: MemberCard }) {
   const t = useTranslations('ustaad.network');
   const locale = useLocale();
+  const name = useMemberName()(m);
   return (
     <Link
       href={localePath(`/ustaad/messages?to=${encodeURIComponent(m.handle)}`, locale)}
@@ -142,8 +139,17 @@ function MessageLink({ m }: { m: MemberCard }) {
     >
       <MessageCircle aria-hidden="true" className="size-5" />
       {t('message')}
+      <Who name={name} />
     </Link>
   );
+}
+
+/** After a write that removes the row: the silent refresh redraws the list, then focus lands on the heading. */
+function useAfterRemove(heading: RefObject<HTMLHeadingElement | null>, refresh: () => void) {
+  return () => {
+    refresh();
+    requestAnimationFrame(() => heading.current?.focus());
+  };
 }
 
 function FollowList({ kind }: { kind: 'followers' | 'following' }) {
@@ -152,8 +158,10 @@ function FollowList({ kind }: { kind: 'followers' | 'following' }) {
   const name = useMemberName();
   const list = usePaged((c, cursor) => c.follows(kind, cursor), kind);
   const { act, busy, error } = useAct();
-  const { loaded, items, next, loadMore, reload, sample, refresh } = list;
-  const [note, setNote] = useNote();
+  const { loaded, items, next, loadMore, reload, sample, refresh, moreError } = list;
+  const [note, setNote] = useState<string | null>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const removed = useAfterRemove(heading, refresh);
 
   async function remove(m: MemberCard) {
     const r =
@@ -164,11 +172,12 @@ function FollowList({ kind }: { kind: 'followers' | 'following' }) {
     setNote(
       kind === 'followers' ? t('removedNote', { name: name(m) }) : t('unfollowedNote', { name: name(m) }),
     );
-    refresh();
+    removed();
   }
 
   return (
     <>
+      <ListHeading text={t(`tab_${kind}`)} hidden innerRef={heading} />
       <SampleNote show={sample} />
       <LiveNote text={note} />
       <LiveNote tone="error" text={error ? errorText(error) : null} />
@@ -185,41 +194,76 @@ function FollowList({ kind }: { kind: 'followers' | 'following' }) {
                 className={`${btnQuiet} ${small}`}
                 onClick={() => void remove(m)}
                 aria-disabled={busy !== null}
-                aria-busy={busy === m.id}
                 data-track={
                   kind === 'followers' ? 'ustaad_network_remove_follower' : 'ustaad_network_unfollow'
                 }
               >
                 <UserMinus aria-hidden="true" className="size-5" />
-                {kind === 'followers' ? t('removeFollower') : t('unfollow')}
+                {busy === m.id ? t('working') : kind === 'followers' ? t('removeFollower') : t('unfollow')}
+                <Who name={name(m)} />
               </button>
             </Row>
           ))}
         </Rows>
       ) : null}
-      <More next={next} busy={list.busy} onMore={() => void loadMore()} />
+      <MoreButton
+        next={next}
+        busy={list.busy}
+        moreError={moreError}
+        loadMore={loadMore}
+        endFocus={heading}
+        label={t('loadMore')}
+        track="ustaad_network_more"
+      />
     </>
   );
 }
 
-function ConnectionList({ box }: { box: 'connected' | 'incoming' | 'outgoing' }) {
+function ConnectionList({
+  box,
+  title,
+  hidden = false,
+}: {
+  box: 'connected' | 'incoming' | 'outgoing';
+  title: string;
+  hidden?: boolean;
+}) {
   const t = useTranslations('ustaad.network');
   const errorText = useDmErrorText();
   const name = useMemberName();
   const list = usePaged((c, cursor) => c.connections(box, cursor), box);
   const { act, busy, error } = useAct();
-  const { loaded, items, next, loadMore, reload, sample, refresh } = list;
-  const [note, setNote] = useNote();
+  const { loaded, items, next, loadMore, reload, sample, refresh, moreError } = list;
+  const [note, setNote] = useState<string | null>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const removed = useAfterRemove(heading, refresh);
 
   async function move(c: ConnectionView, action: 'accept' | 'decline' | 'withdraw' | 'remove') {
     const r = await act(`${c.id}-${action}`, (s) => s.moveConnection(c.id, action));
     if (!r) return;
     setNote(t(`moved_${action}`, { name: name(c.other) }));
-    refresh();
+    removed();
   }
 
+  const button = (c: ConnectionView, action: 'accept' | 'decline' | 'withdraw' | 'remove', label: string) => (
+    <button
+      type="button"
+      className={`${action === 'accept' ? btnPrimary : btnQuiet} ${small}`}
+      onClick={() => void move(c, action)}
+      aria-disabled={busy !== null}
+      data-track={`ustaad_network_${action === 'remove' ? 'remove_connection' : action}`}
+    >
+      {action === 'accept' ? <Check aria-hidden="true" className="size-5" /> : null}
+      {action === 'withdraw' ? <X aria-hidden="true" className="size-5" /> : null}
+      {action === 'remove' ? <UserMinus aria-hidden="true" className="size-5" /> : null}
+      {busy === `${c.id}-${action}` ? t('working') : label}
+      <Who name={name(c.other)} />
+    </button>
+  );
+
   return (
-    <>
+    <section className="grid gap-3">
+      <ListHeading text={title} hidden={hidden} innerRef={heading} />
       {box === 'outgoing' ? null : <SampleNote show={sample} />}
       <LiveNote text={note} />
       <LiveNote tone="error" text={error ? errorText(error) : null} />
@@ -238,64 +282,31 @@ function ConnectionList({ box }: { box: 'connected' | 'incoming' | 'outgoing' })
             <Row key={c.id} m={c.other}>
               {box === 'incoming' ? (
                 <>
-                  <button
-                    type="button"
-                    className={`${btnPrimary} ${small}`}
-                    onClick={() => void move(c, 'accept')}
-                    aria-disabled={busy !== null}
-                    aria-busy={busy === `${c.id}-accept`}
-                    data-track="ustaad_network_accept"
-                  >
-                    <Check aria-hidden="true" className="size-5" />
-                    {t('accept')}
-                  </button>
-                  <button
-                    type="button"
-                    className={`${btnQuiet} ${small}`}
-                    onClick={() => void move(c, 'decline')}
-                    aria-disabled={busy !== null}
-                    aria-busy={busy === `${c.id}-decline`}
-                    data-track="ustaad_network_decline"
-                  >
-                    {t('decline')}
-                  </button>
+                  {button(c, 'accept', t('accept'))}
+                  {button(c, 'decline', t('decline'))}
                 </>
               ) : null}
-              {box === 'outgoing' ? (
-                <button
-                  type="button"
-                  className={`${btnQuiet} ${small}`}
-                  onClick={() => void move(c, 'withdraw')}
-                  aria-disabled={busy !== null}
-                  aria-busy={busy === `${c.id}-withdraw`}
-                  data-track="ustaad_network_withdraw"
-                >
-                  <X aria-hidden="true" className="size-5" />
-                  {t('withdraw')}
-                </button>
-              ) : null}
+              {box === 'outgoing' ? button(c, 'withdraw', t('withdraw')) : null}
               {box === 'connected' ? (
                 <>
                   <MessageLink m={c.other} />
-                  <button
-                    type="button"
-                    className={`${btnQuiet} ${small}`}
-                    onClick={() => void move(c, 'remove')}
-                    aria-disabled={busy !== null}
-                    aria-busy={busy === `${c.id}-remove`}
-                    data-track="ustaad_network_remove_connection"
-                  >
-                    <UserMinus aria-hidden="true" className="size-5" />
-                    {t('removeConnection')}
-                  </button>
+                  {button(c, 'remove', t('removeConnection'))}
                 </>
               ) : null}
             </Row>
           ))}
         </Rows>
       ) : null}
-      <More next={next} busy={list.busy} onMore={() => void loadMore()} />
-    </>
+      <MoreButton
+        next={next}
+        busy={list.busy}
+        moreError={moreError}
+        loadMore={loadMore}
+        endFocus={heading}
+        label={t('loadMore')}
+        track="ustaad_network_more"
+      />
+    </section>
   );
 }
 
@@ -305,7 +316,11 @@ function BlockedList() {
   const name = useMemberName();
   const { loaded, reload, refresh, sample } = useSocial((c) => c.blocks(), 'blocks');
   const { act, busy, error } = useAct();
-  const [note, setNote] = useNote();
+  const [note, setNote] = useState<string | null>(null);
+  const blockedHeading = useRef<HTMLHeadingElement>(null);
+  const mutedHeading = useRef<HTMLHeadingElement>(null);
+  const afterBlocked = useAfterRemove(blockedHeading, refresh);
+  const afterMuted = useAfterRemove(mutedHeading, refresh);
 
   async function undo(m: MemberCard, what: 'block' | 'mute') {
     const r =
@@ -314,36 +329,38 @@ function BlockedList() {
         : await act(`${m.id}-mute`, (c) => c.muteMember(m.id, false));
     if (!r) return;
     setNote(what === 'block' ? t('unblockedNote', { name: name(m) }) : t('unmutedNote', { name: name(m) }));
-    refresh();
+    if (what === 'block') afterBlocked();
+    else afterMuted();
   }
 
-  const section = (key: 'blocked' | 'muted', items: MemberCard[]) => (
-    <section className="grid gap-3" aria-labelledby={`net-${key}`}>
-      <h2 id={`net-${key}`} className="font-heading text-lg font-extrabold text-ink">
-        {t(`h_${key}`)}
-      </h2>
-      {items.length === 0 ? (
-        <p className="rounded-xl bg-pill p-4 text-[15px] text-ink">{t(`empty_${key}`)}</p>
-      ) : (
-        <Rows>
-          {items.map((m) => (
-            <Row key={m.id} m={m}>
-              <button
-                type="button"
-                className={`${btnQuiet} ${small}`}
-                onClick={() => void undo(m, key === 'blocked' ? 'block' : 'mute')}
-                aria-disabled={busy !== null}
-                aria-busy={busy === `${m.id}-${key === 'blocked' ? 'block' : 'mute'}`}
-                data-track={key === 'blocked' ? 'ustaad_network_unblock' : 'ustaad_network_unmute'}
-              >
-                {key === 'blocked' ? t('unblock') : t('unmute')}
-              </button>
-            </Row>
-          ))}
-        </Rows>
-      )}
-    </section>
-  );
+  const section = (key: 'blocked' | 'muted', items: MemberCard[]) => {
+    const what = key === 'blocked' ? 'block' : 'mute';
+    return (
+      <section className="grid gap-3">
+        <ListHeading text={t(`h_${key}`)} innerRef={key === 'blocked' ? blockedHeading : mutedHeading} />
+        {items.length === 0 ? (
+          <p className="rounded-xl bg-pill p-4 text-[15px] text-ink">{t(`empty_${key}`)}</p>
+        ) : (
+          <Rows>
+            {items.map((m) => (
+              <Row key={m.id} m={m}>
+                <button
+                  type="button"
+                  className={`${btnQuiet} ${small}`}
+                  onClick={() => void undo(m, what)}
+                  aria-disabled={busy !== null}
+                  data-track={key === 'blocked' ? 'ustaad_network_unblock' : 'ustaad_network_unmute'}
+                >
+                  {busy === `${m.id}-${what}` ? t('working') : key === 'blocked' ? t('unblock') : t('unmute')}
+                  <Who name={name(m)} />
+                </button>
+              </Row>
+            ))}
+          </Rows>
+        )}
+      </section>
+    );
+  };
 
   return (
     <>
@@ -363,8 +380,4 @@ function BlockedList() {
       ) : null}
     </>
   );
-}
-
-function useNote() {
-  return useState<string | null>(null);
 }

@@ -16,7 +16,7 @@ import {
 import Form from 'next/form';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { USTAAD_LEVELS, USTAAD_SEGMENT_CODES, USTAAD_WORK_CODES } from '@mechdost/shared/ustaad/codes';
 import { track } from '@/lib/analytics';
 import { localePath } from '@/lib/locale-path';
@@ -35,6 +35,8 @@ import {
   Avatar,
   LiveNote,
   MemberLine,
+  MoreButton,
+  Who,
   useAct,
   useDmErrorText,
   useMemberName,
@@ -64,7 +66,8 @@ export function DiscoverView({ filters }: { filters: DiscoverFilters }) {
         </h1>
         <p className="text-[15px] leading-relaxed text-muted">{t('intro')}</p>
       </header>
-      <SearchForm filters={filters} />
+      {/* Keyed on the address: Back or "Clear filters" redraws the fields with the shown filters. */}
+      <SearchForm key={`${filters.q ?? ''}|${filters.work ?? ''}|${filters.level ?? ''}`} filters={filters} />
       <People filters={filters} searching={searching} />
       {searching ? (
         <Link
@@ -91,6 +94,7 @@ function SearchForm({ filters }: { filters: DiscoverFilters }) {
   const locale = useLocale();
   const label = useCodeLabel();
   const qId = useId();
+  const hintId = useId();
   const workId = useId();
   const levelId = useId();
   return (
@@ -99,6 +103,7 @@ function SearchForm({ filters }: { filters: DiscoverFilters }) {
       scroll={false}
       className={`${card} grid gap-3`}
       role="search"
+      noValidate
     >
       <div className="grid gap-1.5">
         <label htmlFor={qId} className="text-[15px] font-bold text-ink">
@@ -109,8 +114,9 @@ function SearchForm({ filters }: { filters: DiscoverFilters }) {
             id={qId}
             name="q"
             type="search"
-            minLength={2}
             maxLength={60}
+            enterKeyHint="search"
+            aria-describedby={hintId}
             defaultValue={filters.q ?? ''}
             placeholder={t('searchPh')}
             className={`${fieldClass} min-w-0 flex-1`}
@@ -120,7 +126,9 @@ function SearchForm({ filters }: { filters: DiscoverFilters }) {
             {t('search')}
           </button>
         </div>
-        <p className="text-sm text-muted">{t('searchHint')}</p>
+        <p id={hintId} className="text-sm text-muted">
+          {t('searchHint')}
+        </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="grid gap-1.5">
@@ -161,6 +169,24 @@ function People({ filters, searching }: { filters: DiscoverFilters; searching: b
   const list = usePaged((c, cursor) => c.discover(filters, cursor), key);
   const { loaded, items, next, loadMore, reload, sample, busy, moreError } = list;
   const tracked = useRef<string | null>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
+  // One status and one alert for every card's Follow / Connect (not two live regions per card).
+  const [note, setNote] = useState<string | null>(null);
+  const [cardError, setCardError] = useState<string | null>(null);
+  const cardNote = useCallback((n: string) => {
+    setCardError(null);
+    setNote(n);
+  }, []);
+  const cardFailed = useCallback((e: string) => {
+    setNote(null);
+    setCardError(e);
+  }, []);
+  const results =
+    searching && loaded.state === 'ok'
+      ? loaded.data.items.length === 0
+        ? t('noMatch')
+        : t('resultsCount', { n: loaded.data.items.length })
+      : '';
 
   // One `ustaad_discover_searched` per search (not per keystroke: the form searches on submit).
   useEffect(() => {
@@ -170,12 +196,21 @@ function People({ filters, searching }: { filters: DiscoverFilters; searching: b
   }, [searching, loaded, key]);
 
   return (
-    <section className="grid gap-3" aria-labelledby="disc-people">
-      <h2 id="disc-people" className="font-heading text-xl font-extrabold text-ink">
+    <section className="grid gap-3">
+      <h2
+        ref={heading}
+        tabIndex={-1}
+        className="rounded-sm font-heading text-xl font-extrabold text-ink focus-visible:outline-3 focus-visible:outline-focus"
+      >
         {searching ? t('results') : t('topHelpers')}
       </h2>
       {searching ? null : <p className="text-[15px] leading-relaxed text-muted">{t('rankRule')}</p>}
       <SampleNote show={sample} />
+      <p role="status" className="sr-only">
+        {results}
+      </p>
+      <LiveNote text={note} />
+      <LiveNote tone="error" text={cardError ? errorText(cardError) : null} />
       {loaded.state === 'loading' ? <LoadingBlock /> : null}
       {loaded.state === 'error' ? <LoadFailed message={errorText(loaded.code)} onRetry={reload} /> : null}
       {loaded.state === 'ok' && items.length === 0 ? (
@@ -187,39 +222,47 @@ function People({ filters, searching }: { filters: DiscoverFilters; searching: b
         <ul className="grid gap-3">
           {items.map((p) => (
             <li key={p.id}>
-              <PersonCard p={p} />
+              <PersonCard p={p} onNote={cardNote} onError={cardFailed} />
             </li>
           ))}
         </ul>
       ) : null}
-      <LiveNote tone="error" text={moreError ? errorText(moreError) : null} />
-      {next ? (
-        <button
-          type="button"
-          className={`${btnQuiet} justify-self-center`}
-          onClick={() => void loadMore()}
-          aria-disabled={busy}
-          aria-busy={busy}
-          data-track="ustaad_discover_more"
-        >
-          {t('loadMore')}
-        </button>
-      ) : null}
+      <MoreButton
+        next={next}
+        busy={busy}
+        moreError={moreError}
+        loadMore={loadMore}
+        endFocus={heading}
+        label={t('loadMore')}
+        track="ustaad_discover_more"
+      />
     </section>
   );
 }
 
-function PersonCard({ p }: { p: DiscoverPerson }) {
+function PersonCard({
+  p,
+  onNote,
+  onError,
+}: {
+  p: DiscoverPerson;
+  onNote: (s: string) => void;
+  onError: (code: string) => void;
+}) {
   const t = useTranslations('ustaad.discover');
   const locale = useLocale();
   const label = useCodeLabel();
-  const errorText = useDmErrorText();
   const name = useMemberName()(p);
+  const nameId = useId();
   const { act, busy, error } = useAct();
   const [following, setFollowing] = useState(false);
   const [followers, setFollowers] = useState(p.followers);
-  const [note, setNote] = useState<string | null>(null);
   const [asked, setAsked] = useState(false);
+  const setNote = onNote;
+
+  useEffect(() => {
+    if (error) onError(error);
+  }, [error, onError]);
 
   async function toggle() {
     const r = await act('follow', (c) => c.follow(p.id, !following));
@@ -238,14 +281,18 @@ function PersonCard({ p }: { p: DiscoverPerson }) {
   }
 
   return (
-    <article className={`${card} grid gap-3`} aria-labelledby={`p-${p.id}`}>
+    <article className={`${card} grid gap-3`} aria-labelledby={nameId}>
       <div className="flex items-start gap-3">
         <Avatar name={name} size="lg" />
-        <div id={`p-${p.id}`} className="min-w-0 flex-1">
-          <MemberLine m={p} extra={p.distanceBand ? <> · {t(`dist_${p.distanceBand}`)}</> : null} />
+        <div className="min-w-0 flex-1">
+          <MemberLine
+            m={p}
+            nameId={nameId}
+            extra={p.distanceBand ? <> · {t(`dist_${p.distanceBand}`)}</> : null}
+          />
         </div>
         {p.isNew ? (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-accent-pale px-2.5 py-1 text-xs font-bold text-accent-soft-text">
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-accent-soft px-2.5 py-1 text-xs font-bold text-accent-soft-text">
             <Sparkles aria-hidden="true" className="size-3.5" />
             {t('newUstaad')}
           </span>
@@ -280,7 +327,6 @@ function PersonCard({ p }: { p: DiscoverPerson }) {
           className={`${following ? btnQuiet : btnPrimary} ${small}`}
           onClick={() => void toggle()}
           aria-disabled={busy !== null}
-          aria-busy={busy !== null}
           data-track={following ? 'ustaad_discover_unfollow' : 'ustaad_discover_follow'}
         >
           {following ? (
@@ -288,7 +334,8 @@ function PersonCard({ p }: { p: DiscoverPerson }) {
           ) : (
             <UserPlus aria-hidden="true" className="size-5" />
           )}
-          {following ? t('unfollow') : t('follow')}
+          {busy === 'follow' ? t('working') : following ? t('unfollow') : t('follow')}
+          <Who name={name} />
         </button>
         {/* Stays mounted after the request (focus is kept); it just says the request went. */}
         <button
@@ -298,11 +345,11 @@ function PersonCard({ p }: { p: DiscoverPerson }) {
             if (!asked) void connect();
           }}
           aria-disabled={asked || busy !== null}
-          aria-busy={busy === 'connect'}
           data-track="ustaad_discover_connect"
         >
           <Link2 aria-hidden="true" className="size-5" />
-          {asked ? t('connectSent') : t('connect')}
+          {busy === 'connect' ? t('working') : asked ? t('connectSent') : t('connect')}
+          <Who name={name} />
         </button>
         <Link
           href={localePath(`/ustaad/messages?to=${encodeURIComponent(p.handle)}`, locale)}
@@ -311,10 +358,9 @@ function PersonCard({ p }: { p: DiscoverPerson }) {
         >
           <MessageCircle aria-hidden="true" className="size-5" />
           {t('message')}
+          <Who name={name} />
         </Link>
       </div>
-      <LiveNote text={note} />
-      <LiveNote tone="error" text={error ? errorText(error) : null} />
     </article>
   );
 }
@@ -325,10 +371,8 @@ function Tags() {
   const { loaded } = useSocial((c) => c.discoverTags(), 'tags');
   if (loaded.state !== 'ok' || loaded.data.items.length === 0) return null;
   return (
-    <section className="grid gap-3" aria-labelledby="disc-tags">
-      <h2 id="disc-tags" className="font-heading text-xl font-extrabold text-ink">
-        {t('tags')}
-      </h2>
+    <section className="grid gap-3">
+      <h2 className="font-heading text-xl font-extrabold text-ink">{t('tags')}</h2>
       <p className="text-[15px] text-muted">{t('tagsNote')}</p>
       <ul className="flex flex-wrap gap-2">
         {loaded.data.items.map((tag) => (
@@ -357,10 +401,8 @@ function TopThisWeek() {
   const { loaded } = useSocial((c) => c.topPosts(), 'top');
   if (loaded.state !== 'ok' || loaded.data.items.length === 0) return null;
   return (
-    <section className="grid gap-3" aria-labelledby="disc-top">
-      <h2 id="disc-top" className="font-heading text-xl font-extrabold text-ink">
-        {t('topWeek')}
-      </h2>
+    <section className="grid gap-3">
+      <h2 className="font-heading text-xl font-extrabold text-ink">{t('topWeek')}</h2>
       <ol className="grid gap-2">
         {loaded.data.items.map((post) => (
           <li key={post.id}>

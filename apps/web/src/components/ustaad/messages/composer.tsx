@@ -3,7 +3,7 @@
 import { Camera, Mic, Send, X } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { SendMessage } from '@mechdost/shared/ustaad/dto/messages';
 import { btnPrimary, btnQuiet, card, fieldClass } from '../common';
 import type { PreparedImage } from '../media/image-picker';
@@ -31,18 +31,33 @@ type Panel = 'text' | 'voice' | 'photo';
  * hold-to-talk (or tap to start / tap to stop), and a Photo button (camera or gallery, cleaned on the phone). Voice and
  * photo upload on send with progress; errors come back as words beside the composer.
  */
-export function Composer({ threadId, onSent }: { threadId: string; onSent: () => void }) {
+export function Composer({
+  threadId,
+  onSent,
+  onNote,
+  focusOnMount = false,
+}: {
+  threadId: string;
+  onSent: () => void;
+  /** The screen's polite status: "Message sent". */
+  onNote: (s: string | null) => void;
+  /** Take focus when the composer replaces the focused control (after Accept). */
+  focusOnMount?: boolean;
+}) {
   const t = useTranslations('ustaad.messages');
   const m = useTranslations('ustaad.media');
   const errorText = useDmErrorText();
   const fieldId = useId();
   const errId = useId();
+  const hintId = useId();
   const [panel, setPanel] = useState<Panel>('text');
   const [text, setText] = useState('');
   const [rec, setRec] = useState<Recording | null>(null);
   const [img, setImg] = useState<PreparedImage | null>(null);
   const [pct, setPct] = useState<number | null>(null);
   const field = useRef<HTMLTextAreaElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const firstPanel = useRef(true);
   const { act, busy, error, setError } = useAct();
 
   const errorWords = (code: string) => {
@@ -50,9 +65,25 @@ export function Composer({ threadId, onSent }: { threadId: string; onSent: () =>
     return m.has(key) ? m(key) : errorText(code);
   };
 
+  useEffect(() => {
+    if (focusOnMount) field.current?.focus();
+  }, [focusOnMount]);
+  // Opening Voice or Photo replaces the button that was pressed: focus the panel that opened; closing it focuses the
+  // message field again (never on first render).
+  useEffect(() => {
+    if (firstPanel.current) {
+      firstPanel.current = false;
+      return;
+    }
+    if (panel === 'text') field.current?.focus();
+    else panelRef.current?.focus();
+  }, [panel]);
+
   async function send(body: SendMessage) {
+    onNote(null);
     const r = await act('send', (c) => c.send(threadId, body));
     if (!r) return false;
+    onNote(t('sentNote'));
     onSent();
     return true;
   }
@@ -70,7 +101,10 @@ export function Composer({ threadId, onSent }: { threadId: string; onSent: () =>
   async function sendMedia() {
     if (busy) return;
     const blob = panel === 'voice' ? rec : img;
-    if (!blob) return;
+    if (!blob) {
+      setError(panel === 'voice' ? 'NO_VOICE' : 'NO_PHOTO');
+      return;
+    }
     const up = await act('upload', (c) =>
       c.upload(
         blob.blob,
@@ -93,7 +127,6 @@ export function Composer({ threadId, onSent }: { threadId: string; onSent: () =>
       setImg(null);
       setText('');
       setPanel('text');
-      field.current?.focus();
     }
   }
 
@@ -112,7 +145,13 @@ export function Composer({ threadId, onSent }: { threadId: string; onSent: () =>
   return (
     <div className={`${card} grid gap-3`}>
       {panel === 'voice' ? (
-        <div className="grid gap-3">
+        <div
+          ref={panelRef}
+          tabIndex={-1}
+          role="group"
+          aria-label={t('voiceLabel')}
+          className="grid gap-3 rounded-xl focus-visible:outline-3 focus-visible:outline-focus"
+        >
           <VoiceRecorder
             maxSeconds={VOICE_MAX_S}
             onChange={setRec}
@@ -125,11 +164,10 @@ export function Composer({ threadId, onSent }: { threadId: string; onSent: () =>
               className={btnPrimary}
               onClick={() => void sendMedia()}
               aria-disabled={!rec || busy !== null}
-              aria-busy={busy !== null}
               data-track="ustaad_message_voice_send"
             >
               <Send aria-hidden="true" className="size-5" />
-              {t('sendVoice')}
+              {busy ? t('working') : t('sendVoice')}
             </button>
             <button
               type="button"
@@ -140,13 +178,19 @@ export function Composer({ threadId, onSent }: { threadId: string; onSent: () =>
               data-track="ustaad_message_voice_close"
             >
               <X aria-hidden="true" className="size-5" />
-              {t('close')}
+              {t('closeVoice')}
             </button>
           </div>
         </div>
       ) : null}
       {panel === 'photo' ? (
-        <div className="grid gap-3">
+        <div
+          ref={panelRef}
+          tabIndex={-1}
+          role="group"
+          aria-label={t('pickPhoto')}
+          className="grid gap-3 rounded-xl focus-visible:outline-3 focus-visible:outline-focus"
+        >
           <ImagePicker onChange={setImg} label={t('pickPhoto')} />
         </div>
       ) : null}
@@ -161,6 +205,9 @@ export function Composer({ threadId, onSent }: { threadId: string; onSent: () =>
             <label htmlFor={fieldId} className="sr-only">
               {panel === 'photo' ? t('caption') : t('messageLabel')}
             </label>
+            <span id={hintId} className="sr-only">
+              {t('enterHint')}
+            </span>
             <textarea
               ref={field}
               id={fieldId}
@@ -178,7 +225,9 @@ export function Composer({ threadId, onSent }: { threadId: string; onSent: () =>
                 }
               }}
               placeholder={panel === 'photo' ? t('captionPh') : t('messagePh')}
-              aria-describedby={errId}
+              aria-describedby={`${hintId} ${errId}`}
+              aria-keyshortcuts="Enter"
+              enterKeyHint="send"
               aria-invalid={error ? true : undefined}
               className={`${fieldClass} max-h-40 resize-none`}
             />
@@ -194,17 +243,16 @@ export function Composer({ threadId, onSent }: { threadId: string; onSent: () =>
                 data-track="ustaad_message_photo_close"
               >
                 <X aria-hidden="true" className="size-5" />
-                <span className="sr-only sm:not-sr-only">{t('close')}</span>
+                <span className="sr-only sm:not-sr-only">{t('closePhoto')}</span>
               </button>
               <button
                 type="submit"
                 className={`${btnPrimary} px-4`}
-                aria-disabled={!img || busy !== null}
-                aria-busy={busy !== null}
+                aria-disabled={busy !== null}
                 data-track="ustaad_message_photo_send"
               >
                 <Send aria-hidden="true" className="size-5" />
-                {t('send')}
+                {busy ? t('working') : t('send')}
               </button>
             </>
           ) : (
@@ -225,7 +273,6 @@ export function Composer({ threadId, onSent }: { threadId: string; onSent: () =>
                   type="submit"
                   className={`${btnPrimary} flex-col gap-0.5 px-4 text-xs`}
                   aria-disabled={busy !== null}
-                  aria-busy={busy !== null}
                   data-track="ustaad_message_text_send"
                 >
                   <Send aria-hidden="true" className="size-5" />

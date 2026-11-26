@@ -39,7 +39,8 @@ import { chronological, composerMode, tickState } from './view';
  * mine on the right in navy, oldest at the top, "Show older" above. Ticks are words as well as icons (Sent / Seen),
  * and my held message says "Being checked" (only I see it; the other member never does). Before acceptance the
  * receiver sees Accept / Decline and the sender a waiting note; the composer (text, hold-to-talk voice, photo) shows
- * only on an open conversation. "More" holds mute notices, report and block.
+ * only on an open conversation. "More" holds mute notices, report and block. Whenever an action replaces the focused
+ * control, focus moves to the control that replaces it (accessibility review 2026-11-26).
  */
 export function ThreadScreen({ id }: { id: string }) {
   const t = useTranslations('ustaad.messages');
@@ -48,9 +49,12 @@ export function ThreadScreen({ id }: { id: string }) {
   const { loaded, reload, refresh, sample } = useSocial((c) => c.messages(id, null), id);
   const [older, setOlder] = useState<{ items: MessageView[]; next: string | null } | null>(null);
   const [olderBusy, setOlderBusy] = useState(false);
+  const [olderNote, setOlderNote] = useState<string | null>(null);
+  const [olderError, setOlderError] = useState<string | null>(null);
   const [blocked, setBlocked] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLOListElement>(null);
   const scrolled = useRef(false);
   const readSent = useRef(false);
 
@@ -79,9 +83,18 @@ export function ThreadScreen({ id }: { id: string }) {
   async function loadOlder() {
     if (!next || olderBusy) return;
     setOlderBusy(true);
+    setOlderNote(null);
+    setOlderError(null);
     const r = await (await socialClient(locale)).messages(id, next);
     setOlderBusy(false);
-    if (r.ok) setOlder({ items: [...(older?.items ?? []), ...r.data.items], next: r.data.nextCursor });
+    if (!r.ok) {
+      setOlderError(r.code);
+      return;
+    }
+    setOlder({ items: [...(older?.items ?? []), ...r.data.items], next: r.data.nextCursor });
+    setOlderNote(t('moreLoaded', { n: r.data.items.length }));
+    // The button leaves when nothing older is left: focus the conversation instead of losing it.
+    if (r.data.nextCursor === null) requestAnimationFrame(() => listRef.current?.focus());
   }
 
   return (
@@ -94,14 +107,10 @@ export function ThreadScreen({ id }: { id: string }) {
         <ArrowLeft aria-hidden="true" className="size-5" />
         {t('backToMessages')}
       </Link>
+      {thread ? null : <h1 className="sr-only">{t('title')}</h1>}
       <SampleNote show={sample} />
       {loaded.state === 'loading' ? <LoadingBlock /> : null}
-      {loaded.state === 'error' ? (
-        <LoadFailed
-          message={errorText(loaded.code === 'NOT_FOUND' ? 'NOT_FOUND' : loaded.code)}
-          onRetry={reload}
-        />
-      ) : null}
+      {loaded.state === 'error' ? <LoadFailed message={errorText(loaded.code)} onRetry={reload} /> : null}
       {thread ? (
         <>
           <ThreadHeader
@@ -124,13 +133,21 @@ export function ThreadScreen({ id }: { id: string }) {
                   className={`${btnQuiet} justify-self-center`}
                   onClick={() => void loadOlder()}
                   aria-disabled={olderBusy}
-                  aria-busy={olderBusy}
                   data-track="ustaad_thread_older"
                 >
-                  {t('showOlder')}
+                  {olderBusy ? t('loadingMore') : t('showOlder')}
                 </button>
               ) : null}
-              <ol aria-label={t('conversationLabel')} className="grid gap-2.5">
+              <p role="status" className="sr-only">
+                {olderNote ?? ''}
+              </p>
+              <LiveNote tone="error" text={olderError ? errorText(olderError) : null} />
+              <ol
+                ref={listRef}
+                tabIndex={-1}
+                aria-label={t('conversationLabel')}
+                className="grid gap-2.5 rounded-xl focus-visible:outline-3 focus-visible:outline-focus"
+              >
                 {messages.map((m) => (
                   <li key={m.id} className={`flex ${m.mine ? 'justify-end' : 'justify-start'}`}>
                     <Bubble m={m} />
@@ -170,7 +187,24 @@ function ThreadHeader({
   const [confirmBlock, setConfirmBlock] = useState(false);
   const [reporting, setReporting] = useState(false);
   const menuId = useId();
+  const confirmId = useId();
   const moreRef = useRef<HTMLButtonElement>(null);
+  const blockRef = useRef<HTMLButtonElement>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const unblockRef = useRef<HTMLButtonElement>(null);
+  /** Set by a block / unblock the member just did, so focus follows the swapped header (never on first render). */
+  const focusAfter = useRef<'unblock' | 'more' | null>(null);
+
+  useEffect(() => {
+    const target = focusAfter.current;
+    if (!target) return;
+    focusAfter.current = null;
+    (target === 'unblock' ? unblockRef : moreRef).current?.focus();
+  }, [blocked]);
+  // The confirmation appears after the three buttons: put focus on its safe answer (Cancel).
+  useEffect(() => {
+    if (confirmBlock) cancelRef.current?.focus();
+  }, [confirmBlock]);
 
   async function mute() {
     const r = await act('mute', (c) => c.muteThread(thread.id, !thread.muted));
@@ -184,17 +218,27 @@ function ThreadHeader({
     if (!r) return;
     setConfirmBlock(false);
     setOpen(false);
+    focusAfter.current = r.blocked ? 'unblock' : 'more';
     onBlocked(r.blocked);
     onNote(r.blocked ? t('blockedNote', { name }) : t('unblockedNote', { name }));
+  }
+  function closeMenu() {
+    setOpen(false);
+    setConfirmBlock(false);
+    moreRef.current?.focus();
   }
 
   if (blocked)
     return (
       <div className={`${card} grid gap-3`}>
+        <h1 className="font-heading text-[16px] font-extrabold text-ink">
+          <span data-user-content>{name}</span>
+        </h1>
         <p className="text-[15px] text-ink">
           {t.rich('youBlocked', { who: name, name: (chunks) => <span data-user-content>{chunks}</span> })}
         </p>
         <button
+          ref={unblockRef}
           type="button"
           className={`${btnQuiet} justify-self-start`}
           onClick={() => void block(false)}
@@ -203,9 +247,7 @@ function ThreadHeader({
         >
           {t('unblock')}
         </button>
-        <p role="alert" className="text-sm font-bold text-error empty:sr-only">
-          {error ? errorText(error) : ''}
-        </p>
+        <LiveNote tone="error" text={error ? errorText(error) : null} />
       </div>
     );
 
@@ -213,14 +255,14 @@ function ThreadHeader({
     <div className={`${card} grid gap-3`}>
       <div className="flex items-start gap-3">
         <Avatar name={name} />
-        <h1 className="min-w-0 flex-1">
-          <MemberLine m={thread.other} />
-        </h1>
+        <div className="min-w-0 flex-1">
+          <MemberLine m={thread.other} heading />
+        </div>
         <button
           ref={moreRef}
           type="button"
           aria-expanded={open}
-          aria-controls={menuId}
+          aria-controls={open ? menuId : undefined}
           onClick={() => {
             setOpen((o) => !o);
             setConfirmBlock(false);
@@ -233,7 +275,16 @@ function ThreadHeader({
         </button>
       </div>
       {open ? (
-        <div id={menuId} className="grid gap-2 border-t border-line-card pt-3 sm:grid-cols-3">
+        <div
+          id={menuId}
+          className="grid gap-2 border-t border-line-card pt-3 sm:grid-cols-3"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape' && !reporting) {
+              e.stopPropagation();
+              closeMenu();
+            }
+          }}
+        >
           <button
             type="button"
             className={btnQuiet}
@@ -260,6 +311,7 @@ function ThreadHeader({
             {t('report')}
           </button>
           <button
+            ref={blockRef}
             type="button"
             className={`${btnQuiet} text-error`}
             onClick={() => {
@@ -273,26 +325,29 @@ function ThreadHeader({
           {confirmBlock ? (
             <div
               role="group"
-              aria-label={t('block')}
+              aria-labelledby={confirmId}
               className="grid gap-2 rounded-xl bg-error-bg p-3 sm:col-span-3"
             >
-              <p className="text-[15px] text-ink">{t('blockConfirm')}</p>
+              <p id={confirmId} className="text-[15px] text-ink">
+                {t('blockConfirm')}
+              </p>
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   className={`${btnQuiet} border-error text-error`}
                   onClick={() => void block(true)}
                   aria-disabled={busy !== null}
-                  aria-busy={busy === 'block'}
                   data-track="ustaad_thread_block_confirm"
                 >
-                  {t('blockYes')}
+                  {busy === 'block' ? t('working') : t('blockYes')}
                 </button>
                 <button
+                  ref={cancelRef}
                   type="button"
                   className={btnQuiet}
                   onClick={() => {
                     setConfirmBlock(false);
+                    blockRef.current?.focus();
                   }}
                   data-track="ustaad_thread_block_cancel"
                 >
@@ -303,16 +358,14 @@ function ThreadHeader({
           ) : null}
         </div>
       ) : null}
-      <p role="alert" className="text-sm font-bold text-error empty:sr-only">
-        {error ? errorText(error) : ''}
-      </p>
+      <LiveNote tone="error" text={error ? errorText(error) : null} />
       {reporting ? (
         <ReportDialog
           target={lastTheirs ? { type: 'message', id: lastTheirs } : { type: 'member', id: thread.other.id }}
           onClose={(sent) => {
+            // The dialog closes itself first, so the browser returns focus to the Report button.
             setReporting(false);
             if (sent) onNote(t('reportSent'));
-            moreRef.current?.focus();
           }}
         />
       ) : null}
@@ -334,15 +387,32 @@ function ThreadFooter({
   const errorText = useDmErrorText();
   const { act, busy, error } = useAct();
   const mode = composerMode(thread);
+  const [decided, setDecided] = useState<'accept' | 'decline' | null>(null);
+  const closedRef = useRef<HTMLParagraphElement>(null);
+
+  // After Decline the buttons leave: focus the closed note that replaces them.
+  useEffect(() => {
+    if (mode === 'closed' && decided === 'decline') closedRef.current?.focus();
+  }, [mode, decided]);
 
   async function decide(action: 'accept' | 'decline') {
     const r = await act(action, (c) => c.threadAction(thread.id, action));
     if (!r) return;
+    setDecided(action);
     onNote(action === 'accept' ? t('acceptedNote') : t('declinedNote'));
     onChanged();
   }
 
-  if (mode === 'open') return <Composer threadId={thread.id} onSent={onChanged} />;
+  if (mode === 'open')
+    return (
+      <Composer
+        threadId={thread.id}
+        onSent={onChanged}
+        onNote={onNote}
+        // After Accept the composer replaces the buttons: the message field takes focus.
+        focusOnMount={decided === 'accept'}
+      />
+    );
   if (mode === 'waiting')
     return (
       <p
@@ -367,29 +437,33 @@ function ThreadFooter({
             className={btnPrimary}
             onClick={() => void decide('accept')}
             aria-disabled={busy !== null}
-            aria-busy={busy === 'accept'}
             data-track="ustaad_thread_accept"
           >
             <Check aria-hidden="true" className="size-5" />
-            {t('accept')}
+            {busy === 'accept' ? t('working') : t('accept')}
           </button>
           <button
             type="button"
             className={btnQuiet}
             onClick={() => void decide('decline')}
             aria-disabled={busy !== null}
-            aria-busy={busy === 'decline'}
             data-track="ustaad_thread_decline"
           >
-            {t('decline')}
+            {busy === 'decline' ? t('working') : t('decline')}
           </button>
         </div>
-        <p role="alert" className="text-sm font-bold text-error empty:sr-only">
-          {error ? errorText(error) : ''}
-        </p>
+        <LiveNote tone="error" text={error ? errorText(error) : null} />
       </div>
     );
-  return <p className="rounded-xl bg-pill p-4 text-[15px] text-ink">{t('closedNote')}</p>;
+  return (
+    <p
+      ref={closedRef}
+      tabIndex={-1}
+      className="rounded-xl bg-pill p-4 text-[15px] text-ink focus-visible:outline-3 focus-visible:outline-focus"
+    >
+      {t('closedNote')}
+    </p>
+  );
 }
 
 function Bubble({ m }: { m: MessageView }) {
@@ -406,7 +480,7 @@ function Bubble({ m }: { m: MessageView }) {
     <div
       className={`grid max-w-[85%] gap-2 rounded-[20px] px-4 py-3 shadow-card sm:max-w-[75%] ${
         mine
-          ? `rounded-br-md bg-navy text-white ${m.pending ? 'outline-2 outline-offset-2 outline-warning outline-dashed' : ''}`
+          ? `rounded-br-md border border-white/15 bg-navy text-white ${m.pending ? 'outline-2 outline-offset-2 outline-warning outline-dashed' : ''}`
           : 'rounded-bl-md border border-line-card bg-surface text-ink'
       }`}
     >

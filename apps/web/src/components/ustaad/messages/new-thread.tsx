@@ -4,7 +4,7 @@ import { ArrowLeft, Info, Search, Send } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { localePath } from '@/lib/locale-path';
 import type { MemberCard } from '@/lib/ustaad/messages-api';
 import { LoadFailed, LoadingBlock, SampleNote, btnPrimary, btnQuiet, card, fieldClass } from '../common';
@@ -94,6 +94,7 @@ function RequestForm({ member }: { member: MemberCard }) {
   const errId = useId();
   const rulesId = useId();
   const [text, setText] = useState('');
+  const field = useRef<HTMLTextAreaElement>(null);
   const [empty, setEmpty] = useState(false);
   const { act, busy, error } = useAct();
 
@@ -102,6 +103,7 @@ function RequestForm({ member }: { member: MemberCard }) {
     if (busy) return;
     if (text.trim() === '') {
       setEmpty(true);
+      field.current?.focus();
       return;
     }
     setEmpty(false);
@@ -137,7 +139,9 @@ function RequestForm({ member }: { member: MemberCard }) {
           {t('firstMessage')}
         </label>
         <textarea
+          ref={field}
           id={fieldId}
+          aria-required="true"
           value={text}
           onChange={(e) => {
             setText(e.target.value);
@@ -158,11 +162,10 @@ function RequestForm({ member }: { member: MemberCard }) {
           type="submit"
           className={btnPrimary}
           aria-disabled={busy !== null}
-          aria-busy={busy !== null}
           data-track="ustaad_thread_request_send"
         >
           <Send aria-hidden="true" className="size-5" />
-          {t('sendRequest')}
+          {busy ? t('working') : t('sendRequest')}
         </button>
         <Link
           href={localePath('/ustaad/messages', locale)}

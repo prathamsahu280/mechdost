@@ -131,7 +131,7 @@ test.describe('Ustaad messages (D2 web)', () => {
   test('More: mute notices, report with a reason, block and unblock', async ({ page }) => {
     await page.goto(ANIL_THREAD);
     await expect(page.getByRole('img', { name: 'Photo in the chat' })).toBeVisible();
-    const more = page.getByRole('button', { name: 'More' });
+    const more = page.getByRole('button', { name: 'More options' });
     await more.click();
     await expect(more).toHaveAttribute('aria-expanded', 'true');
     await page.getByRole('button', { name: 'Turn on notices' }).click();
@@ -147,13 +147,17 @@ test.describe('Ustaad messages (D2 web)', () => {
     await dialog.getByRole('button', { name: 'Send report' }).click();
     await expect(dialog).toBeHidden();
     await expect(page.getByText('Report sent. Our team will check it.')).toBeVisible();
-    await expect(more).toBeFocused();
+    // The dialog closes natively, so focus returns to the Report button that opened it.
+    await expect(page.getByRole('button', { name: 'Report' })).toBeFocused();
 
     await page.getByRole('button', { name: 'Block', exact: true }).click();
     await page.getByRole('button', { name: 'Yes, block' }).click();
     await expect(page.getByText('You blocked Anil Patel.')).toBeVisible();
+    // Focus follows the swapped header (never lost to the page).
+    await expect(page.getByRole('button', { name: 'Unblock' })).toBeFocused();
     await page.getByRole('button', { name: 'Unblock' }).click();
     await expect(page.getByText('Anil Patel is unblocked.')).toBeVisible();
+    await expect(more).toBeFocused();
   });
 
   test('Start a conversation from ?to=<handle>: the rules, a link refused in words, then waiting', async ({
@@ -211,6 +215,7 @@ test.describe('Ustaad My network and Discover (D2 web)', () => {
       .getByRole('button', { name: 'Remove' })
       .click();
     await expect(page.getByText('Raju Nishad no longer follows you.')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Followers' })).toBeFocused();
 
     await tabs.getByRole('link', { name: 'Requests' }).click();
     await expect(page).toHaveURL(/tab=requests/);
@@ -283,7 +288,7 @@ test.describe('Ustaad My network and Discover (D2 web)', () => {
     const anil = page.getByRole('article').filter({ hasText: 'Anil Patel' });
     await expect(anil).toBeVisible();
     await anil.getByRole('button', { name: 'Follow' }).click();
-    await expect(anil.getByText('Following Anil Patel.')).toBeVisible();
+    await expect(page.getByText('Following Anil Patel.')).toBeVisible();
     await expect(anil.getByText('403 followers')).toBeVisible();
     await expectSameDocument(page);
     await page.getByRole('link', { name: 'Clear filters' }).click();

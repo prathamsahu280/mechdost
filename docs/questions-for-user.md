@@ -387,6 +387,14 @@ liked member posts in the member's city over 7 days, `GET /ustaad/discover/top-p
 in Discover, drop it, or rank it by saves only (helpfulness) instead of saves and likes? Default meanwhile: Discover
 only, saves × 2 + likes, never in the feed.
 
+#### Q-U-DM1: a member-by-handle route for "Message" links (Decision for the lead, P2, default: resolve through Discover search)
+
+The messages screen opens a request form from `/ustaad/messages?to=<handle>` (Discover, My network and the profile
+link there). No API route looks a member up by handle, so the web resolves it through the typed Discover search (exact
+handle only). Limits: only members in my city are found, and each lookup spends the daily profile budget. Add
+`GET /ustaad/members/by-handle/{handle}` (member card + relationship, 404 when blocked) and swap the one function in
+`apps/web/src/lib/ustaad/messages-api.ts`? Default meanwhile: the Discover workaround.
+
 #### Q-U-D2b: set `USTAAD_LOCATION_SECRET` on the server (Input, P2, default: unset, no distance bands)
 
 Discover can show a rough distance band ("under 2 km", "2–5 km"…) to other mechanics, never a number (SR-29). It needs

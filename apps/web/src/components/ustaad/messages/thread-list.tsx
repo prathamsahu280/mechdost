@@ -3,10 +3,11 @@
 import { BellOff, MessageCircle, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
+import { useRef } from 'react';
 import { localePath } from '@/lib/locale-path';
 import type { ThreadView } from '@/lib/ustaad/messages-api';
-import { LoadFailed, LoadingBlock, SampleNote, btnPrimary, btnQuiet, useTimeAgo } from '../common';
-import { Avatar, TabLinks, useDmErrorText, useMemberName, usePaged } from './shared';
+import { LoadFailed, LoadingBlock, SampleNote, btnPrimary, useTimeAgo } from '../common';
+import { Avatar, MoreButton, TabLinks, useDmErrorText, useMemberName, usePaged } from './shared';
 import { THREAD_BOXES, type ThreadBox } from './view';
 
 /**
@@ -19,12 +20,17 @@ export function ThreadList({ box }: { box: ThreadBox }) {
   const locale = useLocale();
   const errorText = useDmErrorText();
   const list = usePaged((c, cursor) => c.threads(box, cursor), box);
-  const { loaded, items, next, loadMore, busy, reload, sample } = list;
+  const { loaded, items, next, loadMore, busy, moreError, reload, sample } = list;
+  const heading = useRef<HTMLHeadingElement>(null);
 
   return (
     <div className="mx-auto grid max-w-2xl gap-5">
       <header className="grid gap-1">
-        <h1 className="font-heading text-[clamp(24px,5vw,32px)] font-extrabold tracking-[-0.02em] text-ink">
+        <h1
+          ref={heading}
+          tabIndex={-1}
+          className="font-heading text-[clamp(24px,5vw,32px)] font-extrabold tracking-[-0.02em] text-ink"
+        >
           {t('title')}
         </h1>
         <p className="text-[15px] leading-relaxed text-muted">{t('intro')}</p>
@@ -67,18 +73,15 @@ export function ThreadList({ box }: { box: ThreadBox }) {
         </ul>
       ) : null}
 
-      {next ? (
-        <button
-          type="button"
-          className={`${btnQuiet} justify-self-center`}
-          onClick={() => void loadMore()}
-          aria-disabled={busy}
-          aria-busy={busy}
-          data-track="ustaad_messages_more"
-        >
-          {t('loadMore')}
-        </button>
-      ) : null}
+      <MoreButton
+        next={next}
+        busy={busy}
+        moreError={moreError}
+        loadMore={loadMore}
+        endFocus={heading}
+        label={t('loadMore')}
+        track="ustaad_messages_more"
+      />
     </div>
   );
 }
@@ -125,7 +128,7 @@ function ThreadRow({ th, box }: { th: ThreadView; box: ThreadBox }) {
       <span className="grid justify-items-end gap-1 text-xs text-muted">
         {th.lastMessageAt ? <time dateTime={th.lastMessageAt}>{ago(th.lastMessageAt)}</time> : null}
         {th.unread ? (
-          <span className="rounded-full bg-accent-button px-2 py-0.5 font-bold text-white">
+          <span aria-hidden="true" className="rounded-full bg-accent-button px-2 py-0.5 font-bold text-white">
             {t('newBadge')}
           </span>
         ) : null}

@@ -256,3 +256,13 @@ phone) and the smart-correction events; every control also carries `data-track` 
 `ustaad_voice_*`, `ustaad_learn_*`, `ustaad_pin_*`, `ustaad_area_zone`, `ustaad_job_*`). Questions asked, answers,
 votes, best answers, job posts, applications and pin confirmations are counted server-side (spec 23 § 16). Never
 text, names, phones or locations.
+
+## Ustaad messages, My network and Discover screens (2026-11-26, spec 23 § 21g)
+
+No new event names. Discover sends the catalogue's client events `ustaad_discover_searched { results }` (once per
+submitted search or filter change, never per keystroke) and `ustaad_tag_opened {}` (a tag chip). Every control carries
+`data-track` (`ustaad_messages_*`, `ustaad_thread_*`, `ustaad_message_*`, `ustaad_report_*`, `ustaad_network_*`,
+`ustaad_discover_*`, `ustaad_member_open`). Follows, connections, blocks, mutes, thread starts and moves, messages
+sent (`{ kind, held }`) and Discover pages served are counted server-side (D2 events, spec 23 § 21d). Not added yet
+(the client catalogue is shared and outside this task): a thread-opened and a network-tab event; the server events
+cover the writes. Never text, names, handles, phones or locations.

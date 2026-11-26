@@ -35,6 +35,11 @@ export function ReportDialog({
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const noteId = useId();
+  const bodyId = useId();
+  const errId = useId();
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const firstRadio = useRef<HTMLInputElement>(null);
+  const closed = useRef(false);
   const [reason, setReason] = useState<(typeof REASONS)[number] | null>(null);
   const [note, setNote] = useState('');
   const [missing, setMissing] = useState(false);
@@ -43,16 +48,27 @@ export function ReportDialog({
   useEffect(() => {
     const d = ref.current;
     if (d && !d.open) d.showModal();
+    // Start on the title, so the question is heard before the Close button.
+    titleRef.current?.focus();
     return () => {
-      d?.close();
+      if (d?.open) d.close();
     };
   }, []);
+
+  /** Close natively first: the browser returns focus to the Report button that opened the dialog. */
+  function finish(sent: boolean) {
+    if (closed.current) return;
+    closed.current = true;
+    ref.current?.close();
+    onClose(sent);
+  }
 
   async function submit(e: React.SyntheticEvent) {
     e.preventDefault();
     if (busy) return;
     if (!reason) {
       setMissing(true);
+      firstRadio.current?.focus();
       return;
     }
     const r = await act('report', (c) =>
@@ -63,22 +79,29 @@ export function ReportDialog({
         ...(note.trim() ? { note: note.trim() } : {}),
       }),
     );
-    if (r) onClose(true);
+    if (r) finish(true);
   }
 
   return (
     <dialog
       ref={ref}
       aria-labelledby={titleId}
+      aria-describedby={bodyId}
       onCancel={(e) => {
         e.preventDefault();
-        onClose(false);
+        // While the report is being sent the dialog stays, so a late answer cannot jump focus around.
+        if (!busy) finish(false);
       }}
       className="m-auto w-[min(92vw,28rem)] rounded-2xl border border-line-card bg-surface p-0 text-ink shadow-float backdrop:bg-navy/60"
     >
       <form className="grid gap-4 p-5" onSubmit={(e) => void submit(e)} noValidate>
         <div className="flex items-start justify-between gap-3">
-          <h2 id={titleId} className="flex items-center gap-2 font-heading text-xl font-extrabold">
+          <h2
+            id={titleId}
+            ref={titleRef}
+            tabIndex={-1}
+            className="flex items-center gap-2 font-heading text-xl font-extrabold"
+          >
             <Flag aria-hidden="true" className="size-5 text-error" />
             {t('reportTitle')}
           </h2>
@@ -86,23 +109,28 @@ export function ReportDialog({
             type="button"
             className={`${btnQuiet} px-3`}
             onClick={() => {
-              onClose(false);
+              if (!busy) finish(false);
             }}
+            aria-disabled={busy !== null}
             data-track="ustaad_report_close"
           >
             <X aria-hidden="true" className="size-5" />
             <span className="sr-only">{t('close')}</span>
           </button>
         </div>
-        <p className="text-[15px] leading-relaxed text-muted">{t('reportBody')}</p>
-        <fieldset className="grid gap-2" aria-invalid={missing && !reason ? true : undefined}>
+        <p id={bodyId} className="text-[15px] leading-relaxed text-muted">
+          {t('reportBody')}
+        </p>
+        <fieldset className="grid gap-2" aria-describedby={missing && !reason ? errId : undefined}>
           <legend className="mb-1 text-[15px] font-bold">{t('reportReason')}</legend>
           {REASONS.map((r) => (
             <label
               key={r}
-              className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-line-card px-3 has-[:checked]:border-accent has-[:checked]:bg-accent-pale has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-focus"
+              className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-line-card px-3 has-[:checked]:border-accent has-[:checked]:bg-accent-soft has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-focus"
             >
               <input
+                ref={r === REASONS[0] ? firstRadio : undefined}
+                required
                 type="radio"
                 name="reason"
                 value={r}
@@ -118,6 +146,7 @@ export function ReportDialog({
           ))}
         </fieldset>
         <LiveNote
+          id={errId}
           tone="error"
           text={missing && !reason ? t('reportPick') : error ? errorText(error) : null}
         />
@@ -140,10 +169,9 @@ export function ReportDialog({
           type="submit"
           className={btnPrimary}
           aria-disabled={busy !== null}
-          aria-busy={busy !== null}
           data-track="ustaad_report_send"
         >
-          {t('reportSend')}
+          {busy ? t('working') : t('reportSend')}
         </button>
       </form>
     </dialog>

@@ -93,6 +93,8 @@ export const DM_ERROR_CODES = [
   'NOT_FOUND',
   'NETWORK',
   'HANDLE_NOT_FOUND',
+  'NO_VOICE',
+  'NO_PHOTO',
 ] as const;
 
 export function dmErrorKey(code: string): string {

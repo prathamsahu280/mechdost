@@ -2328,3 +2328,20 @@ Spec 23 § 21f. Rulings made while building (lead brief + security review of the
   the two apart (a location oracle). Ruling: `verify.attest_distance_tries` default **1** — any confirmation closes the
   link; a failed distance check leaves the attestation for staff, who may issue a new link. Admin can raise it (1–5)
   accepting the oracle. Tests: `packages/db/test/ustaad-identity-jobs.test.ts` (single and parallel attempts).
+
+## 2026-11-26 - Ustaad messages, My network and Discover web screens (D2 web, spec 23 § 21g)
+
+- **Own seam, no shared social client:** `apps/web/src/lib/ustaad/messages-api.ts` (API or the labelled demo in
+  `demo/ustaad-messages.ts`); uploads and signed URLs reuse `client.ts`. The web app has no zod dependency, so the
+  small write answers (`{ messageId, pending }`, `{ status }`, …) are checked by hand-written guards; list answers use
+  the shared DTOs.
+- **`?to=<handle>` resolves through the typed Discover search** (exact handle only) because no handle route exists;
+  it is city-scoped and spends the daily profile budget. Queued as **Q-U-DM1** (default meanwhile: this workaround; a
+  `GET /ustaad/members/by-handle/{handle}` route replaces it in one function).
+- **No numbers in limit copy:** the account-age rule, the daily caps and the connect cooldown are admin settings the
+  member API does not expose, so the copy says "a few days" / "today's limit" instead of hard-coding 7 or 20 (hard
+  rule 8).
+- **Report from a conversation targets the other member's latest message** (falls back to the member), so staff can
+  open the thread through that report (SR-38).
+- **Profile links use `/ustaad/u/<handle>`** (the profile route being built in parallel); § 5's `/ustaad/m/[handle]`
+  row is left for that agent to update.

@@ -7941,7 +7941,7 @@
       "unblockedNote": "{name} is unblocked.",
       "youBlocked": "You blocked <name>{who}</name>.",
       "unblock": "Unblock",
-      "more": "More",
+      "more": "More options",
       "muteThread": "Turn off notices",
       "unmuteThread": "Turn on notices",
       "report": "Report",
@@ -7973,15 +7973,15 @@
       "close": "Close",
       "pickPhoto": "Take or pick a photo",
       "caption": "Photo caption",
-      "captionPh": "Add a line (optional)",
+      "captionPh": "Add a line (optional)…",
       "messageLabel": "Message",
-      "messagePh": "Type a message",
+      "messagePh": "Type a message…",
       "send": "Send",
       "photo": "Photo",
       "voice": "Voice",
       "reportTitle": "Report this chat",
       "reportBody": "The MechDost team will look at the latest messages. The other mechanic is not told who reported.",
-      "reportReason": "What is wrong?",
+      "reportReason": "What is wrong? (pick one)",
       "rsn_abuse": "Abuse or threats",
       "rsn_spam": "Spam or selling",
       "rsn_job_scam": "Job scam or asks for money",
@@ -8005,7 +8005,16 @@
       "err_NOT_FOUND": "This is not available. It may have been closed.",
       "err_NETWORK": "No network. Check your internet and try again.",
       "err_HANDLE_NOT_FOUND": "We could not find that mechanic. Search for them on Discover.",
-      "err_generic": "Something went wrong. Try again."
+      "err_generic": "Something went wrong. Try again.",
+      "working": "Working…",
+      "loadingMore": "Loading…",
+      "moreLoaded": "{n, plural, =0 {Nothing more} one {# more shown} other {# more shown}}",
+      "sentNote": "Message sent.",
+      "closeVoice": "Close voice",
+      "closePhoto": "Close photo",
+      "enterHint": "Enter sends. Shift and Enter makes a new line.",
+      "err_NO_VOICE": "Record a voice note first: hold the mic and speak.",
+      "err_NO_PHOTO": "Take or pick a photo first."
     },
     "network": {
       "title": "My network",
@@ -8047,14 +8056,15 @@
       "empty_muted": "You have not muted anyone.",
       "unblock": "Unblock",
       "unmute": "Unmute",
-      "blockedRule": "Blocked mechanics cannot see you or message you. Muted ones are not told; their posts just leave your feed."
+      "blockedRule": "Blocked mechanics cannot see you or message you. Muted ones are not told; their posts just leave your feed.",
+      "working": "Working…"
     },
     "discover": {
       "title": "Discover",
       "intro": "Find Ustaads by name, area or work, and follow the ones who help.",
       "clearFilters": "Clear filters",
       "searchLabel": "Search name, area or work",
-      "searchPh": "Example: Suresh, Telibandha",
+      "searchPh": "Example: Suresh, Telibandha…",
       "search": "Search",
       "searchHint": "Type at least 2 letters.",
       "filterWork": "Work",
@@ -8099,7 +8109,9 @@
       "connect": "Connect",
       "connectSent": "Request sent",
       "connectedNote": "You are now connected with {name}.",
-      "connectSentNote": "Connect request sent to {name}. They can accept in My network."
+      "connectSentNote": "Connect request sent to {name}. They can accept in My network.",
+      "working": "Working…",
+      "resultsCount": "{n, plural, one {# mechanic found} other {# mechanics found}}"
     }
   }
 }
