@@ -13,8 +13,14 @@ import type {
   AdminShopModeRequestRow,
   AgentInvitePreview,
   AgentInviteRow,
+  AgentEarnings,
   AgentJobCard,
   AgentJobDetail,
+  AgentOwnPayoutRow,
+  AgentPayoutInput,
+  AgentPayoutPage,
+  AgentPayoutRow,
+  AgentPayoutSummary,
   AgentProfile,
   CodeStepResult,
   CustomerDeliveryBlock,
@@ -34,68 +40,59 @@ import type {
   DeliveryRetryAgent,
   DeliverySwitchDeclineReason,
   DeliverySwitchReason,
+  DeliveryRatingReason,
   DeliveryWithdrawReason,
   ShopDeliveryMode,
   ShopModeRejectReason,
   ShopModeRequestReason,
 } from '@mechdost/shared/delivery/codes';
+import type { ApplicationRejectReason } from '@mechdost/shared/partner-codes';
+import { AGENT_PAYOUT_METHODS, DELIVERY_RATING_REASONS } from '@mechdost/shared/delivery/codes';
 
 /** The parsed output of a shared schema, without importing Zod. */
 type Out<S> = S extends { parse(data: unknown, ...rest: never[]): infer O } ? O : never;
 
-/**
- * Rider rating (founder ruling 2026-11-26): 1–5 stars and quick reasons, one per job, editable for 24 h. The contract
- * DTOs come in a later backend commit; the web builds against this shape meanwhile (report: contract gap).
- */
-export const RATING_REASONS = ['on_time', 'polite', 'careful', 'late', 'rude', 'damaged', 'other'] as const;
-export type RatingReason = (typeof RATING_REASONS)[number];
-export interface DeliveryRating {
-  stars: number;
-  reasons: RatingReason[];
-  note: string | null;
-  editableUntil: string;
-}
+/** Rider rating reasons (founder ruling 2026-11-26), from the contract (`codes.ts` is Zod-free). */
+export const RATING_REASONS = DELIVERY_RATING_REASONS;
+export type RatingReason = DeliveryRatingReason;
 
-export type AgentProfileView = Out<typeof AgentProfile> & { rating?: number | null };
+export type AgentProfileView = Out<typeof AgentProfile>;
 export type AgentJobCardView = Out<typeof AgentJobCard>;
 export type AgentJobDetailView = Out<typeof AgentJobDetail>;
 export type CodeStepView = Out<typeof CodeStepResult>;
 export type ShopOrderDeliveryView = Out<typeof ShopOrderDelivery>;
 export type ShopDeliveryModeViewT = Out<typeof ShopDeliveryModeView>;
 export type CustomerDeliveryView = Out<typeof CustomerDeliveryBlock> & {
-  /** After a return to the shop: what the refund covers (Lead's call 13). */
+  /**
+   * Demo only, after a return to the shop: what the refund covers (Lead's call 13). The API's block has no such
+   * field (the refund shows on the order's refund lines), so the card words it generally when absent.
+   */
   refund?: 'full' | 'parts_only' | null;
-  rating?: DeliveryRating | null;
-  canRate?: boolean;
 };
 export type AdminJobRowView = Out<typeof AdminJobRow>;
-export type AdminJobDetailView = Out<typeof AdminJobDetail> & {
-  pickupLocked?: boolean;
-  deliveryLocked?: boolean;
-  retryAllowed?: boolean;
-};
-export type AdminAgentRowView = Out<typeof AdminAgentRow> & {
-  ratingAvg?: number | null;
-  ratingCount?: number;
-};
-export type AdminAgentDetailView = Out<typeof AdminAgentDetail> & {
-  ratingAvg?: number | null;
-  ratingCount?: number;
-};
+export type AdminJobDetailView = Out<typeof AdminJobDetail>;
+export type AdminAgentRowView = Out<typeof AdminAgentRow>;
+export type AdminAgentDetailView = Out<typeof AdminAgentDetail>;
 export type AdminDocumentViewT = Out<typeof AdminDocumentView>;
 export type AdminShopModeRequestView = Out<typeof AdminShopModeRequestRow>;
 export type AgentInviteRowView = Out<typeof AgentInviteRow>;
 export type AgentInvitePreviewView = Out<typeof AgentInvitePreview>;
 
-/** A delivery-agent application as the admin list needs it (the API serves partner applications of kind `delivery_agent`). */
+/**
+ * A row of `GET /v1/admin/delivery/applications` (spec 24 § 16 G3; phone masked). The contract has no shared schema
+ * for it yet, so `api-clients.ts` checks it with a guard; `version` goes back with a reject.
+ */
 export interface AgentApplicationView {
   code: string;
   name: string;
   vehicleType: AgentVehicleType | null;
   cityCode: string | null;
   status: string;
+  reasonCode: string | null;
   createdAt: string;
+  version: number;
 }
+export type { ApplicationRejectReason };
 
 export type Result<T> = { ok: true; data: T } | { ok: false; status: number; code: string };
 export interface Page<T> {
@@ -153,45 +150,17 @@ export interface AgentClient extends Live {
   earnings(): Promise<Result<AgentEarningsView>>;
 }
 
-/**
- * Manual payouts (founder ruling 2026-11-26): staff record what they paid an agent; a correction is a reversing entry.
- * The contract DTOs come in a later backend commit; the web builds against this shape meanwhile (report: contract gap).
- */
-export const PAYOUT_METHODS = ['upi', 'bank_transfer', 'cash', 'other'] as const;
-export type PayoutMethod = (typeof PAYOUT_METHODS)[number];
-export interface PayoutView {
-  id: string;
-  agentId: string;
-  amountPaise: number;
-  periodFrom: string;
-  periodTo: string;
-  method: PayoutMethod;
-  reference: string | null;
-  note: string | null;
-  createdAt: string;
-  reversesId: string | null;
-  corrected: boolean;
-}
-export type AdminPayoutView = PayoutView & { agentName: string };
-export interface PayoutInputView {
-  agentId: string;
-  amountPaise: number;
-  periodFrom: string;
-  periodTo: string;
-  method: PayoutMethod;
-  reference?: string;
-  note?: string;
-}
-export interface PayoutSummaryRow {
-  agentId: string;
-  name: string;
-  delivered: number;
-  paidPaise: number;
-}
-export interface AgentEarningsView {
-  payouts: PayoutView[];
-  deliveredJobs: number;
-}
+/** Manual payouts (founder ruling 2026-11-26): staff record what they paid; a correction is a reversing row. */
+export const PAYOUT_METHODS = AGENT_PAYOUT_METHODS;
+export type PayoutMethod = (typeof AGENT_PAYOUT_METHODS)[number];
+/** The agent's own payout row (`note` is always null: staff notes stay with staff). */
+export type PayoutView = Out<typeof AgentOwnPayoutRow>;
+export type AdminPayoutView = Out<typeof AgentPayoutRow>;
+export type AdminPayoutPageView = Out<typeof AgentPayoutPage>;
+/** `idempotencyKey`: one per form opening, kept across retries (`newPayoutKey` / `nextPayoutKey` in `view.ts`). */
+export type PayoutInputView = Out<typeof AgentPayoutInput>;
+export type PayoutSummaryRow = Out<typeof AgentPayoutSummary>['items'][number];
+export type AgentEarningsView = Out<typeof AgentEarnings>;
 
 export interface ShopDeliveryClient extends Live {
   markReady(orderCode: string, version: number): Promise<Result<null>>;
@@ -234,7 +203,8 @@ export interface AdminDeliveryClient extends Live {
     version: number,
   ): Promise<Result<null>>;
   switchToShop(orderCode: string, reasonCode: DeliverySwitchReason, note?: string): Promise<Result<null>>;
-  agents(cursor: string | null): Promise<Result<Page<AdminAgentRowView>>>;
+  /** Not paged (the API answers the whole list for the staff member's cities). */
+  agents(): Promise<Result<Page<AdminAgentRowView>>>;
   agent(id: string): Promise<Result<AdminAgentDetailView>>;
   setStatus(
     id: string,
@@ -252,8 +222,14 @@ export interface AdminDeliveryClient extends Live {
     reasonCode?: AgentDocumentRejectReason,
   ): Promise<Result<null>>;
   applications(cursor: string | null): Promise<Result<Page<AgentApplicationView>>>;
-  rejectApplication(code: string, reasonCode: string): Promise<Result<null>>;
-  invites(cursor: string | null): Promise<Result<Page<AgentInviteRowView>>>;
+  rejectApplication(
+    code: string,
+    reasonCode: ApplicationRejectReason,
+    version: number,
+    note?: string,
+  ): Promise<Result<null>>;
+  /** Not paged. */
+  invites(): Promise<Result<Page<AgentInviteRowView>>>;
   invite(
     input:
       | { applicationCode: string }
@@ -267,7 +243,7 @@ export interface AdminDeliveryClient extends Live {
     version: number,
     reasonCode?: ShopModeRejectReason,
   ): Promise<Result<null>>;
-  payouts(filter: { agentId?: string; from?: string; to?: string }): Promise<Result<Page<AdminPayoutView>>>;
+  payouts(filter: { agentId?: string; from?: string; to?: string }): Promise<Result<AdminPayoutPageView>>;
   recordPayout(input: PayoutInputView): Promise<Result<null>>;
   correctPayout(id: string, note: string): Promise<Result<null>>;
   /** Per agent: delivered jobs in the period and what was already paid for it. */

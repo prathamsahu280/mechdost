@@ -47,7 +47,7 @@ import type {
   AgentInviteRowView,
   Result,
 } from '@/lib/delivery/types';
-import { countdown, kmText } from '@/lib/delivery/view';
+import { countdown, kmText, ratingFromX10 } from '@/lib/delivery/view';
 import { PayoutsTab } from './admin-delivery-payouts';
 import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
 import { useStatusLine } from './status-line';
@@ -469,9 +469,9 @@ function JobDetail({
             {job.failReason ? t('failedWhy', { reason: fr(job.failReason) }) : null}
           </p>
           <h4 className="mt-2 text-sm font-bold text-ink">{t('decideTitle')}</h4>
-          {job.retryAllowed === false ? <p className="text-sm text-ink">{t('retryLimitNote')}</p> : null}
+          {!job.retryAllowed ? <p className="text-sm text-ink">{t('retryLimitNote')}</p> : null}
           <div className="mt-2 flex flex-wrap gap-2">
-            {job.retryAllowed === false ? null : (
+            {!job.retryAllowed ? null : (
               <>
                 <button
                   type="button"
@@ -899,7 +899,7 @@ function ApplicationsTab({ client }: { client: AdminDeliveryClient }) {
   const [reason, setReason] = useState<(typeof APPLICATION_REJECT_REASONS)[number] | ''>('');
   useDisclosureFocus(rejecting ? `reject-${rejecting}` : null);
   const loadApps = useCallback(() => client.applications(null), [client]);
-  const loadInvites = useCallback(() => client.invites(null), [client]);
+  const loadInvites = useCallback(() => client.invites(), [client]);
   const apps = useList<AgentApplicationView>(client, loadApps);
   const invites = useList<AgentInviteRowView>(client, loadInvites);
 
@@ -928,7 +928,9 @@ function ApplicationsTab({ client }: { client: AdminDeliveryClient }) {
       say(t('reasonRequired'), 'error');
       return;
     }
-    const res = await client.rejectApplication(code, reason);
+    const row = apps.items?.find((a) => a.code === code);
+    if (!row) return;
+    const res = await client.rejectApplication(code, reason, row.version);
     track('click', { id: 'admin_delivery_application_rejected', path: window.location.pathname });
     if (res.ok) {
       say(t('rejected'));
@@ -1255,7 +1257,7 @@ function AgentsTab({ client }: { client: AdminDeliveryClient }) {
   const v = useTranslations('delivery.vehicle');
   const [filter, setFilter] = useState<AgentStatus | 'all'>('all');
   const [open, setOpen] = useState<string | null>(null);
-  const load = useCallback(() => client.agents(null), [client]);
+  const load = useCallback(() => client.agents(), [client]);
   const { items, failed, reload } = useList<AdminAgentRowView>(client, load);
   const shown = (items ?? []).filter((a) => filter === 'all' || a.status === filter);
   return (
@@ -1324,7 +1326,7 @@ function AgentsTab({ client }: { client: AdminDeliveryClient }) {
                   <td className={`${adminTd} tabular-nums`}>{a.activeJobs}</td>
                   <td className={adminTd}>{t('docsCount', { n: a.documentsVerified })}</td>
                   <td className={adminTd}>
-                    <RatingText avg={a.ratingAvg ?? null} count={a.ratingCount ?? 0} />
+                    <RatingText avg={ratingFromX10(a.ratingAvgX10)} count={a.ratingCount} />
                   </td>
                   <td className={adminTd}>
                     <button
@@ -1433,7 +1435,7 @@ function AgentDetail({
       <p className="text-sm text-muted">
         {st(a.status)}
         {a.statusReason ? ` · ${sr(a.statusReason)}` : ''} ·{' '}
-        <RatingText avg={a.ratingAvg ?? null} count={a.ratingCount ?? 0} />
+        <RatingText avg={ratingFromX10(a.ratingAvgX10)} count={a.ratingCount} />
       </p>
       <div className="mt-2">{line}</div>
 
@@ -1715,7 +1717,7 @@ function DocumentReview({
 
 /** Payouts need the agent list (filter, record form). */
 function PayoutsHost({ client }: { client: AdminDeliveryClient }) {
-  const load = useCallback(() => client.agents(null), [client]);
+  const load = useCallback(() => client.agents(), [client]);
   const { items, failed, reload } = useList<AdminAgentRowView>(client, load);
   if (!items) return <ListState failed={failed} loading={!failed} onRetry={reload} />;
   return <PayoutsTab client={client} agents={items} />;

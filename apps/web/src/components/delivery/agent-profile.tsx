@@ -8,6 +8,7 @@ import { track } from '@/lib/analytics';
 import { formatDate, formatPrice } from '@/lib/format';
 import type { AgentEarningsView } from '@/lib/delivery/types';
 import { useLiveReload } from '@/lib/delivery/use-delivery-client';
+import { ratingFromX10 } from '@/lib/delivery/view';
 import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
 import { useAgent } from './agent-portal';
 import { LoadGate, PhotoCapture, bigPrimary, bigQuiet, useStatusLine } from './parts';
@@ -39,9 +40,9 @@ export function AgentProfileScreen() {
         <p className="mt-1 text-[15px] text-ink">{t('vehicle', { vehicle: v(profile.vehicleType) })}</p>
         <p className="mt-1 text-sm text-muted">{t('vehicleChange')}</p>
         <p className="mt-2 text-[15px] font-bold text-ink">
-          {typeof profile.rating === 'number'
-            ? t('ratingOwn', { rating: profile.rating.toFixed(1) })
-            : t('ratingNone')}
+          {profile.ratingAvgX10 === null
+            ? t('ratingNone')
+            : t('ratingOwn', { rating: (ratingFromX10(profile.ratingAvgX10) ?? 0).toFixed(1) })}
         </p>
       </section>
 

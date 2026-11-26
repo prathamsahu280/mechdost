@@ -11,6 +11,7 @@ import {
   correctPayout,
   recordPayout,
 } from '../src/demo/delivery-store';
+import { newPayoutKey } from '../src/lib/delivery/view';
 
 function fakeWindow() {
   const data = new Map<string, string>();
@@ -48,18 +49,27 @@ describe('demo agent payouts', () => {
   });
 
   it('records a payout in paise and refuses bad input', () => {
-    expect(recordPayout(base).ok).toBe(true);
-    expect(recordPayout({ ...base, amountPaise: 0 })).toEqual({ ok: false, code: 'BAD_AMOUNT' });
-    expect(recordPayout({ ...base, amountPaise: 10.5 })).toEqual({ ok: false, code: 'BAD_AMOUNT' });
-    expect(recordPayout({ ...base, periodFrom: '2026-11-23' })).toEqual({ ok: false, code: 'BAD_PERIOD' });
-    expect(adminPayouts({})).toHaveLength(1);
+    expect(recordPayout({ ...base, idempotencyKey: newPayoutKey() }).ok).toBe(true);
+    expect(recordPayout({ ...base, idempotencyKey: newPayoutKey(), amountPaise: 0 })).toEqual({
+      ok: false,
+      code: 'BAD_AMOUNT',
+    });
+    expect(recordPayout({ ...base, idempotencyKey: newPayoutKey(), amountPaise: 10.5 })).toEqual({
+      ok: false,
+      code: 'BAD_AMOUNT',
+    });
+    expect(recordPayout({ ...base, idempotencyKey: newPayoutKey(), periodFrom: '2026-11-23' })).toEqual({
+      ok: false,
+      code: 'BAD_PERIOD',
+    });
+    expect(adminPayouts({}).items).toHaveLength(1);
   });
 
   it('a correction adds a reversing entry once and keeps the original', () => {
-    recordPayout(base);
-    const first = adminPayouts({})[0];
+    recordPayout({ ...base, idempotencyKey: newPayoutKey() });
+    const first = adminPayouts({}).items[0];
     expect(correctPayout(first?.id ?? '', 'wrong amount').ok).toBe(true);
-    const rows = adminPayouts({});
+    const rows = adminPayouts({}).items;
     expect(rows).toHaveLength(2);
     expect(rows.reduce((n, r) => n + r.amountPaise, 0)).toBe(0);
     expect(rows.find((r) => r.id === first?.id)?.corrected).toBe(true);
@@ -69,9 +79,9 @@ describe('demo agent payouts', () => {
   });
 
   it('filters by agent and the agent sees only their own payouts', () => {
-    recordPayout(base);
-    recordPayout({ ...base, agentId: B, amountPaise: 90_000 });
-    expect(adminPayouts({ agentId: B })).toHaveLength(1);
+    recordPayout({ ...base, idempotencyKey: newPayoutKey() });
+    recordPayout({ ...base, idempotencyKey: newPayoutKey(), agentId: B, amountPaise: 90_000 });
+    expect(adminPayouts({ agentId: B }).items).toHaveLength(1);
     expect(agentEarnings(A).payouts.map((p) => p.amountPaise)).toEqual([150_000]);
     expect(agentEarnings(A).deliveredJobs).toBe(0);
   });

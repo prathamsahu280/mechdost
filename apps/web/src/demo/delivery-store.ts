@@ -21,6 +21,7 @@ import {
   documentNumberProblem,
   maskDocumentNumber,
   normaliseDocumentNumber,
+  ratingAverageX10,
   retryAllowed,
   returnRefundKind,
   vehicleCarries,
@@ -49,7 +50,13 @@ import {
   type ShopModeRequestStatus,
 } from '@mechdost/shared/delivery/codes';
 import { publicCode } from '@mechdost/shared/ids';
-import { PAYOUT_METHODS, type PayoutMethod, type RatingReason } from '@/lib/delivery/types';
+import {
+  PAYOUT_METHODS,
+  type AdminPayoutPageView,
+  type AgentEarningsView,
+  type PayoutMethod,
+  type RatingReason,
+} from '@/lib/delivery/types';
 import { agentStatusMachine, deliveryJobMachine } from '@mechdost/shared/state';
 import { localizeArea, localizeShop, productNameFor } from './i18n/localize';
 import { DEMO_SHOPS, findShop } from './shops';
@@ -143,6 +150,8 @@ export interface DemoAgentApplication {
   status: 'new' | 'invited' | 'rejected';
   rejectReason: string | null;
   createdAt: string;
+  /** Older demo data has none (read as 0). */
+  version?: number;
 }
 export interface DemoAgentInvite {
   id: string;
@@ -190,6 +199,8 @@ export interface DemoRating {
   note: string | null;
   createdAt: string;
   editableUntil: string;
+  /** Older demo data has none (read as 0). */
+  version?: number;
 }
 export interface DemoDeliverySettings {
   agentsEnabled: boolean;
@@ -1274,6 +1285,7 @@ export function applyAsAgent(input: {
         status: 'new',
         rejectReason: null,
         createdAt: now,
+        version: 0,
       },
       ...s.applications,
     ],
@@ -1281,16 +1293,18 @@ export function applyAsAgent(input: {
   return { code };
 }
 export const agentApplication = (code: string) => deliveryState().applications.find((a) => a.code === code);
-export function rejectAgentApplication(code: string, reason: string): Res {
+export function rejectAgentApplication(code: string, reason: string, version: number): Res {
   return change((s) => {
     const a = s.applications.find((x) => x.code === code);
     if (!a) return fail('NOT_FOUND');
-    if (a.status !== 'new') return fail('JOB_CHANGED');
+    if (a.status !== 'new' || (a.version ?? 0) !== version) return fail('JOB_CHANGED');
     return {
       state: {
         ...s,
         applications: s.applications.map((x) =>
-          x.code === code ? { ...x, status: 'rejected' as const, rejectReason: reason } : x,
+          x.code === code
+            ? { ...x, status: 'rejected' as const, rejectReason: reason, version: (x.version ?? 0) + 1 }
+            : x,
         ),
       },
       result: ok(null),
@@ -1432,6 +1446,7 @@ export function rateDelivery(orderCode: string, stars: number, reasons: RatingRe
       note: note ?? null,
       createdAt: prior?.createdAt ?? now,
       editableUntil: prior?.editableUntil ?? new Date(Date.parse(now) + 86_400_000).toISOString(),
+      version: prior ? (prior.version ?? 0) + 1 : 0,
     };
     return {
       state: { ...s, ratings: [...s.ratings.filter((r) => r.jobId !== j.id), row] },
@@ -1439,11 +1454,14 @@ export function rateDelivery(orderCode: string, stars: number, reasons: RatingRe
     };
   });
 }
-export function agentRating(agentId: string): { avg: number | null; count: number } {
+/** The agent's average in tenths of a star (contract `ratingAvgX10`: 43 = 4.3) and the count. */
+export function agentRating(agentId: string): { avgX10: number | null; count: number } {
   const rows = deliveryState().ratings.filter((r) => r.agentId === agentId);
-  if (rows.length === 0) return { avg: null, count: 0 };
   return {
-    avg: Math.round((rows.reduce((n, r) => n + r.stars, 0) / rows.length) * 10) / 10,
+    avgX10: ratingAverageX10(
+      rows.reduce((n, r) => n + r.stars, 0),
+      rows.length,
+    ),
     count: rows.length,
   };
 }
@@ -1473,7 +1491,8 @@ export function agentProfile(agentId: string) {
     missingDocuments: AGENT_DOCUMENT_KINDS.filter(
       (k) => !a.documents.some((d) => d.kind === k && d.status !== 'rejected'),
     ),
-    rating: agentRating(a.id).avg,
+    ratingAvgX10: agentRating(a.id).avgX10,
+    ratingCount: agentRating(a.id).count,
     version: a.version,
   };
 }
@@ -1637,6 +1656,7 @@ export function customerDelivery(orderCode: string) {
           reasons: rating.reasons,
           note: rating.note,
           editableUntil: rating.editableUntil,
+          version: rating.version ?? 0,
         }
       : null,
     canRate: j.status === 'delivered' && (!rating || Date.parse(rating.editableUntil) > Date.now()),
@@ -1704,6 +1724,8 @@ export function adminJob(jobId: string, locale = 'en') {
       distanceM: shop ? distanceM(a, shop) : null,
       activeJobs: heldBy(s, a.id),
       acceptanceRateBp: acceptanceBp(s, a.id),
+      ratingAvgX10: agentRating(a.id).avgX10,
+      ratingCount: agentRating(a.id).count,
       carriesLoad: vehicleCarries(
         a.vehicleType,
         { knownWeightG: 0, unknownClass: load },
@@ -1769,7 +1791,7 @@ function adminAgentRow(s: DeliveryState, a: DemoAgent) {
     online: a.online,
     activeJobs: heldBy(s, a.id),
     documentsVerified: a.documents.filter((d) => d.status === 'verified').length,
-    ratingAvg: r.avg,
+    ratingAvgX10: r.avgX10,
     ratingCount: r.count,
     createdAt: a.createdAt,
     version: a.version,
@@ -1787,6 +1809,17 @@ export function adminAgent(id: string) {
   return {
     ...adminAgentRow(s, a),
     documents: agentProfile(id)?.documents ?? [],
+    ratings: s.ratings
+      .filter((r) => r.agentId === id)
+      .toSorted((x, y) => y.createdAt.localeCompare(x.createdAt))
+      .map((r) => ({
+        orderCode: s.jobs.find((j) => j.id === r.jobId)?.orderCode ?? '',
+        stars: r.stars,
+        reasons: r.reasons,
+        note: r.note,
+        at: r.createdAt,
+      }))
+      .filter((r) => r.orderCode !== ''),
     history: a.history,
     kpis: {
       offers30d: offers.length,
@@ -1823,6 +1856,8 @@ export interface DemoPayout {
   createdAt: string;
   /** Set on a correction: the payout it reverses. */
   reversesId: string | null;
+  /** The submission key (hard rule 3): the same key records once. Older demo data has none. */
+  idempotencyKey?: string;
 }
 export interface PayoutInput {
   agentId: string;
@@ -1832,6 +1867,7 @@ export interface PayoutInput {
   method: PayoutMethod;
   reference?: string;
   note?: string;
+  idempotencyKey: string;
 }
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const blankToNull = (v: string | undefined) => (v === undefined || v === '' ? null : v);
@@ -1844,8 +1880,12 @@ export function recordPayout(input: PayoutInput): Res<{ id: string }> {
   if (!DATE_RE.test(input.periodFrom) || !DATE_RE.test(input.periodTo) || input.periodFrom > input.periodTo)
     return fail('BAD_PERIOD');
   if (!PAYOUT_METHODS.includes(input.method)) return fail('BAD_METHOD');
+  if (!/^[A-Za-z0-9_-]{16,64}$/.test(input.idempotencyKey) || input.idempotencyKey.startsWith('rev-'))
+    return fail('BAD_KEY');
   return change((s, now) => {
     if (!s.agents.some((a) => a.id === input.agentId)) return fail('NOT_FOUND');
+    const seen = s.payouts.find((x) => x.idempotencyKey === input.idempotencyKey);
+    if (seen) return { state: s, result: ok({ id: seen.id }) };
     const row: DemoPayout = {
       id: newId(),
       agentId: input.agentId,
@@ -1857,6 +1897,7 @@ export function recordPayout(input: PayoutInput): Res<{ id: string }> {
       note: blankToNull(input.note?.trim().slice(0, 300)),
       createdAt: now,
       reversesId: null,
+      idempotencyKey: input.idempotencyKey,
     };
     return { state: { ...s, payouts: [...s.payouts, row] }, result: ok({ id: row.id }) };
   });
@@ -1876,12 +1917,18 @@ export function correctPayout(id: string, note: string): Res<{ id: string }> {
       note: note.trim().slice(0, 300) || null,
       createdAt: now,
       reversesId: id,
+      idempotencyKey: `rev-${id}`,
     };
     return { state: { ...s, payouts: [...s.payouts, row] }, result: ok({ id: row.id }) };
   });
 }
 
-export function adminPayouts(filter: { agentId?: string; from?: string; to?: string }) {
+/** Staff list (contract `AgentPayoutPage`): rows newest first and the net total of the filter. */
+export function adminPayouts(filter: { agentId?: string; from?: string; to?: string }): AdminPayoutPageView {
+  const items = payoutRows(filter);
+  return { items, totalPaise: items.reduce((n, x) => n + x.amountPaise, 0), nextCursor: null };
+}
+function payoutRows(filter: { agentId?: string; from?: string; to?: string }) {
   const s = deliveryState();
   const corrected = new Set(s.payouts.flatMap((x) => (x.reversesId ? [x.reversesId] : [])));
   return s.payouts
@@ -1893,9 +1940,20 @@ export function adminPayouts(filter: { agentId?: string; from?: string; to?: str
     )
     .toSorted((a, b) => b.createdAt.localeCompare(a.createdAt))
     .map((x) => ({
-      ...x,
+      id: x.id,
+      agentId: x.agentId,
       agentName: s.agents.find((a) => a.id === x.agentId)?.name ?? '',
+      kind: x.reversesId ? ('reversal' as const) : ('payment' as const),
+      amountPaise: x.amountPaise,
+      periodFrom: x.periodFrom,
+      periodTo: x.periodTo,
+      method: x.method,
+      reference: x.reference,
+      note: x.note,
+      reversesId: x.reversesId,
       corrected: corrected.has(x.id),
+      recordedByName: null,
+      createdAt: x.createdAt,
     }));
 }
 
@@ -1922,10 +1980,15 @@ export function payoutSummary(from: string, to: string) {
 }
 
 /** The agent's own Earnings screen: their payouts (newest first) and delivered jobs. */
-export function agentEarnings(agentId: string) {
+export function agentEarnings(agentId: string): AgentEarningsView {
   const s = deliveryState();
+  const payouts = payoutRows({ agentId }).map(({ agentName: _n, recordedByName: _r, note: _note, ...x }) => ({
+    ...x,
+    note: null,
+  }));
   return {
-    payouts: adminPayouts({ agentId }).map(({ agentName: _n, ...x }) => x),
+    payouts,
+    totalPaise: payouts.reduce((n, x) => n + x.amountPaise, 0),
     deliveredJobs: s.jobs.filter((j) => j.agentId === agentId && j.status === 'delivered').length,
   };
 }

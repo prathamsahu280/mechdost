@@ -77,3 +77,21 @@ export function mapsHref(to: { lat: number; lng: number } | { address: string })
 export function kmText(m: number): string {
   return Math.max(0.1, Math.round(m / 100) / 10).toFixed(1);
 }
+
+/**
+ * Idempotency key of one "Record payout" submission (`AgentPayoutInput.idempotencyKey`: 16–64 of `[A-Za-z0-9_-]`,
+ * never `rev-…`, hard rule 3). Made when the form opens and kept across retries of the same submission, so a double
+ * click or a retry after a network error records the payment once.
+ */
+export function newPayoutKey(): string {
+  return globalThis.crypto.randomUUID();
+}
+/** After an answer: keep the key when the submission failed (a retry is the same payment), renew it after success. */
+export function nextPayoutKey(current: string, succeeded: boolean): string {
+  return succeeded ? newPayoutKey() : current;
+}
+
+/** The contract keeps ratings in tenths of a star (`ratingAvgX10`: 43 = 4.3); screens show stars. */
+export function ratingFromX10(avgX10: number | null): number | null {
+  return avgX10 === null ? null : avgX10 / 10;
+}

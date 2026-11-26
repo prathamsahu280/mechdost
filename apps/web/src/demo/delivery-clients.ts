@@ -148,11 +148,14 @@ export function demoAdminDeliveryClient(locale: string): AdminDeliveryClient {
             vehicleType: a.vehicleType,
             cityCode: a.cityCode,
             status: a.status,
+            reasonCode: a.rejectReason,
             createdAt: a.createdAt,
+            version: a.version ?? 0,
           })),
         ),
       ),
-    rejectApplication: (code, reason) => Promise.resolve(done(d.rejectAgentApplication(code, reason))),
+    rejectApplication: (code, reason, version) =>
+      Promise.resolve(done(d.rejectAgentApplication(code, reason, version))),
     invites: () =>
       Promise.resolve(
         page(
@@ -186,7 +189,7 @@ export function demoAdminDeliveryClient(locale: string): AdminDeliveryClient {
       ),
     decideMode: (id, approve, version, reason) =>
       Promise.resolve(done(d.decideShopMode(id, approve, version, reason))),
-    payouts: (filter) => Promise.resolve(page(d.adminPayouts(filter))),
+    payouts: (filter) => Promise.resolve({ ok: true, data: d.adminPayouts(filter) }),
     recordPayout: (input) => {
       const r = d.recordPayout(input);
       return Promise.resolve(r.ok ? { ok: true, data: null } : done(r));

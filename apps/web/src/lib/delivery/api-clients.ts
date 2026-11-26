@@ -5,10 +5,13 @@ import {
   AdminJobDetail,
   AdminJobPage,
   AdminShopModeRequestPage,
+  AgentEarnings,
   AgentInviteCreated,
   AgentInvitePage,
   AgentJobDetail,
   AgentJobPage,
+  AgentPayoutPage,
+  AgentPayoutSummary,
   AgentPhotoUploaded,
   AgentProfile,
   CodeStepResult,
@@ -20,15 +23,10 @@ import type {
   AdminDeliveryClient,
   AgentApplicationView,
   AgentClient,
-  AdminPayoutView,
-  AgentEarningsView,
   Page,
-  PayoutSummaryRow,
-  PayoutView,
   Result,
   ShopDeliveryClient,
 } from './types';
-import { PAYOUT_METHODS } from './types';
 
 /**
  * The delivery-agent clients on the API (spec 24 route table; real sign-in builds only). Loaded with `import()` by
@@ -86,7 +84,7 @@ export function apiAgentClient(locale: string): AgentClient {
         method: 'PUT',
         body: { kind, number, mediaId },
       }),
-    earnings: () => adminApi(locale, '/agent/me/earnings', Earnings),
+    earnings: () => adminApi(locale, '/agent/me/earnings', AgentEarnings),
   };
 }
 
@@ -165,8 +163,8 @@ export function apiShopDeliveryClient(locale: string): ShopDeliveryClient {
   };
 }
 
-// Delivery-agent applications are partner applications of kind `delivery_agent`; the shared `ApplicationPage` row
-// requires a PIN code those rows do not have, so the list is read with this tolerant guard (report: contract gap).
+// `GET /v1/admin/delivery/applications` rows (spec 24 § 16 G3) have no shared schema yet, so this guard checks the
+// fields the screen uses; `version` is required because a reject sends it back (conditional update, hard rule 3).
 type Rec = Record<string, unknown>;
 const isRec = (v: unknown): v is Rec => typeof v === 'object' && v !== null;
 const strOrNull = (v: unknown) => (typeof v === 'string' ? v : null);
@@ -179,7 +177,8 @@ const AppPage: ResponseSchema<Page<AgentApplicationView>> = {
         !isRec(r) ||
         typeof r.code !== 'string' ||
         typeof r.name !== 'string' ||
-        typeof r.status !== 'string'
+        typeof r.status !== 'string' ||
+        typeof r.version !== 'number'
       )
         return { success: false };
       items.push({
@@ -188,80 +187,13 @@ const AppPage: ResponseSchema<Page<AgentApplicationView>> = {
         status: r.status,
         vehicleType: (strOrNull(r.vehicleType) as AgentApplicationView['vehicleType']) ?? null,
         cityCode: strOrNull(r.cityCode),
+        reasonCode: strOrNull(r.reasonCode),
         createdAt: typeof r.createdAt === 'string' ? r.createdAt : '',
+        version: r.version,
       });
     }
     return { success: true, data: { items, nextCursor: strOrNull(v.nextCursor) } };
   },
-};
-const VersionOnly: ResponseSchema<{ version: number }> = {
-  safeParse: (v) =>
-    isRec(v) && typeof v.version === 'number'
-      ? { success: true, data: { version: v.version } }
-      : { success: false },
-};
-const JobList: ResponseSchema<{ items: { jobId: string }[] }> = {
-  safeParse: (v) => {
-    const page = AdminJobPage.safeParse(v);
-    return page.success ? { success: true, data: page.data } : { success: false };
-  },
-};
-
-// Manual payouts (founder ruling 2026-11-26): no shared DTO yet (contract gap), so these guards check the shape.
-const num = (v: unknown) => typeof v === 'number' && Number.isInteger(v);
-const isPayout = (v: unknown): v is PayoutView =>
-  isRec(v) &&
-  typeof v.id === 'string' &&
-  typeof v.agentId === 'string' &&
-  num(v.amountPaise) &&
-  typeof v.periodFrom === 'string' &&
-  typeof v.periodTo === 'string' &&
-  typeof v.method === 'string' &&
-  (PAYOUT_METHODS as readonly string[]).includes(v.method) &&
-  typeof v.createdAt === 'string' &&
-  (v.corrected === undefined || typeof v.corrected === 'boolean');
-const PayoutPage: ResponseSchema<Page<AdminPayoutView>> = {
-  safeParse: (v) =>
-    isRec(v) && Array.isArray(v.items) && v.items.every(isPayout)
-      ? {
-          success: true,
-          data: {
-            items: v.items.map((x) => ({
-              ...x,
-              agentName:
-                typeof (x as unknown as Rec).agentName === 'string'
-                  ? String((x as unknown as Rec).agentName)
-                  : '',
-              reference: x.reference ?? null,
-              note: x.note ?? null,
-              reversesId: x.reversesId ?? null,
-              corrected: x.corrected,
-            })),
-            nextCursor: strOrNull(v.nextCursor),
-          },
-        }
-      : { success: false },
-};
-const Earnings: ResponseSchema<AgentEarningsView> = {
-  safeParse: (v) =>
-    isRec(v) && Array.isArray(v.payouts) && v.payouts.every(isPayout) && num(v.deliveredJobs)
-      ? { success: true, data: { payouts: v.payouts, deliveredJobs: v.deliveredJobs as number } }
-      : { success: false },
-};
-const SummaryPage: ResponseSchema<{ items: PayoutSummaryRow[] }> = {
-  safeParse: (v) =>
-    isRec(v) &&
-    Array.isArray(v.items) &&
-    v.items.every(
-      (r) =>
-        isRec(r) &&
-        typeof r.agentId === 'string' &&
-        typeof r.name === 'string' &&
-        num(r.delivered) &&
-        num(r.paidPaise),
-    )
-      ? { success: true, data: { items: v.items as PayoutSummaryRow[] } }
-      : { success: false },
 };
 
 export function apiAdminDeliveryClient(locale: string): AdminDeliveryClient {
@@ -272,9 +204,9 @@ export function apiAdminDeliveryClient(locale: string): AdminDeliveryClient {
     sample: false,
     jobs: (view, cursor) => get(`/admin/delivery/jobs${qs({ view, cursor })}`, AdminJobPage),
     job: (jobId) => get(`/admin/delivery/jobs/${enc(jobId)}`, AdminJobDetail),
-    // No route lists the jobs of one order yet: the jobs list filtered by `orderCode` (report: contract gap).
+    // G4: `view=all&orderCode=` lists the jobs of one sub-order; each detail is read for the timeline.
     jobsForOrder: async (orderCode) => {
-      const list = await get(`/admin/delivery/jobs${qs({ view: 'all', orderCode })}`, JobList);
+      const list = await get(`/admin/delivery/jobs${qs({ view: 'all', orderCode })}`, AdminJobPage);
       if (!list.ok) return list;
       const details = await Promise.all(
         list.data.items.map((j) => get(`/admin/delivery/jobs/${enc(j.jobId)}`, AdminJobDetail)),
@@ -294,7 +226,7 @@ export function apiAdminDeliveryClient(locale: string): AdminDeliveryClient {
         version,
       }),
     override: (jobId, kind, reason, version) =>
-      post(`/admin/delivery/jobs/${enc(jobId)}/override-${kind}`, Empty, { reason, version }),
+      post(`/admin/delivery/jobs/${enc(jobId)}/override/${kind}`, Empty, { reason, version }),
     switchToShop: async (orderCode, reasonCode, note) => {
       const r = await post(`/admin/orders/${enc(orderCode)}/delivery-switch`, DeliverySwitchRow, {
         reasonCode,
@@ -302,7 +234,7 @@ export function apiAdminDeliveryClient(locale: string): AdminDeliveryClient {
       });
       return r.ok ? { ok: true, data: null } : r;
     },
-    agents: (cursor) => get(`/admin/delivery/agents${qs({ cursor })}`, AdminAgentPage),
+    agents: () => get('/admin/delivery/agents', AdminAgentPage),
     agent: (id) => get(`/admin/delivery/agents/${enc(id)}`, AdminAgentDetail),
     setStatus: (id, status, version, reasonCode, note) =>
       post(`/admin/delivery/agents/${enc(id)}/status`, Empty, {
@@ -322,15 +254,13 @@ export function apiAdminDeliveryClient(locale: string): AdminDeliveryClient {
         ...(reasonCode ? { reasonCode } : {}),
       }),
     applications: (cursor) => get(`/admin/delivery/applications${qs({ cursor })}`, AppPage),
-    rejectApplication: async (code, reasonCode) => {
-      const detail = await get(`/admin/partner-applications/${enc(code)}`, VersionOnly);
-      if (!detail.ok) return detail;
-      return post(`/admin/partner-applications/${enc(code)}/reject`, Empty, {
-        version: detail.data.version,
+    rejectApplication: (code, reasonCode, version, note) =>
+      post(`/admin/delivery/applications/${enc(code)}/reject`, Empty, {
         reasonCode,
-      });
-    },
-    invites: (cursor) => get(`/admin/delivery/invites${qs({ cursor })}`, AgentInvitePage),
+        ...(note ? { note } : {}),
+        version,
+      }),
+    invites: () => get('/admin/delivery/invites', AgentInvitePage),
     invite: (input) => post('/admin/delivery/invites', AgentInviteCreated, input),
     revokeInvite: (id) => post(`/admin/delivery/invites/${enc(id)}/revoke`, Empty),
     modeRequests: (status) =>
@@ -346,10 +276,11 @@ export function apiAdminDeliveryClient(locale: string): AdminDeliveryClient {
     payouts: (f) =>
       get(
         `/admin/delivery/payouts${qs({ agentId: f.agentId ?? null, from: f.from ?? null, to: f.to ?? null })}`,
-        PayoutPage,
+        AgentPayoutPage,
       ),
     recordPayout: (input) => post('/admin/delivery/payouts', Empty, input),
     correctPayout: (id, note) => post(`/admin/delivery/payouts/${enc(id)}/correct`, Empty, { note }),
-    payoutSummary: (from, to) => get(`/admin/delivery/payouts/summary${qs({ from, to })}`, SummaryPage),
+    payoutSummary: (from, to) =>
+      get(`/admin/delivery/payouts/summary${qs({ from, to })}`, AgentPayoutSummary),
   };
 }

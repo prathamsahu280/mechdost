@@ -21,9 +21,10 @@ import {
   type AdminAgentRowView,
   type AdminDeliveryClient,
   type AdminPayoutView,
-  type PayoutMethod,
+  type PayoutInputView,
   type PayoutSummaryRow,
 } from '@/lib/delivery/types';
+import { newPayoutKey, nextPayoutKey } from '@/lib/delivery/view';
 import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
 import { useStatusLine } from './status-line';
 
@@ -388,18 +389,12 @@ function RecordForm({
 }: {
   agents: AdminAgentRowView[];
   period: { from: string; to: string };
-  onSave: (input: {
-    agentId: string;
-    amountPaise: number;
-    periodFrom: string;
-    periodTo: string;
-    method: PayoutMethod;
-    reference?: string;
-    note?: string;
-  }) => Promise<boolean>;
+  onSave: (input: PayoutInputView) => Promise<boolean>;
 }) {
   const t = useTranslations('deliveryAdmin');
   const [open, setOpen] = useState(false);
+  // One key per form opening, kept across retries of the same submission (hard rule 3: records once).
+  const [payoutKey, setPayoutKey] = useState(newPayoutKey);
   const [problem, setProblem] = useState<string | null>(null);
   const [badField, setBadField] = useState<string | null>(null);
   const invalid = (fid: string) =>
@@ -429,7 +424,9 @@ function RecordForm({
           ? ['pay-method', t('payoutErrMethod')]
           : !from || !to || from > to
             ? ['pay-from', t('payoutErrPeriod')]
-            : null;
+            : method === 'other' && !get('note')
+              ? ['pay-note', t('payoutErrNote')]
+              : null;
     if (bad || !agentId || !amount.ok || !method) {
       setProblem(bad?.[1] ?? null);
       setBadField(bad?.[0] ?? null);
@@ -446,7 +443,9 @@ function RecordForm({
       method,
       ...(get('reference') ? { reference: get('reference') } : {}),
       ...(get('note') ? { note: get('note') } : {}),
+      idempotencyKey: payoutKey,
     });
+    setPayoutKey((k) => nextPayoutKey(k, done));
     setBusy(false);
     if (done) {
       form.reset();
@@ -461,6 +460,7 @@ function RecordForm({
         data-disclosure-trigger="record-payout"
         className={portalPrimary}
         onClick={() => {
+          setPayoutKey(newPayoutKey());
           setOpen(true);
         }}
       >
@@ -576,7 +576,7 @@ function RecordForm({
         <label htmlFor="pay-note" className="text-sm font-bold text-ink">
           {t('statusNote')}
         </label>
-        <input id="pay-note" name="note" maxLength={300} className={portalField} />
+        <input id="pay-note" name="note" maxLength={300} className={portalField} {...invalid('pay-note')} />
       </div>
       {problem ? (
         <p id="pay-error" role="alert" className="text-sm font-bold text-error tab:col-span-3">

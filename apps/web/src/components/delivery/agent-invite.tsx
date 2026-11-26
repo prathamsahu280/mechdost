@@ -47,7 +47,7 @@ async function loadPreview(token: string): Promise<AgentInvitePreviewView | null
 }
 
 /**
- * Delivery-agent invite (spec 24, Lead's call 10): the link from the email or WhatsApp opens this page; the person signs
+ * Delivery-agent invite (spec 24, Lead's call 10): the link from the email opens this page (the WhatsApp invite has no link: the person signs in with the invited mobile number, spec 24 § 16 G1); the person signs
  * in with the invited mobile number (phone OTP) and accepts, which links their account to the agent record. They then
  * upload their documents in the agent portal.
  */
