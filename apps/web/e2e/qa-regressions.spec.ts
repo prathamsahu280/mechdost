@@ -309,8 +309,10 @@ test('B1: a rejection reaches a Hindi customer in Hindi, with nothing charged fo
   await note.fill('हमें खेद है, यह बैटरी अभी उपलब्ध नहीं है।');
   await card.getByRole('button', { name: 'Reject order' }).click();
   await page.goto(`/hi/orders/${CODES.routing}`);
+  // The reason in the customer's language (`orders.rejectedBecause_no_stock_nearby`). Worded without the shop since
+  // the 2026-11-22 ruling "customers never see the shop" (8559dfec); the old sentence named a nearby shop.
   await expect(
-    page.getByText('आपके पास की किसी दुकान में ये प्रोडक्ट अभी स्टॉक में नहीं हैं।', { exact: false }),
+    page.getByText('ये प्रोडक्ट आपके पिन के लिए अभी स्टॉक में नहीं हैं।', { exact: false }),
   ).toBeVisible();
   await expect(page.getByText('यह कैश ऑन डिलीवरी था', { exact: false })).toBeVisible();
 });
@@ -549,11 +551,20 @@ test('review: the theme toggle still works when the browser storage is full', as
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 });
 
-test('QA 13: checkout says from when delivery is free while a fee is charged', async ({ page }) => {
+test('QA 13: checkout explains the delivery charge while a fee is charged', async ({ page }) => {
+  // Q196 (answered 2026-11-16, QA pass 4): without a server quote the checkout names no city amount, because a PIN or
+  // shop threshold can differ; the per-shop threshold line ("Free delivery on this part of your order at ₹…") shows
+  // only with the API's quote (`freeDeliveryHints`, unit test bugfix-qa-pass3b). The demo checkout therefore explains
+  // the charge without an amount, and never repeats the old city amount.
   await page.goto('/shop/castrol-activ-4t-20w40-900ml');
   await page.getByRole('button', { name: 'Add to cart' }).first().click();
   await page.goto('/checkout');
-  await expect(page.getByRole('complementary').getByText(/Free delivery on orders from ₹/)).toBeVisible();
+  const summary = page.getByRole('complementary').filter({ hasText: 'Total' });
+  await expect(summary.getByText(/^Delivery$/)).toBeVisible();
+  await expect(
+    summary.getByText('Delivery charges depend on your PIN code.', { exact: false }),
+  ).toBeVisible();
+  await expect(summary.getByText(/Free delivery on orders from ₹/)).toHaveCount(0);
 });
 
 test('review: a different customer account does not see someone else’s delivery code', async ({ page }) => {
