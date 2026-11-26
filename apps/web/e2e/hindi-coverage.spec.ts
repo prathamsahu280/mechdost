@@ -107,6 +107,10 @@ const MUST_SHOW: Readonly<Record<string, string>> = {
   '/ustaad/jobs': 'शंकर नगर',
   '/ustaad/u/suresh_auto': 'सुरेश वर्मा',
   '/ustaad/tags/splendor': '#स्प्लेंडर',
+  '/ustaad/messages': 'सुरेश वर्मा',
+  '/ustaad/messages/0193a000-0000-7000-8000-000000000301': 'Splendor ka self',
+  '/ustaad/network?tab=requests': 'राजू निषाद',
+  '/ustaad/discover': 'तेलीबांधा',
 };
 
 /** Visits each page and returns "page: words" for every page with English left on it. */
@@ -214,6 +218,20 @@ const USTAAD_PAGES = [
   '/ustaad/u/suresh_auto',
   '/ustaad/s/aaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbbb',
 ];
+// Ustaad messages, My network and Discover (workstream D2 web) with the browser demo's sample data.
+const USTAAD_DM_PAGES = [
+  '/ustaad/messages',
+  '/ustaad/messages?box=requests',
+  '/ustaad/messages?box=sent',
+  '/ustaad/messages/0193a000-0000-7000-8000-000000000301',
+  '/ustaad/messages/0193a000-0000-7000-8000-000000000303',
+  '/ustaad/messages?to=raju_chhotu',
+  '/ustaad/network',
+  '/ustaad/network?tab=requests',
+  '/ustaad/network?tab=blocked',
+  '/ustaad/discover',
+  '/ustaad/discover?work=ac',
+];
 
 const report = (failures: string[]) =>
   `English text on Hindi pages — translate it (or mark user-typed text with data-user-content):\n${failures.join('\n')}`;
@@ -253,6 +271,13 @@ test.describe('Hindi pages have no English left (hard rule 10)', () => {
     test.setTimeout(180_000);
     await signIn(page, PHONES.admin);
     const failures = await audit(page, USTAAD_PAGES, true);
+    expect(failures, report(failures)).toEqual([]);
+  });
+
+  test('Ustaad messages, My network and Discover (staff preview)', async ({ page }) => {
+    test.setTimeout(180_000);
+    await signIn(page, PHONES.admin);
+    const failures = await audit(page, USTAAD_DM_PAGES, true);
     expect(failures, report(failures)).toEqual([]);
   });
 

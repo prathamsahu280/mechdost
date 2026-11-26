@@ -458,3 +458,14 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
 - L-UDW3 · 2026-11-26 · api gaps · "Every API exists" in a brief was wrong for the profile (no read by handle, no
   member posts) → check each screen's reads against the route files during orientation, add thin composed reads
   test-first (role leak + block 404), and record them in the spec's as-built section. · active
+- L-UDM1 · 2026-11-26 · ui/a11y · Six static a11y specialists on the D2 web screens all converged on one bug class:
+  a write that swaps the focused control for another tree (block → blocked card, accept → composer, voice button →
+  recorder panel, list row removed after an action, last "Show more") drops focus to `<body>`; plus identical button
+  names per row ("Remove" × N). → When an action replaces the focused element, move focus to its replacement in an
+  effect keyed on the new state (never on first render); give row actions an sr-only member name (`Who`); close a
+  native `<dialog>` with `.close()` before unmounting so the browser restores focus to the invoker. · active
+- L-UDM2 · 2026-11-26 · web/deps · `apps/web` has no zod dependency: shared DTO schemas work as `Schema<T>` but a new
+  inline `z.object` in web code fails typecheck → reuse shared DTOs, or hand-write `safeParse` guards for tiny answers;
+  never add zod to the web bundle for it. · active
+- L-UDM3 · 2026-11-26 · i18n · sr-only text is crawled by the Hindi gate too (`Enter`/`Shift` key names, a model name
+  in a tag) → Hindi copy spells key names in Devanagari (एंटर, शिफ़्ट); demo tags carry a transliterated `nameHi`. · active

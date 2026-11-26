@@ -268,13 +268,13 @@ action; Hindi default for new members (`general.default_lang`), English switch i
 | `/ustaad/create`                                           | Composer (quick start + any media), draft restore                                                                                                                                                                            |
 | `/ustaad/p/[id]`                                           | Post detail with replies                                                                                                                                                                                                     |
 | `/ustaad/stories/[memberId]`                               | Full-screen story viewer                                                                                                                                                                                                     |
-| `/ustaad/discover`                                         | Search, filters, top helpers, tags                                                                                                                                                                                           |
+| `/ustaad/discover`                                         | Search, work and level filters, top helpers, tags, Top this week (§ 21g)                                                                                                                                                     |
 | `/ustaad/tags/[slug]`                                      | Tag page (posts, questions, follow tag)                                                                                                                                                                                      |
 | `/ustaad/u/[handle]`                                       | Member profile (card, counts, Follow / Connect / Message, posts; was `/m/`, § 21g)                                                                                                                                           |
 | `/ustaad/me`                                               | My card (share as image, QR), stats, level ladder, badges, my work, settings and my choices                                                                                                                                  |
 | `/ustaad/me/verify`                                        | Get verified                                                                                                                                                                                                                 |
-| `/ustaad/network`                                          | Requests, near you, mentors / my shagirds, connected                                                                                                                                                                         |
-| `/ustaad/messages`, `/ustaad/messages/[id]`                | Message requests and threads                                                                                                                                                                                                 |
+| `/ustaad/network`                                          | Followers, following, connections, requests, blocked (§ 21g); mentors later                                                                                                                                                  |
+| `/ustaad/messages`, `/ustaad/messages/[id]`                | Message requests and threads; `?to=<handle>` starts a request (§ 21g)                                                                                                                                                        |
 | `/ustaad/jobs`, `/ustaad/jobs/[code]`, `/ustaad/jobs/mine` | Jobs list, detail + apply sheet, employer's jobs and applicants                                                                                                                                                              |
 | `/ustaad/learn`                                            | Courses, short videos, MechDost training                                                                                                                                                                                     |
 | `/ustaad/area`, `/ustaad/me/location`                      | Zone map; pin my garage (`/ustaad/pin` redirects here, § 21c)                                                                                                                                                                |
@@ -1795,6 +1795,64 @@ PROFILE,TEASER}` (fixtures owed, Q-U-DW3).
 - **Not built here:** messages / network / Discover (other agent), resumable video upload (Q-U-DW1), a lasting
   per-member hide (Q-U-DW2), photo avatars (no profile photo upload on the web yet), offline drafts in IndexedDB
   (§ 17), link-preview images (D1 has no og:image yet), 1440 screenshots (lead: 390 + Hindi 390 only this round).
+
+## 21g. Messages, My network and Discover web screens as built (2026-11-26, D2 web)
+
+- **Routes** (`apps/web/src/app/[locale]/ustaad/`, server shells with one client island each, inside A's layout,
+  noindex, `MemberGate`): `messages` (tabs Chats · Requests · Sent as links, `?box=`; with `?to=<handle>` the request
+  form), `messages/[id]` (one conversation; a malformed id is a 404 before any request), `network` (`?tab=followers |
+following | connections | requests | blocked`), `discover` (`?q=&work=&level=`, the `area=` filter is not served).
+  Profile links go to **`/ustaad/u/<handle>`** (the profile page another agent builds; § 5 still names `/ustaad/m/`).
+- **One seam** `apps/web/src/lib/ustaad/messages-api.ts`: real sign-in calls `/v1/ustaad/{threads,follows,followers,
+members/{id}/relationship,connections,blocks,mutes,discover,discover/tags,discover/top-posts,reports}` with every
+  answer checked (shared DTOs; small write answers by hand-written guards, the web app has no zod); the browser demo
+  loads `apps/web/src/demo/ustaad-messages.ts` (labelled **Sample data**, in memory only; imitates the request rules:
+  one text-only message, link refused, fee/UPI phrase held, cooldown after a withdrawn request). Uploads and signed
+  URLs reuse the C + E seam (`client.ts`). Pure view rules in `components/ustaad/messages/view.ts`.
+- **Messages (WhatsApp habit):** list rows = initials, the name as written, an unread dot with the word "New", muted
+  bell, time (the API serves no last-message text, so none is shown). Thread = their bubbles left on the surface, mine
+  right in navy, oldest at the top with "Show older"; ticks in words and icons (**Sent / Seen**), my held message
+  says **"Being checked"** with "Only you see this" (never shown to the receiver). Read receipt (`POST …/read`) once an
+  open conversation is on screen. Before acceptance: the receiver gets Accept / Decline (no composer), the sender a
+  waiting note (no composer). Open: composer with a text line (Enter sends, Shift+Enter new line), **Voice** (opens
+  the hold-to-talk recorder, 90 s) and **Photo** (camera or gallery, cleaned on the phone, optional caption), uploads
+  with progress; the recorder and picker load only when opened. Photos load their signed URL when scrolled into view.
+  "More": notices off/on per conversation, **Report** (native modal dialog, reason radio group + note; target = the
+  other member's latest message so staff can open the thread through the report, SR-38, else the member), **Block**
+  with a confirm step, then a "You blocked …" card with Unblock.
+- **Start a conversation (`?to=<handle>`):** no handle route exists, so the handle is resolved through the typed
+  Discover search (caller's city, spends the daily profile budget, exact handle only) — **API gap, Q-U-DM1**. An
+  existing conversation opens instead; otherwise the request rules are shown before typing (one message until they
+  accept, text only, no links, phone/UPI hidden as #, new accounts wait a few days — no number, the setting is
+  admin's) and API refusals come back as words beside the field (`USTAAD_DM_TOO_NEW`, `_DM_NOT_ALLOWED`,
+  `_DM_PENDING`, `_DM_LINK`, `USTAAD_CONTENT_BLOCKED`, `USTAAD_DAILY_CAP`, `RATE_LIMITED`).
+- **My network:** five tabs; rows with Message (→ `?to=`), Remove follower, Unfollow, Accept / Decline (to me),
+  Take back (mine), Remove connection, Unblock, Unmute; keyset "Show more"; the limits note on Requests (daily cap and
+  the wait after a withdrawn or declined request, `USTAAD_CONNECT_COOLDOWN` in words). No totals (the API serves none).
+- **Discover:** search on submit (2–60 letters; `next/form`, no reload), work and level filters; "Top helpers this
+  month" with the ranking rule ("not by followers") when nothing is searched; people cards: initials, name, level
+  chip, verified tick, area and **distance band** (never km), specialities, helpful / best counts, followers when the
+  admin shows them, "New" for the new-member slots, **Follow** (count updated from the answer), **Connect**,
+  **Message**. Without a search: popular **tags** (links to `/ustaad/tags/<slug>`) and **Top this week** (links to
+  `/ustaad/p/<id>`). Following state is not in `DiscoverPersonDto`, so a card starts at "Follow" (PUT is idempotent).
+- **Copy:** `ustaad.messages`, `ustaad.network`, `ustaad.discover` (en + hi, `test/ustaad-dm-view.test.ts` checks key
+  parity and every error code in both). **Analytics:** spec 12 § "Ustaad messages, My network and Discover".
+- **Accessibility review (2026-11-26, six specialists: ARIA, keyboard, forms, modal, live regions, contrast +
+  headings):** focus follows every swap (block → Unblock, unblock → More, Accept → message field, Decline → the closed
+  note, Voice/Photo → their panel, removed row or ended list → the list heading, Show older end → the conversation);
+  row buttons carry the member's name (sr-only); the report dialog starts on its title, ties the "pick a reason"
+  error to the group, closes natively so focus returns to Report; one status + one alert per Discover list (not per
+  card) and the result count is announced; the thread `h1` is the name only; busy buttons say "Working…"; Enter-sends
+  is described; the composer panels follow the `data-panel-cancel` contract (Escape closes). Not fixed here (shared
+  `common.tsx`): `LoadingBlock` wraps its status in `aria-busy`, `LoadFailed` mounts its alert with content.
+- **Tests:** `apps/web/test/ustaad-dm-view.test.ts` (box/tab parsing, ticks, order, initials, handle rules, composer
+  mode, filters, error keys, copy parity); e2e `apps/web/e2e/ustaad-dm.spec.ts` (tabs, accept a request, ticks and
+  held message, send text and photo, mute/report/block/unblock, `?to=` rules and link refusal, network actions and
+  cooldown words, Discover search/filters/follow and the search event, axe on `main`); Hindi crawl
+  (`USTAAD_DM_PAGES`, eleven `/hi` pages); state-audit rows `API-USTAAD-MESSAGES`, `-THREAD`, `-NETWORK`, `-DISCOVER`.
+- **Not built:** a handle lookup route (Q-U-DM1), following state on Discover cards, my own follower/following
+  counts, "Suggest me to others" (choices page, B), the city filter (no city list served), mentorship, message
+  delete/unsend, live updates (screens refresh after each write; RTDB pings later), a thread-opened client event.
 
 ## 22. Not built / later
 

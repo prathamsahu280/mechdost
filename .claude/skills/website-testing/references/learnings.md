@@ -329,3 +329,12 @@ T203 · 2026-11-24 · notifications · the WhatsApp approval gate is per event (
 - 2026-11-26 · Ustaad D web · `aria-label` built from member text (poll options) leaks English into `/hi` pages because
   the Hindi crawl reads attributes outside `data-user-content` → put member text in the button's content and the
   fixed words in an sr-only span.
+- 2026-11-26 · D2 web (messages/network/discover) · New bug class "focus lost on swap": after a write the focused control
+  is replaced (header variant, footer mode, composer panel, removed row, ended pager). Test: after the action,
+  `expect(<replacement>).toBeFocused()` (e2e `ustaad-dm.spec.ts`: Unblock after block, More after unblock, Report after
+  the dialog closes, the list heading after Remove). Demo state lives in memory: assertions that depend on an earlier
+  write must navigate by client links, not `page.goto` (a full load resets the sample data).
+- 2026-11-26 · D2 web Discover · Bug: the first render after a new search key still held the previous answer, so the
+  "searched" event counted the old 4 results and the old cards flashed. Root cause: the loader reset to "loading" in an
+  effect (after render). Fix: the answer remembers its key and reads as loading when the key differs (`useSocial` in
+  `components/ustaad/messages/shared.tsx`). Guard: e2e `ustaad-dm.spec.ts` asserts `ustaad_discover_searched` = [1].
