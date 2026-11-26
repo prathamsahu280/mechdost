@@ -325,3 +325,7 @@ T203 · 2026-11-24 · notifications · the WhatsApp approval gate is per event (
   `expect(<replacement>).toBeFocused()` (e2e `ustaad-dm.spec.ts`: Unblock after block, More after unblock, Report after
   the dialog closes, the list heading after Remove). Demo state lives in memory: assertions that depend on an earlier
   write must navigate by client links, not `page.goto` (a full load resets the sample data).
+- 2026-11-26 · D2 web Discover · Bug: the first render after a new search key still held the previous answer, so the
+  "searched" event counted the old 4 results and the old cards flashed. Root cause: the loader reset to "loading" in an
+  effect (after render). Fix: the answer remembers its key and reads as loading when the key differs (`useSocial` in
+  `components/ustaad/messages/shared.tsx`). Guard: e2e `ustaad-dm.spec.ts` asserts `ustaad_discover_searched` = [1].
