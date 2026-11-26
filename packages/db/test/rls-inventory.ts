@@ -227,6 +227,7 @@ const DELIVERY_NONE = [
   'delivery_agent_documents',
   'delivery_agent_events',
   'delivery_agent_invites',
+  'delivery_agent_payouts',
   'delivery_agents',
   'delivery_handover_codes',
   'delivery_job_events',

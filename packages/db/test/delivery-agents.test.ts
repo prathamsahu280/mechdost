@@ -439,7 +439,7 @@ describe('dispatch and the agent flow', () => {
     await w.db.execute(
       sql`update delivery_job_offers set offered_at = now() - interval '2 hours', expires_at = now() - interval '1 minute' where job_id = ${j.id} and status = 'offered'`,
     );
-    expect(await expireDueDeliveryOffers(w.t())).toBeGreaterThanOrEqual(1);
+    expect((await expireDueDeliveryOffers(w.t())).expired).toBeGreaterThanOrEqual(1);
     j = await jobOf(w, orderId);
     expect(j.status).toBe('needs_agent');
     expect(

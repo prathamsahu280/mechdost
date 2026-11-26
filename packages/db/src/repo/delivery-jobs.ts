@@ -608,8 +608,14 @@ export async function declineDeliveryOffer(
   });
 }
 
-/** The worker: offers past their time go back to the admin queue, one transaction each. */
-export async function expireDueDeliveryOffers(db: Tx, limit = 50): Promise<number> {
+/**
+ * The worker: offers past their time go back to the admin queue, one transaction each; a failing offer is reported and
+ * skipped (the rest still expire).
+ */
+export async function expireDueDeliveryOffers(
+  db: Tx,
+  limit = 50,
+): Promise<{ expired: number; failed: { offerId: string; error: unknown }[] }> {
   const due = await db
     .select({
       id: deliveryJobOffers.id,
@@ -622,43 +628,55 @@ export async function expireDueDeliveryOffers(db: Tx, limit = 50): Promise<numbe
     .where(and(eq(deliveryJobOffers.status, 'offered'), lte(deliveryJobOffers.expiresAt, sql`now()`)))
     .limit(limit);
   let n = 0;
+  const failed: { offerId: string; error: unknown }[] = [];
   for (const d of due) {
-    const done = await db.transaction(async (tx) => {
-      await lockOrder(tx, d.orderId);
-      const job = await lockJob(tx, d.jobId);
-      deliveryOfferMachine.assert('offered', 'expired', 'system');
-      const closed = await tx
-        .update(deliveryJobOffers)
-        .set({ status: 'expired', respondedAt: sql`now()` })
-        .where(
-          and(
-            eq(deliveryJobOffers.id, d.id),
-            eq(deliveryJobOffers.status, 'offered'),
-            lte(deliveryJobOffers.expiresAt, sql`now()`),
-          ),
-        )
-        .returning({ id: deliveryJobOffers.id });
-      if (closed.length === 0) return false;
-      if (job.status === 'offered')
-        await transitionJob(tx, { job, to: 'needs_agent', actor: 'system', offerId: d.id });
-      await jobEvent(tx, { job, kind: 'offer_expired', offerId: d.id, agentId: d.agentId, actor: 'system' });
-      const o = await orderInfo(tx, job.orderId);
-      await queueStaffNotice(tx, {
-        kind: 'staff.delivery_offer_expired',
-        cityId: job.cityId,
-        entityId: d.id,
-        version: 1,
-        params: { orderCode: o.code },
+    let done = false;
+    try {
+      done = await db.transaction(async (tx) => {
+        await lockOrder(tx, d.orderId);
+        const job = await lockJob(tx, d.jobId);
+        deliveryOfferMachine.assert('offered', 'expired', 'system');
+        const closed = await tx
+          .update(deliveryJobOffers)
+          .set({ status: 'expired', respondedAt: sql`now()` })
+          .where(
+            and(
+              eq(deliveryJobOffers.id, d.id),
+              eq(deliveryJobOffers.status, 'offered'),
+              lte(deliveryJobOffers.expiresAt, sql`now()`),
+            ),
+          )
+          .returning({ id: deliveryJobOffers.id });
+        if (closed.length === 0) return false;
+        if (job.status === 'offered')
+          await transitionJob(tx, { job, to: 'needs_agent', actor: 'system', offerId: d.id });
+        await jobEvent(tx, {
+          job,
+          kind: 'offer_expired',
+          offerId: d.id,
+          agentId: d.agentId,
+          actor: 'system',
+        });
+        const o = await orderInfo(tx, job.orderId);
+        await queueStaffNotice(tx, {
+          kind: 'staff.delivery_offer_expired',
+          cityId: job.cityId,
+          entityId: d.id,
+          version: 1,
+          params: { orderCode: o.code },
+        });
+        await recordServerEvent(tx, 'delivery_offer_expired', {
+          cityId: job.cityId,
+          props: { jobId: job.id, offerId: d.id, agentId: d.agentId },
+        });
+        return true;
       });
-      await recordServerEvent(tx, 'delivery_offer_expired', {
-        cityId: job.cityId,
-        props: { jobId: job.id, offerId: d.id, agentId: d.agentId },
-      });
-      return true;
-    });
+    } catch (error) {
+      failed.push({ offerId: d.id, error });
+    }
     if (done) n += 1;
   }
-  return n;
+  return { expired: n, failed };
 }
 
 /** Staff take an offered or accepted (not yet picked up) job back; it returns to the queue. */

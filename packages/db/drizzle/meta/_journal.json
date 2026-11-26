@@ -722,6 +722,13 @@
       "when": 1795713919370,
       "tag": "0105_delivery_agents",
       "breakpoints": true
+    },
+    {
+      "idx": 105,
+      "version": "7",
+      "when": 1795717064594,
+      "tag": "0106_delivery_agent_payouts",
+      "breakpoints": true
     }
   ]
 }

@@ -66,6 +66,13 @@ import { workshopPortalRoutes } from './routes/workshop-portal';
 import { roadsideRoutes } from './routes/roadside';
 import { adminRoadsideRoutes } from './routes/admin-roadside';
 import { workshopRoadsideRoutes } from './routes/workshop-roadside';
+import {
+  deliveryAdminRoutes,
+  deliveryAgentRoutes,
+  deliveryCustomerRoutes,
+  deliveryPublicRoutes,
+  deliveryShopRoutes,
+} from './routes/delivery';
 import { workshopAnalyticsRoutes } from './routes/workshop-analytics';
 import { servicePhotoRoutes } from './routes/service-photos';
 import { workshopAdminRoutes, workshopPublicRoutes } from './routes/workshops';
@@ -177,6 +184,12 @@ export function createApp(deps: AppDeps) {
   v1.route('/', roadsideRoutes(deps, sessions));
   v1.route('/', workshopRoadsideRoutes(deps, sessions));
   v1.route('/', adminRoadsideRoutes(deps, sessions));
+  // Delivery agents (spec 24).
+  v1.route('/', deliveryPublicRoutes(deps));
+  v1.route('/', deliveryAgentRoutes(deps, sessions));
+  v1.route('/', deliveryShopRoutes(deps, sessions));
+  v1.route('/', deliveryCustomerRoutes(deps, sessions));
+  v1.route('/', deliveryAdminRoutes(deps, sessions));
   v1.route('/', workshopAnalyticsRoutes(deps, sessions));
   v1.route('/', servicePhotoRoutes(deps, sessions));
   v1.route('/', productPhotoRoutes(deps, sessions));

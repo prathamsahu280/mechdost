@@ -101,6 +101,8 @@ export const PERMISSIONS = {
     'Review delivery-agent applications, invite agents, verify documents, pause or suspend agents, set shop delivery mode',
   'delivery_jobs:assign':
     'Offer delivery jobs to agents, withdraw offers, decide failed deliveries and overrides',
+  'delivery_payouts:manage':
+    'Record manual payouts to delivery agents (reversing rows for corrections) and read them',
 } as const satisfies Record<string, string>;
 
 export type Permission = keyof typeof PERMISSIONS;
@@ -222,6 +224,7 @@ export const ROLES = {
       'payments:read',
       'payouts:read',
       'payouts:manage',
+      'delivery_payouts:manage',
       'invoices:read',
       'gst:export',
       'partners:read',

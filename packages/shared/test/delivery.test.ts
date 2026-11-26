@@ -9,6 +9,7 @@ import {
   DELIVERY_RATING_REASONS,
   RATING_EDIT_HOURS,
   ratingAverageX10,
+  AGENT_PAYOUT_METHODS,
   documentNumberProblem,
   maskDocumentNumber,
   normaliseDocumentNumber,
@@ -30,6 +31,10 @@ import {
   FailureDecisionInput,
   DeliveryRatingInput,
   AgentProfile,
+  AgentPayoutInput,
+  AgentPayoutReverseInput,
+  AgentPayoutRow,
+  AgentOwnPayoutRow,
 } from '../src/delivery/api';
 import {
   DELIVERY_JOB_STATES,
@@ -393,5 +398,43 @@ describe('rider ratings (founder 2026-11-26)', () => {
     const keys = Object.keys(AgentProfile.shape);
     expect(keys).toEqual(expect.arrayContaining(['ratingAvgX10', 'ratingCount']));
     expect(keys.join(' ')).not.toMatch(/rater|customer/i);
+  });
+});
+
+describe('manual agent payouts (founder 2026-11-26: manual now, automatic later)', () => {
+  const base = {
+    agentId: crypto.randomUUID(),
+    amountPaise: 150_000,
+    periodFrom: '2026-11-01',
+    periodTo: '2026-11-15',
+    method: 'upi',
+    reference: 'UTR123456',
+    idempotencyKey: 'pay-2026-11-agent-0001',
+  };
+  it('records a positive integer-paise payment for a period with a method code', () => {
+    expect(AGENT_PAYOUT_METHODS).toEqual(['upi', 'bank_transfer', 'cash', 'other']);
+    expect(AgentPayoutInput.safeParse(base).success).toBe(true);
+    expect(AgentPayoutInput.safeParse({ ...base, amountPaise: 0 }).success).toBe(false);
+    expect(AgentPayoutInput.safeParse({ ...base, amountPaise: 10.5 }).success).toBe(false);
+    expect(AgentPayoutInput.safeParse({ ...base, periodFrom: '2026-11-16' }).success).toBe(false);
+    expect(AgentPayoutInput.safeParse({ ...base, method: 'other' }).success).toBe(false);
+    expect(AgentPayoutInput.safeParse({ ...base, method: 'other', note: 'Paid by cheque' }).success).toBe(
+      true,
+    );
+    expect(AgentPayoutInput.safeParse({ ...base, ratePaise: 100 }).success).toBe(false);
+  });
+  it('corrects only by a reversing row with a reason', () => {
+    expect(
+      AgentPayoutReverseInput.safeParse({ note: 'Wrong agent', idempotencyKey: 'rev-0001-abcdefgh' }).success,
+    ).toBe(true);
+    expect(AgentPayoutReverseInput.safeParse({ idempotencyKey: 'rev-0001-abcdefgh' }).success).toBe(false);
+  });
+  it('the agent sees their own payouts without staff notes or who recorded them', () => {
+    const keys = Object.keys(AgentOwnPayoutRow.shape);
+    expect(keys).not.toContain('recordedBy');
+    expect(keys).not.toContain('note');
+    expect(Object.keys(AgentPayoutRow.shape)).toEqual(
+      expect.arrayContaining(['kind', 'reversesId', 'recordedByName']),
+    );
   });
 });

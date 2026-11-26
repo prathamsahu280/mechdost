@@ -78,6 +78,13 @@ export interface DeliveryServerEventProps {
   /** Customer rated the agent (founder 2026-11-26); `edited` = a change within the 24 h window. */
   delivery_rated: { jobId: string; agentId: string; stars: number; reasons: string[]; edited: boolean };
   delivery_low_rating_alert: { agentId: string; avgX10: number; ratingCount: number };
+  delivery_payout_recorded: {
+    payoutId: string;
+    agentId: string;
+    kind: 'payment' | 'reversal';
+    amountPaise: number;
+    method: string;
+  };
   delivery_switch_requested: { orderCode: string; reasonCode: string };
   delivery_switch_decided: {
     orderCode: string;

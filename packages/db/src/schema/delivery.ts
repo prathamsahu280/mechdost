@@ -7,9 +7,11 @@
  */
 import { sql } from 'drizzle-orm';
 import {
+  type AnyPgColumn,
   bigint,
   boolean,
   check,
+  date,
   index,
   integer,
   pgTable,
@@ -24,6 +26,8 @@ import {
   AGENT_DOCUMENT_REJECT_REASONS,
   AGENT_DOCUMENT_STATUSES,
   AGENT_INVITE_STATES,
+  AGENT_PAYOUT_KINDS,
+  AGENT_PAYOUT_METHODS,
   AGENT_STATUS_REASONS,
   AGENT_VEHICLE_TYPES,
   DELIVERY_DECLINE_REASONS,
@@ -46,7 +50,17 @@ import {
   DELIVERY_JOB_STATES,
   DELIVERY_OFFER_STATES,
 } from '@mechdost/shared/state';
-import { citext, createdAt, encryptedCheck, geographyPoint, id, ts, updatedAt, version } from './_common';
+import {
+  citext,
+  createdAt,
+  encryptedCheck,
+  geographyPoint,
+  id,
+  paise,
+  ts,
+  updatedAt,
+  version,
+} from './_common';
 import { shops } from './catalogue';
 import { cities } from './geography';
 import { users } from './identity';
@@ -605,5 +619,51 @@ export const deliveryRatings = pgTable(
     index('delivery_ratings_agent_idx').on(t.agentId, t.createdAt),
     index().on(t.orderId),
     index().on(t.userId),
+  ],
+);
+
+/**
+ * Manual payouts to agents (founder 2026-11-26: manual now, automatic later). Append-only: staff record a payment they
+ * made outside the app; a correction is a new `reversal` row with the opposite amount (one per payment). Integer
+ * paise; the period is in IST calendar days. No rate maths (rates undecided).
+ */
+export const deliveryAgentPayouts = pgTable(
+  'delivery_agent_payouts',
+  {
+    id: id(),
+    agentId: uuid()
+      .notNull()
+      .references(() => deliveryAgents.id, { onDelete: 'restrict' }),
+    cityId: uuid()
+      .notNull()
+      .references(() => cities.id, { onDelete: 'restrict' }),
+    kind: text().notNull(),
+    amountPaise: paise().notNull(),
+    periodFrom: date({ mode: 'string' }).notNull(),
+    periodTo: date({ mode: 'string' }).notNull(),
+    method: text().notNull(),
+    reference: text(),
+    note: text(),
+    reversesId: uuid()
+      .unique()
+      .references((): AnyPgColumn => deliveryAgentPayouts.id, { onDelete: 'restrict' }),
+    idemKey: text().notNull().unique(),
+    recordedBy: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check('delivery_agent_payouts_kind_valid', sql`${t.kind} in (${inList(AGENT_PAYOUT_KINDS)})`),
+    check('delivery_agent_payouts_method_valid', sql`${t.method} in (${inList(AGENT_PAYOUT_METHODS)})`),
+    check(
+      'delivery_agent_payouts_sign',
+      sql`(${t.kind} = 'payment' and ${t.amountPaise} > 0 and ${t.reversesId} is null) or (${t.kind} = 'reversal' and ${t.amountPaise} < 0 and ${t.reversesId} is not null and ${t.note} is not null)`,
+    ),
+    check('delivery_agent_payouts_period', sql`${t.periodFrom} <= ${t.periodTo}`),
+    check('delivery_agent_payouts_other_note', sql`${t.method} <> 'other' or ${t.note} is not null`),
+    index('delivery_agent_payouts_agent_idx').on(t.agentId, t.createdAt),
+    index('delivery_agent_payouts_city_idx').on(t.cityId, t.createdAt, t.id),
+    index().on(t.recordedBy),
   ],
 );

@@ -314,3 +314,14 @@ export function documentNumberProblem(kind: AgentDocumentKind, raw: string): 'aa
 export function maskDocumentNumber(n: string): string {
   return '•'.repeat(Math.max(0, n.length - 4)) + n.slice(-4);
 }
+
+/**
+ * Manual agent payouts (founder 2026-11-26: "payouts would be manual and we can make it automatic later"): staff
+ * record each payment they made; corrections are new reversing rows. No rate maths and no transfers (rates undecided).
+ */
+export const AGENT_PAYOUT_METHODS = ['upi', 'bank_transfer', 'cash', 'other'] as const;
+export type AgentPayoutMethod = (typeof AGENT_PAYOUT_METHODS)[number];
+export const AGENT_PAYOUT_KINDS = ['payment', 'reversal'] as const;
+export type AgentPayoutKind = (typeof AGENT_PAYOUT_KINDS)[number];
+/** Largest single payout staff can record (paise): ₹2,00,000 — a typo guard, not a business limit. */
+export const AGENT_PAYOUT_MAX_PAISE = 20_000_000;

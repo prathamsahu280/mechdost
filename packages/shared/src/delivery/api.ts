@@ -12,6 +12,9 @@ import {
   AGENT_DOCUMENT_REJECT_REASONS,
   AGENT_DOCUMENT_STATUSES,
   AGENT_INVITE_STATES,
+  AGENT_PAYOUT_KINDS,
+  AGENT_PAYOUT_MAX_PAISE,
+  AGENT_PAYOUT_METHODS,
   AGENT_STATUS_REASONS,
   AGENT_VEHICLE_TYPES,
   DELIVERY_DECLINE_REASONS,
@@ -621,3 +624,77 @@ export const DeliveryKpis = z.object({
 });
 
 export { DELIVERY_RETURN_OUTCOMES };
+
+// ── manual agent payouts (founder 2026-11-26) ────────────────────────────────────────────────────────────────────
+
+const Day = z.iso.date();
+const IdemKey = z.string().regex(/^[A-Za-z0-9_-]{16,64}$/);
+
+/** `POST /v1/admin/delivery/payouts` (`delivery_payouts:manage`): one payment already made to an agent. */
+export const AgentPayoutInput = z
+  .object({
+    agentId: Uuid,
+    amountPaise: z.number().int().min(1).max(AGENT_PAYOUT_MAX_PAISE),
+    periodFrom: Day,
+    periodTo: Day,
+    method: z.enum(AGENT_PAYOUT_METHODS),
+    reference: Text(1, 80).optional(),
+    note: Note.optional(),
+    /** The same key twice records once (double click, retry). */
+    idempotencyKey: IdemKey,
+  })
+  .strict()
+  .refine((v) => v.periodFrom <= v.periodTo, { path: ['periodTo'], message: 'PERIOD_ORDER' })
+  .refine((v) => v.method !== 'other' || v.note !== undefined, { path: ['note'], message: 'NOTE_REQUIRED' });
+
+/** `POST /v1/admin/delivery/payouts/{payoutId}/reverse`: a correction is a new row with the opposite amount. */
+export const AgentPayoutReverseInput = z.object({ note: Note, idempotencyKey: IdemKey }).strict();
+
+/** Staff rows (`GET /v1/admin/delivery/payouts?agentId&from&to&format=json|csv`). */
+export const AgentPayoutRow = z.object({
+  id: Uuid,
+  agentId: Uuid,
+  agentName: z.string(),
+  kind: z.enum(AGENT_PAYOUT_KINDS),
+  amountPaise: z.number().int(),
+  periodFrom: z.string(),
+  periodTo: z.string(),
+  method: z.enum(AGENT_PAYOUT_METHODS),
+  reference: z.string().nullable(),
+  note: z.string().nullable(),
+  reversesId: Uuid.nullable(),
+  reversed: z.boolean(),
+  recordedByName: z.string().nullable(),
+  createdAt: Iso,
+});
+export const AgentPayoutPage = z.object({
+  items: z.array(AgentPayoutRow),
+  totalPaise: z.number().int(),
+  nextCursor: z.string().nullable(),
+});
+
+/** The agent's own payouts (`GET /v1/agent/payouts`): no staff note, no staff name. */
+export const AgentOwnPayoutRow = z.object({
+  id: Uuid,
+  kind: z.enum(AGENT_PAYOUT_KINDS),
+  amountPaise: z.number().int(),
+  periodFrom: z.string(),
+  periodTo: z.string(),
+  method: z.enum(AGENT_PAYOUT_METHODS),
+  reference: z.string().nullable(),
+  createdAt: Iso,
+});
+export const AgentOwnPayoutPage = z.object({
+  items: z.array(AgentOwnPayoutRow),
+  totalPaise: z.number().int(),
+});
+
+/** `GET /v1/admin/delivery/agents/{agentId}/delivered-count?from&to` (IST days): a helper for working out pay. */
+export const AgentDeliveredCount = z.object({
+  agentId: Uuid,
+  from: z.string(),
+  to: z.string(),
+  delivered: z.number().int(),
+  failedAttempts: z.number().int(),
+  paidPaise: z.number().int(),
+});
