@@ -105,6 +105,8 @@ const MUST_SHOW: Readonly<Record<string, string>> = {
   '/admin/partners': 'शर्मा ऑटो पार्ट्स',
   '/ustaad/q/UQ-RPR-2026-K7QM2D': 'Splendor Plus',
   '/ustaad/jobs': 'शंकर नगर',
+  '/ustaad/u/suresh_auto': 'सुरेश वर्मा',
+  '/ustaad/tags/splendor': '#स्प्लेंडर',
 };
 
 /** Visits each page and returns "page: words" for every page with English left on it. */
@@ -202,6 +204,15 @@ const USTAAD_PAGES = [
   '/ustaad/jobs',
   '/ustaad/jobs/UJ-RPR-2026-Q4MZ7A',
   '/ustaad/jobs/new',
+  // Feed and social screens (workstream D web).
+  '/ustaad?tab=following',
+  '/ustaad/create',
+  '/ustaad/create?story=1',
+  '/ustaad/p/0193a000-0000-7000-8000-000000001001',
+  '/ustaad/saved',
+  '/ustaad/tags/splendor',
+  '/ustaad/u/suresh_auto',
+  '/ustaad/s/aaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbbb',
 ];
 
 const report = (failures: string[]) =>

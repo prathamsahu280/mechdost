@@ -41,6 +41,9 @@ describe('locale messages', () => {
       'common.brand',
       'ustaad.labels.seg_ev', // EV: a technical token (hard rule 10)
       'ustaad.labels.work_ac', // AC: a technical token (hard rule 10)
+      'ustaad.feed.share', // WhatsApp: a brand (hard rule 10)
+      'ustaad.feed.officialBadge', // MechDost: the brand on official posts
+      'ustaad.feed.kind_document', // PDF: a file-format code
       'announcement.brand',
       'language.other',
       'language.otherName',
