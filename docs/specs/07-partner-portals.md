@@ -361,3 +361,9 @@ Separate from seller applications (their table is seller-shaped: GST status, add
 - **Shop portal:** "Ready for pickup" step and the pickup code for agent-mode orders; return code entry when an agent
   brings a parcel back; confirm or decline a "deliver it yourselves" switch (decline with reason); a "Deliver
   ourselves" request card (one pending per shop, withdraw). Self-delivery shops are unchanged.
+
+## Delivery agents in the partner portals (2026-11-27, spec 24)
+
+Shop portal for agent-mode shops (ready for pickup, pickup code, agent first name + vehicle, return code, switch
+confirm/decline, "Who delivers your orders" requests) and the delivery agent portal `/partner/delivery`: spec 24
+§ Web screens. Self-delivering shops are unchanged.

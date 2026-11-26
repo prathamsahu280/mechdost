@@ -2709,3 +2709,30 @@ A replayed payout key checks the caller's city scope before returning anything (
 target payment in scope first; one reversal per payment (UNIQUE `reverses_id`) is the idempotency, so a second
 correction returns the first one and any client key is ignored. Client payout keys may not start with `rev-`
 (422 `RESERVED_KEY`); that prefix is reserved for reversal rows. Tests: `packages/db/test/delivery-payouts.test.ts`.
+
+## 2026-11-27 — Delivery agents: web screens (web stream; spec 24 § Web screens)
+
+- **One seam, one set of screens:** `lib/delivery/types.ts` interfaces with an API client (`api-clients.ts`, loaded
+  with `import()`, Zod only there) and a browser-demo client on `demo/delivery-store.ts`. Same pattern as the Ustaad
+  messages seam.
+- **Demo-only rules:** the browser demo has no payments, so its orders count as prepaid for the delivery mode (Lead's
+  call 8 keeps COD with the shop in real builds); agents are switched on in the demo city (real default off, Lead's call
+  11); existing demo shops deliver themselves and **Gupta Lubes & Spares** (new login 9000000006) is the agent-mode shop;
+  two demo agents (Sunil 9000000005 motorcycle, Deepak 9000000007 three-wheeler) so the role-leak test has a foreign
+  job; photos are never stored in the browser (a flag); a demo sub-order is "heavy" above four items.
+- **Agent portal** is a layout frame (status strip with the online switch and a Help call, tab bar) with tab pages;
+  the job screen is a deep link `/partner/delivery/jobs/{jobId}` in 4 steps; "I'm at the shop / customer" is the
+  agent's own tap, kept in session storage. 48 px targets.
+- **Photos** are shrunk and re-encoded on the phone (canvas: no EXIF) by `lib/delivery/photo.ts` (a copy of the
+  Ustaad step, so delivery pages do not load the Ustaad UI).
+- **Invite link path** `/partners/delivery-invite/{token}`; the token is redacted in client analytics and in the
+  access log (URI + Referer). `SECRET_ROUTES` in `analytics-path.ts` is now the one list and
+  `apps/web/test/caddy-secret-paths.test.ts` fails when the Caddyfile misses one (security review 2026-11-27).
+- **Founder rulings applied (2026-11-26):** offer timeout default 15 min (demo; the shared setting default is the
+  backend's); rider ratings (customer card after delivery, admin average + count, agent own average only); manual
+  payouts (Admin → Delivery → Payouts with reversing corrections and CSV; agent Earnings with payout history); no
+  insurance or uniform screens or copy.
+- **Admin order card** shows the delivery timeline of an agent-delivered order (dynamic import).
+- **State audit:** world `delivery` and auth `agent` / `agentshop` in the harness; rows `DLV-*` in chunk E; the core
+  subset limit is 108 (one delivery case).
+- Contract gaps G1–G8 for the backend stream are listed in spec 24 § Web screens.

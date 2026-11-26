@@ -16,6 +16,7 @@ import { requestedPartCode } from '@/lib/order-parts';
 import { OrderAgain } from '@/components/account/order-again';
 import { orderTotalLines } from '@/lib/order-totals';
 import { StatusTimeline } from './status-timeline';
+import ApiCustomerDelivery, { customerDeliveryOf } from '../delivery/customer-delivery-api';
 
 /** Reviews of delivered products (spec 02 § Reviews): its own chunk, fetched only when something was delivered. */
 const WriteReviewApi = lazy(() =>
@@ -202,6 +203,8 @@ function OrderPart({
   const locale = useLocale();
   const steps = ORDER_STEPS.map((s) => ({ key: s, title: t(`stage_${s}`), detail: t(`detail_${s}`) }));
   const closed = isClosedStatus(part.status);
+  // Agent-delivered part (spec 24): stage, first name and vehicle; never the shop or the agent's phone.
+  const delivery = customerDeliveryOf(part);
   return (
     <section
       ref={highlight ? scrollIntoViewOnce : undefined}
@@ -228,6 +231,7 @@ function OrderPart({
           currentLabel={t('current')}
         />
       )}
+      {delivery ? <ApiCustomerDelivery code={part.code} view={delivery} /> : null}
       {part.deliveryCode ? (
         <section
           aria-labelledby={`code-${part.code}`}

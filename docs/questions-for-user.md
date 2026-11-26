@@ -537,3 +537,12 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
   built.
 - **Q-DA5 (2026-11-27) · Delivery agent help number.** Should agents' **Help** button call a per-city number staff can
   edit (like roadside SOS), or the company support line? **Default meanwhile:** company support line (7978776551).
+- **Q-DLV-W1 (2026-11-27, delivery web, Input):** the Help button in the agent portal calls the company support
+  number. Should each city have its own delivery help number (admin-editable, like roadside's SOS number)?
+  **Default meanwhile:** the support number.
+- **Q-DLV-W2 (2026-11-27, delivery web, Decision):** customers see the agent's first name in the delivery block.
+  Should the first name show before pickup ("Sunil will pick up your order") or only after? **Default meanwhile:** from
+  acceptance, as the contract's stages allow.
+- **Q-DLV-W3 (2026-11-27, delivery web, Decision):** manual payouts are recorded by staff with
+  `delivery_agents:manage`. Should finance (role `finance`) record them instead, with ops only reading?
+  **Default meanwhile:** whoever the backend's payout routes allow (the screen hides nothing by role).

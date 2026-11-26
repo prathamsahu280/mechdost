@@ -31,6 +31,21 @@ This file is the single source of truth for **where the build is right now**. It
 - **Next (lead):** merge; apply 0110 before deploying; Gate 0 G0-1/G0-2 per the plan; revert the bypass commit within
   48 h of the run (Q-SIM-3).
 
+## 2026-11-27 — delivery agents web screens (branch worktree-agent-a36d3c6ca1dc56788, not pushed, no migration)
+
+- Built against the contract (63c68d0c) with a client seam (API + browser demo): public apply form + partners card +
+  footer link + status lookup; invite acceptance `/partners/delivery-invite/{token}`; agent portal
+  `/partner/delivery` (online switch, offers with countdown, job in 4 steps with codes + camera photos, couldn't
+  deliver, give up, history, profile with documents, rating and Earnings/payouts); shop portal (ready for pickup,
+  pickup code, agent name + vehicle, return code, switch confirm/decline, delivery-mode card); customer delivery block
+  - rating; Admin → Delivery (jobs queue, applications + invites, agents, payouts, shop requests, settings) and the
+    order timeline. Founder rulings (15-min timer, ratings, manual payouts, no insurance/uniform) and the security
+    review's Caddy redaction done.
+- Docs: spec 24 § Web screens (contract gaps G1–G8), decisions 2026-11-27, demo runbook logins, specs 07/08/12
+  pointers, Q-DLV-W1…3. Verified: a11y specialist fixes in; prod build ok; delivery e2e 7+1 pass (desktop+mobile),
+  Hindi crawl delivery pages pass; storefront JS unchanged (≤ 179.4 KB gz). **Next:** lead merges with the backend branch; backend closes G1–G8; the API-mode screens
+  need a run against the real API once the routes exist.
+
 ## 2026-11-26 (night) — delivery agents backend (branch worktree-agent-aa4e4463a8d74ac65, not pushed)
 
 - **Step 1 done: contract** ("feat(delivery): contract"): job/offer/agent machines, order machine

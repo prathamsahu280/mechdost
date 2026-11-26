@@ -20,6 +20,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           namespaces={[
             'portal',
             'roadside',
+            // Admin → Delivery (spec 24) and the delivery timeline on order details.
+            'deliveryAdmin',
+            'deliveryApply',
+            'delivery',
             // Admin → Applications → trade accounts and fleet enquiries (audience entry design 2026-11-22).
             'business',
             'account',

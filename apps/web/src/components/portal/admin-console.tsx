@@ -41,6 +41,7 @@ import {
   Users,
   Wrench,
   type LucideIcon,
+  Bike,
 } from 'lucide-react';
 import { useState, type ReactNode, type SyntheticEvent } from 'react';
 import { useCenterCurrent } from '@/lib/use-center-current';
@@ -138,6 +139,16 @@ const AdminRoadside = dynamic(() => import('./admin-roadside').then((m) => m.Adm
   ssr: false,
   loading: () => <div className="skeleton h-64 rounded-card" aria-hidden="true" />,
 });
+/** The delivery jobs of an agent-delivered order (spec 24), loaded only where an order shows it. */
+const OrderDeliveryTimeline = dynamic(
+  () => import('../delivery/admin-delivery').then((m) => m.OrderDeliveryTimeline),
+  { ssr: false },
+);
+/** Admin → Delivery (spec 24): one set of screens for the demo store and the API, loaded on demand. */
+const AdminDelivery = dynamic(() => import('../delivery/admin-delivery').then((m) => m.AdminDelivery), {
+  ssr: false,
+  loading: () => <div className="skeleton h-64 rounded-card" aria-hidden="true" />,
+});
 const ServiceRoutingApi = dynamic(() => import('./admin-services-api').then((m) => m.ServiceRoutingApi), {
   ssr: false,
   loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
@@ -215,6 +226,7 @@ const SECTION_ICON: Record<AdminSection, LucideIcon> = {
   refunds: RotateCcw,
   services: Wrench,
   roadside: Siren,
+  delivery: Bike,
   quotes: MessagesSquare,
   applications: Handshake,
   partners: Store,
@@ -263,6 +275,7 @@ export function AdminConsole({
       {section === 'orders' ? AUTH_MODE === 'firebase' ? <OrderRoutingApi /> : <OrderRouting /> : null}
       {section === 'services' ? AUTH_MODE === 'firebase' ? <ServiceRoutingApi /> : <ServiceRouting /> : null}
       {section === 'roadside' ? <AdminRoadside /> : null}
+      {section === 'delivery' ? <AdminDelivery /> : null}
       {section === 'quotes' ? AUTH_MODE === 'firebase' ? <QuoteDeskApi /> : <QuoteDesk /> : null}
       {section === 'applications' ? <Applications /> : null}
       {section === 'reviews' ? AUTH_MODE === 'firebase' ? <AdminReviewsApi /> : <Reviews /> : null}
@@ -758,6 +771,9 @@ function RoutingCard({ order, now }: { order: DemoOrder; now: number }) {
           <span aria-hidden="true">✅ </span>
           {t('acceptedBy', { shop: shopName(order.shop.slug) })}
         </p>
+      ) : null}
+      {order.stage >= ORDER_STAGES.indexOf('packed') ? (
+        <OrderDeliveryTimeline orderCode={order.code} />
       ) : null}
       {order.delivery && !order.delivery.confirmedAt ? <DeliveryOverride order={order} /> : null}
       {order.delivery?.method === 'override' ? (

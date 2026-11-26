@@ -72,7 +72,13 @@ const CODE_LENGTH = 6;
 const ANNOUNCE_BUSY_AFTER_MS = 700;
 /** Firebase reset links work once and expire after an hour; the demo link after 30 minutes. */
 const RESET_LINK_MINUTES = REAL ? 60 : 30;
-const ROLE_EMOJI: Record<DemoRole, string> = { customer: '🙋', shop: '🏪', workshop: '🔧', admin: '🛡️' };
+const ROLE_EMOJI: Record<DemoRole, string> = {
+  customer: '🙋',
+  shop: '🏪',
+  workshop: '🔧',
+  admin: '🛡️',
+  delivery_agent: '🛵',
+};
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 /** The API's origin for a connection hint; a relative or missing base has none. */
 function apiOrigin(): string | null {

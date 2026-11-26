@@ -39,8 +39,29 @@ export default async function OrderPage({ params }: Props) {
         <ClientMessages
           namespaces={
             DATA_MODE === 'api'
-              ? ['order', 'cart', 'demo', 'reviews', 'supportThread', 'refunds', 'savings']
-              : ['order', 'cart', 'demo', 'savings']
+              ? [
+                  'order',
+                  'cart',
+                  'demo',
+                  'reviews',
+                  'supportThread',
+                  'refunds',
+                  'savings',
+                  'delivery.customerStage',
+                  'delivery.vehicle',
+                  'delivery.failReason',
+                  'deliveryCustomer',
+                ]
+              : [
+                  'order',
+                  'cart',
+                  'demo',
+                  'savings',
+                  'delivery.customerStage',
+                  'delivery.vehicle',
+                  'delivery.failReason',
+                  'deliveryCustomer',
+                ]
           }
         >
           <Suspense>

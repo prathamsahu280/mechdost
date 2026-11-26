@@ -558,3 +558,10 @@ agent / offered / active / failed, timers, ranked suggestions, offer, withdraw, 
 audited overrides, switch an order to the shop), Shop delivery mode (requests, approve or reject, set directly),
 Payouts (record, reverse, list, CSV; `delivery_payouts:manage`, finance and super admin), KPIs. The `delivery.*`
 settings show under Admin → Settings → Partners until the section has its own settings screen.
+
+## Delivery (2026-11-27, spec 24)
+
+Operations group → **Delivery**: jobs queue with ranked agent suggestions and timers, applications and invites,
+agents (status with history, documents with an audited view, rating), manual payouts (record, correct with a
+reversing entry, CSV), shop delivery-mode requests and the per-city settings (real builds: Settings → Partners). The
+order card shows the delivery timeline. Spec 24 § Web screens.

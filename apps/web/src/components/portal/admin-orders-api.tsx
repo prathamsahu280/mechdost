@@ -1,4 +1,5 @@
 'use client';
+import dynamic from 'next/dynamic';
 
 import {
   OrderChanged,
@@ -37,6 +38,12 @@ import { portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { offerLeftParams } from '@/lib/offer-time';
 import { useNoticeRefresh } from '../notices/use-notice-refresh';
 import { useApiList, type ApiList } from './use-api-list';
+
+/** The delivery jobs of an agent-delivered order (spec 24), loaded only where an order shows it. */
+const OrderDeliveryTimeline = dynamic(
+  () => import('../delivery/admin-delivery').then((m) => m.OrderDeliveryTimeline),
+  { ssr: false },
+);
 
 const POLL_MS = 30_000;
 /** Why nobody can be offered the order (QA 2026-11-16, bug 8): the `portal` key per reason. */
@@ -276,6 +283,9 @@ function RoutingCard({
       ) : null}
       {stage === 'rejected' || stage === 'cancelled' ? (
         <p className="mt-3 rounded-lg bg-pill p-3 text-sm text-muted">{t(`queue_${stage}`)}</p>
+      ) : null}
+      {['packed', 'ready_for_pickup', 'out_for_delivery', 'delivered', 'returned'].includes(stage) ? (
+        <OrderDeliveryTimeline orderCode={item.code} />
       ) : null}
       {can.override ? (
         <DeliveryOverride

@@ -28,6 +28,8 @@ export const REAL_ADMIN_SECTIONS = [
   'refunds',
   'services',
   'roadside',
+  // Delivery agents (spec 24, 2026-11-27).
+  'delivery',
   'quotes',
   'applications',
   'partners',

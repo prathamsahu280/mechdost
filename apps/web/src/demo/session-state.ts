@@ -13,7 +13,7 @@ export const DEMO_OTP = '123456';
 /** Password of every seeded demo login until it is changed on this device (docs/runbooks/demo.md). */
 export const DEMO_PASSWORD = 'Raipur@2026';
 
-export type DemoRole = 'customer' | 'shop' | 'workshop' | 'admin';
+export type DemoRole = 'customer' | 'shop' | 'workshop' | 'admin' | 'delivery_agent';
 export type { VehicleType } from '@mechdost/shared/vehicles';
 export type Fuel = 'petrol' | 'diesel' | 'cng' | 'ev';
 
@@ -133,6 +133,43 @@ export const SEEDED_ACCOUNTS: readonly DemoAccount[] = [
     vehicles: [],
     addresses: [],
     createdAt: '2026-08-01T10:00:00.000Z',
+  },
+  {
+    id: 'demo-shop-3',
+    phone: '9000000006',
+    name: 'Rajesh Gupta',
+    email: 'desk@guptalubes.example',
+    role: 'shop',
+    partner: 'gupta-lubes-spares',
+    language: 'en',
+    vehicles: [],
+    addresses: [],
+    createdAt: '2026-08-07T10:00:00.000Z',
+  },
+  // Delivery agents (spec 24): Sunil rides a motorcycle, Deepak a three-wheeler (demo/delivery-store.ts).
+  {
+    id: 'demo-agent',
+    phone: '9000000005',
+    name: 'Sunil Yadav',
+    email: 'sunil.yadav@example.com',
+    role: 'delivery_agent',
+    partner: null,
+    language: 'en',
+    vehicles: [],
+    addresses: [],
+    createdAt: '2026-11-20T09:00:00.000Z',
+  },
+  {
+    id: 'demo-agent-2',
+    phone: '9000000007',
+    name: 'Deepak Sahu',
+    email: 'deepak.sahu@example.com',
+    role: 'delivery_agent',
+    partner: null,
+    language: 'en',
+    vehicles: [],
+    addresses: [],
+    createdAt: '2026-11-20T09:00:00.000Z',
   },
   {
     id: 'demo-admin',
@@ -260,6 +297,8 @@ export function homeFor(role: DemoRole): string {
       return '/partner/workshop';
     case 'admin':
       return '/admin';
+    case 'delivery_agent':
+      return '/partner/delivery';
     default:
       return '/account';
   }

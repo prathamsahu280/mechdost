@@ -343,3 +343,9 @@ Client events for the portal screens come with the screens.
 `delivery_shop_return_confirmed`, `delivery_shop_switch_answered`, `delivery_shop_mode_requested`,
 `delivery_rating_submitted`, `delivery_admin_action` (schemas: `packages/shared/src/delivery/client-events.ts`).
 Codes, counts and booleans only; never a typed code, phone, name or address.
+
+## Delivery agents web screens (2026-11-27, spec 24)
+
+Client `click` ids for every agent, shop, customer and admin delivery action (list in spec 24 § Web screens →
+Analytics) and `code_submitted {kind:'delivery'}` for pickup, delivery and return codes. No PII: ids, codes and
+paths only (the invite token is redacted). Typed events in the shared catalogue: contract gap G6.

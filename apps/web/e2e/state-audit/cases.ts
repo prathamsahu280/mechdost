@@ -15,8 +15,9 @@ import {
   type ComponentDef,
 } from './model.ts';
 
-export type Role = 'out' | 'customer' | 'shop' | 'workshop' | 'admin';
-export type World = 'empty' | 'cart' | 'busy';
+export type Role = 'out' | 'customer' | 'shop' | 'workshop' | 'admin' | 'agent' | 'agentshop';
+/** `delivery`: the busy world plus agent-delivered orders and jobs (spec 24). */
+export type World = 'empty' | 'cart' | 'busy' | 'delivery';
 
 export interface AuditCase {
   /** Stable id, e.g. `SHOP-CARD-017`; every test title starts with it. */
@@ -54,7 +55,7 @@ export const CHUNKS: Readonly<Record<string, string>> = {
   B: 'SHOP-,STEP-',
   C: 'PDP-,CMP-,CART-,CHK-',
   D: 'ORD-,SR-,RSA-,QT-,ACC-,WS-,OFFERS-,PTN-,BIZ-,SUP-,LOGIN-,POL-',
-  E: 'PRT-,ADM-',
+  E: 'PRT-,ADM-,DLV-',
   F: 'NAV-',
   // Real-sign-in screens: run with playwright.state-audit-api.config.ts (mocked API), not with the demo config.
   G: 'API-',
@@ -148,6 +149,8 @@ const AUTH_TEXT: Readonly<Record<Role, string>> = {
   shop: 'shop partner',
   workshop: 'workshop partner',
   admin: 'admin',
+  agent: 'delivery agent',
+  agentshop: 'agent-mode shop',
 };
 
 /** One-line state description used in test titles, checklist lines and failure reports. */

@@ -25,6 +25,7 @@ import { ShopPerformanceApi } from './shop-performance-api';
 import { ShopStaffPerformanceLazy } from './shop-staff-performance-lazy';
 import { ShopPhotosApi } from './shop-photos-api';
 import { ShopTeamApi } from './shop-team-api';
+import { ShopDeliveryModeCard } from '../delivery/shop-delivery';
 
 type Load = { kind: 'loading' } | { kind: 'error'; code: string } | { kind: 'ok'; shops: MyShopDto[] };
 
@@ -159,6 +160,7 @@ function ShopHeader({ shop: s, onChanged }: { shop: MyShopDto; onChanged: () => 
           <p className="mt-1 text-xs text-muted">{t('shops_api_meDeliveryNote')}</p>
         </section>
       </div>
+      <ShopDeliveryModeCard shopId={s.id} isOwner={s.isOwner} />
       {s.isOwner ? <ShopOffersApi shopId={s.id} /> : null}
       <ShopCsvCard shopId={s.id} />
       {s.isOwner ? <ShopPerformanceApi shopId={s.id} /> : null}

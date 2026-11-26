@@ -577,3 +577,19 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
 - L-DA4 · 2026-11-26 · state machines · A new order state (`ready_for_pickup`, `returned`) was missing from the
   "closed/dead" status lists in other features → when adding an order state, grep every status list (coupon dead-order
   checks, analytics live parts, routing closed view, support-deletion done list) and add it in the same change. · active
+- L-DLV1 · 2026-11-27 · seams/web · Building screens before the backend: one interface per audience (`lib/delivery/types.ts`)
+  with an API client (Zod DTOs, loaded by `import()`) and a demo client on the browser store let one set of screens
+  serve both builds and test the whole flow in the demo; the DTO types come from the contract with `import type` +
+  `Out<S> = S extends { parse(...): infer O }` (no Zod in the web package). → Use this seam for any feature whose API
+  lands in parallel; list every place the shared schema strips a field the screen needs as a contract gap. · active
+- L-DLV2 · 2026-11-27 · security/logs · A new token route redacted in client analytics was still logged by Caddy (lead's
+  security review). → `SECRET_ROUTES` in `analytics-path.ts` is the one list; `test/caddy-secret-paths.test.ts` fails when
+  the Caddyfile (URI + Referer) misses one. Add every bearer-token path to both in the same change. · active
+- L-DLV3 · 2026-11-27 · a11y · Six specialists on the rider UI agreed: an auto-submitting code with a required photo
+  below it errors on the wrong field (put the photo first and hold the submit with `ready`), a status line inside a card
+  that the action removes never speaks (lift it to the list), opened forms need `useDisclosureFocus` + a
+  `data-disclosure-field`, row buttons need the row in their name, and codes shown big need a spaced sr-only reading.
+  → Build these in from the start for any portal list with in-place forms. · active
+- L-DLV4 · 2026-11-27 · state audit · New component rows inserted in the middle of `COMPONENTS` made the merged checklist
+  disagree with the model (order). → Append new rows at the end of `COMPONENTS`, add new `world`/`auth` values to
+  `cases.ts` (`World`, `Role`, `AUTH_TEXT`) and the harness, and add the prefix to a chunk in `CHUNKS`. · active

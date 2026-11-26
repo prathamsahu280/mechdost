@@ -25,9 +25,11 @@
 			# Query strings (reset codes, tokens) and path-embedded secrets (partner invite tokens: /partners/invite/<token>,
 			# /hi/partners/invite/<token>, /v1/partner-invites/<token>) and the Ustaad garage-owner link
 			# (/ustaad-attest/<token>, /v1/ustaad-attest/<token>, 2026-11-26) and the share teaser (/ustaad/s/<token>,
-			# /v1/ustaad/s/<token>, 2026-11-26) never reach the log.
-			request>uri regexp (/partners/invite/|/partner-invites/|/ustaad-attest/|/ustaad/s/|\?)[^?]* ${1}REDACTED
-			request>headers>Referer regexp (/partners/invite/|/partner-invites/|/ustaad-attest/|/ustaad/s/|\?)[^?]* ${1}REDACTED
+			# /v1/ustaad/s/<token>, 2026-11-26) and the delivery-agent invite (/partners/delivery-invite/<token>,
+			# /v1/delivery-invites/<token>, spec 24, 2026-11-27) never reach the log. Every route in SECRET_ROUTES
+			# (packages/shared/src/analytics-path.ts) must be here: apps/web/test/caddy-secret-paths.test.ts checks it.
+			request>uri regexp (/partners/invite/|/partners/delivery-invite/|/partner-invites/|/delivery-invites/|/ustaad-attest/|/ustaad/s/|\?)[^?]* ${1}REDACTED
+			request>headers>Referer regexp (/partners/invite/|/partners/delivery-invite/|/partner-invites/|/delivery-invites/|/ustaad-attest/|/ustaad/s/|\?)[^?]* ${1}REDACTED
 			request>tls delete
 			resp_headers delete
 		}

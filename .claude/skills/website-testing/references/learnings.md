@@ -381,3 +381,11 @@ ustaad-console.test.ts` (held answer/question/comment/post/message, NCII re-hold
   block "security review 2026-11-26: standing and documents". · active
 
 T-DA2 · 2026-11-27 · API/OpenAPI · a shared path-param schema (.openapi({ param: { name: 'code' } })) reused as a query field broke /openapi.json (500 'Conflicting names for parameter') while every route test passed · a schema with param metadata names one parameter only; query fields get their own schema · test/platform.test.ts 'publishes the OpenAPI document'
+
+- T-DLV1 · 2026-11-27 · guards · new portal code tripped four guard tests at once: `tel:` links must be template
+  literals (`href={`tel:${…}`}`, no-reload guard), an sr-only file input must sit in a `.file-pick` label, every in-place
+  panel needs `data-disclosure-trigger` + `data-panel-cancel`, and a new admin section must be listed in
+  `model-api.ts` `REAL_ADMIN_SECTIONS` · run `test/{no-reload-navigation,file-picker-focus,panel-dismiss,state-audit-*}`
+  after adding any portal screen.
+- T-DLV2 · 2026-11-27 · e2e · several always-mounted `role=alert`/`status` lines per screen make
+  `getByRole('alert')` ambiguous · filter by text: `getByRole('alert').filter({ hasText: … })`.

@@ -9,6 +9,7 @@ import { expect, type Page, type TestInfo } from '@playwright/test';
 import { CONSENT_NOTICE_VERSION } from '@mechdost/shared/privacy';
 import { latinOffenders } from '../../test/hindi-allowlist';
 import { busyWorld } from '../fixtures/demo-world';
+import { deliveryWorld } from '../fixtures/delivery-world';
 import { describeCase, type AuditCase } from './cases.ts';
 import {
   applyStress,
@@ -51,6 +52,9 @@ const ACCOUNTS: Readonly<Record<string, string | null>> = {
   shop: 'demo-shop',
   workshop: 'demo-workshop',
   admin: 'demo-admin',
+  // Delivery agents (spec 24): Sunil the agent, and Gupta Lubes & Spares (the agent-mode demo shop).
+  agent: 'demo-agent',
+  agentshop: 'demo-shop-3',
 };
 /** The state matrix's "cart" world: a battery and two engine oils in the cart, two oils in the compare list. */
 const CART_WORLD = {
@@ -159,6 +163,10 @@ export function seedFor(c: AuditCase, now: number): Record<string, string> {
   if (c.state.data !== undefined)
     seed['mechdost-demo-accounts'] = JSON.stringify([customerWithSavedData(c.state.data)]);
   if (c.world === 'busy') for (const [k, v] of Object.entries(busyWorld(now))) seed[k] = JSON.stringify(v);
+  // The busy world plus agent-delivered orders and jobs (`fixtures/delivery-world.ts`).
+  if (c.world === 'delivery')
+    for (const [k, v] of Object.entries({ ...busyWorld(now), ...deliveryWorld(now) }))
+      seed[k] = JSON.stringify(v);
   if (c.world === 'cart') {
     seed['mechdost-cart'] = JSON.stringify(CART_WORLD.cart);
     seed['mechdost-compare'] = JSON.stringify(CART_WORLD.compare);

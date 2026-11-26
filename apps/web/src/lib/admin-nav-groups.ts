@@ -20,7 +20,7 @@ export const ADMIN_NAV_GROUPS: readonly AdminNavGroup[] = [
   {
     id: 'operations',
     heading: 'operations',
-    sections: ['orders', 'refunds', 'services', 'roadside', 'quotes', 'support'],
+    sections: ['orders', 'delivery', 'refunds', 'services', 'roadside', 'quotes', 'support'],
   },
   { id: 'catalogue', heading: 'catalogue', sections: ['catalogue', 'coupons', 'coins', 'reviews'] },
   { id: 'people', heading: 'people', sections: ['customers', 'partners', 'applications', 'staff'] },

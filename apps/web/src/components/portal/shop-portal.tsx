@@ -30,6 +30,8 @@ import { useNow } from './use-now';
 import { portalCard, portalPrimary, portalQuiet, portalField } from './portal-styles';
 import { offerLeftParams } from '@/lib/offer-time';
 import { GstInvoiceLine } from '@/components/commerce/gst-invoice-line';
+import { useDemoShopDelivery } from '@/components/delivery/demo-shop-delivery';
+import { ShopDeliveryModeCard, ShopDeliveryPanel } from '@/components/delivery/shop-delivery';
 
 /** Real sign-in: the portal reads and acts through the API; demo builds never load it (Stream C2, 2026-11-14). */
 const ShopOrdersApi = dynamic(() => import('./shop-portal-api').then((m) => m.ShopOrdersApi), {
@@ -105,6 +107,8 @@ function ShopOrders({ shopSlug }: { shopSlug: string }) {
       ) : null}
 
       <ShopAgreement shopSlug={shopSlug} />
+
+      <ShopDeliveryModeCard shopId={shopSlug} isOwner />
 
       <section aria-labelledby="offered-title">
         <h2 id="offered-title" className="font-heading text-xl font-extrabold text-ink">
@@ -322,13 +326,23 @@ function ActiveOrder({ order, shopSlug }: { order: DemoOrder; shopSlug: string }
   const t = useTranslations('portal');
   const o = useTranslations('order');
   const stage = ORDER_STAGES[order.stage] ?? 'confirmed';
+  // Agent-delivered order (spec 24): from packed on, MechDost's delivery partner takes it (ready → pickup code).
+  const delivery = useDemoShopDelivery(order.code, shopSlug);
   return (
     <article className={portalCard}>
       <p className="mb-2 inline-flex rounded-pill bg-success-bg px-3 py-1 text-xs font-extrabold text-success">
         {o(`stage_${stage}`)}
       </p>
       <OrderLines order={order} showBusiness />
-      {stage === 'shipped' ? (
+      {delivery?.mode === 'agent' && stage !== 'confirmed' ? (
+        <ShopDeliveryPanel
+          orderCode={order.code}
+          orderVersion={0}
+          delivery={delivery}
+          shopSlug={shopSlug}
+          onChanged={() => undefined}
+        />
+      ) : stage === 'shipped' ? (
         <DeliveryCodeForm order={order} shopSlug={shopSlug} />
       ) : (
         <button
