@@ -9179,8 +9179,8 @@
     "pickupCodeTitle": "Pickup code",
     "pickupCodeHint": "Tell this code to the delivery partner only when you hand over the parcel.",
     "waitingAgent": "Finding a delivery partner",
-    "agentComing": "{name} ({vehicle}) is coming to pick it up.",
-    "pickedUp": "Picked up by {name} ({vehicle}).",
+    "agentComing": "<n>{name}</n> ({vehicle}) is coming to pick it up.",
+    "pickedUp": "Picked up by <n>{name}</n> ({vehicle}).",
     "outWithAgent": "Out for delivery with the delivery partner.",
     "pickupLocked": "Too many wrong codes. MechDost support will confirm the pickup.",
     "returningTitle": "Parcel coming back",
@@ -9243,7 +9243,9 @@
     "rateEdit": "Change rating",
     "rateFailed": "Could not save your rating. Try again.",
     "rateKeep": "Keep my rating",
-    "rateNoteRequiredLabel": "Note (needed for Other)"
+    "rateNoteRequiredLabel": "Note (needed for Other)",
+    "stage_agent_assigned": "<n>{name}</n> will pick up your order",
+    "stage_picked_up": "Picked up by <n>{name}</n> ({vehicle})"
   },
   "deliveryApply": {
     "title": "Apply as a delivery agent",

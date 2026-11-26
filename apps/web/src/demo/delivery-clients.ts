@@ -45,7 +45,7 @@ export function demoAgentClient(accountId: string, locale: string): AgentClient 
     },
     jobs: (view) => {
       d.sweepExpiredOffers();
-      return Promise.resolve(page(d.agentJobs(agentId(), view)));
+      return Promise.resolve(page(d.agentJobs(agentId(), view, locale)));
     },
     job: (jobId) => {
       d.sweepExpiredOffers();

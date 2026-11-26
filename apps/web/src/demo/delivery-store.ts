@@ -1478,7 +1478,7 @@ export function agentProfile(agentId: string) {
   };
 }
 
-function card(s: DeliveryState, j: DemoJob, agentId: string | null) {
+function card(s: DeliveryState, j: DemoJob, agentId: string | null, locale = 'en') {
   const o = findOrder(j.orderCode);
   const shop = findShop(j.shopSlug);
   const agent = s.agents.find((x) => x.id === agentId);
@@ -1493,7 +1493,7 @@ function card(s: DeliveryState, j: DemoJob, agentId: string | null) {
     itemCount: o?.lines.reduce((n, l) => n + l.qty, 0) ?? 0,
     loadClass: o ? loadOf(o) : ('light' as LoadClass),
     weightKg: null,
-    shopArea: shop?.area ?? null,
+    shopArea: shop ? localizeArea(shop.area, locale) : null,
     customerPincode: o?.customer.pincode ?? '',
     distanceM: agent && shop ? distanceM(agent, shop) : null,
     attempt: j.attempt,
@@ -1501,14 +1501,16 @@ function card(s: DeliveryState, j: DemoJob, agentId: string | null) {
   };
 }
 export type AgentJobView = 'offers' | 'active' | 'done';
-export function agentJobs(agentId: string, view: AgentJobView) {
+export function agentJobs(agentId: string, view: AgentJobView, locale = 'en') {
   const s = deliveryState();
   const list = s.jobs.filter((j) => {
     if (view === 'offers') return j.status === 'offered' && openOffer(j)?.agentId === agentId;
     if (view === 'active') return j.agentId === agentId && HELD.includes(j.status);
     return j.offers.some((o) => o.agentId === agentId && o.status === 'accepted') && !isActiveJob(j);
   });
-  return list.toSorted((a, b) => b.statusAt.localeCompare(a.statusAt)).map((j) => card(s, j, agentId));
+  return list
+    .toSorted((a, b) => b.statusAt.localeCompare(a.statusAt))
+    .map((j) => card(s, j, agentId, locale));
 }
 
 /** One job for this agent, contacts by stage (Lead's call 6); null (= 404) for a job never offered to them. */
@@ -1548,7 +1550,7 @@ export function agentJobDetail(agentId: string, jobId: string, locale: string) {
             phone: o.customer.phone,
           };
   return {
-    ...card(s, j, agentId),
+    ...card(s, j, agentId, locale),
     items: (o?.lines ?? []).map((l) => ({
       name: `${l.brand} ${productNameFor(l.slug, l.name, locale)}`,
       quantity: l.qty,

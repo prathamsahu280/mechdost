@@ -9179,8 +9179,8 @@
     "pickupCodeTitle": "पिकअप कोड",
     "pickupCodeHint": "यह कोड डिलीवरी पार्टनर को तभी बताएँ जब पार्सल सौंपें।",
     "waitingAgent": "डिलीवरी पार्टनर ढूँढ रहे हैं",
-    "agentComing": "{name} ({vehicle}) सामान लेने आ रहे हैं।",
-    "pickedUp": "{name} ({vehicle}) सामान ले गए।",
+    "agentComing": "<n>{name}</n> ({vehicle}) सामान लेने आ रहे हैं।",
+    "pickedUp": "<n>{name}</n> ({vehicle}) सामान ले गए।",
     "outWithAgent": "डिलीवरी पार्टनर के साथ डिलीवरी पर।",
     "pickupLocked": "बहुत बार गलत कोड। MechDost सपोर्ट पिकअप पक्का करेगा।",
     "returningTitle": "पार्सल वापस आ रहा है",
@@ -9243,7 +9243,9 @@
     "rateEdit": "रेटिंग बदलें",
     "rateFailed": "रेटिंग सेव नहीं हुई। फिर कोशिश करें।",
     "rateKeep": "मेरी रेटिंग रहने दें",
-    "rateNoteRequiredLabel": "नोट (\"अन्य\" के लिए ज़रूरी)"
+    "rateNoteRequiredLabel": "नोट (\"अन्य\" के लिए ज़रूरी)",
+    "stage_agent_assigned": "<n>{name}</n> आपका ऑर्डर पिकअप करेंगे",
+    "stage_picked_up": "<n>{name}</n> ({vehicle}) ने पिकअप किया"
   },
   "deliveryApply": {
     "title": "डिलीवरी एजेंट के लिए आवेदन",
@@ -9377,7 +9379,7 @@
     "ev_other": "अपडेट",
     "actor_delivery_agent": "एजेंट",
     "actor_shop": "दुकान",
-    "actor_admin": "MechDost",
+    "actor_admin": "MechDost टीम",
     "actor_system": "अपने आप",
     "offersTitle": "ऑफ़र",
     "photos": "फ़ोटो",

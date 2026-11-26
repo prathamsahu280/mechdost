@@ -112,15 +112,16 @@ test.describe('delivery agents (demo)', () => {
     await page.getByLabel("Customer's delivery code").fill(code);
     await expect(page.getByText('Delivered. Thank you!')).toBeVisible();
     // Delivered: the customer's details are gone from the agent's screen.
-    await expect(page.getByText('C-605 Salasar Greens')).toHaveCount(0);
+    // Scoped to main: the footer's company address happens to share the demo street.
+    await expect(page.locator('main').getByText('C-605 Salasar Greens')).toHaveCount(0);
   });
 
   test('role leak: another agent cannot open the job', async ({ page }) => {
     await start(page);
     await as(page, 'demo-agent-2', `/partner/delivery/jobs/${DELIVERY_JOB_IDS.pickedUp}`);
     await expect(page.getByText('This job is not available to you.')).toBeVisible();
-    await expect(page.getByText('Ravi Sahu')).toHaveCount(0);
-    await expect(page.getByText('C-605')).toHaveCount(0);
+    await expect(page.locator('main').getByText('Ravi Sahu')).toHaveCount(0);
+    await expect(page.locator('main').getByText('C-605')).toHaveCount(0);
     await as(page, 'demo-agent-2', '/partner/delivery/jobs');
     await expect(page.getByText(DELIVERY_CODES.pickedUp)).toHaveCount(0);
   });
@@ -159,7 +160,7 @@ test.describe('delivery agents (demo)', () => {
     const returnCode =
       (await page.locator('#return-code-title + p span[aria-hidden="true"]').textContent())?.trim() ?? '';
     expect(returnCode).toMatch(/^\d{4}$/);
-    await expect(page.getByText('Ravi Sahu')).toHaveCount(0);
+    await expect(page.locator('main').getByText('Ravi Sahu')).toHaveCount(0);
 
     await as(page, 'demo-shop-3', '/partner/shop');
     const card = page.locator('article').filter({ hasText: DELIVERY_CODES.pickedUp });

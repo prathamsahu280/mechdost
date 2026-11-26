@@ -37,9 +37,9 @@ export function CustomerDeliveryCard({
   const vehicle = view.vehicleType ? v(view.vehicleType) : '';
   const stageText =
     view.stage === 'agent_assigned'
-      ? s('agent_assigned', { name })
+      ? t.rich('stage_agent_assigned', { name, n: (c) => <span data-user-content>{c}</span> })
       : view.stage === 'picked_up'
-        ? s('picked_up', { name, vehicle })
+        ? t.rich('stage_picked_up', { name, vehicle, n: (c) => <span data-user-content>{c}</span> })
         : s(view.stage);
   const tone =
     view.stage === 'delivered'

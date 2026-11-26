@@ -104,7 +104,11 @@ export function ShopDeliveryPanel({
         <div className="rounded-card border border-accent-button/50 bg-accent-soft p-4">
           <p role="status" className="text-base font-bold text-accent-soft-text">
             {status === 'accepted' && delivery.agentFirstName
-              ? t('agentComing', { name: delivery.agentFirstName, vehicle })
+              ? t.rich('agentComing', {
+                  name: delivery.agentFirstName,
+                  vehicle,
+                  n: (c) => <span data-user-content>{c}</span>,
+                })
               : t('waitingAgent')}
           </p>
           {delivery.pickupLocked ? (
@@ -126,7 +130,11 @@ export function ShopDeliveryPanel({
       {status === 'picked_up' || status === 'failed' ? (
         <p role="status" className="text-sm font-bold text-ink">
           {delivery.agentFirstName
-            ? t('pickedUp', { name: delivery.agentFirstName, vehicle })
+            ? t.rich('pickedUp', {
+                name: delivery.agentFirstName,
+                vehicle,
+                n: (c) => <span data-user-content>{c}</span>,
+              })
             : t('outWithAgent')}
         </p>
       ) : null}
