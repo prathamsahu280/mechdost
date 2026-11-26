@@ -443,3 +443,13 @@ meanwhile: unset, so Discover shows no distance bands.
 - **Q-U-D2 (2026-11-26, Ustaad share links, Input):** set `USTAAD_SHARE_SECRET` on the server (`openssl rand -hex 24`,
   `docs/runbooks/deploy.md`). **Default meanwhile:** unset, so "Share on WhatsApp" answers "not available right now"
   (503); everything else in the feed works.
+
+### Q-U-JS1: the Ustaad pages' JavaScript limit (2026-11-26, default: per-route ceilings at the measured size)
+
+Spec 23 § 17 sets 150 KB (gzip, first load) for the Ustaad pages. Measured: React + Next.js + the site's shared frame
+(header, consent banner, assistant, sign-in state) are about 160 KB on every page before any Ustaad code, so 150 KB
+cannot be met as the site is built. Options: (a) give the Ustaad Network its own root layout (a structural move of
+every storefront route into a route group; the network then loads without the shop header), (b) slim the whole
+site's shared frame, (c) accept a higher limit for Ustaad pages (for example 185 KB) with per-route ceilings so they
+cannot grow. Default meanwhile: (c), each Ustaad route capped at its measured size + 1 KB in `measure-js`, and the
+storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data shows slow phones struggle.
