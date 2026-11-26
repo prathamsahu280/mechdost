@@ -36,6 +36,8 @@ export const ALL_ADMIN_SECTIONS = [
   'services',
   // Roadside assistance (spec 22, 2026-11-24): dispatch queue, cancel and the per-city settings.
   'roadside',
+  // Delivery agents (spec 24, 2026-11-26): jobs queue, applications, agents, shop requests, settings; demo and API.
+  'delivery',
   'quotes',
   'applications',
   'partners',

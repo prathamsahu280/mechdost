@@ -3338,7 +3338,9 @@
     "api_set_delivery_max_load_bike_kg": "Most a motorcycle carries (kg)",
     "api_set_delivery_max_load_scooter_kg": "Most a scooter carries (kg)",
     "api_set_delivery_max_load_three_wheeler_kg": "Most a three-wheeler carries (kg)",
-    "api_set_delivery_max_load_goods_vehicle_kg": "Most a goods vehicle carries (kg)"
+    "api_set_delivery_max_load_goods_vehicle_kg": "Most a goods vehicle carries (kg)",
+    "nav_delivery": "Delivery",
+    "adminHeader_delivery": "Delivery agents: jobs waiting for an agent, applications, agents, shop requests and the city settings."
   },
   "shopGiveUp": {
     "action": "Can't fulfil this order",
@@ -9453,6 +9455,8 @@
     "reasonRequired": "Choose a reason.",
     "noteRequired": "Write a short note.",
     "note": "Note",
-    "loadMore": "Show more"
+    "loadMore": "Show more",
+    "on": "On",
+    "off": "Off"
   }
 }

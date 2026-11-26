@@ -3338,7 +3338,9 @@
     "api_set_delivery_max_load_bike_kg": "मोटरसाइकिल पर अधिकतम वज़न (kg)",
     "api_set_delivery_max_load_scooter_kg": "स्कूटर पर अधिकतम वज़न (kg)",
     "api_set_delivery_max_load_three_wheeler_kg": "तिपहिया पर अधिकतम वज़न (kg)",
-    "api_set_delivery_max_load_goods_vehicle_kg": "मालवाहक गाड़ी पर अधिकतम वज़न (kg)"
+    "api_set_delivery_max_load_goods_vehicle_kg": "मालवाहक गाड़ी पर अधिकतम वज़न (kg)",
+    "nav_delivery": "डिलीवरी",
+    "adminHeader_delivery": "डिलीवरी एजेंट: एजेंट का इंतज़ार करते काम, आवेदन, एजेंट, दुकानों के अनुरोध और शहर की सेटिंग्स।"
   },
   "shopGiveUp": {
     "action": "यह ऑर्डर पूरा नहीं कर सकते",
@@ -9453,6 +9455,8 @@
     "reasonRequired": "कारण चुनें।",
     "noteRequired": "छोटा सा नोट लिखें।",
     "note": "नोट",
-    "loadMore": "और दिखाएँ"
+    "loadMore": "और दिखाएँ",
+    "on": "चालू",
+    "off": "बंद"
   }
 }
