@@ -338,13 +338,13 @@ describe('badgesToAward (§ 9.3)', () => {
     { code: 'founding_ustaad', rule: { schema_version: 1, kind: 'founding' } },
     {
       code: 'battery_expert',
-      rule: { schema_version: 1, kind: 'best_answers_with_tag', tag: 'battery', min: 10 },
+      rule: { schema_version: 1, kind: 'best_answers_with_tag', tag: 'battery', count: 10 },
     },
     {
       code: 'two_wheeler_doctor',
-      rule: { schema_version: 1, kind: 'helpful_answers_in_segment', segment: 'two_wheeler', min: 25 },
+      rule: { schema_version: 1, kind: 'helpful_answers_in_segment', segment: 'two_wheeler', count: 25 },
     },
-    { code: 'helping_hand', rule: { schema_version: 1, kind: 'apprentice_answers_in_week', min: 5 } },
+    { code: 'helping_hand', rule: { schema_version: 1, kind: 'apprentice_answers_in_week', count: 5 } },
     { code: 'broken', rule: { schema_version: 1, kind: 'unknown_kind' } },
   ];
   const facts = {

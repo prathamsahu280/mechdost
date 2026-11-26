@@ -5,7 +5,8 @@
  */
 import { z } from 'zod';
 
-const min = z.number().int().min(1).max(100_000);
+/** Same shape as the admin DTO (`dto/admin.ts` BadgeRuleDto, workstream G1): thresholds are `count`. */
+const count = z.number().int().min(1).max(10_000);
 const v1 = z.literal(1);
 
 export const BadgeRuleDto = z.discriminatedUnion('kind', [
@@ -13,15 +14,15 @@ export const BadgeRuleDto = z.discriminatedUnion('kind', [
     schema_version: v1,
     kind: z.literal('best_answers_with_tag'),
     tag: z.string().min(1).max(60),
-    min,
+    count,
   }),
   z.object({
     schema_version: v1,
     kind: z.literal('helpful_answers_in_segment'),
     segment: z.string().min(1).max(40),
-    min,
+    count,
   }),
-  z.object({ schema_version: v1, kind: z.literal('apprentice_answers_in_week'), min }),
+  z.object({ schema_version: v1, kind: z.literal('apprentice_answers_in_week'), count }),
   z.object({ schema_version: v1, kind: z.literal('first_post') }),
   z.object({ schema_version: v1, kind: z.literal('first_question') }),
   z.object({ schema_version: v1, kind: z.literal('first_answer') }),
@@ -50,11 +51,11 @@ function met(r: BadgeRule, f: BadgeFacts): boolean {
     case 'founding':
       return f.founding;
     case 'best_answers_with_tag':
-      return (f.bestAnswersByTag[r.tag] ?? 0) >= r.min;
+      return (f.bestAnswersByTag[r.tag] ?? 0) >= r.count;
     case 'helpful_answers_in_segment':
-      return (f.helpfulBySegment[r.segment] ?? 0) >= r.min;
+      return (f.helpfulBySegment[r.segment] ?? 0) >= r.count;
     case 'apprentice_answers_in_week':
-      return f.apprenticeAnswersThisWeek >= r.min;
+      return f.apprenticeAnswersThisWeek >= r.count;
   }
 }
 

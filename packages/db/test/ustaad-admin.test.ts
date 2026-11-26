@@ -55,6 +55,12 @@ beforeAll(async () => {
   await syncRbacCatalogue(t());
   f = await seedServiceFixture(db);
   await db.insert(s.ustaadReachCities).values({ cityId: f.raipur });
+  // Migration `ustaad_identity_seed` (workstream B) seeds level rules, badges, tutorial cards and coach-marks; these
+  // CRUD tests start from empty tables.
+  await db.delete(s.ustaadLevelRules);
+  await db.delete(s.ustaadBadges);
+  await db.delete(s.ustaadTutorialCards);
+  await db.delete(s.ustaadCoachmarks);
 });
 
 afterAll(async () => {

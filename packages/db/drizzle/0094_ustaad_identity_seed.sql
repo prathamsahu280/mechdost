@@ -14,10 +14,10 @@ ON CONFLICT (level, rule_group) DO NOTHING;
 --> statement-breakpoint
 INSERT INTO public.ustaad_badges (code, name_en, name_hi, rule_en, rule_hi, icon, kind, rule, active)
 VALUES
-  ('battery_expert', 'Battery expert', 'बैटरी एक्सपर्ट', '10 best answers on battery questions', 'बैटरी सवालों पर 10 बेस्ट जवाब', 'battery', 'speciality', '{"schema_version":1,"kind":"best_answers_with_tag","tag":"battery","min":10}', true),
-  ('two_wheeler_doctor', 'Two-wheeler doctor', 'टू-व्हीलर डॉक्टर', '25 helpful answers on two-wheelers', 'टू-व्हीलर पर 25 मददगार जवाब', 'bike', 'speciality', '{"schema_version":1,"kind":"helpful_answers_in_segment","segment":"two_wheeler","min":25}', true),
-  ('helping_hand', 'Helping hand', 'मददगार हाथ', '5 answers to Chhotus in a week', 'एक हफ़्ते में छोटुओं को 5 जवाब', 'hand', 'fun', '{"schema_version":1,"kind":"apprentice_answers_in_week","min":5}', true),
-  ('wiring_wizard', 'Wiring wizard', 'वायरिंग जादूगर', '10 best answers on electrical questions', 'बिजली के सवालों पर 10 बेस्ट जवाब', 'bolt', 'speciality', '{"schema_version":1,"kind":"best_answers_with_tag","tag":"electrical","min":10}', false),
+  ('battery_expert', 'Battery expert', 'बैटरी एक्सपर्ट', '10 best answers on battery questions', 'बैटरी सवालों पर 10 बेस्ट जवाब', 'battery', 'speciality', '{"schema_version":1,"kind":"best_answers_with_tag","tag":"battery","count":10}', true),
+  ('two_wheeler_doctor', 'Two-wheeler doctor', 'टू-व्हीलर डॉक्टर', '25 helpful answers on two-wheelers', 'टू-व्हीलर पर 25 मददगार जवाब', 'bike', 'speciality', '{"schema_version":1,"kind":"helpful_answers_in_segment","segment":"two_wheeler","count":25}', true),
+  ('helping_hand', 'Helping hand', 'मददगार हाथ', '5 answers to Chhotus in a week', 'एक हफ़्ते में छोटुओं को 5 जवाब', 'hand', 'fun', '{"schema_version":1,"kind":"apprentice_answers_in_week","count":5}', true),
+  ('wiring_wizard', 'Wiring wizard', 'वायरिंग जादूगर', '10 best answers on electrical questions', 'बिजली के सवालों पर 10 बेस्ट जवाब', 'bolt', 'speciality', '{"schema_version":1,"kind":"best_answers_with_tag","tag":"electrical","count":10}', false),
   ('first_post', 'First post', 'पहली पोस्ट', 'Shared your first work post', 'अपनी पहली काम की पोस्ट डाली', 'camera', 'fun', '{"schema_version":1,"kind":"first_post"}', true),
   ('pehla_sawaal', 'Pehla sawaal', 'पहला सवाल', 'Asked your first question', 'अपना पहला सवाल पूछा', 'question', 'fun', '{"schema_version":1,"kind":"first_question"}', true),
   ('pehla_jawab', 'Pehla jawab', 'पहला जवाब', 'Gave your first answer', 'अपना पहला जवाब दिया', 'reply', 'fun', '{"schema_version":1,"kind":"first_answer"}', true),

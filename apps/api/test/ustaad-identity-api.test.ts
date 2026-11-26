@@ -145,10 +145,10 @@ describe('member onboarding and verification', () => {
       (await call(mechanic, 'PUT', '/ustaad/onboarding', { event: 'card', card: 1, extra: 1 })).status,
     ).toBe(400);
     expect((await call(mechanic, 'POST', '/ustaad/onboarding/reset')).body).toMatchObject({ skipped: false });
-    expect((await call(mechanic, 'GET', '/ustaad/tutorial')).body).toMatchObject({
-      cards: [],
-      coachmarks: [],
-    });
+    // Seeded by migration ustaad_identity_seed: six cards and six coach-marks, in the language asked for.
+    const tut = await call(mechanic, 'GET', '/ustaad/tutorial?lang=en');
+    expect((tut.body.cards as { title: string }[]).map((c) => c.title)[0]).toBe('Ask by voice');
+    expect((tut.body.coachmarks as unknown[]).length).toBe(6);
   });
 
   it('join with a method opened a request; staff approve once (city scoped), a double approve is 409', async () => {
