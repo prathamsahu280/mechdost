@@ -2530,3 +2530,12 @@ and WhatsApp, PAN + licence + RC (no Aadhaar), vehicle type, photo at pickup and
 pay, COD and dispatch mode decided later. Lead's calls (in the design): admin-assigns dispatch, COD stays with the shop,
 per-order mode, documents after sign-in, per-city switch off by default, load by total weight, failed-delivery refund
 rule (founder accepted). Q217 answered.
+
+## 2026-11-26 — Founder: manual payouts, COD by approval, mechanics-first focus
+
+- Delivery agent payouts are **manual** for now (staff record each payment; agent sees history); automatic later.
+- **Cash on delivery only on request**: available to customers the admin approves, or to verified Ustaad mechanics —
+  not to everyone; admin-configurable (`checkout.cod_eligibility`). Supersedes "COD for every verified customer"
+  (spec 03).
+- **Positioning:** "our website would target mechanics and workshops a lot more than normal users" — direction
+  recorded; what changes (home, navigation, copy, SEO, onboarding, pricing) is being discussed with the founder.
