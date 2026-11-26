@@ -264,6 +264,24 @@ export async function findPasswordAccount(db: Tx, ident: SignInIdentifier): Prom
 }
 
 /**
+ * A security event with no entity transaction of its own (e.g. `security.turnstile_bypassed`, decision 2026-11-27).
+ * Callers pass ids and codes only — never a phone, email or token.
+ */
+export async function recordSecurityAudit(
+  db: Tx,
+  input: { action: string; userId: string | null; entity: string; entityId: string | null; after: unknown },
+): Promise<void> {
+  await db.insert(auditLog).values({
+    actorUserId: input.userId,
+    actorRole: input.userId ? 'user' : 'anonymous',
+    action: input.action,
+    entity: input.entity,
+    entityId: input.entityId,
+    after: input.after ?? null,
+  });
+}
+
+/**
  * Sign-in audit (spec 01): failures and locks, with the account when one was named — never the phone or email
  * that was typed (DPDP minimisation; the identifier may belong to someone else).
  */

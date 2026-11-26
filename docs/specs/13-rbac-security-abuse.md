@@ -65,6 +65,16 @@ Every `/v1` request (`apps/api/src/middleware/api-rate-limit.ts`) counts against
 
 Shared carrier IPs (CGNAT) therefore do not block signed-in customers at the guest limit; only the flood guard applies to the address as a whole. Who can change them: `settings:write` (super admin; an operations manager can read), no city overrides; each change is validated against the bounds and the flood-not-below-guest rule (422 `SETTING_RANGE`), compare-and-set, and audited (`setting.saved` in `audit_log`). A change reaches every API instance within 45 seconds. The route-level per-account cap `RATE_RULES.apiPerUser` (120/min, rule name `api_route_user`) and the sign-in, OTP, password-reset, payment and other specific rules are unchanged. Tests: `apps/api/test/api-rate-limits.test.ts`, `apps/api/test/admin-settings.test.ts`, `packages/shared/test/api-limit-settings.test.ts`, `apps/web/test/admin-api-limits-view.test.ts`.
 
+### Turnstile QA bypass (TEMPORARY, decision 2026-11-27)
+
+For the Ustaad QA simulation only (founder ruling R3): `QA_TURNSTILE_BYPASS_IDS` (keyed HMAC-SHA256 of `user:<uuid>`,
+`phone:+91…` or `email:…`, never raw), `QA_TURNSTILE_BYPASS_KEY` (≥ 32 chars) and `QA_TURNSTILE_BYPASS_UNTIL` (≤ 12 h
+ahead; malformed or longer → the API does not start; past → off). Off unless all three are set. The subject is
+derived by the server (verified session user id on `/v1/ustaad/join`; the normalised typed identifier on
+`/v1/auth/password`); no client flag exists. Each use writes one `audit_log` row `security.turnstile_bypassed`; if
+that insert fails there is no bypass. Never on guest forms, partner applications, support, password reset or the attest
+page. Rate limits unchanged. Tests: `apps/api/test/qa-turnstile-bypass.test.ts`. Runbook: deploy.md § 7.1.
+
 ## Acceptance tests
 
 RBAC matrix (every endpoint × role) generated from the permission table; cross-tenant 404s; four-eyes rejection; rate limits 429 with headers; Turnstile verification mocked; CSP header present; webhook signature failure 400; audit row per mutation.

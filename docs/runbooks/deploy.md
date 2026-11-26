@@ -284,6 +284,36 @@ When a separate production Supabase project exists, migrations move into the pip
 - **Removing the deploy key:** delete its line (`github-actions-deploy@mechdost`) from `~/.ssh/authorized_keys` on the server, then delete the `DEPLOY_SSH_KEY` secret of the `production` environment.
 - **Server patching:** security updates install automatically (unattended-upgrades). Reboot for kernel updates when convenient: `sudo reboot`. The containers come back by themselves (`restart: unless-stopped`).
 
+### 7.1 QA Turnstile bypass (TEMPORARY, decision 2026-11-27)
+
+A narrow, time-boxed bypass of the "are you human" check for the QA test accounts only (founder ruling R3, plan
+`docs/qa/ustaad-simulation-plan-2026-11-27.md` § 2.2). Code: `apps/api/src/auth/qa-turnstile-bypass.ts`, one call in
+`apps/api/src/server.ts`. Applies to password sign-in (`/v1/auth/password`) and Ustaad join (`/v1/ustaad/join`) only;
+rate limits, lockouts, passwords, the staff phone code and permissions are unchanged.
+
+**Build the allowlist (lead, on the repo machine; never paste raw values into a log, issue or chat):** pick a fresh key
+of at least 32 characters. Put the subjects in a local file outside the repo, one per line, in the canonical form the
+API hashes: `phone:+91XXXXXXXXXX` (E.164), `email:<lower-case address>` or `user:<users.id uuid>`. Then:
+
+```
+QA_KEY='<key>' node -e "const c=require('node:crypto');const f=require('node:fs');console.log(f.readFileSync(process.argv[1],'utf8').split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>c.createHmac('sha256',process.env.QA_KEY).update(l).digest('hex')).join(','))" <path-to-local-file>
+```
+
+This is exactly `qaBypassHash` (a unit test pins the canonical form). At most 30 entries. Each account needs its
+phone line (sign-in) and its `user:` line (join).
+
+**Turn on:** in `/opt/mechdost/.env` set `QA_TURNSTILE_BYPASS_IDS=<hashes>`, `QA_TURNSTILE_BYPASS_KEY=<key>`,
+`QA_TURNSTILE_BYPASS_UNTIL=<start + 6 h, ISO-8601 UTC ending in Z>` (more than 12 h ahead, or a malformed value, and the
+API refuses to start: the old container keeps serving until you fix it). Restart the API
+(`docker compose --profile api up -d api` in `/opt/mechdost`, or the normal deploy) and confirm the log line
+`qa_turnstile_bypass_on {until, entries}`. Each use logs `qa_turnstile_bypass_used` and writes one `audit_log` row
+`security.turnstile_bypassed` (route, subject kind, user id or the first 8 hex of the identifier hash, request id).
+
+**Turn off:** delete the three lines, restart the API, confirm `qa_turnstile_bypass_off`. After `UNTIL` it is off by
+itself (a restart then also logs `off`). Record both times in the run's settings ledger. Revert the code within 48 h
+unless the founder keeps it dormant (Q-SIM-3): delete the file, unwrap the verifier in `server.ts`, drop the three
+names from `.env.example`, `deploy/env.server.example` and this section (the `verifyFor` interface can stay).
+
 ## 8. Troubleshooting
 
 | Symptom                                                                    | Likely cause                                                                                                                                           | Fix                                                                                                                                                                                                                   |

@@ -49,7 +49,9 @@ export const JoinDto = z
       .string()
       .regex(/^[A-Z0-9-]{6,40}$/)
       .optional(),
-    turnstileToken: z.string().min(10).max(4096),
+    // Optional on the wire: a missing token fails the check (400 TURNSTILE_FAILED) unless the temporary QA bypass
+    // (decision 2026-11-27) recognises the signed-in account.
+    turnstileToken: z.string().min(10).max(4096).optional(),
     /** Which entry point the join came from (analytics only): `/ustaad/join` or `/partners/apply/mechanic`. */
     via: z.enum(['ustaad', 'partners_apply']).optional(),
   })

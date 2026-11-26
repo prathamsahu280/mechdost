@@ -2539,3 +2539,25 @@ rule (founder accepted). Q217 answered.
   (spec 03).
 - **Positioning:** "our website would target mechanics and workshops a lot more than normal users" — direction
   recorded; founder 2026-11-26: "we will do that later, we keep the design as it is for now" — no design change yet.
+
+## 2026-11-27 — QA Turnstile bypass (time-boxed)
+
+Founder ruling R3 (2026-11-27) for the Ustaad QA simulation (`docs/qa/ustaad-simulation-plan-2026-11-27.md` § 2.2):
+
+- **What:** `withQaTurnstileBypass` (`apps/api/src/auth/qa-turnstile-bypass.ts`) wraps the Turnstile verifier; routes
+  call `verifyFor({ token, ip, route, subject })`. Only password sign-in and Ustaad join name a subject; guest forms,
+  partner applications, support, password reset and the attest page keep plain `verify`.
+- **Env (server env file only):** `QA_TURNSTILE_BYPASS_IDS` (≤ 30 keyed HMAC-SHA256 hashes), `QA_TURNSTILE_BYPASS_KEY`
+  (≥ 32 chars), `QA_TURNSTILE_BYPASS_UNTIL` (ISO UTC). Off unless all three are set; empty in `.env.example`.
+- **Deviations from the plan text (lead brief + advisor):** (1) one list of keyed hashes for user ids **and**
+  identifiers (`user:` / `phone:` / `email:` domain-separated) instead of raw user ids — nothing raw in config;
+  (2) a window in the **past** means off with a log line rather than a refusal to start, so a restart after the run
+  cannot take the API down; malformed or > 12 h ahead still refuses to start; (3) if the audit row cannot be written
+  the bypass does not apply (fail closed).
+- **Audit:** one `audit_log` row `security.turnstile_bypassed` per use (route, subject kind, user id or 8-hex hash
+  prefix, request id); start-up logs `qa_turnstile_bypass_on|off` with counts only.
+- **Unchanged:** per-IP and per-identifier limits, lockouts, passwords, staff phone code, permissions.
+- **`JoinDto.turnstileToken` is now optional on the wire** (a missing token still fails with 400 `TURNSTILE_FAILED`
+  unless the bypass recognises the signed-in account).
+- **Removal:** delete the file, unwrap in `server.ts`, drop the three env names (runbook deploy.md § 7.1); revert within
+  48 h of the run unless the founder keeps it dormant (Q-SIM-3).

@@ -139,6 +139,9 @@ export class FakeTurnstile implements TurnstileVerifier {
   verify(token: string): Promise<boolean> {
     return Promise.resolve(this.human.includes(token));
   }
+  verifyFor(input: { token?: string | undefined }): Promise<boolean> {
+    return Promise.resolve(input.token !== undefined && this.human.includes(input.token));
+  }
 }
 
 let sharedDb: TestDb | undefined;
