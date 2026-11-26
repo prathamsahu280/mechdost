@@ -25,7 +25,17 @@ export interface Figures {
   refunded: boolean;
 }
 
-export function OrderSavingsPanel({ figures, override }: { figures: Figures; override: string | null }) {
+export function OrderSavingsPanel({
+  figures,
+  override,
+  headingLevel = 2,
+}: {
+  figures: Figures;
+  override: string | null;
+  /** 2 on the real-mode order page; 3 inside the demo page's "Status" section (accessibility review). */
+  headingLevel?: 2 | 3;
+}) {
+  const Heading = headingLevel === 3 ? 'h3' : 'h2';
   const t = useTranslations('savings');
   const seen = useRef('');
   const state = figures.status === 'final' ? 'final' : 'estimate';
@@ -48,9 +58,11 @@ export function OrderSavingsPanel({ figures, override }: { figures: Figures; ove
   const rows = savingsRows(figures);
   return (
     <section aria-labelledby="order-savings" className="rounded-card bg-success-bg p-5 tab:p-6">
-      <h2 id="order-savings" className="font-heading text-base font-extrabold text-success">
-        {headline}
-      </h2>
+      {/* A short, stable heading; the sentence with the amount is the text under it (accessibility review). */}
+      <Heading id="order-savings" className="text-sm font-bold text-ink">
+        {t('title')}
+      </Heading>
+      <p className="mt-1 font-heading text-base font-extrabold text-success">{headline}</p>
       {rows.length > 0 ? (
         <dl className="mt-3 max-w-md space-y-1.5 text-sm">
           {rows.map((r) => (

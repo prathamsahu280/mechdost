@@ -24,5 +24,5 @@ export function OrderSavingsDemo({ order, override }: { order: DemoOrder; overri
     }),
     refunded: false,
   };
-  return shown(figures) ? <OrderSavingsPanel figures={figures} override={override} /> : null;
+  return shown(figures) ? <OrderSavingsPanel figures={figures} override={override} headingLevel={3} /> : null;
 }

@@ -58,16 +58,12 @@ test('the order page shows an estimate on the way and the saving once delivered;
   page,
 }) => {
   const code = await placeOrder(page);
-  await expect(
-    page.getByRole('heading', { name: "You save about ₹120 vs the maker's printed MRP on this order" }),
-  ).toBeVisible();
+  await expect(page.getByText("You save about ₹120 vs the maker's printed MRP on this order")).toBeVisible();
   await expect(page.getByText('Estimate. The final figure is set after delivery.')).toBeVisible();
 
   await markDelivered(page, code);
   await page.reload();
-  await expect(
-    page.getByRole('heading', { name: "You saved ₹120 vs the maker's printed MRP on this order" }),
-  ).toBeVisible();
+  await expect(page.getByText("You saved ₹120 vs the maker's printed MRP on this order")).toBeVisible();
   await expect(page.getByText('Estimate. The final figure is set after delivery.')).toHaveCount(0);
 
   await page.goto('/login?next=%2Faccount');

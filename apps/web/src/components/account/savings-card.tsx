@@ -52,16 +52,29 @@ export function SavingsCard({ override }: { override: string | null }) {
   const locale = useLocale();
   const prefix = locale === 'hi' ? '/hi' : '';
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
+  const [retrying, setRetrying] = useState(false);
   const tracked = useRef(false);
+  const sectionRef = useRef<HTMLElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
 
   const refresh = useCallback(async () => {
-    setLoad({ kind: 'loading' });
     setLoad(await loadFigures(locale).catch((): Load => ({ kind: 'error' })));
   }, [locale]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  // Retry keeps the button mounted (accessibility review: focus must not drop to the page); once the answer is in,
+  // focus moves to the card heading if it was inside the card, so the new content is read from its start.
+  async function retry() {
+    if (retrying) return;
+    setRetrying(true);
+    const hadFocus = sectionRef.current?.contains(document.activeElement) ?? false;
+    await refresh();
+    setRetrying(false);
+    if (hadFocus) headingRef.current?.focus();
+  }
 
   useEffect(() => {
     if (load.kind !== 'ok' || tracked.current) return;
@@ -78,16 +91,19 @@ export function SavingsCard({ override }: { override: string | null }) {
   if (load.kind === 'loading') return <div className="skeleton h-44 rounded-card" aria-hidden="true" />;
 
   return (
-    <section aria-labelledby="savings-card-title" className={card}>
-      <h2 id="savings-card-title" className="text-sm font-bold text-muted">
+    <section ref={sectionRef} aria-labelledby="savings-card-title" aria-busy={retrying} className={card}>
+      <h2 id="savings-card-title" ref={headingRef} tabIndex={-1} className="text-sm font-bold text-muted">
         {t('title')}
       </h2>
       {load.kind === 'error' ? (
         <div className="mt-2">
-          <p className="text-ink">{t('error')}</p>
+          <p role="status" className="text-ink">
+            {t('error')}
+          </p>
           <button
             type="button"
-            onClick={() => void refresh()}
+            aria-disabled={retrying}
+            onClick={() => void retry()}
             className="press mt-3 inline-flex min-h-11 items-center rounded-button border border-input-border px-4 text-sm font-bold text-ink hover:bg-pill"
           >
             {t('retry')}
@@ -152,7 +168,7 @@ function Figures({
         <details className="mt-2">
           <summary
             data-track="savings_breakdown"
-            className="inline-flex min-h-11 cursor-pointer items-center text-sm font-bold text-accent-soft-text underline underline-offset-4"
+            className="min-h-11 cursor-pointer py-3 text-sm font-bold text-accent-soft-text underline underline-offset-4 hover:text-ink"
           >
             {t('breakdown')}
           </summary>
