@@ -10,9 +10,8 @@
  * - Restricted members and members whose perks are frozen (SR-2) can neither post nor apply.
  * - The phone number is never part of any view here (SR-34); `sharePhone` is a flag the employer UI reads.
  */
+import { ustaadPublicCode } from '@mechdost/shared/ustaad/public-code';
 import { and, desc, eq, inArray, lt, or, sql } from 'drizzle-orm';
-import { randomInt } from 'node:crypto';
-import { istYear } from '@mechdost/shared/time';
 import {
   ustaadApplicationMachine,
   ustaadJobMachine,
@@ -86,13 +85,9 @@ export interface UstaadJobView {
 }
 
 const CODE_RETRIES = 3;
-const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-
-/** `UJ-{CITY}-{YYYY}-{6 base32}`: RFC 4648 letters to match the `ustaad_jobs_code_format` CHECK (A-Z, 2-7). */
+/** `UJ-{CITY}-{YYYY}-{6 base32}`: the shared Ustaad code helper (RFC 4648, matches `ustaad_jobs_code_format`). */
 function jobCode(cityCode: string, at: Date): string {
-  let tail = '';
-  for (let i = 0; i < 6; i += 1) tail += B32.charAt(randomInt(0, 32));
-  return `UJ-${cityCode}-${String(istYear(at))}-${tail}`;
+  return ustaadPublicCode('UJ', cityCode, at);
 }
 
 async function memberGate(
