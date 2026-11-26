@@ -10,7 +10,7 @@
  * - Clocks: which clock a report gets and its due time from the admin settings; the overdue stage (50 % / 100 %).
  * - Four-eyes: which actions need a second staff member.
  */
-import { normaliseDigits } from './local';
+import { hasPayAppAsk, hasUpiId, normaliseDigits } from './local';
 import type { REPORT_CLOCKS, UstaadReportReason, UstaadReportSource } from './codes';
 
 export type UstaadClock = (typeof REPORT_CLOCKS)[number];
@@ -59,8 +59,16 @@ export const ILLEGAL_MODIFICATION_PHRASES: readonly string[] = [
 const OTP_ASK =
   /\b(otp|o\.t\.p|one time password|verification code)\b.{0,30}\b(share|bhej|bata|batao|send|de do|dedo|do|dijiye|batana|forward)\b|\b(share|bhej|bata|batao|send|de do|dedo|forward)\b.{0,30}\b(otp|o\.t\.p)\b|ओटीपी/i;
 
-/** An Indian mobile number: optional +91 / 0, then 10 digits starting 6–9 (spaces or dashes allowed between). */
-const PHONE = /(?<![0-9])(?:(?:\+|00)?91[\s-]?|0)?[6-9](?:[\s-]?[0-9]){9}(?![0-9])/;
+/**
+ * An Indian mobile number written the way people write phone numbers: optional +91 / 0, then 10 digits starting 6–9,
+ * contiguous or split by spaces (`98765 43210`). Blocked in public text.
+ */
+const PHONE = /(?<![0-9-])(?:(?:\+|00)?91[\s]?|0)?[6-9](?:\s?[0-9]){9}(?![0-9]|-[0-9])/;
+/**
+ * A dashed 10-digit run (`98765-43210`) is also how part numbers look (`94109-12000`), so it only holds the item for
+ * review (never blocks); a longer dashed code (`96100-62010-00`) does not match at all.
+ */
+const PHONE_LIKE = /(?<![0-9-])[6-9](?:-?[0-9]){9}(?![0-9]|-[0-9])/;
 
 /**
  * Staff views never show a phone number (SR-38): every phone-like run and e-mail address becomes `[phone]` /
@@ -69,21 +77,32 @@ const PHONE = /(?<![0-9])(?:(?:\+|00)?91[\s-]?|0)?[6-9](?:[\s-]?[0-9]){9}(?![0-9
 export function maskContactsInText(text: string): string {
   return normaliseDigits(text)
     .replace(new RegExp(PHONE.source, 'g'), '[phone]')
+    .replace(new RegExp(PHONE_LIKE.source, 'g'), '[phone]')
     .replace(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi, '[email]');
 }
 
-/** A registration plate (CG04AB1234, CG 04 A 1234) or a Bharat-series plate (22 BH 1234 AA). */
-const PLATE =
-  /(?<![a-z0-9])(?:[a-z]{2}[\s-]?[0-9]{1,2}[\s-]?[a-z]{1,3}[\s-]?[0-9]{4}|[0-9]{2}[\s-]?bh[\s-]?[0-9]{4}[\s-]?[a-z]{1,2})(?![a-z0-9])/;
+/** Registration state codes (MoRTH), so ordinary words ("rs 50 se 2000") never look like a plate. */
+const STATE_CODES =
+  'an|ap|ar|as|br|cg|ch|dd|dl|dn|ga|gj|hp|hr|jh|jk|ka|kl|la|ld|mh|ml|mn|mp|mz|nl|od|or|pb|py|rj|sk|tn|tr|ts|uk|up|wb';
+/**
+ * A registration plate written as one token (`CG04AB1234`, `cg04ab1234`) or spaced in capitals (`CG 04 AB 1234`), or
+ * a Bharat-series plate (`22 BH 1234 AA`). Spaced lower-case text ("ka 97 cc 2018 model") is ordinary Hinglish.
+ */
+const PLATE_COMPACT = new RegExp(
+  `(?<![a-z0-9])(?:${STATE_CODES})[0-9]{1,2}[a-z]{1,3}[0-9]{4}(?![a-z0-9])`,
+  'i',
+);
+const PLATE_SPACED_UPPER = new RegExp(
+  `(?<![A-Za-z0-9])(?:${STATE_CODES.toUpperCase()})[\\s-][0-9]{1,2}[\\s-][A-Z]{1,3}[\\s-][0-9]{4}(?![A-Za-z0-9])`,
+);
+const PLATE_BH = /(?<![a-z0-9])[0-9]{2}[\s-]?bh[\s-]?[0-9]{4}[\s-]?[a-z]{1,2}(?![a-z0-9])/i;
 
-/** A link: a scheme, `www.`, or a bare domain with a common top-level domain. */
+/**
+ * A link: a scheme, `www.`, or a bare domain with a top-level domain people rarely type by accident (`hai.me`,
+ * `kal.co` are ordinary Hinglish typos, so `.me`, `.co`, `.top`, `.live`, `.club`, `.biz` count only with a scheme).
+ */
 const LINK =
-  /\bhttps?:\/\/|\bwww\.|(?<![@a-z0-9-])[a-z0-9][a-z0-9-]{0,62}\.(?:com|in|net|org|xyz|io|me|co|app|link|ly|info|biz|site|online|shop|top|live|club|store)(?![a-z0-9-])/;
-
-const UPI_PSP =
-  /[a-z0-9._-]{2,}@(?:ybl|ibl|axl|okaxis|oksbi|okhdfcbank|okicici|paytm|pthdfc|ptsbi|ptyes|ptaxis|upi|apl|yapl|rapl|fbl|ikwik|freecharge|airtel|axisbank|icici|sbi|hdfcbank|kotak|indus|yesbank|idfcbank|federal|pnb|barodampay)(?![a-z0-9])/;
-const UPI_GENERIC = /[a-z0-9._-]{2,}@[a-z]{2,}(?![a-z0-9]|[.][a-z])/;
-const PAY_APP = /\b(paytm|phonepe|gpay|google ?pay|bhim)\s*(kar|karo|kare|number|no\.?|pe|par|to)\b/;
+  /\bhttps?:\/\/|\bwww\.|(?<![@a-z0-9-])[a-z0-9][a-z0-9-]{2,62}\.(?:com|in|net|org|xyz|io|app|link|ly|info|site|online|shop|store)(?![a-z0-9-])/;
 
 export type ScreenSignal =
   | 'banned_word'
@@ -92,6 +111,7 @@ export type ScreenSignal =
   | 'pay_app'
   | 'otp_ask'
   | 'phone_number'
+  | 'phone_like'
   | 'number_plate'
   | 'link'
   | 'link_denied'
@@ -121,11 +141,14 @@ export function screenTextSignals(text: string, lists: ScreenLists): ScreenSigna
   if (lists.banned.some((p) => phraseHit(t, p))) out.add('banned_word');
   if (lists.scamPhrases.some((p) => phraseHit(t, p))) out.add('scam_phrase');
   if (ILLEGAL_MODIFICATION_PHRASES.some((p) => phraseHit(t, p))) out.add('illegal_modification');
-  if (UPI_PSP.test(t) || UPI_GENERIC.test(t)) out.add('upi_id');
-  if (PAY_APP.test(t)) out.add('pay_app');
+  if (hasUpiId(t)) out.add('upi_id');
+  if (hasPayAppAsk(t)) out.add('pay_app');
   if (OTP_ASK.test(t)) out.add('otp_ask');
   if (PHONE.test(t)) out.add('phone_number');
-  if (PLATE.test(t)) out.add('number_plate');
+  else if (PHONE_LIKE.test(t)) out.add('phone_like');
+  // Plates are checked on the un-lowered text too (spaced capitals); normalised digits either way.
+  const cased = normaliseDigits(text);
+  if (PLATE_COMPACT.test(t) || PLATE_BH.test(t) || PLATE_SPACED_UPPER.test(cased)) out.add('number_plate');
   if (LINK.test(t)) {
     out.add('link');
     const denied = lists.linkDomains.map((d) => normaliseForScreen(d)).filter((d) => d.length > 3);
@@ -187,13 +210,16 @@ export function screenDecision(
     has('upi_id') ||
     has('pay_app') ||
     has('otp_ask') ||
-    has('phone_number');
+    has('phone_number') ||
+    has('phone_like');
   return { outcome: hold ? 'hold' : 'ok', signals: all };
 }
 
 /** The report source of an automatic hold: scam signals → `auto_scam`, the rest → `auto_word`. */
 export function autoReportSource(signals: readonly string[]): 'auto_scam' | 'auto_word' {
-  return signals.some((s) => ['scam_phrase', 'upi_id', 'pay_app', 'otp_ask', 'phone_number'].includes(s))
+  return signals.some((s) =>
+    ['scam_phrase', 'upi_id', 'pay_app', 'otp_ask', 'phone_number', 'phone_like'].includes(s),
+  )
     ? 'auto_scam'
     : 'auto_word';
 }

@@ -341,5 +341,15 @@ export const USTAAD_ERRORS = [
   'USTAAD_PIN_LIMIT',
   'USTAAD_ADULT_ATTESTATION',
   'MOVED_TO_USTAAD',
+  // F2 reports and moderation (spec 23 § 21f).
+  'USTAAD_CONTENT_BLOCKED',
+  'USTAAD_REPORT_SELF',
+  'USTAAD_REASON_OFF',
+  'USTAAD_BAN_PENDING',
+  'USTAAD_BAN_NOT_PENDING',
+  'USTAAD_APPEAL_TICKET',
+  'USTAAD_LEGAL_HOLD',
+  'USTAAD_ACTION_INVALID',
+  'STALE_REPORT',
 ] as const;
 export type UstaadErrorCode = (typeof USTAAD_ERRORS)[number];

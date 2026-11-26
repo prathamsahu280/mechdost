@@ -311,7 +311,7 @@ export async function listUstaadModerationQueue(
         inScope(staff.scope),
         query.cityId ? eq(ustaadReports.cityId, query.cityId) : sql`true`,
         after
-          ? sql`(${rank}, ${ustaadReports.dueAt}, ${ustaadReports.id}) > (${after.rank}, ${after.due}, ${after.id}::uuid)`
+          ? sql`(${rank}, ${ustaadReports.dueAt}, ${ustaadReports.id}) > (${after.rank}::int, ${after.due.toISOString()}::timestamptz, ${after.id}::uuid)`
           : sql`true`,
       ),
     )
@@ -392,7 +392,7 @@ export async function ustaadReportDetail(
     minor: r.reasonCode === 'minor' || r.source === 'auto_safety',
     version: r.version,
     cityCode: city?.code ?? null,
-    note: r.note,
+    note: r.note ? maskContactsInText(r.note) : null,
     // DM content only through the audited thread route (SR-38); everything else masked (no phone numbers).
     text: target && target.type !== 'message' && target.text ? maskContactsInText(target.text) : null,
     contentStatus: target?.status ?? null,
@@ -700,7 +700,12 @@ async function notifyAuthor(
 }
 
 /** Lifts the minor-report restricted mode once a community manager has decided (§ 13 "until review"). */
-async function liftMinorRestriction(tx: Tx, memberId: string, cityId: string | null): Promise<void> {
+async function liftMinorRestriction(
+  tx: Tx,
+  memberId: string,
+  cityId: string | null,
+  exceptReportId: string | null = null,
+): Promise<void> {
   const [stillOpen] = await tx
     .select({ n: count() })
     .from(ustaadReports)
@@ -708,9 +713,17 @@ async function liftMinorRestriction(tx: Tx, memberId: string, cityId: string | n
       and(
         eq(ustaadReports.reasonCode, 'minor'),
         inArray(ustaadReports.status, ['open', 'in_review']),
+        exceptReportId ? ne(ustaadReports.id, exceptReportId) : sql`true`,
+        // Any open minor report about this member or about anything they wrote.
         or(
           and(eq(ustaadReports.targetType, 'member'), eq(ustaadReports.targetId, memberId)),
-          sql`${ustaadReports.targetId} in (select id from ustaad_posts where author_id = ${memberId})`,
+          sql`${ustaadReports.targetId} in (
+            select id from ustaad_posts where author_id = ${memberId}
+            union all select id from ustaad_comments where author_id = ${memberId}
+            union all select id from ustaad_questions where asker_id = ${memberId}
+            union all select id from ustaad_answers where author_id = ${memberId}
+            union all select id from ustaad_jobs where employer_member_id = ${memberId}
+            union all select id from ustaad_messages where sender_id = ${memberId})`,
         ),
       ),
     );
@@ -877,6 +890,9 @@ export async function actOnUstaadReport(
       await notifyAuthor(tx, t, 'ustaad.strike', r.id);
     } else {
       const days = Number(s['ustaad.mod.restrict_days']);
+      // This decision is the review a minor report waits for: lift its restricted mode first (unless another minor
+      // report is still open), so the dated restriction applies instead of being skipped and then lost.
+      if (r.reasonCode === 'minor') await liftMinorRestriction(tx, t.authorMemberId, r.cityId, r.id);
       await applySanction(tx, t, 'restrict', days, now);
       const actionId = await writeAction(tx, { ...base, action: 'restrict', days, note: body.note ?? null });
       await addUstaadStrike(tx, {

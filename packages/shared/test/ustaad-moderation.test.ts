@@ -48,6 +48,16 @@ describe('signals', () => {
   });
   it('part numbers and tyre sizes are not phone numbers or plates', () => {
     expect(screenTextSignals('6301 bearing, 175/65 R14, DOT 3', lists)).toEqual([]);
+    // Honda-style part numbers: a dashed 10-digit run only holds (phone_like), a longer code is nothing.
+    expect(screenTextSignals('96100-62010-00 lagao', lists)).toEqual([]);
+    expect(screenTextSignals('94109-12000 washer', lists)).toEqual(['phone_like']);
+    expect(screenDecision('post', ['phone_like'], settled).outcome).toBe('hold');
+  });
+  it('ordinary Hinglish is not a plate or a link', () => {
+    expect(screenTextSignals('Splendor ka 97 cc 2018 model', lists)).toEqual([]);
+    expect(screenTextSignals('rs 50 se 2000 tak', lists)).toEqual([]);
+    expect(screenTextSignals('thik hai.me kal aaunga', lists)).toEqual([]);
+    expect(screenTextSignals('gaadi cg04ab1234 hai', lists)).toContain('number_plate');
   });
   it('UPI ids, pay-app asks, OTP asks and fee phrases are flagged', () => {
     expect(screenTextSignals('paise ramesh@ybl pe bhejo', lists)).toContain('upi_id');

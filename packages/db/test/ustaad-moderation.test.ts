@@ -843,3 +843,86 @@ describe('security review fixes (2026-11-26)', () => {
     expect(m?.purgeAfter).toBeNull();
   });
 });
+
+describe('advisor review follow-ups', () => {
+  it('restrict on a minor-reported author applies a dated restriction (the decision is the review)', async () => {
+    const target = await member();
+    const p = await post(target, false);
+    const r = await createUstaadReport(t(), reporter, {
+      targetType: 'post',
+      targetId: p.id,
+      reasonCode: 'minor',
+    });
+    const d = await ustaadReportDetail(t(), cmA, r.code);
+    await actOnUstaadReport(t(), cmA, r.code, {
+      action: 'restrict',
+      reasonCode: 'minor',
+      version: d.version,
+    });
+    const [m] = await db.select().from(s.ustaadMembers).where(eq(s.ustaadMembers.id, target.memberId));
+    expect(m?.status).toBe('restricted');
+    expect(m?.restrictedMode).toBe('none');
+    expect(m?.restrictedUntil).not.toBeNull();
+  });
+
+  it('the queue pages with its cursor across more than 20 reports, no item twice', async () => {
+    for (let i = 0; i < 22; i += 1) {
+      const p = await post(author, false);
+      await createUstaadReport(t(), viewer, { targetType: 'post', targetId: p.id, reasonCode: 'spam' });
+    }
+    const seen: string[] = [];
+    let cursor: string | undefined;
+    for (let page = 0; page < 20; page += 1) {
+      const q = await listUstaadModerationQueue(t(), admin, { queue: 'open', cityId: null, cursor });
+      seen.push(...q.items.map((i) => i.code));
+      if (!q.nextCursor) break;
+      cursor = q.nextCursor;
+    }
+    expect(seen.length).toBeGreaterThan(22);
+    expect(new Set(seen).size).toBe(seen.length);
+  });
+
+  it('overdue notices reach every moderator of the city once', async () => {
+    const { grantRole } = await import('../src/repo');
+    await grantRole(db, {
+      userId: cmA2.userId,
+      role: 'community_manager',
+      cityId: f.raipur,
+      grantedBy: null,
+    });
+    const p = await post(author, false);
+    const r = await createUstaadReport(t(), reporter, {
+      targetType: 'post',
+      targetId: p.id,
+      reasonCode: 'abuse',
+    });
+    const [row] = await db.select().from(s.ustaadReports).where(eq(s.ustaadReports.code, r.code));
+    const at = new Date((row?.createdAt.getTime() ?? 0) + 13 * 3_600_000);
+    await runUstaadReportClock(t(), at);
+    await runUstaadReportClock(t(), at);
+    for (const userId of [cmA.userId, cmA2.userId]) {
+      const rows = (
+        await db
+          .select()
+          .from(s.notifications)
+          .where(
+            and(eq(s.notifications.kind, 'staff.ustaad_report_overdue'), eq(s.notifications.userId, userId)),
+          )
+      ).filter((x) => (x.dedupeKey ?? '').includes(row?.id ?? 'x'));
+      expect(rows).toHaveLength(1);
+    }
+  });
+
+  it("the reporter's note is masked for staff", async () => {
+    const p = await post(author, false);
+    const r = await createUstaadReport(t(), reporter, {
+      targetType: 'post',
+      targetId: p.id,
+      reasonCode: 'other',
+      note: 'isne mujhe 98765 43210 se call kiya',
+    });
+    const d = await ustaadReportDetail(t(), cmA, r.code);
+    expect(d.note).toContain('[phone]');
+    expect(d.note).not.toContain('98765');
+  });
+});
