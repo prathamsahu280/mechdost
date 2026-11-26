@@ -19,6 +19,17 @@ export class NotFoundError extends Error {
   }
 }
 
+/** A per-member daily cap that is an admin setting was reached (Ustaad follows, threads, profiles); the API answers 429. */
+export class DailyCapError extends Error {
+  readonly status = 429;
+  readonly code: string;
+  constructor(message: string, code = 'DAILY_CAP') {
+    super(message);
+    this.name = 'DailyCapError';
+    this.code = code;
+  }
+}
+
 /** The actor may not do this at all (e.g. a blocked customer ordering); the API answers 403. */
 export class ForbiddenError extends Error {
   readonly status = 403;

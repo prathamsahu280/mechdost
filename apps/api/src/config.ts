@@ -83,6 +83,8 @@ const schema = z
      * to refresh what it cached by tag (design 2026-11-15 items 5, 6, 8). Unset = the website refreshes within 60 s.
      */
     REVALIDATE_SECRET: z.string().trim().min(32).max(200).optional(),
+    /** Ustaad distance bands (spec 23 SR-29): HMAC key for the stable per-pair noise; unset = Discover shows no bands. */
+    USTAAD_LOCATION_SECRET: z.string().trim().min(32).max(200).optional(),
     WHATSAPP_ENABLED: z.enum(['on', 'off']).default('off'),
     WHATSAPP_PHONE_NUMBER_ID: z
       .string()
@@ -352,6 +354,7 @@ function toConfig(env: z.infer<typeof schema>) {
       : null,
     webBaseUrl: env.WEB_BASE_URL,
     revalidateSecret: env.REVALIDATE_SECRET ?? null,
+    ustaadLocationSecret: env.USTAAD_LOCATION_SECRET ?? null,
     whatsapp:
       env.WHATSAPP_ENABLED === 'on' &&
       env.WHATSAPP_PHONE_NUMBER_ID &&

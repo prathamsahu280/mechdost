@@ -19,7 +19,15 @@ export * from './application-links';
 export * from './admin';
 export * from './qa';
 export * from './learn';
-// D: export * from './posts'; export * from './feed'; export * from './graph'; export * from './threads'; …
+// D: export * from './posts'; export * from './feed'; …
+// D2: graph, messages, Discover, promotions (serve side).
+export * from './graph-common';
+export * from './follows';
+export * from './connections';
+export * from './blocks';
+export * from './messages';
+export * from './discover';
+export * from './promotions';
 export * from './location';
 export * from './zones';
 export * from './jobs';

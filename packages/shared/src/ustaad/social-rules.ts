@@ -36,12 +36,12 @@ export function dmTextCheck(
   text: string,
   opts: { requested: boolean; scamPhrases?: readonly string[] },
 ): DmTextCheck {
-  const normal = normaliseDigits(text);
-  const hold = jobScamSignals(text, opts.scamPhrases ?? []).length > 0;
-  if (!opts.requested) return { text, link: false, hold };
-  const link = LINK.test(normal);
+  const phrases = opts.scamPhrases ?? [];
+  if (!opts.requested) return { text, link: false, hold: jobScamSignals(text, phrases).length > 0 };
+  const link = LINK.test(normaliseDigits(text));
+  // A request is masked first; what is left (a fee phrase, a pay-app ask) still holds it.
   const masked = maskPersonalData(text).replace(UPI_HANDLE, '#');
-  return { text: masked, link, hold };
+  return { text: masked, link, hold: jobScamSignals(masked, phrases).length > 0 };
 }
 
 /** Wilson score lower bound (95 %) of `pos` successes in `n` trials; 0 when there is no evidence. */
