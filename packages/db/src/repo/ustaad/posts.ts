@@ -185,7 +185,17 @@ export async function createUstaadPost(db: Tx, actor: UstaadActor, input: Create
         .limit(1);
       if (!vm) throw new ValidationError('Unknown vehicle model', 'USTAAD_VEHICLE_UNKNOWN');
     }
-    const text = [input.body, input.fixSymptom, input.fixCause, input.fixFix, input.poll?.options.join('\n')]
+    // Everything other members can read is screened, incl. the pre-correction words shown as "see original"
+    // (stored only when a correction was used).
+    const bodyOriginal = input.correction === 'none' ? null : (input.bodyOriginal ?? null);
+    const text = [
+      input.body,
+      bodyOriginal,
+      input.fixSymptom,
+      input.fixCause,
+      input.fixFix,
+      input.poll?.options.join('\n'),
+    ]
       .filter(Boolean)
       .join('\n');
     const screen = await screenUstaadContent(tx, {
@@ -205,7 +215,7 @@ export async function createUstaadPost(db: Tx, actor: UstaadActor, input: Create
         template: input.template ?? null,
         contentType: 'ugc',
         body: input.body ?? null,
-        bodyOriginal: input.bodyOriginal ?? null,
+        bodyOriginal,
         correction: input.correction,
         fixSymptom: input.fixSymptom ?? null,
         fixCause: input.fixCause ?? null,

@@ -50,7 +50,9 @@ import { seedServiceFixture, type Fixture } from './service-fixture';
 
 const screen = vi.hoisted(() => ({ outcome: 'ok' as 'ok' | 'hold' | 'block' }));
 vi.mock('../src/repo/ustaad/moderation', () => ({
-  screenUstaadContent: () => Promise.resolve(screen.outcome),
+  // Holds any text with the test word, so tests prove which fields reach the screen.
+  screenUstaadContent: (_tx: unknown, input: { text: string | null }) =>
+    Promise.resolve(input.text?.includes('PAYFEE') ? 'hold' : screen.outcome),
 }));
 
 let db: TestDb;
@@ -369,6 +371,27 @@ describe('create post', () => {
     expect(p.status).toBe('held');
     await expect(ustaadPostDetail(t(), suresh, p.id)).rejects.toMatchObject({ name: 'NotFoundError' });
     expect((await ustaadPostDetail(t(), ramesh, p.id)).status).toBe('held');
+  });
+
+  it('the original words are screened too (a clean body cannot carry an abusive "see original")', async () => {
+    const p = await post(ramesh, {
+      body: 'Clean words',
+      bodyOriginal: 'PAYFEE to 98xxxx',
+      correction: 'auto',
+    });
+    expect(p.status).toBe('held');
+    const target = await post(ramesh);
+    const c = await commentOnUstaadPost(t(), suresh, target.id, {
+      body: 'Clean reply',
+      bodyOriginal: 'PAYFEE now',
+      correction: 'suggested_used',
+      idemKey: key(),
+    });
+    expect(c.status).toBe('held');
+    // Without a correction the original is never stored, even if a caller skips the DTO.
+    const raw = await post(ramesh, { body: 'Clean', bodyOriginal: 'ignored', correction: 'none' });
+    const [row] = await db.select().from(s.ustaadPosts).where(eq(s.ustaadPosts.id, raw.id));
+    expect(row?.bodyOriginal).toBeNull();
   });
 
   it('a restricted member reads but cannot post, like or comment', async () => {

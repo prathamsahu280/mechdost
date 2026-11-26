@@ -81,9 +81,11 @@ export async function commentOnUstaadPost(
       if (!ok) throw new ValidationError('That file cannot be used', 'USTAAD_MEDIA_INVALID');
       mediaKind = m.kind;
     }
+    // The pre-correction words are shown as "see original", so they are screened too.
+    const bodyOriginal = input.correction === 'none' ? null : (input.bodyOriginal ?? null);
     const screen = await screenUstaadContent(tx, {
       kind: 'comment',
-      text: input.body ?? null,
+      text: [input.body, bodyOriginal].filter(Boolean).join('\n') || null,
       mediaIds: input.mediaId ? [input.mediaId] : [],
       authorId: me.id,
     });
@@ -97,7 +99,7 @@ export async function commentOnUstaadPost(
         authorId: me.id,
         parentId: input.parentId ?? null,
         body: input.body ?? null,
-        bodyOriginal: input.bodyOriginal ?? null,
+        bodyOriginal,
         correction: input.correction,
         mediaId: input.mediaId ?? null,
         status,
