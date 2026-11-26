@@ -1384,11 +1384,17 @@ members at the next run. Data dictionary: this § 6.
   with en + hi templates, ICT logs, archive, reminder, tabletop drill, SSMI); `docs/research/processors.md`;
   Community Rules page `/policies/community-rules` (en + hi, admin-editable as `policy.community_rules`; the
   reminder notice links there).
-- **Screen patterns (advisor review):** a phone number is blocked only when written like one (contiguous or split by
-  spaces); a dashed 10-digit run (`94109-12000`, also a part-number shape) only holds; plates need a state code and
-  are blocked only as one token or spaced in capitals; bare domains count only for TLDs people rarely type by accident
-  (`.me`, `.co` need a scheme). The UPI / pay-app patterns are E's (`hasUpiId`, `hasPayAppAsk` in `local.ts`). The
-  built-in illegal-modification phrases are a floor; the admin `banned` list adds to them (G1).
+- **Screen patterns (advisor + security review, 2026-11-26):** a phone number is **blocked** in public text only
+  when written like one (contiguous or split by spaces, optional +91 / 0); any other phone shape (dashes, mixed
+  separators, `+91-98765-43210`, `9-8-7-6-5-4-3-2-1-0`, also part numbers such as `94109-12000`) is `phone_like` and
+  **holds**; staff masking uses the broad pattern, so no number reaches a staff screen. Plates need a valid state
+  code: one token (`CG04AB1234`) or spaced/dashed capitals block (`number_plate`); separated lower case
+  (`cg 04 ab 1234`, also Hinglish like "ka 97 cc 2018") is `plate_like` and holds. Links: scheme, `www.` or a bare
+  domain with a TLD people rarely type by accident; short redirector/messaging domains (`t.me`, `wa.me`, `bit.ly`,
+  `tinyurl`, `goo.gl`, `rb.gy`, `cutt.ly`) always count, also spelled `t . me`, `wa dot me`, `bit (dot) ly`; the
+  admin `link_domain` denylist runs on all text (dotted spellings too) and blocks. UPI / pay-app patterns are E's
+  (`hasUpiId`, `hasPayAppAsk` in `local.ts`). The built-in illegal-modification phrases are a floor; the admin
+  `banned` list adds to them (G1).
 - **Not done (F), first:** a staff route to view reported or held media (blurred, audited) — pre-moderated media posts
   cannot be reviewed in the console until it exists (G2 needs it); `keep` on a held answer or question does not run the
   publish side effects (question → answered, Izzat, Ustaad notices); plan tests not yet written: restricted-mode
