@@ -77,6 +77,11 @@ export interface DemoOrder {
   coins?: { accountId: string; coins: number; discountPaise: number } | null;
   /** Proof of delivery (spec 04): code issued when the order goes out for delivery. */
   delivery?: DeliveryProof | null;
+  /**
+   * Brought back to the shop after a failed agent delivery and closed (spec 24, Lead's call 13): the refund covers the
+   * parts only when the customer was at fault, else everything. Set by `demo/delivery-store.ts`.
+   */
+  returned?: { at: string; refund: 'full' | 'parts_only' } | null;
 }
 
 /**
@@ -312,6 +317,8 @@ const KEYS = {
   resetLinks: 'mechdost-demo-reset-links',
   coins: 'mechdost-demo-coins',
   invites: 'mechdost-demo-invites',
+  // Delivery agents (spec 24): one key for the whole demo delivery state (demo/delivery-store.ts).
+  delivery: 'mechdost-demo-delivery',
 } as const;
 type Key = (typeof KEYS)[keyof typeof KEYS];
 
@@ -746,7 +753,7 @@ export function respondToOrder(
 }
 
 /** A rejected or cancelled order is closed: nothing moves it forward again. */
-export const isClosed = (o: DemoOrder) => Boolean(o.rejection ?? o.cancellation);
+export const isClosed = (o: DemoOrder) => Boolean(o.rejection ?? o.cancellation ?? o.returned);
 
 /** Admin rejects an unfulfillable order with a reason code and a message to the customer (same rules as the API). */
 export function rejectOrder(code: string, message: string, reasonCode: OrderRejectReason): boolean {
