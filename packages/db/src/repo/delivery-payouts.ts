@@ -2,7 +2,7 @@ import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { AgentPayoutMethod } from '@mechdost/shared/delivery/codes';
 import { deliveryAgentPayouts, deliveryAgents, users } from '../schema';
 import { agentOfUser, auditDelivery } from './delivery-common';
-import { ConflictError, NotFoundError } from './errors';
+import { ConflictError, NotFoundError, ValidationError } from './errors';
 import { recordServerEvent } from './events';
 import type { Tx } from './orders';
 import type { CityScope } from './routing';
@@ -27,6 +27,9 @@ async function scopedAgent(tx: Tx, scope: CityScope, agentId: string) {
 }
 
 type PayoutRow = typeof deliveryAgentPayouts.$inferSelect;
+
+/** Reversal rows carry the derived key `rev-{payoutId}`; client keys may not use that namespace. */
+export const RESERVED_PAYOUT_KEY_PREFIX = 'rev-';
 
 async function byKey(tx: Tx, key: string): Promise<PayoutRow | null> {
   const [r] = await tx
@@ -53,9 +56,13 @@ export async function recordAgentPayout(
   },
 ): Promise<PayoutRow> {
   return db.transaction(async (tx) => {
+    if (input.idempotencyKey.startsWith(RESERVED_PAYOUT_KEY_PREFIX))
+      throw new ValidationError('This key is reserved', 'RESERVED_KEY');
     const a = await scopedAgent(tx, input.scope, input.agentId);
     const seen = await byKey(tx, input.idempotencyKey);
     if (seen) {
+      // Scope first: a replayed key never returns a row of a city the caller cannot see.
+      if (!inScope(input.scope, seen.cityId)) throw new NotFoundError('Payout not found');
       if (seen.agentId !== a.id || seen.amountPaise !== input.amountPaise)
         throw new ConflictError('This key was used for another payout', 'IDEMPOTENCY_MISMATCH');
       return seen;
@@ -119,18 +126,15 @@ export async function reverseAgentPayout(
     staffUserId: string;
     payoutId: string;
     note: string;
-    /** One reversal per payment, so the default key is derived from the payment. */
+    /**
+     * Ignored: one reversal per payment (UNIQUE reverses_id) is the idempotency, so a replay returns the first
+     * reversal; the stored key is always `rev-{payoutId}`. Kept so older clients may still send one.
+     */
     idempotencyKey?: string | undefined;
   },
 ): Promise<PayoutRow> {
   return db.transaction(async (tx) => {
-    const key = input.idempotencyKey ?? `rev-${input.payoutId}`;
-    const seen = await byKey(tx, key);
-    if (seen) {
-      if (seen.reversesId !== input.payoutId)
-        throw new ConflictError('This key was used for another payout', 'IDEMPOTENCY_MISMATCH');
-      return seen;
-    }
+    // Scoped load of the target first, then the replay lookup (security review 2026-11-27).
     const [p] = await tx
       .select()
       .from(deliveryAgentPayouts)
@@ -139,11 +143,12 @@ export async function reverseAgentPayout(
     if (!p || !inScope(input.scope, p.cityId)) throw new NotFoundError('Payout not found');
     if (p.kind !== 'payment') throw new ConflictError('Only a payment can be reversed', 'NOT_A_PAYMENT');
     const [done] = await tx
-      .select({ id: deliveryAgentPayouts.id })
+      .select()
       .from(deliveryAgentPayouts)
       .where(eq(deliveryAgentPayouts.reversesId, p.id))
       .limit(1);
-    if (done) throw new ConflictError('This payment was already reversed', 'ALREADY_REVERSED');
+    if (done) return done;
+    const key = `${RESERVED_PAYOUT_KEY_PREFIX}${p.id}`;
     const [row] = await tx
       .insert(deliveryAgentPayouts)
       .values({

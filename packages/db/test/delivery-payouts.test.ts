@@ -52,7 +52,7 @@ describe('manual agent payouts', () => {
     expect(audit.map((a) => a.action)).toContain('delivery_agent.payout_recorded');
   });
 
-  it('corrects only by a reversing row; a second reversal and edits are refused', async () => {
+  it('corrects only by a reversing row; reversing a reversal and edits are refused', async () => {
     const A = await makeAgent(w);
     const p = await pay(A.agentId, 'payout-key-000000000002', 50_000);
     const rev = await reverseAgentPayout(w.t(), {
@@ -63,15 +63,6 @@ describe('manual agent payouts', () => {
       idempotencyKey: 'payout-rev-0000000002',
     });
     expect(rev).toMatchObject({ kind: 'reversal', amountPaise: -50_000 });
-    await expect(
-      reverseAgentPayout(w.t(), {
-        scope: { all: true },
-        staffUserId: w.staff,
-        payoutId: p.id,
-        note: 'Again',
-        idempotencyKey: 'payout-rev-0000000003',
-      }),
-    ).rejects.toMatchObject({ code: 'ALREADY_REVERSED' });
     await expect(
       reverseAgentPayout(w.t(), {
         scope: { all: true },
@@ -87,6 +78,51 @@ describe('manual agent payouts', () => {
     const page = await listAgentPayouts(w.t(), { scope: { all: true }, agentId: A.agentId, limit: 50 });
     expect(page.totalPaise).toBe(0);
     expect(page.items.find((i) => i.id === p.id)?.corrected).toBe(true);
+  });
+
+  it('security review: a replayed key never leaks another city, rev- keys are reserved, a double reversal returns the same row', async () => {
+    const A = await makeAgent(w);
+    const p = await pay(A.agentId, 'payout-key-000000000010', 30_000);
+    const elsewhere = { all: false as const, cityIds: [randomUUID()] };
+    const rev = await reverseAgentPayout(w.t(), {
+      scope: { all: true },
+      staffUserId: w.staff,
+      payoutId: p.id,
+      note: 'Wrong amount',
+    });
+    // City-B finance replays the reversal of a city-A payment: 404, not the row.
+    await expect(
+      reverseAgentPayout(w.t(), { scope: elsewhere, staffUserId: w.staff, payoutId: p.id, note: 'Replay' }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    // City-B finance replays a city-A payment key with a city-B-invisible agent: 404.
+    await expect(
+      recordAgentPayout(w.t(), {
+        scope: elsewhere,
+        staffUserId: w.staff,
+        agentId: A.agentId,
+        amountPaise: 30_000,
+        periodFrom: '2026-11-01',
+        periodTo: '2026-11-15',
+        method: 'upi',
+        idempotencyKey: 'payout-key-000000000010',
+      }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    // A client key in the reserved namespace is refused.
+    await expect(pay(A.agentId, `rev-${p.id}`)).rejects.toMatchObject({ code: 'RESERVED_KEY' });
+    // A second reversal of the same payment returns the first reversal, once.
+    const again = await reverseAgentPayout(w.t(), {
+      scope: { all: true },
+      staffUserId: w.staff,
+      payoutId: p.id,
+      note: 'Again',
+      idempotencyKey: 'payout-rev-0000000011',
+    });
+    expect(again.id).toBe(rev.id);
+    const rows = await w.db
+      .select()
+      .from(s.deliveryAgentPayouts)
+      .where(eq(s.deliveryAgentPayouts.reversesId, p.id));
+    expect(rows).toHaveLength(1);
   });
 
   it('staff of another city get 404; the agent sees only their own rows without notes or staff names', async () => {

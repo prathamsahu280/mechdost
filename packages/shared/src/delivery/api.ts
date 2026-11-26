@@ -621,7 +621,7 @@ export const AgentPayoutInput = z
     reference: Text(1, 80).optional(),
     note: Note.optional(),
     /** The same key twice records once (double click, retry). */
-    idempotencyKey: IdemKey,
+    idempotencyKey: IdemKey.refine((k) => !k.startsWith('rev-'), 'rev- keys are reserved for corrections'),
   })
   .strict()
   .refine((v) => v.periodFrom <= v.periodTo, { path: ['periodTo'], message: 'PERIOD_ORDER' })
@@ -633,6 +633,8 @@ export const AgentPayoutInput = z
  * payment, so the key defaults to one derived from the payment).
  */
 export const AgentPayoutReverseInput = z.object({ note: Note, idempotencyKey: IdemKey.optional() }).strict();
+/** Client payout keys may not start with `rev-` (reserved for reversals). */
+export const PAYOUT_RESERVED_KEY_PREFIX = 'rev-';
 
 /** Staff rows (`GET /v1/admin/delivery/payouts?agentId&from&to&format=json|csv`). */
 export const AgentPayoutRow = z.object({

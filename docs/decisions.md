@@ -2621,3 +2621,10 @@ Spec 24 § 5. Found in the security review of the delivery repositories; fixed i
 - **Worker:** offers expire every 30 s (one transaction each; failures logged and skipped).
 - **Not built (queued as founder questions):** reroute to another shop after a declined switch; document retention
   purge job (setting `delivery.document_retention_days` only); Meta template submission.
+
+### 2026-11-27 · Delivery payouts: replay scope and reserved keys (security review)
+
+A replayed payout key checks the caller's city scope before returning anything (404 otherwise). A correction loads the
+target payment in scope first; one reversal per payment (UNIQUE `reverses_id`) is the idempotency, so a second
+correction returns the first one and any client key is ignored. Client payout keys may not start with `rev-`
+(422 `RESERVED_KEY`); that prefix is reserved for reversal rows. Tests: `packages/db/test/delivery-payouts.test.ts`.

@@ -430,6 +430,16 @@ describe('manual agent payouts (founder 2026-11-26: manual now, automatic later)
     ).toBe(true);
     expect(AgentPayoutReverseInput.safeParse({ idempotencyKey: 'rev-0001-abcdefgh' }).success).toBe(false);
     expect(AgentPayoutReverseInput.safeParse({ note: 'Wrong amount' }).success).toBe(true);
+    expect(
+      AgentPayoutInput.safeParse({
+        agentId: '018f0000-0000-7000-8000-000000000001',
+        amountPaise: 100,
+        periodFrom: '2026-11-01',
+        periodTo: '2026-11-02',
+        method: 'cash',
+        idempotencyKey: 'rev-018f0000-0000-7000-8000-000000000001',
+      }).success,
+    ).toBe(false);
   });
   it('the agent sees their own payouts without staff notes or who recorded them', () => {
     const keys = Object.keys(AgentOwnPayoutRow.shape);
