@@ -38,6 +38,10 @@ export default async function AccountLayout({ children }: { children: ReactNode 
             'supportThread',
             // Overview → "Your savings" card (decision 2026-11-26).
             'savings',
+            // Account → Payments and the cash-on-delivery request (founder ruling 2026-11-26).
+            'accountPayments',
+            'checkout',
+            'codRequest',
           ]}
         >
           <AccountFrame>{children}</AccountFrame>

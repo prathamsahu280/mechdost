@@ -53,6 +53,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             'adminTier2',
             // Admin → Settings: categories, search, save bar and one-line help per setting (design 2026-11-24).
             'adminSettings',
+            // Customers → COD requests (founder ruling 2026-11-26).
+            'adminCod',
+            'codRequest',
             'coupons',
             'adminExports',
             'refunds',
