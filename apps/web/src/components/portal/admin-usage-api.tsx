@@ -308,7 +308,7 @@ function MetricRow({
             className={`${portalQuiet} scroll-my-24`}
           >
             {t('edit')}
-            <span className="sr-only">: {name}</span>
+            <span className="sr-only"> {name}</span>
           </button>
         ) : null}
       </div>
@@ -376,7 +376,7 @@ function Sparkline({ metric: m, name }: { metric: UsageMetricViewDto; name: stri
       <details className="mt-1 text-xs text-muted">
         <summary className="inline-flex min-h-6 cursor-pointer items-center rounded-button font-bold text-ink focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus">
           {t('daily_values')}
-          <span className="sr-only">: {name}</span>
+          <span className="sr-only"> {name}</span>
         </summary>
         <table className="mt-1 text-left tabular-nums">
           <caption className="sr-only">{name}</caption>
@@ -475,10 +475,10 @@ function LimitForm({
       className="mt-3 space-y-3 rounded-card border border-line-card bg-bg p-3"
     >
       <div>
-        <label htmlFor={`${id}-limit`} className="text-sm font-bold text-ink">
+        <label htmlFor={`${id}-limit`} className="block text-sm font-bold text-ink">
           {t('limit_label')}
           {bytes ? ` (${t('limit_unit_gb')})` : null}
-          <span className="sr-only">: {name}</span>
+          <span className="sr-only"> {name}</span>
         </label>
         <input
           ref={inputRef}
@@ -678,7 +678,7 @@ function AlertSettings({ data, onSaved }: { data: UsageViewDto; onSaved: () => v
             ] as const
           ).map(([field, val, set, ref, label]) => (
             <div key={field}>
-              <label htmlFor={`${id}-${field}`} className="text-sm font-bold text-ink">
+              <label htmlFor={`${id}-${field}`} className="block text-sm font-bold text-ink">
                 {label}
               </label>
               <input
@@ -707,7 +707,7 @@ function AlertSettings({ data, onSaved }: { data: UsageViewDto; onSaved: () => v
         ) : null}
       </fieldset>
       <div>
-        <label htmlFor={`${id}-mail`} className="text-sm font-bold text-ink">
+        <label htmlFor={`${id}-mail`} className="block text-sm font-bold text-ink">
           {t('recipients_label')}
         </label>
         <textarea
@@ -736,7 +736,7 @@ function AlertSettings({ data, onSaved }: { data: UsageViewDto; onSaved: () => v
         ) : null}
       </div>
       <div>
-        <label htmlFor={`${id}-lang`} className="text-sm font-bold text-ink">
+        <label htmlFor={`${id}-lang`} className="block text-sm font-bold text-ink">
           {t('email_lang_label')}
         </label>
         <select

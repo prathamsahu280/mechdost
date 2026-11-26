@@ -71,7 +71,7 @@ test.describe('admin usage & limits', () => {
     await expect(page.getByText('Marks on the bars: warning at 70%, critical at 90%')).toBeVisible();
     await shot(page, 'usage__1440-light-en');
 
-    const edit = page.getByRole('button', { name: 'Edit: Database size' });
+    const edit = page.getByRole('button', { name: /^Edit[\s:]+Database size$/ });
     await edit.click();
     await expect(edit).toHaveAttribute('aria-expanded', 'true');
     await expect(page.getByRole('textbox', { name: /Limit \(GB\)/ })).toBeFocused();
@@ -80,7 +80,7 @@ test.describe('admin usage & limits', () => {
     await expect(edit).toHaveAttribute('aria-expanded', 'false');
 
     await page.getByRole('button', { name: 'Check now' }).click();
-    await expect(page.getByRole('status').first()).toHaveText('Checked. 11 values stored.');
+    await expect(page.getByRole('status').filter({ hasText: 'Checked. 11 values stored.' })).toBeVisible();
     expect((problems?.list ?? []).filter((p) => !p.includes('audit-photo'))).toEqual([]);
   });
 
