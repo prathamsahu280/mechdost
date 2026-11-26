@@ -142,3 +142,12 @@ const ERRORS: Partial<Record<string, JoinApiErrorKey>> = {
 export function joinErrorKey(code: string): JoinApiErrorKey {
   return ERRORS[code] ?? 'errGeneric';
 }
+
+/** API refusals about an earlier answer: the step and field to send the person back to (forms review 2026-11-26). */
+export function joinErrorStep(
+  code: string,
+): { step: JoinStep; field: 'displayName' | 'pincode'; key: JoinApiErrorKey } | null {
+  if (code === 'NAME_RESERVED') return { step: 'details', field: 'displayName', key: 'errName' };
+  if (code === 'USTAAD_REGION') return { step: 'details', field: 'pincode', key: 'errRegion' };
+  return null;
+}

@@ -84,7 +84,12 @@ export function TutorialCards() {
         {t('error')}
       </p>
     );
-  if (!cards) return <p className="text-base text-ink-muted">{t('loading')}</p>;
+  if (!cards)
+    return (
+      <p role="status" className="text-base text-ink-muted">
+        {t('loading')}
+      </p>
+    );
   const total = cards.length;
   const card = cards[i];
   if (!card) return null;
@@ -131,6 +136,7 @@ export function TutorialCards() {
         setPlaying(true);
         void a.play().catch(() => {
           setPlaying(false);
+          setNoVoice(true);
         });
         return;
       }
@@ -152,7 +158,10 @@ export function TutorialCards() {
     <section
       aria-roledescription="carousel"
       aria-label={t('title')}
-      className="grid gap-5"
+      className="grid touch-pan-y gap-5"
+      onPointerCancel={() => {
+        startX.current = null;
+      }}
       onPointerDown={(e) => {
         startX.current = e.clientX;
       }}
@@ -166,9 +175,7 @@ export function TutorialCards() {
       }}
     >
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-bold text-ink-muted" aria-live="polite">
-          {t('cardOf', { n: i + 1, total })}
-        </p>
+        <p className="text-sm font-bold text-ink-muted">{t('cardOf', { n: i + 1, total })}</p>
         <button
           type="button"
           onClick={() => {
@@ -180,8 +187,10 @@ export function TutorialCards() {
         </button>
       </div>
 
-      <article
+      <div
+        role="group"
         aria-roledescription="slide"
+        aria-label={t('cardOf', { n: i + 1, total })}
         className="grid justify-items-center gap-4 rounded-[26px] bg-navy px-5 py-8 text-center text-white shadow-float"
       >
         <span
@@ -200,7 +209,6 @@ export function TutorialCards() {
         <p className="max-w-[36ch] text-base leading-relaxed text-white/90">{card.body}</p>
         <button
           type="button"
-          aria-pressed={playing}
           onClick={() => {
             void listen(card);
           }}
@@ -209,8 +217,10 @@ export function TutorialCards() {
           <UstaadIcon name="mic" size={20} />
           {playing ? t('stop') : t('listen')}
         </button>
-        {noVoice ? <p className="text-sm text-white/80">{t('noVoice')}</p> : null}
-      </article>
+        <p role="status" className="text-sm text-white/80">
+          {noVoice ? t('noVoice') : ''}
+        </p>
+      </div>
 
       <div className="flex justify-center gap-1.5" aria-hidden="true">
         {cards.map((c, n) => (

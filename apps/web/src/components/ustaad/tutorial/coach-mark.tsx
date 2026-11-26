@@ -13,7 +13,7 @@ import { track } from '@/lib/analytics';
  */
 let claimed: CoachmarkTarget | null = null;
 
-export function CoachMark({ target }: { target: CoachmarkTarget }) {
+export function CoachMark({ target, returnFocusTo }: { target: CoachmarkTarget; returnFocusTo: string }) {
   const t = useTranslations('ustaad.tutorial');
   const locale = useLocale();
   const [text, setText] = useState<string | null>(null);
@@ -40,28 +40,36 @@ export function CoachMark({ target }: { target: CoachmarkTarget }) {
     };
   }, [locale, target]);
 
-  if (!text) return null;
   return (
-    <div
-      role="status"
-      className="relative mt-3 max-w-xs rounded-card bg-accent-button p-3 text-white shadow-float"
-    >
-      <span aria-hidden="true" className="absolute -top-1.5 left-6 size-3 rotate-45 bg-accent-button" />
-      <p className="text-sm font-bold">{text}</p>
-      <button
-        type="button"
-        onClick={() => {
-          setText(null);
-          claimed = null;
-          track('ustaad_coachmark_dismissed', { target });
-          void import('@/lib/ustaad/identity-api').then((api) =>
-            api.saveOnboarding(locale, { event: 'coachmark', target }),
-          );
-        }}
-        className="press mt-2 min-h-12 rounded-button bg-white px-4 text-sm font-bold text-ink focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
-      >
-        {t('gotIt')}
-      </button>
+    <div className="mt-3">
+      {/* Always mounted so the hint is announced when it appears; the button sits outside the live text. */}
+      <p role="status" className={text ? 'sr-only' : 'hidden'}>
+        {text ?? ''}
+      </p>
+      {text ? (
+        <div className="relative max-w-xs rounded-card bg-accent-button p-3 text-white shadow-float">
+          <span aria-hidden="true" className="absolute -top-1.5 left-6 size-3 rotate-45 bg-accent-button" />
+          <p aria-hidden="true" className="text-sm font-bold">
+            {text}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              // Focus goes back to the control the hint points at before the bubble goes away.
+              document.getElementById(returnFocusTo)?.focus();
+              setText(null);
+              claimed = null;
+              track('ustaad_coachmark_dismissed', { target });
+              void import('@/lib/ustaad/identity-api').then((api) =>
+                api.saveOnboarding(locale, { event: 'coachmark', target }),
+              );
+            }}
+            className="press mt-2 min-h-12 rounded-button bg-white px-4 text-sm font-bold text-ink focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
+            {t('gotIt')}
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

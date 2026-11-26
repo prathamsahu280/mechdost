@@ -57,6 +57,7 @@ export function UstaadVerificationProgress() {
                 }`}
               >
                 <span aria-hidden="true">{MARK[s]}</span>
+                <span className="sr-only">{t(`state_${s}`)}: </span>
                 {t(STEP_KEYS[n] ?? 'step_asked')}
               </li>
             ))}

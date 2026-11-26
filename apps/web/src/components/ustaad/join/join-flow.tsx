@@ -12,10 +12,12 @@ import {
   JOIN_STEPS,
   joinBody,
   joinErrorKey,
+  joinErrorStep,
   stepErrors,
   type JoinConsent,
   type JoinDraft,
   type JoinProof,
+  type JoinApiErrorKey,
   type JoinStepErrorKey,
 } from '@/lib/ustaad/join';
 
@@ -37,6 +39,7 @@ function Choice({
   title,
   hint,
   disabled,
+  required,
 }: {
   type: 'radio' | 'checkbox';
   name: string;
@@ -45,6 +48,7 @@ function Choice({
   title: string;
   hint?: string | undefined;
   disabled?: boolean;
+  required?: boolean;
 }) {
   return (
     <label
@@ -57,6 +61,7 @@ function Choice({
         name={name}
         checked={checked}
         disabled={disabled}
+        aria-required={required ? true : undefined}
         onChange={onChange}
         className="mt-1 size-5 shrink-0 accent-[var(--color-accent-button)]"
       />
@@ -69,20 +74,27 @@ function Choice({
 }
 
 function Group({
+  id,
   legend,
   error,
   children,
 }: {
+  id: string;
   legend: string;
   error?: string | undefined;
   children: ReactNode;
 }) {
   return (
-    <fieldset className="grid gap-3" aria-invalid={error ? true : undefined}>
+    <fieldset
+      id={id}
+      data-invalid={error ? true : undefined}
+      aria-describedby={error ? `${id}-error` : undefined}
+      className="grid gap-3"
+    >
       <legend className="mb-2 text-sm font-bold text-ink">{legend}</legend>
       {children}
       {error ? (
-        <p role="alert" className="text-sm font-bold text-error">
+        <p id={`${id}-error`} className="text-sm font-bold text-error">
           {error}
         </p>
       ) : null}
@@ -99,6 +111,8 @@ function Field({
   inputMode,
   autoComplete,
   maxLength,
+  required,
+  marker,
 }: {
   id: string;
   label: string;
@@ -108,11 +122,15 @@ function Field({
   inputMode?: 'numeric' | 'text';
   autoComplete?: string;
   maxLength: number;
+  required?: boolean;
+  /** "(needed)" / "(optional)" shown after the label. */
+  marker?: string;
 }) {
   return (
     <div className="grid gap-1">
       <label htmlFor={id} className="text-sm font-bold text-ink">
         {label}
+        {marker ? <span className="ml-1 font-normal text-ink-muted">{marker}</span> : null}
       </label>
       <input
         id={id}
@@ -121,6 +139,7 @@ function Field({
         inputMode={inputMode}
         autoComplete={autoComplete}
         maxLength={maxLength}
+        required={required}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : undefined}
         onChange={(e) => {
@@ -158,18 +177,33 @@ export function UstaadJoinFlow({
   const session = useSession();
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<JoinDraft>(() => emptyJoinDraft(prefill));
-  const [errors, setErrors] = useState<Partial<Record<string, JoinStepErrorKey>>>({});
+  const [errors, setErrors] = useState<Partial<Record<string, JoinStepErrorKey | JoinApiErrorKey>>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [challenge, setChallenge] = useState(false);
   const [done, setDone] = useState(false);
+  const [later, setLater] = useState(false);
+  const [status, setStatus] = useState('');
+  const [errorTick, setErrorTick] = useState(0);
   const heading = useRef<HTMLHeadingElement>(null);
+  const form = useRef<HTMLFormElement>(null);
   const moved = useRef(false);
 
   useEffect(() => {
     if (moved.current) heading.current?.focus();
     moved.current = true;
   }, [step, done]);
+
+  // After a failed Next, focus the first invalid control (its message is read through aria-describedby).
+  useEffect(() => {
+    if (errorTick === 0) return;
+    const root = form.current;
+    if (!root) return;
+    const first = root.querySelector<HTMLElement>(
+      '[aria-invalid="true"], [data-invalid="true"] input:not([disabled])',
+    );
+    first?.focus();
+  }, [errorTick]);
 
   if (!hydrated) return <div className="skeleton h-96 w-full rounded-card" aria-hidden="true" />;
   if (!session) {
@@ -179,7 +213,7 @@ export function UstaadJoinFlow({
         <p className="text-base text-ink">{t('signInFirst')}</p>
         <a
           href={`${localePath('/login', locale)}?next=${encodeURIComponent(back)}`}
-          className="press inline-flex min-h-12 items-center justify-center rounded-button bg-accent-button px-6 text-base font-bold text-white hover:bg-accent-button-hover"
+          className="press inline-flex min-h-12 items-center justify-center rounded-button bg-accent-button px-6 text-base font-bold text-white hover:bg-accent-button-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
         >
           {t('signIn')}
         </a>
@@ -200,7 +234,7 @@ export function UstaadJoinFlow({
         <p className="text-base text-ink-muted">{t('doneBody')}</p>
         <a
           href={localePath('/ustaad/welcome', locale)}
-          className="press inline-flex min-h-12 items-center justify-center rounded-button bg-accent-button px-6 text-base font-bold text-white hover:bg-accent-button-hover"
+          className="press inline-flex min-h-12 items-center justify-center rounded-button bg-accent-button px-6 text-base font-bold text-white hover:bg-accent-button-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
         >
           {t('doneCta')}
         </a>
@@ -220,22 +254,31 @@ export function UstaadJoinFlow({
   const last = step === JOIN_STEPS.length - 1;
 
   async function onNext() {
+    if (busy) return;
     const found = stepErrors(key, draft);
     setErrors(found);
     setFormError(null);
-    if (Object.keys(found).length > 0) return;
+    if (Object.keys(found).length > 0) {
+      setErrorTick((n) => n + 1);
+      return;
+    }
     track('ustaad_join_step', { step: step + 1, via });
     if (!last) {
       setStep((s) => s + 1);
       return;
     }
     setBusy(true);
+    setStatus(t('submitting'));
     let token: string;
     try {
       const { turnstileToken } = await import('@/lib/auth/turnstile');
-      token = await turnstileToken(TURNSTILE_ID, locale, setChallenge);
+      token = await turnstileToken(TURNSTILE_ID, locale, (shown) => {
+        setChallenge(shown);
+        if (shown) setStatus(t('challengeShown'));
+      });
     } catch {
       setBusy(false);
+      setStatus('');
       setFormError(t('errTurnstile'));
       return;
     }
@@ -245,7 +288,15 @@ export function UstaadJoinFlow({
       joinBody(draft, { turnstileToken: token, via, ...(fromApplication ? { fromApplication } : {}) }),
     );
     setBusy(false);
+    setStatus('');
     if (!res.ok) {
+      // A problem with an earlier answer takes the person back to that step, error on the field.
+      const back = joinErrorStep(res.code);
+      if (back) {
+        setStep(JOIN_STEPS.indexOf(back.step));
+        setErrors({ [back.field]: back.key });
+        return;
+      }
       setFormError(t(joinErrorKey(res.code)));
       return;
     }
@@ -254,6 +305,7 @@ export function UstaadJoinFlow({
 
   return (
     <form
+      ref={form}
       noValidate
       className="grid gap-6"
       onSubmit={(e) => {
@@ -278,12 +330,13 @@ export function UstaadJoinFlow({
           tabIndex={-1}
           className="mt-4 font-heading text-[clamp(22px,4vw,28px)] font-extrabold text-ink outline-none"
         >
+          <span className="sr-only">{t('stepHeading', { n: step + 1, total: JOIN_STEPS.length })}</span>
           {t(`step_${key}`)}
         </h2>
       </div>
 
       {key === 'who' ? (
-        <Group legend={t('step_who')} error={msg('track')}>
+        <Group id="uj-track" legend={t('step_who')} error={msg('track')}>
           {(['apprentice', 'ustaad'] as const).map((tr) => (
             <Choice
               key={tr}
@@ -302,12 +355,12 @@ export function UstaadJoinFlow({
       ) : null}
 
       {key === 'work' ? (
-        <div className="grid gap-6">
+        <Group id="uj-work" legend={t('step_work')} error={msg('specialities')}>
           {[
-            { legend: t('workVehicles'), codes: USTAAD_SEGMENT_CODES },
-            { legend: t('workKinds'), codes: USTAAD_WORK_CODES },
-          ].map((g, i) => (
-            <Group key={g.legend} legend={g.legend} error={i === 0 ? msg('specialities') : undefined}>
+            { legend: t('workVehicles'), codes: USTAAD_SEGMENT_CODES, id: 'uj-work-vehicles' },
+            { legend: t('workKinds'), codes: USTAAD_WORK_CODES, id: 'uj-work-kinds' },
+          ].map((g) => (
+            <Group key={g.id} id={g.id} legend={g.legend}>
               <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
                 {g.codes.map((code) => (
                   <Choice
@@ -324,7 +377,7 @@ export function UstaadJoinFlow({
               </div>
             </Group>
           ))}
-        </div>
+        </Group>
       ) : null}
 
       {key === 'details' ? (
@@ -339,6 +392,8 @@ export function UstaadJoinFlow({
             error={msg('displayName')}
             autoComplete="name"
             maxLength={60}
+            required
+            marker={t('required')}
           />
           <Field
             id="uj-garage"
@@ -347,6 +402,7 @@ export function UstaadJoinFlow({
             onChange={(v) => {
               set('garageName', v);
             }}
+            autoComplete="organization"
             maxLength={80}
           />
           <label className="flex min-h-12 items-center gap-3 text-base text-ink">
@@ -372,6 +428,8 @@ export function UstaadJoinFlow({
               inputMode="numeric"
               autoComplete="postal-code"
               maxLength={6}
+              required
+              marker={t('required')}
             />
             <Field
               id="uj-years"
@@ -383,6 +441,8 @@ export function UstaadJoinFlow({
               error={msg('yearsClaimed')}
               inputMode="numeric"
               maxLength={2}
+              required
+              marker={t('required')}
             />
           </div>
           <Field
@@ -393,9 +453,12 @@ export function UstaadJoinFlow({
               set('areaLabel', v);
             }}
             error={msg('areaLabel')}
+            autoComplete="address-level3"
             maxLength={80}
+            required
+            marker={t('required')}
           />
-          <Group legend={t('workPlace')} error={msg('workPlace')}>
+          <Group id="uj-workplace" legend={t('workPlace')} error={msg('workPlace')}>
             {(['shop', 'home_roadside'] as const).map((w) => (
               <Choice
                 key={w}
@@ -413,7 +476,7 @@ export function UstaadJoinFlow({
       ) : null}
 
       {key === 'verify' ? (
-        <Group legend={t('verifyLead')}>
+        <Group id="uj-verify" legend={t('verifyLead')}>
           {PROOFS.map((p) => (
             <Choice
               key={p}
@@ -421,6 +484,7 @@ export function UstaadJoinFlow({
               name="verify"
               checked={draft.verifyMethods.includes(p)}
               onChange={() => {
+                setLater(false);
                 set('verifyMethods', toggle(draft.verifyMethods, p));
               }}
               title={t(`verify_${p}`)}
@@ -439,9 +503,11 @@ export function UstaadJoinFlow({
           <Choice
             type="checkbox"
             name="verify-later"
-            checked={draft.verifyMethods.length === 0}
+            checked={later}
             onChange={() => {
-              set('verifyMethods', []);
+              const next = !later;
+              setLater(next);
+              if (next) set('verifyMethods', []);
             }}
             title={t('verifyLater')}
           />
@@ -449,58 +515,67 @@ export function UstaadJoinFlow({
       ) : null}
 
       {key === 'choices' ? (
-        <Group legend={t('step_choices')} error={msg('ustaad_profile')}>
-          {CONSENTS.map((c) => (
-            <Choice
-              key={c}
-              type="checkbox"
-              name={c}
-              checked={draft.consents[c]}
-              onChange={() => {
-                set('consents', { ...draft.consents, [c]: !draft.consents[c] });
-              }}
-              title={t(`consent_${c}`)}
-            />
-          ))}
-          <p className="text-sm text-ink-muted">{t('consentNote')}</p>
-          <div role="group" aria-labelledby={challenge ? 'uj-turnstile-label' : undefined}>
+        <div className="grid gap-4">
+          <Group id="uj-consents" legend={t('step_choices')} error={msg('ustaad_profile')}>
+            {CONSENTS.map((c) => (
+              <Choice
+                key={c}
+                type="checkbox"
+                name={c}
+                checked={draft.consents[c]}
+                required={c === 'ustaad_profile'}
+                onChange={() => {
+                  set('consents', { ...draft.consents, [c]: !draft.consents[c] });
+                }}
+                title={t(`consent_${c}`)}
+              />
+            ))}
+            <p className="text-sm text-ink-muted">{t('consentNote')}</p>
+          </Group>
+          {/* One stable container for the widget; the group gets its name only once a challenge shows. */}
+          <div
+            role={challenge ? 'group' : undefined}
+            aria-labelledby={challenge ? 'uj-turnstile-label' : undefined}
+          >
             <p id="uj-turnstile-label" hidden={!challenge} className="text-sm font-bold text-ink">
               {t('securityCheck')}
             </p>
             <div id={TURNSTILE_ID} />
           </div>
-        </Group>
+        </div>
       ) : null}
 
+      <p role="status" className="sr-only">
+        {status}
+      </p>
       {formError ? (
         <p role="alert" className="rounded-lg bg-warning-bg px-3 py-2 text-sm font-bold text-warning">
           {formError}
         </p>
       ) : null}
 
-      <div className="flex flex-col-reverse gap-3 min-[420px]:flex-row min-[420px]:justify-between">
+      {/* Primary action first in the DOM (it is also on top on phones); Back sits to its left on wider screens. */}
+      <div className="flex flex-col gap-3 min-[420px]:flex-row-reverse min-[420px]:justify-between">
+        <button
+          type="submit"
+          aria-disabled={busy}
+          className={`press min-h-12 rounded-button bg-accent-button px-6 text-base font-bold text-white hover:bg-accent-button-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus ${busy ? 'opacity-70' : ''}`}
+        >
+          {last ? (busy ? t('submitting') : t('submit')) : t('next')}
+        </button>
         {step > 0 ? (
           <button
             type="button"
             onClick={() => {
               setErrors({});
+              setFormError(null);
               setStep((s) => s - 1);
             }}
             className="press min-h-12 rounded-button border border-line-card px-6 text-base font-bold text-ink focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
           >
             {t('back')}
           </button>
-        ) : (
-          <span />
-        )}
-        <button
-          type="submit"
-          disabled={busy}
-          aria-busy={busy}
-          className="press min-h-12 rounded-button bg-accent-button px-6 text-base font-bold text-white hover:bg-accent-button-hover disabled:opacity-70 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
-        >
-          {last ? (busy ? t('submitting') : t('submit')) : t('next')}
-        </button>
+        ) : null}
       </div>
     </form>
   );

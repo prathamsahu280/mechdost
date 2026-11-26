@@ -10,6 +10,7 @@ import {
   JOIN_STEPS,
   joinBody,
   joinErrorKey,
+  joinErrorStep,
   mechanicApplyView,
   stepErrors,
   type JoinDraft,
@@ -115,5 +116,13 @@ describe('/partners/apply/mechanic (spec 23 § 4a, lead 2026-11-26)', () => {
     expect(mechanicApplyView('open')).toBe('ustaad_join');
     expect(mechanicApplyView('staff_preview')).toBe('application');
     expect(mechanicApplyView('off')).toBe('application');
+  });
+});
+
+describe('server errors about earlier answers (forms review 2026-11-26)', () => {
+  it('a reserved name or a closed area sends the person back to step 3 with the field marked', () => {
+    expect(joinErrorStep('NAME_RESERVED')).toEqual({ step: 'details', field: 'displayName', key: 'errName' });
+    expect(joinErrorStep('USTAAD_REGION')).toEqual({ step: 'details', field: 'pincode', key: 'errRegion' });
+    expect(joinErrorStep('USTAAD_ALREADY_MEMBER')).toBeNull();
   });
 });

@@ -6773,7 +6773,11 @@
       "errTurnstile": "सुरक्षा जाँच पूरी नहीं हुई। फिर से कोशिश करो।",
       "errPhone": "पहले अपना फ़ोन नंबर पक्का करो।",
       "errRate": "बहुत बार कोशिश हुई। थोड़ा रुककर फिर करो।",
-      "errGeneric": "कुछ गड़बड़ हुई। फिर से कोशिश करो।"
+      "errGeneric": "कुछ गड़बड़ हुई। फिर से कोशिश करो।",
+      "required": "(ज़रूरी)",
+      "optional": "(ज़रूरी नहीं)",
+      "challengeShown": "नीचे सुरक्षा जाँच पूरी करो।",
+      "stepHeading": "कदम {n} / {total}: "
     },
     "card": {
       "title": "मेरा कार्ड",
@@ -6844,7 +6848,14 @@
       "reason_proofs_mismatch": "सबूत मेल नहीं खाए।",
       "reason_duplicate_account": "यह दूसरा खाता लगता है।",
       "reason_other": "MechDost का संदेश देखो।",
-      "openNetwork": "उस्ताद नेटवर्क खोलो"
+      "openNetwork": "उस्ताद नेटवर्क खोलो",
+      "specialities": "मैं क्या ठीक करता हूँ",
+      "opensNewTab": "(WhatsApp खुलेगा)",
+      "state_done": "पूरा",
+      "state_current": "अभी",
+      "state_next": "अभी नहीं",
+      "state_todo": "अभी नहीं",
+      "state_failed": "मंज़ूरी नहीं"
     },
     "qa": {},
     "feed": {},

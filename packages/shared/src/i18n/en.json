@@ -6773,7 +6773,11 @@
       "errTurnstile": "The security check did not pass. Try again.",
       "errPhone": "Verify your phone number first.",
       "errRate": "Too many tries. Wait a little and try again.",
-      "errGeneric": "Something went wrong. Try again."
+      "errGeneric": "Something went wrong. Try again.",
+      "required": "(needed)",
+      "optional": "(optional)",
+      "challengeShown": "Complete the security check below.",
+      "stepHeading": "Step {n} of {total}: "
     },
     "card": {
       "title": "My card",
@@ -6844,7 +6848,14 @@
       "reason_proofs_mismatch": "The proofs did not match.",
       "reason_duplicate_account": "This looks like a second account.",
       "reason_other": "See the message from MechDost.",
-      "openNetwork": "Open Ustaad Network"
+      "openNetwork": "Open Ustaad Network",
+      "specialities": "What I fix",
+      "opensNewTab": "(opens WhatsApp)",
+      "state_done": "Done",
+      "state_current": "Now",
+      "state_next": "Not yet",
+      "state_todo": "Not yet",
+      "state_failed": "Not approved"
     },
     "qa": {},
     "feed": {},

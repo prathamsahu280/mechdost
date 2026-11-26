@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MyCard } from '@mechdost/shared/ustaad/dto/verification';
 import { UstaadIcon } from '@/components/ustaad/shell/icons';
 import { track } from '@/lib/analytics';
@@ -69,7 +69,7 @@ function IdCard({ card }: { card: MyCard }) {
               verified ? 'bg-success-bg text-success' : 'bg-white/10 text-white/85'
             }`}
           >
-            {verified ? '✓ ' : ''}
+            {verified ? <span aria-hidden="true">✓ </span> : null}
             {verified ? t('verified') : t('notVerified')}
           </span>
           {m.official ? (
@@ -79,7 +79,7 @@ function IdCard({ card }: { card: MyCard }) {
           ) : null}
         </div>
         {m.specialities.length > 0 ? (
-          <ul className="flex flex-wrap gap-2" aria-label={t('title')}>
+          <ul className="flex flex-wrap gap-2" aria-label={t('specialities')}>
             {m.specialities.map((s) => (
               <li key={s} className="rounded-full bg-white/10 px-3 py-1 text-sm">
                 {/* Speciality names live with the join copy (`ustaad.join.spec_*`). */}
@@ -98,6 +98,7 @@ function IdCard({ card }: { card: MyCard }) {
           className={`${btn} bg-white text-navy`}
         >
           {t('shareWhatsApp')}
+          <span className="sr-only"> {t('opensNewTab')}</span>
         </a>
       </div>
     </article>
@@ -132,6 +133,7 @@ function Ladder({ card }: { card: MyCard }) {
                 <span aria-hidden="true" className="text-lg">
                   {state === 'done' ? '✓' : state === 'current' ? '●' : '○'}
                 </span>
+                <span className="sr-only">{t(`state_${state}`)}: </span>
                 <h3 className="font-heading text-lg font-extrabold text-ink">
                   {step.name || t(`level_${step.level}`)}
                 </h3>
@@ -176,6 +178,8 @@ export function MyCardScreen() {
   const locale = useLocale();
   const [card, setCard] = useState<MyCard | null>(null);
   const [failed, setFailed] = useState(false);
+  const top = useRef<HTMLDivElement>(null);
+  const retried = useRef(false);
 
   const load = useCallback(async () => {
     setFailed(false);
@@ -185,17 +189,23 @@ export function MyCardScreen() {
     else setFailed(true);
   }, [locale]);
 
+  // After Retry the button goes away: put focus on the screen's top so keyboard users keep their place.
+  useEffect(() => {
+    if (retried.current && (card || failed)) top.current?.focus();
+  }, [card, failed]);
+
   useEffect(() => {
     void load();
   }, [load]);
 
   if (failed)
     return (
-      <div role="alert" className="grid gap-3">
+      <div ref={top} tabIndex={-1} role="alert" className="grid gap-3 outline-none">
         <p className="text-base text-ink">{t('error')}</p>
         <button
           type="button"
           onClick={() => {
+            retried.current = true;
             void load();
           }}
           className={`${btn} border border-line-card text-ink`}
@@ -206,7 +216,7 @@ export function MyCardScreen() {
     );
   if (!card)
     return (
-      <p className="text-base text-ink-muted" aria-live="polite">
+      <p role="status" className="text-base text-ink-muted">
         {t('loading')}
       </p>
     );
@@ -220,7 +230,7 @@ export function MyCardScreen() {
   ];
   const verified = card.member.verificationState === 'verified';
   return (
-    <div className="grid gap-6">
+    <div ref={top} tabIndex={-1} className="grid gap-6 outline-none">
       <IdCard card={card} />
       <a
         href={localePath('/partners/status', locale)}
@@ -248,7 +258,7 @@ export function MyCardScreen() {
           {card.badges.map((b) => (
             <li
               key={b.code}
-              className={`rounded-card border p-3 ${b.held ? 'border-accent bg-accent-soft' : 'border-line-card bg-surface opacity-70'}`}
+              className={`rounded-card border p-3 ${b.held ? 'border-accent bg-accent-soft' : 'border-dashed border-line-card bg-surface'}`}
             >
               <p className="font-bold text-ink">{b.name}</p>
               <p className="text-sm text-ink-muted">{b.rule}</p>
