@@ -493,6 +493,43 @@ describe('request-only messages (SR-33, SR-34, AT-DM-1)', () => {
     expect(after).toBe(before);
   });
 
+  it('a held first message never reaches the receiver: not in requests, cannot be opened or accepted', async () => {
+    const a = await member();
+    const b = await member();
+    const th = await startUstaadThread(t(), a, { memberId: b.memberId, text: 'registration fee 500 bhejo' });
+    expect(th.pending).toBe(true);
+    expect((await listUstaadThreads(t(), b, { box: 'requests' })).items.map((x) => x.id)).not.toContain(
+      th.threadId,
+    );
+    expect((await err(ustaadThreadMessages(t(), b, th.threadId, {}))).status).toBe(404);
+    expect((await err(moveUstaadThread(t(), b, th.threadId, 'accept'))).status).toBe(404);
+    // The sender still sees their request as pending.
+    expect((await listUstaadThreads(t(), a, { box: 'sent' })).items.map((x) => x.id)).toContain(th.threadId);
+  });
+
+  it('a restricted member’s thread and connection moves emit no analytics (SR-42)', async () => {
+    const a = await member();
+    const b = await member();
+    const th = await startUstaadThread(t(), a, { memberId: b.memberId, text: 'namaste' });
+    const req = await requestUstaadConnection(t(), a, b.memberId);
+    await db
+      .update(s.ustaadMembers)
+      .set({ restrictedMode: 'review' })
+      .where(eq(s.ustaadMembers.id, b.memberId));
+    const count = async () =>
+      Number(
+        (
+          await db.execute<{ n: number }>(
+            sql`select count(*)::int as n from events where user_id = ${b.userId}`,
+          )
+        ).rows[0]?.n,
+      );
+    const before = await count();
+    await moveUstaadThread(t(), b, th.threadId, 'decline');
+    await moveUstaadConnection(t(), b, req.id, 'decline');
+    expect(await count()).toBe(before);
+  });
+
   it('the photo of a held message is not readable by the receiver (signed URL refused), only by the sender', async () => {
     const a = await member();
     const b = await member();
@@ -760,6 +797,14 @@ describe('promotions (SR-41, § 9.5, § 15)', () => {
     await db.delete(s.ustaadPromotions);
     await db.insert(s.ustaadPromotions).values(live({ segmentCodes: ['truck_bus'] }));
     expect(await serveUstaadPromotion(t(), await member(), 'feed')).toBeNull();
+  });
+
+  it('a scheduled promotion is served once its start has come (G1 has no scheduled → live move)', async () => {
+    await db
+      .update(s.ustaadPromotions)
+      .set({ status: 'scheduled' })
+      .where(eq(s.ustaadPromotions.id, promoId));
+    expect((await serveUstaadPromotion(t(), await member(), 'feed'))?.id).toBe(promoId);
   });
 
   it('a click on a promotion that is not live is 404', async () => {

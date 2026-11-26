@@ -4283,7 +4283,7 @@
     },
     "ustaad_follow": {
       "title": "New followers",
-      "body": "{count} mechanics started following you."
+      "body": "New followers: {count}. See who is following you."
     },
     "ustaad_connect_request": {
       "title": "Connection request",

@@ -1312,7 +1312,8 @@ new_threads | connect_requests`; one conditional upsert `n + k where n < cap`, n
   and UPI ids masked to "#" (`dmTextCheck`, `shared/ustaad/social-rules.ts`), no media. Every message passes
   `screenUstaadContent` (`block` → 422 `USTAAD_CONTENT_BLOCKED`, `hold` → held) and the scam signals (fee phrase, UPI,
   pay-app ask, admin `scam_phrase` list) → held: invisible to the receiver, no notice, `last_message_at` unchanged,
-  shown to the sender as pending; its media is not readable by the receiver (`readableUstaadMedia` now requires an
+  shown to the sender as pending (a thread whose only message is held does not exist for the receiver: not
+  listed, 404 to open or accept); its media is not readable by the receiver (`readableUstaadMedia` now requires an
   `open` thread and an unheld message). Voice/photo only the sender's own verified audio/image in `media`; a shared
   post must be visible to both. Read receipts, per-thread mute (no notice), one `ustaad.message` bell entry per thread
   and IST day. Report hook for F2: `ustaadMessageReportTarget(tx, reporterMemberId, messageId)`.
@@ -1333,7 +1334,8 @@ new_threads | connect_requests`; one conditional upsert `n + k where n < cap`, n
   one promotion or null with the locked label `{ en: 'Sponsored', hi: 'प्रायोजित' }` (`SPONSORED_LABEL`) and `href`, a
   MechDost internal path built on the server (`promotionHref`: `/shop/{slug}`, `/shop?category=`, `/offers`,
   `/ustaad/learn…`, or a stored internal path) re-checked by `isSafeInternalPath`; no redirect endpoint exists.
-  Rules: `promo.enabled` + `promo.place.<slot>`, live in its window, city/speciality targeting only, never on a
+  Rules: `promo.enabled` + `promo.place.<slot>`, `live` or `scheduled` inside its window (G1 has no
+  `scheduled → live` move, so a scheduled promotion goes live by its start time), city/speciality targeting only, never on a
   member's first day or in restricted mode, never once hidden, `promo.daily_cap_per_member` (atomic).
   `POST …/{id}/click` answers the same link; `POST …/{id}/hide` takes a reason code. The feed's `promo.every_n` spacing
   is the feed's job (D1/D2 feed).
@@ -1354,7 +1356,12 @@ new_threads | connect_requests`; one conditional upsert `n + k where n < cap`, n
   interleaving; the real-Postgres concurrency run is owed (`TEST_DATABASE_URL`).
 - **Not built (D2):** web screens (My network, message request, thread, Discover), mentorship routes (machine and
   table exist; block ends them), tag follows (`/ustaad/tags*` belong to D1), message delete/unsend, the feed's own
-  promotion spacing, push channel tuning for `ustaad.message`.
+  promotion spacing, push channel tuning for `ustaad.message`, the Discover `area=` filter of § 8 (the strict query
+  answers 400 to it today), a staff release path for held messages (F2: set `last_message_at`, send the notice),
+  real-Postgres concurrency run. Known limits: restricted members may still follow, block and mute; the fixed rate
+  rules (20 a day for follows, connects and new threads) sit in front of the admin caps, so raising a cap above 20
+  has no effect until the rate rules read the settings. The `ustaad.follow` notice now reads "New followers:
+  {count}" (en + hi) so a count of 1 reads naturally.
 
 ## 21e. Workstream E as built (2026-11-26, branch `worktree-agent-a53f6c8fce669739a`, no migration)
 

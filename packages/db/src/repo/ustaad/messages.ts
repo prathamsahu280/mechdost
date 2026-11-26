@@ -15,7 +15,7 @@
  * - Blocked either way: the thread is 404 for both (SR-35). Staff read a thread only through an open report on one of
  *   its messages, city scoped, with a reason code, and every read writes `audit_log` (`ustaad.dm_read`).
  */
-import { and, asc, desc, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
 import { ustaadThreadMachine, type UstaadThreadStatus } from '@mechdost/shared/state';
 import type {
   MessageView,
@@ -83,6 +83,8 @@ async function myThread(tx: Tx, me: string, threadId: string, lock = false): Pro
   if (!row || row.status === 'blocked') throw new NotFoundError('Conversation not found');
   if (await ustaadBlockedEitherWay(tx, row.lowId, row.highId))
     throw new NotFoundError('Conversation not found');
+  // A thread whose only message is held does not exist for the receiver (no card, no accept, no notice).
+  if (row.requestedBy !== me && row.lastMessageAt === null) throw new NotFoundError('Conversation not found');
   return row;
 }
 
@@ -91,6 +93,7 @@ async function moveThread(
   row: ThreadRow,
   to: UstaadThreadStatus,
   actorUserId: string,
+  actorMemberId: string,
 ): Promise<ThreadRow> {
   const from = row.status as UstaadThreadStatus;
   ustaadThreadMachine.assert(from, to, 'member');
@@ -119,7 +122,7 @@ async function moveThread(
     },
     {
       name: 'ustaad_message_thread_changed',
-      memberId: null,
+      memberId: actorMemberId,
       userId: actorUserId,
       props: { threadId: row.id, to },
     },
@@ -413,7 +416,13 @@ export async function moveUstaadThread(
     const thread = await myThread(tx, me.id, threadId);
     if (thread.status !== 'requested' || thread.requestedBy === me.id)
       throw new NotFoundError('Conversation not found');
-    const moved = await moveThread(tx, thread, action === 'accept' ? 'open' : 'declined', actor.userId);
+    const moved = await moveThread(
+      tx,
+      thread,
+      action === 'accept' ? 'open' : 'declined',
+      actor.userId,
+      me.id,
+    );
     if (action === 'accept')
       await tx
         .update(ustaadThreadMembers)
@@ -515,6 +524,7 @@ export async function listUstaadThreads(
       and(
         or(eq(ustaadThreads.lowId, me.id), eq(ustaadThreads.highId, me.id)),
         box,
+        or(eq(ustaadThreads.requestedBy, me.id), isNotNull(ustaadThreads.lastMessageAt)),
         sql`not exists (select 1 from ustaad_blocks bl where (bl.member_id = ${ustaadThreads.lowId} and bl.target_id = ${ustaadThreads.highId}) or (bl.member_id = ${ustaadThreads.highId} and bl.target_id = ${ustaadThreads.lowId}))`,
         cur ? sql`(${at}, ${ustaadThreads.id}) < (${cur.at}, ${cur.id})` : undefined,
       ),

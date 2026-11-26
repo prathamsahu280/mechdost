@@ -39,7 +39,7 @@ async function moveConnection(
   tx: Tx,
   row: ConnectionRow,
   to: UstaadConnectionStatus,
-  actor: { userId: string | null; role: 'member' | 'system' },
+  actor: { userId: string | null; role: 'member' | 'system'; memberId?: string },
   set: Partial<typeof ustaadConnections.$inferInsert> = {},
   reasonCode: string | null = null,
 ): Promise<ConnectionRow> {
@@ -72,7 +72,7 @@ async function moveConnection(
     actor.role === 'member'
       ? {
           name: 'ustaad_connection_changed',
-          memberId: null,
+          memberId: actor.memberId ?? null,
           userId: actor.userId,
           props: { connectionId: row.id, to },
         }
@@ -168,7 +168,11 @@ export async function requestUstaadConnection(
       if (cur.status === 'requested' && cur.requestedBy === me.id) return { id: cur.id, status: 'requested' };
       if (cur.status === 'requested') {
         // Crossed requests: the other member asked first, so this is an accept.
-        const moved = await moveConnection(tx, cur, 'accepted', { userId: actor.userId, role: 'member' });
+        const moved = await moveConnection(tx, cur, 'accepted', {
+          userId: actor.userId,
+          role: 'member',
+          memberId: me.id,
+        });
         await connected(tx, moved, actor.userId, me.id);
         return { id: moved.id, status: 'accepted' };
       }
@@ -181,7 +185,7 @@ export async function requestUstaadConnection(
         tx,
         cur,
         'requested',
-        { userId: actor.userId, role: 'member' },
+        { userId: actor.userId, role: 'member', memberId: me.id },
         { requestedBy: me.id },
       );
     }
@@ -233,7 +237,7 @@ export async function moveUstaadConnection(
       .limit(1);
     if (!row) throw new NotFoundError('Request not found');
     const receiver = row.requestedBy !== me.id;
-    const by = { userId: actor.userId, role: 'member' as const };
+    const by = { userId: actor.userId, role: 'member' as const, memberId: me.id };
     if (
       (action === 'accept' || action === 'decline' || action === 'ignore') &&
       row.status === 'requested' &&
