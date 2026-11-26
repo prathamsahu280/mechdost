@@ -14,7 +14,7 @@ import { recordServerEvent } from '../events';
 import type { Tx } from '../orders';
 
 const STAFF_ROLE_KEYS = Object.entries(ROLES)
-  .filter(([, r]) => 'staff' in r && r.staff === true)
+  .filter(([, r]) => 'staff' in r && r.staff)
   .map(([k]) => k);
 
 async function reservedSkeletons(tx: Tx): Promise<Set<string>> {

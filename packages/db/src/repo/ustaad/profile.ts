@@ -47,9 +47,7 @@ export async function updateUstaadProfile(
   input: PatchMe,
 ): Promise<MemberView> {
   const { expectedVersion, ...patch } = input;
-  const set = Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined)) as Partial<
-    Omit<PatchMe, 'expectedVersion'>
-  >;
+  const set = patch as Partial<Omit<PatchMe, 'expectedVersion'>>;
   const fields = Object.keys(set).sort();
   if (fields.length === 0) throw new ValidationError('Nothing to update', 'EMPTY_PATCH');
   if (set.displayName !== undefined)
@@ -179,9 +177,7 @@ export async function saveUstaadChoices(
       if (s['ustaad.correction.member_can_change'] !== true)
         throw new ValidationError('Smart correction is set by MechDost right now', 'USTAAD_SETTING_LOCKED');
     }
-    const set = Object.fromEntries(Object.entries(prefs).filter(([, v]) => v !== undefined)) as Partial<
-      Omit<Choices, 'expectedVersion' | 'consents'>
-    >;
+    const set = prefs as Partial<Omit<Choices, 'expectedVersion' | 'consents'>>;
     const [row] = await tx
       .update(ustaadMembers)
       .set({ ...set, updatedAt: new Date() })

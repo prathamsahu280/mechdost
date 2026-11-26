@@ -27,6 +27,7 @@ import {
 } from '../../schema';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../errors';
 import type { Tx } from '../orders';
+import { num } from '../sql-rows';
 import { recordUstaadEvent } from './events';
 import { readUstaadSettingValues } from './settings';
 import { ustaadMaybeToReview } from './verification';
@@ -417,7 +418,7 @@ export async function decideUstaadAttestByToken(
         ),
       )
       .limit(1);
-    const distanceM = pin ? Number(pin.m) : null;
+    const distanceM = pin ? num(pin.m) : null;
     const near =
       attestationRefusal({
         ownerIsPartner: false,
