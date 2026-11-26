@@ -161,6 +161,10 @@ const EXEMPT: Record<string, string> = {
   'components/assistant/assistant-launcher.tsx': 'chat dialog with its own close button and Escape handler',
   'components/partners/partner-status.tsx':
     'status-lookup wizard (form, code, result): a visible restart button per step',
+  'components/ustaad/feed/post-menu.tsx':
+    'steps inside a native modal <dialog> sheet (Escape, the close button and a tap outside close it; Cancel on confirms)',
+  'components/ustaad/feed/comments-sheet.tsx':
+    'setMode switches the comment input (text / voice / photo) inside the sheet; nothing opens in place',
   'components/portal/shop-csv-api.tsx':
     'file-check steps: "Choose another file" resets; the file field is always visible',
 };

@@ -14,7 +14,14 @@ export default async function UstaadCreatePage({ searchParams }: Props) {
   const story = (await searchParams)?.story === '1';
   return (
     <ClientMessages
-      namespaces={['ustaad.shell', 'ustaad.feed', 'ustaad.labels', 'ustaad.media', 'ustaad.correction']}
+      namespaces={[
+        'ustaad.shell',
+        'ustaad.feed',
+        'ustaad.labels',
+        'ustaad.media',
+        'ustaad.correction',
+        'segments',
+      ]}
     >
       <MemberGate>
         <Composer story={story} />

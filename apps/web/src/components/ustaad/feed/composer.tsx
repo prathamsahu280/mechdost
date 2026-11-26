@@ -533,10 +533,7 @@ export function Composer({ story }: { story: boolean }) {
                 </ul>
               ) : null}
               {photos.length < maxPhotos ? (
-                <label
-                  htmlFor={ids.photos}
-                  className={`${btnQuiet} cursor-pointer has-focus-visible:outline-3 has-focus-visible:outline-focus`}
-                >
+                <label htmlFor={ids.photos} className={`${btnQuiet} file-pick cursor-pointer`}>
                   <UstaadIcon name="photo" />
                   {t('addPhoto')}
                   <input
@@ -558,10 +555,7 @@ export function Composer({ story }: { story: boolean }) {
           {wantsVideo ? (
             <div className="grid gap-2">
               <p className="text-sm text-muted">{t('videoHint')}</p>
-              <label
-                htmlFor={ids.video}
-                className={`${btnQuiet} cursor-pointer has-focus-visible:outline-3 has-focus-visible:outline-focus`}
-              >
+              <label htmlFor={ids.video} className={`${btnQuiet} file-pick cursor-pointer`}>
                 <UstaadIcon name="video" />
                 {t('videoPick')}
                 <input
@@ -591,10 +585,7 @@ export function Composer({ story }: { story: boolean }) {
 
           {kind === 'document' ? (
             <div className="grid gap-2">
-              <label
-                htmlFor={ids.doc}
-                className={`${btnQuiet} cursor-pointer has-focus-visible:outline-3 has-focus-visible:outline-focus`}
-              >
+              <label htmlFor={ids.doc} className={`${btnQuiet} file-pick cursor-pointer`}>
                 <UstaadIcon name="doc" />
                 {t('docPick')}
                 <input

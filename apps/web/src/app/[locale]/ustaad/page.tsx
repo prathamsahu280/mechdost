@@ -22,16 +22,6 @@ interface Props {
  */
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
-/** Message bundles the feed islands read (cards, sheets, media, correction, the join card). */
-const FEED_NS = [
-  'ustaad.feed',
-  'ustaad.labels',
-  'ustaad.media',
-  'ustaad.correction',
-  'ustaad.shell',
-  'segments',
-] as const;
-
 /** Shortcut tiles (spec 23 § 5 Home). Each opens its workstream's screen (B–E build them). */
 type ShortcutKey = 'ask' | 'jobs' | 'dukaan' | 'learn' | 'network' | 'area' | 'saved' | 'pin' | 'card';
 const SHORTCUTS: readonly { key: ShortcutKey; icon: UstaadIconName; path: string }[] = [
@@ -100,7 +90,16 @@ export default async function UstaadHome({ params, searchParams }: Props) {
           {t('storiesTitle')}
         </h2>
         <div className="mt-3">
-          <ClientMessages namespaces={[...FEED_NS]}>
+          <ClientMessages
+            namespaces={[
+              'ustaad.feed',
+              'ustaad.labels',
+              'ustaad.media',
+              'ustaad.correction',
+              'ustaad.shell',
+              'segments',
+            ]}
+          >
             <StoryRow />
           </ClientMessages>
         </div>
@@ -167,7 +166,16 @@ export default async function UstaadHome({ params, searchParams }: Props) {
           </ul>
         </nav>
         <div className="mt-4">
-          <ClientMessages namespaces={[...FEED_NS]}>
+          <ClientMessages
+            namespaces={[
+              'ustaad.feed',
+              'ustaad.labels',
+              'ustaad.media',
+              'ustaad.correction',
+              'ustaad.shell',
+              'segments',
+            ]}
+          >
             <MemberGate>
               <HomeFeed tab={following ? 'following' : 'for_you'} />
             </MemberGate>
