@@ -4,49 +4,16 @@ import { Camera } from 'lucide-react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState, type ReactNode, type SyntheticEvent } from 'react';
-import { prepareImage } from '@/components/ustaad/media/image-picker';
+import { preparePhoto } from '@/lib/delivery/photo';
 import { useAutoSubmitCode } from '@/lib/auth/use-auto-submit-code';
 import { track } from '@/lib/analytics';
 import { portalField, portalPrimary, portalQuiet } from '@/components/portal/portal-styles';
 import type { PhotoPurpose, Result } from '@/lib/delivery/types';
+export { useStatusLine } from './status-line';
 
 /** Big phone targets for the agent screens (48 px, decision 2026-11-26 delivery web). */
 export const bigPrimary = `${portalPrimary} min-h-12 text-base`;
 export const bigQuiet = `${portalQuiet} min-h-12 text-base`;
-
-/**
- * One always-mounted live line per screen (learning L-P23e): cleared, then set a moment later, so a repeated message is
- * read again. `tone` only colours the visible text.
- */
-export function useStatusLine() {
-  const [msg, setMsg] = useState<{ text: string; tone: 'ok' | 'error' } | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const say = (text: string, tone: 'ok' | 'error' = 'ok') => {
-    clearTimeout(timer.current);
-    setMsg(null);
-    timer.current = setTimeout(() => {
-      setMsg({ text, tone });
-    }, 60);
-  };
-  useEffect(
-    () => () => {
-      clearTimeout(timer.current);
-    },
-    [],
-  );
-  const line = (
-    <p
-      role="status"
-      className={`text-sm font-bold empty:sr-only ${msg?.tone === 'error' ? 'text-error' : 'text-success'}`}
-    >
-      {msg?.text ?? ''}
-    </p>
-  );
-  const clear = () => {
-    setMsg(null);
-  };
-  return { say, clear, line };
-}
 
 /**
  * A reason code as native radios (one choice; L-P23e) and the note, which is required for `other` (rule 16: codes
@@ -273,7 +240,7 @@ export function PhotoCapture({
     onMedia(null);
     setStatus('preparing');
     try {
-      const img = await prepareImage(file);
+      const img = await preparePhoto(file);
       setPreview({ url: URL.createObjectURL(img.blob), width: img.width, height: img.height });
       setStatus('uploading');
       const res = await upload(img.blob, purpose);

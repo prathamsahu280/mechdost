@@ -9,8 +9,10 @@
  *   width     viewport width in CSS px (grid column counts change at 480/640/760/1024/1280)
  *   theme     light | dark (the system preference is set to the opposite, so a lost choice shows)
  *   locale    en | hi
- *   auth      out | customer | shop | workshop | admin (demo session seeded directly)
- *   world     empty | cart | busy (`fixtures/demo-world.ts`: orders, requests, quote, ticket, reviews)
+ *   auth      out | customer | shop | workshop | admin | agent | agentshop (demo session seeded directly;
+ *             agent = delivery agent Sunil, agentshop = Gupta Lubes & Spares in agents mode, spec 24)
+ *   world     empty | cart | busy | delivery (`fixtures/demo-world.ts`: orders, requests, quote, ticket, reviews;
+ *             delivery = busy + `fixtures/delivery-world.ts`: agent jobs picked up, ready, returned)
  *   cart      none | c1 | c2 | c99 | mixed | many20 | below | max   (see CARTS)
  *   compare   none | lub-1 | lub-2 | lub-3 | lub-4 | bat-2 | bat-3 | tyr-2 | spa-2 | spa-3   (see COMPARES)
  *   stress    none | long-text | long-price | mixed-shape  (data-shape variants the demo catalogue lacks,
@@ -286,6 +288,7 @@ export const ADMIN_SECTIONS = [
   'orders',
   'services',
   'roadside',
+  'delivery',
   'quotes',
   'applications',
   'partners',
@@ -340,6 +343,131 @@ const roleRoute = (r: Row) =>
  * each item and check the page that opens). The admin and account lists follow `src/lib/sections.ts` for the demo
  * build (unit-tested); real-mode lists are the API rows `API-NAV-*` (`model-api.ts`).
  */
+/** The delivery world's ids (copied from `fixtures/delivery-world.ts`, which imports the demo store and cannot load here). */
+const DLV_PICKED_UP_JOB = '0193a5d0-0000-7000-8000-0000000b0005';
+const DLV_PICKED_UP_ORDER = 'MD-RPR-2026-HND005';
+const DLV_RETURNED_ORDER = 'MD-RPR-2026-HND007';
+const deliveryWorldParam: Param = { name: 'world', values: ['delivery'] };
+const agentEnv = [{ name: 'width', values: [320, 390, 480, 768, 1440] }, theme, locale];
+const agentRow = (
+  code: string,
+  component: string,
+  path: string,
+  mustShow?: string,
+  core = false,
+): ComponentDef => ({
+  code,
+  page: `Delivery agent portal (${path})`,
+  component,
+  path,
+  scope: 'main',
+  checks: [...BASE_CHECKS, 'dismiss'],
+  strategy: 'pairwise',
+  params: [...agentEnv, { name: 'auth', values: ['agent'] }, deliveryWorldParam],
+  sweep: 12,
+  ...(mustShow ? { mustShow } : {}),
+  // One per-push case for the whole feature (the job screen in Hindi at 390 px): the CI core subset stays small.
+  ...(core ? { core: coreAt([390], (r) => r.locale === 'hi') } : {}),
+});
+const DELIVERY_COMPONENTS: readonly ComponentDef[] = [
+  agentRow(
+    'DLV-AGENT-OFFERS',
+    'Agent offers: status strip (online switch, help call), tab bar, offers with countdown or the empty state',
+    '/partner/delivery',
+  ),
+  agentRow('DLV-AGENT-JOBS', 'Agent jobs in hand (picked up)', '/partner/delivery/jobs', DLV_PICKED_UP_ORDER),
+  agentRow(
+    'DLV-AGENT-JOB',
+    "Agent job in steps: customer revealed after pickup, call + maps, delivery code + photo, couldn't deliver",
+    `/partner/delivery/jobs/${DLV_PICKED_UP_JOB}`,
+    'Ravi Sahu',
+    true,
+  ),
+  agentRow(
+    'DLV-AGENT-HISTORY',
+    'Agent history (returned job)',
+    '/partner/delivery/history',
+    DLV_RETURNED_ORDER,
+  ),
+  agentRow(
+    'DLV-AGENT-PROFILE',
+    'Agent profile: rating, documents with status, earnings (payouts)',
+    '/partner/delivery/profile',
+  ),
+  {
+    code: 'DLV-APPLY',
+    page: 'Apply as a delivery agent (/partners/apply/delivery_agent)',
+    component:
+      'Delivery agent application: name, mobile, city, vehicle radios, consent (Turnstile on the API)',
+    path: '/partners/apply/delivery_agent',
+    scope: 'main',
+    checks: [...BASE_CHECKS, 'dismiss'],
+    strategy: 'pairwise',
+    params: [...env, { name: 'auth', values: ['out'] }, { name: 'form', values: ['clean', 'errors'] }],
+    sweep: 12,
+  },
+  {
+    code: 'DLV-INVITE',
+    page: 'Delivery agent invite (/partners/delivery-invite/{token})',
+    component: 'Invite link that is not valid (expired, used or wrong): one sentence, no action',
+    path: '/partners/delivery-invite/0000000000000000000000000000000000000000',
+    scope: 'main',
+    checks: BASE_CHECKS,
+    strategy: 'pairwise',
+    params: [...env, { name: 'auth', values: ['out', 'customer'] }],
+  },
+  {
+    code: 'DLV-SHOP',
+    page: 'Shop portal, agents mode (/partner/shop)',
+    component:
+      'Agent-mode shop: Mark ready for pickup, pickup code while an agent comes, agent first name + vehicle, delivery mode card',
+    path: '/partner/shop',
+    scope: 'main',
+    checks: [...BASE_CHECKS, 'dismiss'],
+    strategy: 'pairwise',
+    params: [...env, { name: 'auth', values: ['agentshop'] }, deliveryWorldParam],
+    sweep: 16,
+    mustShow: 'MD-RPR-2026-HND006',
+  },
+  {
+    code: 'DLV-CUSTOMER',
+    page: 'Order page, agent delivery (/orders/{code})',
+    component:
+      'Customer delivery block: picked up by first name (vehicle), delivery code; never the shop or the agent phone',
+    path: `/orders/${DLV_PICKED_UP_ORDER}`,
+    scope: 'main',
+    checks: BASE_CHECKS,
+    strategy: 'pairwise',
+    params: [...env, { name: 'auth', values: ['customer'] }, deliveryWorldParam],
+    mustShow: 'Sunil',
+  },
+  {
+    code: 'DLV-CUSTOMER-RETURNED',
+    page: 'Order page, returned to the shop (/orders/{code})',
+    component: 'Customer delivery block after a return: refund wording (parts only)',
+    path: `/orders/${DLV_RETURNED_ORDER}`,
+    scope: 'main',
+    checks: BASE_CHECKS,
+    strategy: 'pairwise',
+    params: [...env, { name: 'auth', values: ['customer'] }, deliveryWorldParam],
+  },
+  {
+    code: 'DLV-ADMIN',
+    page: 'Admin → Delivery (/admin/delivery)',
+    component:
+      'Delivery section tabs (jobs, applications, agents, payouts, shop requests, settings) and the jobs queue table with waiting chips',
+    path: '/admin/delivery',
+    scope: 'main',
+    checks: [...BASE_CHECKS, 'dismiss'],
+    strategy: 'pairwise',
+    params: [...env, { name: 'auth', values: ['admin'] }, deliveryWorldParam],
+    sweep: 16,
+    align: TABLE_ALIGN,
+    mustShow: 'MD-RPR-2026-HND006',
+    note: 'Tabs other than Jobs are client state of one route: opened by hand in the screenshots and the e2e.',
+  },
+];
+
 const NAVIGATION: readonly ComponentDef[] = [
   {
     code: 'NAV-HEADER',
@@ -1361,6 +1489,8 @@ export const COMPONENTS: readonly ComponentDef[] = [
     params: [...env, { name: 'auth', values: ['workshop'] }, world2],
     sweep: 16,
   },
+  // Delivery agents (spec 24, 2026-11-26), demo store + `fixtures/delivery-world.ts` (world `delivery`).
+  ...DELIVERY_COMPONENTS,
   // Roadside help (spec 22, 2026-11-24): the customer's request form (location, vehicle, problem, review). The tracking
   // page needs a request seeded in this browser's demo store, which the harness cannot do yet: its rows are listed and
   // parked as `test.fixme` (`realApi`), like the other pages that need a seeded world.

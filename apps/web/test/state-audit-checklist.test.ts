@@ -65,7 +65,8 @@ describe('UI state model', () => {
     // case (hi · 390 · coins), which the pairwise draw had missed before; one case is a few seconds per push.
     // 107 (was 105): the vehicle-segment rows (2026-11-25) add one chips case; the seven new demo products and the two
     // new /shop routes re-draw the pairwise cases of the card and filter rows.
-    expect(core.length).toBeLessThanOrEqual(107);
+    // 108 (was 107): one delivery-agent case (spec 24, 2026-11-27: the job screen in Hindi at 390 px).
+    expect(core.length).toBeLessThanOrEqual(108);
   });
 
   it('docs/qa/ui-state-checklist.md lists exactly the cases of the model', () => {

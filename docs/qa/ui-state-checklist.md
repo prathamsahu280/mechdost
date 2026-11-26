@@ -135,6 +135,17 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | POL-PAGE                   | Policies                                                                                   | Policy pages (sections, anchors)                                                                                                                                                                                                                                                | pairwise | 40       | 0       |
 | PRT-SHOP                   | Shop portal (/partner/shop)                                                                | Shop portal: offers with timer, accept/decline, orders, prices                                                                                                                                                                                                                  | pairwise | 16       | 1       |
 | PRT-WORKSHOP               | Workshop portal (/partner/workshop)                                                        | Workshop portal: requests, proposal, estimate lines, bill                                                                                                                                                                                                                       | pairwise | 16       | 0       |
+| DLV-AGENT-OFFERS           | Delivery agent portal (/partner/delivery)                                                  | Agent offers: status strip (online switch, help call), tab bar, offers with countdown or the empty state                                                                                                                                                                        | pairwise | 10       | 0       |
+| DLV-AGENT-JOBS             | Delivery agent portal (/partner/delivery/jobs)                                             | Agent jobs in hand (picked up)                                                                                                                                                                                                                                                  | pairwise | 10       | 0       |
+| DLV-AGENT-JOB              | Delivery agent portal (/partner/delivery/jobs/0193a5d0-0000-7000-8000-0000000b0005)        | Agent job in steps: customer revealed after pickup, call + maps, delivery code + photo, couldn't deliver                                                                                                                                                                        | pairwise | 10       | 1       |
+| DLV-AGENT-HISTORY          | Delivery agent portal (/partner/delivery/history)                                          | Agent history (returned job)                                                                                                                                                                                                                                                    | pairwise | 10       | 0       |
+| DLV-AGENT-PROFILE          | Delivery agent portal (/partner/delivery/profile)                                          | Agent profile: rating, documents with status, earnings (payouts)                                                                                                                                                                                                                | pairwise | 10       | 0       |
+| DLV-APPLY                  | Apply as a delivery agent (/partners/apply/delivery_agent)                                 | Delivery agent application: name, mobile, city, vehicle radios, consent (Turnstile on the API)                                                                                                                                                                                  | pairwise | 16       | 0       |
+| DLV-INVITE                 | Delivery agent invite (/partners/delivery-invite/{token})                                  | Invite link that is not valid (expired, used or wrong): one sentence, no action                                                                                                                                                                                                 | pairwise | 16       | 0       |
+| DLV-SHOP                   | Shop portal, agents mode (/partner/shop)                                                   | Agent-mode shop: Mark ready for pickup, pickup code while an agent comes, agent first name + vehicle, delivery mode card                                                                                                                                                        | pairwise | 16       | 0       |
+| DLV-CUSTOMER               | Order page, agent delivery (/orders/{code})                                                | Customer delivery block: picked up by first name (vehicle), delivery code; never the shop or the agent phone                                                                                                                                                                    | pairwise | 16       | 0       |
+| DLV-CUSTOMER-RETURNED      | Order page, returned to the shop (/orders/{code})                                          | Customer delivery block after a return: refund wording (parts only)                                                                                                                                                                                                             | pairwise | 16       | 0       |
+| DLV-ADMIN                  | Admin → Delivery (/admin/delivery)                                                         | Delivery section tabs (jobs, applications, agents, payouts, shop requests, settings) and the jobs queue table with waiting chips                                                                                                                                                | pairwise | 16       | 0       |
 | RSA-REQUEST                | Roadside help (/roadside)                                                                  | Roadside request: PIN code, vehicle types offered, problem choices, review and advance                                                                                                                                                                                          | pairwise | 16       | 0       |
 | RSA-FLOAT                  | Roadside help (/roadside)                                                                  | Roadside request with the floating assistant button at 390 px: the button never overlaps a focusable element in main (it steps aside on this form; QA 2026-11-24, "Car / SUV" card)                                                                                             | cross    | 16       | 1       |
 | RSA-TRACK                  | Roadside request (/roadside/{code})                                                        | Roadside tracking: steps, responder, arrival code, bill with advance and balance, refund note                                                                                                                                                                                   | pairwise | 16       | 0       |
@@ -142,6 +153,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | ADM-ORDERS                 | Admin console (/admin)                                                                     | Admin section: orders (section bar, tables, actions)                                                                                                                                                                                                                            | pairwise | 16       | 1       |
 | ADM-SERVICES               | Admin console (/admin)                                                                     | Admin section: services (section bar, tables, actions)                                                                                                                                                                                                                          | pairwise | 16       | 0       |
 | ADM-ROADSIDE               | Admin console (/admin)                                                                     | Admin section: roadside (section bar, tables, actions)                                                                                                                                                                                                                          | pairwise | 16       | 0       |
+| ADM-DELIVERY               | Admin console (/admin)                                                                     | Admin section: delivery (section bar, tables, actions)                                                                                                                                                                                                                          | pairwise | 16       | 0       |
 | ADM-QUOTES                 | Admin console (/admin)                                                                     | Admin section: quotes (section bar, tables, actions)                                                                                                                                                                                                                            | pairwise | 16       | 0       |
 | ADM-APPLICATIONS           | Admin console (/admin)                                                                     | Admin section: applications (section bar, tables, actions)                                                                                                                                                                                                                      | pairwise | 16       | 0       |
 | ADM-PARTNERS               | Admin console (/admin)                                                                     | Admin section: partners (section bar, tables, actions)                                                                                                                                                                                                                          | pairwise | 16       | 0       |
@@ -155,11 +167,11 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | ADM-SETTINGS               | Admin console (/admin)                                                                     | Admin section: settings (section bar, tables, actions)                                                                                                                                                                                                                          | pairwise | 16       | 0       |
 | ADM-NOTIFICATIONS          | Admin console (/admin)                                                                     | Admin section: notifications (section bar, tables, actions)                                                                                                                                                                                                                     | pairwise | 16       | 0       |
 | ADM-SCROLL                 | Admin console (/admin)                                                                     | Scroll geometry: one page scroller, side bar in view after scrolling, no second scroller (overview, orders, catalogue, content, settings, notifications)                                                                                                                        | cross    | 30       | 0       |
-| ADM-HEADER                 | Admin console (/admin)                                                                     | Page pattern: one header per section (title = side bar item, one-line description, primary action on the right), status badges, empty states, table boxes; 320 to 1920 px, both themes, English and Hindi                                                                       | pairwise | 96       | 0       |
+| ADM-HEADER                 | Admin console (/admin)                                                                     | Page pattern: one header per section (title = side bar item, one-line description, primary action on the right), status badges, empty states, table boxes; 320 to 1920 px, both themes, English and Hindi                                                                       | pairwise | 102      | 0       |
 | NAV-HEADER                 | Navigation                                                                                 | Header nav (1024 px and up): current item, hover, focus, every role and route                                                                                                                                                                                                   | cross    | 38       | 1       |
 | NAV-TABBAR                 | Navigation                                                                                 | Floating dock (under 1024 px): current tab, long Hindi labels, every role, walk                                                                                                                                                                                                 | cross    | 31       | 2       |
 | NAV-ACCOUNT                | Navigation                                                                                 | Account section bar: current section on each of the nine sections (scrolls on phones)                                                                                                                                                                                           | cross    | 80       | 1       |
-| NAV-ADMIN                  | Navigation                                                                                 | Admin section bar: current section on each demo section (scrolls on phones, column from 1024 px)                                                                                                                                                                                | cross    | 128      | 0       |
+| NAV-ADMIN                  | Navigation                                                                                 | Admin section bar: current section on each demo section (scrolls on phones, column from 1024 px)                                                                                                                                                                                | cross    | 136      | 0       |
 | NAV-CATEGORY               | Navigation                                                                                 | Shop category chips (scroll row): current chip, every chip applies its filter                                                                                                                                                                                                   | pairwise | 24       | 0       |
 | NAV-FOOTER                 | Navigation                                                                                 | Footer links: every link opens its page (help, policies, partners, support)                                                                                                                                                                                                     | pairwise | 16       | 0       |
 | ADM-PARTNERS-TABS          | Admin console (/admin/partners)                                                            | Partners: invites, price requests, agreement card, shop / workshop / mechanic tabs, pause prompt                                                                                                                                                                                | pairwise | 25       | 0       |
@@ -238,7 +250,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-USTAAD-NETWORK         | Ustaad My network (/ustaad/network), member                                                | Followers / Following / Connections / Requests / Blocked tab links; Message, Remove, Unfollow, Accept, Decline, Take back, Unblock, Unmute; limits note; empty states; Show more; cap and cooldown words                                                                        | pairwise | 41       | 0       |
 | API-USTAAD-DISCOVER        | Ustaad Discover (/ustaad/discover), member                                                 | Search (submit) with work and level filters; people cards: level chip, verified tick, area and distance band, specialities, helpful / best, New, Follow, Connect, Message; tags; Top this week; no match; Show more                                                             | pairwise | 56       | 0       |
 | API-ADM-APPS-USTAAD        | Admin → Partner applications (/admin/applications), real sign-in                           | Notice "Mechanic applications moved to the Ustaad Network" with the open verification count and the queue link (only for verifying staff while access is open)                                                                                                                  | pairwise | 32       | 0       |
-| **Total**                  |                                                                                            |                                                                                                                                                                                                                                                                                 |          | **6286** | **107** |
+| **Total**                  |                                                                                            |                                                                                                                                                                                                                                                                                 |          | **6462** | **108** |
 
 ## Chrome
 
@@ -2701,6 +2713,229 @@ Pairwise (all pairs of values); 16 states; scope `main`.
 - [ ] PRT-WORKSHOP-015 · 1920px · light · en · workshop partner · world=empty · /partner/workshop · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
 - [ ] PRT-WORKSHOP-016 · 1920px · dark · hi · workshop partner · world=busy · /partner/workshop · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
 
+## Delivery agent portal (/partner/delivery)
+
+### DLV-AGENT-OFFERS — Agent offers: status strip (online switch, help call), tab bar, offers with countdown or the empty state
+
+Pairwise (all pairs of values); 10 states; scope `main`.
+
+- [ ] DLV-AGENT-OFFERS-001 · 320px · light · en · · world=delivery · /partner/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] DLV-AGENT-OFFERS-002 · 320px · dark · hi · · world=delivery · /partner/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-AGENT-OFFERS-003 · 390px · light · hi · · world=delivery · /partner/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-AGENT-OFFERS-004 · 390px · dark · en · · world=delivery · /partner/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
+- [ ] DLV-AGENT-OFFERS-005 · 480px · light · en · · world=delivery · /partner/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] DLV-AGENT-OFFERS-006 · 480px · dark · hi · · world=delivery · /partner/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-AGENT-OFFERS-007 · 768px · light · en · · world=delivery · /partner/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
+- [ ] DLV-AGENT-OFFERS-008 · 768px · dark · hi · · world=delivery · /partner/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-AGENT-OFFERS-009 · 1440px · light · en · · world=delivery · /partner/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] DLV-AGENT-OFFERS-010 · 1440px · dark · hi · · world=delivery · /partner/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+
+## Delivery agent portal (/partner/delivery/jobs)
+
+### DLV-AGENT-JOBS — Agent jobs in hand (picked up)
+
+Pairwise (all pairs of values); 10 states; scope `main`.
+
+- [ ] DLV-AGENT-JOBS-001 · 320px · light · en · · world=delivery · /partner/delivery/jobs · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] DLV-AGENT-JOBS-002 · 320px · dark · hi · · world=delivery · /partner/delivery/jobs · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-AGENT-JOBS-003 · 390px · light · hi · · world=delivery · /partner/delivery/jobs · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-AGENT-JOBS-004 · 390px · dark · en · · world=delivery · /partner/delivery/jobs · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
+- [ ] DLV-AGENT-JOBS-005 · 480px · light · en · · world=delivery · /partner/delivery/jobs · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] DLV-AGENT-JOBS-006 · 480px · dark · hi · · world=delivery · /partner/delivery/jobs · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-AGENT-JOBS-007 · 768px · light · en · · world=delivery · /partner/delivery/jobs · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
+- [ ] DLV-AGENT-JOBS-008 · 768px · dark · hi · · world=delivery · /partner/delivery/jobs · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-AGENT-JOBS-009 · 1440px · light · en · · world=delivery · /partner/delivery/jobs · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] DLV-AGENT-JOBS-010 · 1440px · dark · hi · · world=delivery · /partner/delivery/jobs · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+
+## Delivery agent portal (/partner/delivery/jobs/0193a5d0-0000-7000-8000-0000000b0005)
+
+### DLV-AGENT-JOB — Agent job in steps: customer revealed after pickup, call + maps, delivery code + photo, couldn't deliver
+
+Pairwise (all pairs of values); 10 states; scope `main`.
+
+- [ ] DLV-AGENT-JOB-001 · 320px · light · en · · world=delivery · /partner/delivery/jobs/0193a5d0-0000-7000-8000-0000000b0005 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] DLV-AGENT-JOB-002 · 320px · dark · hi · · world=delivery · /partner/delivery/jobs/0193a5d0-0000-7000-8000-0000000b0005 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-AGENT-JOB-003 · 390px · light · hi · · world=delivery · /partner/delivery/jobs/0193a5d0-0000-7000-8000-0000000b0005 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi axe · core
+- [ ] DLV-AGENT-JOB-004 · 390px · dark · en · · world=delivery · /partner/delivery/jobs/0193a5d0-0000-7000-8000-0000000b0005 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
+- [ ] DLV-AGENT-JOB-005 · 480px · light · en · · world=delivery · /partner/delivery/jobs/0193a5d0-0000-7000-8000-0000000b0005 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] DLV-AGENT-JOB-006 · 480px · dark · hi · · world=delivery · /partner/delivery/jobs/0193a5d0-0000-7000-8000-0000000b0005 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-AGENT-JOB-007 · 768px · light · en · · world=delivery · /partner/delivery/jobs/0193a5d0-0000-7000-8000-0000000b0005 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
+- [ ] DLV-AGENT-JOB-008 · 768px · dark · hi · · world=delivery · /partner/delivery/jobs/0193a5d0-0000-7000-8000-0000000b0005 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-AGENT-JOB-009 · 1440px · light · en · · world=delivery · /partner/delivery/jobs/0193a5d0-0000-7000-8000-0000000b0005 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] DLV-AGENT-JOB-010 · 1440px · dark · hi · · world=delivery · /partner/delivery/jobs/0193a5d0-0000-7000-8000-0000000b0005 · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+
+## Delivery agent portal (/partner/delivery/history)
+
+### DLV-AGENT-HISTORY — Agent history (returned job)
+
+Pairwise (all pairs of values); 10 states; scope `main`.
+
+- [ ] DLV-AGENT-HISTORY-001 · 320px · light · en · · world=delivery · /partner/delivery/history · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] DLV-AGENT-HISTORY-002 · 320px · dark · hi · · world=delivery · /partner/delivery/history · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-AGENT-HISTORY-003 · 390px · light · hi · · world=delivery · /partner/delivery/history · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-AGENT-HISTORY-004 · 390px · dark · en · · world=delivery · /partner/delivery/history · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
+- [ ] DLV-AGENT-HISTORY-005 · 480px · light · en · · world=delivery · /partner/delivery/history · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] DLV-AGENT-HISTORY-006 · 480px · dark · hi · · world=delivery · /partner/delivery/history · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-AGENT-HISTORY-007 · 768px · light · en · · world=delivery · /partner/delivery/history · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
+- [ ] DLV-AGENT-HISTORY-008 · 768px · dark · hi · · world=delivery · /partner/delivery/history · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-AGENT-HISTORY-009 · 1440px · light · en · · world=delivery · /partner/delivery/history · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] DLV-AGENT-HISTORY-010 · 1440px · dark · hi · · world=delivery · /partner/delivery/history · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+
+## Delivery agent portal (/partner/delivery/profile)
+
+### DLV-AGENT-PROFILE — Agent profile: rating, documents with status, earnings (payouts)
+
+Pairwise (all pairs of values); 10 states; scope `main`.
+
+- [ ] DLV-AGENT-PROFILE-001 · 320px · light · en · · world=delivery · /partner/delivery/profile · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] DLV-AGENT-PROFILE-002 · 320px · dark · hi · · world=delivery · /partner/delivery/profile · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-AGENT-PROFILE-003 · 390px · light · hi · · world=delivery · /partner/delivery/profile · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-AGENT-PROFILE-004 · 390px · dark · en · · world=delivery · /partner/delivery/profile · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
+- [ ] DLV-AGENT-PROFILE-005 · 480px · light · en · · world=delivery · /partner/delivery/profile · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] DLV-AGENT-PROFILE-006 · 480px · dark · hi · · world=delivery · /partner/delivery/profile · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-AGENT-PROFILE-007 · 768px · light · en · · world=delivery · /partner/delivery/profile · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
+- [ ] DLV-AGENT-PROFILE-008 · 768px · dark · hi · · world=delivery · /partner/delivery/profile · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-AGENT-PROFILE-009 · 1440px · light · en · · world=delivery · /partner/delivery/profile · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] DLV-AGENT-PROFILE-010 · 1440px · dark · hi · · world=delivery · /partner/delivery/profile · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+
+## Apply as a delivery agent (/partners/apply/delivery_agent)
+
+### DLV-APPLY — Delivery agent application: name, mobile, city, vehicle radios, consent (Turnstile on the API)
+
+Pairwise (all pairs of values); 16 states; scope `main`.
+
+- [ ] DLV-APPLY-001 · 320px · light · en · signed out · world=empty · /partners/apply/delivery_agent · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] DLV-APPLY-002 · 320px · dark · hi · signed out · world=empty · /partners/apply/delivery_agent · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-APPLY-003 · 390px · light · hi · signed out · world=empty · /partners/apply/delivery_agent · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-APPLY-004 · 390px · dark · en · signed out · world=empty · /partners/apply/delivery_agent · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
+- [ ] DLV-APPLY-005 · 480px · light · en · signed out · world=empty · /partners/apply/delivery_agent · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] DLV-APPLY-006 · 480px · dark · hi · signed out · world=empty · /partners/apply/delivery_agent · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-APPLY-007 · 768px · light · en · signed out · world=empty · /partners/apply/delivery_agent · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
+- [ ] DLV-APPLY-008 · 768px · dark · hi · signed out · world=empty · /partners/apply/delivery_agent · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-APPLY-009 · 1024px · light · en · signed out · world=empty · /partners/apply/delivery_agent · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] DLV-APPLY-010 · 1024px · dark · hi · signed out · world=empty · /partners/apply/delivery_agent · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-APPLY-011 · 1280px · light · en · signed out · world=empty · /partners/apply/delivery_agent · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
+- [ ] DLV-APPLY-012 · 1280px · dark · hi · signed out · world=empty · /partners/apply/delivery_agent · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-APPLY-013 · 1440px · light · en · signed out · world=empty · /partners/apply/delivery_agent · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] DLV-APPLY-014 · 1440px · dark · hi · signed out · world=empty · /partners/apply/delivery_agent · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-APPLY-015 · 1920px · light · en · signed out · world=empty · /partners/apply/delivery_agent · form=clean · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
+- [ ] DLV-APPLY-016 · 1920px · dark · hi · signed out · world=empty · /partners/apply/delivery_agent · form=errors · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+
+## Delivery agent invite (/partners/delivery-invite/{token})
+
+### DLV-INVITE — Invite link that is not valid (expired, used or wrong): one sentence, no action
+
+Pairwise (all pairs of values); 16 states; scope `main`.
+
+- [ ] DLV-INVITE-001 · 320px · light · en · signed out · world=empty · /partners/delivery-invite/0000000000000000000000000000000000000000 · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] DLV-INVITE-002 · 320px · dark · hi · customer · world=empty · /partners/delivery-invite/0000000000000000000000000000000000000000 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] DLV-INVITE-003 · 390px · light · hi · signed out · world=empty · /partners/delivery-invite/0000000000000000000000000000000000000000 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] DLV-INVITE-004 · 390px · dark · en · customer · world=empty · /partners/delivery-invite/0000000000000000000000000000000000000000 · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] DLV-INVITE-005 · 480px · light · en · customer · world=empty · /partners/delivery-invite/0000000000000000000000000000000000000000 · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] DLV-INVITE-006 · 480px · dark · hi · signed out · world=empty · /partners/delivery-invite/0000000000000000000000000000000000000000 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] DLV-INVITE-007 · 768px · light · en · signed out · world=empty · /partners/delivery-invite/0000000000000000000000000000000000000000 · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] DLV-INVITE-008 · 768px · dark · hi · customer · world=empty · /partners/delivery-invite/0000000000000000000000000000000000000000 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] DLV-INVITE-009 · 1024px · light · en · signed out · world=empty · /partners/delivery-invite/0000000000000000000000000000000000000000 · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] DLV-INVITE-010 · 1024px · dark · hi · customer · world=empty · /partners/delivery-invite/0000000000000000000000000000000000000000 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] DLV-INVITE-011 · 1280px · light · en · signed out · world=empty · /partners/delivery-invite/0000000000000000000000000000000000000000 · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] DLV-INVITE-012 · 1280px · dark · hi · customer · world=empty · /partners/delivery-invite/0000000000000000000000000000000000000000 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] DLV-INVITE-013 · 1440px · light · en · signed out · world=empty · /partners/delivery-invite/0000000000000000000000000000000000000000 · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] DLV-INVITE-014 · 1440px · dark · hi · customer · world=empty · /partners/delivery-invite/0000000000000000000000000000000000000000 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] DLV-INVITE-015 · 1920px · light · en · signed out · world=empty · /partners/delivery-invite/0000000000000000000000000000000000000000 · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] DLV-INVITE-016 · 1920px · dark · hi · customer · world=empty · /partners/delivery-invite/0000000000000000000000000000000000000000 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
+## Shop portal, agents mode (/partner/shop)
+
+### DLV-SHOP — Agent-mode shop: Mark ready for pickup, pickup code while an agent comes, agent first name + vehicle, delivery mode card
+
+Pairwise (all pairs of values); 16 states; scope `main`.
+
+- [ ] DLV-SHOP-001 · 320px · light · en · · world=delivery · /partner/shop · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] DLV-SHOP-002 · 320px · dark · hi · · world=delivery · /partner/shop · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-SHOP-003 · 390px · light · hi · · world=delivery · /partner/shop · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-SHOP-004 · 390px · dark · en · · world=delivery · /partner/shop · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
+- [ ] DLV-SHOP-005 · 480px · light · en · · world=delivery · /partner/shop · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] DLV-SHOP-006 · 480px · dark · hi · · world=delivery · /partner/shop · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-SHOP-007 · 768px · light · en · · world=delivery · /partner/shop · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
+- [ ] DLV-SHOP-008 · 768px · dark · hi · · world=delivery · /partner/shop · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-SHOP-009 · 1024px · light · en · · world=delivery · /partner/shop · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] DLV-SHOP-010 · 1024px · dark · hi · · world=delivery · /partner/shop · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-SHOP-011 · 1280px · light · en · · world=delivery · /partner/shop · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
+- [ ] DLV-SHOP-012 · 1280px · dark · hi · · world=delivery · /partner/shop · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-SHOP-013 · 1440px · light · en · · world=delivery · /partner/shop · asserts: present inside overlap covered clipped tap hscroll focus console dismiss axe
+- [ ] DLV-SHOP-014 · 1440px · dark · hi · · world=delivery · /partner/shop · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+- [ ] DLV-SHOP-015 · 1920px · light · en · · world=delivery · /partner/shop · asserts: present inside overlap covered clipped tap hscroll focus console dismiss
+- [ ] DLV-SHOP-016 · 1920px · dark · hi · · world=delivery · /partner/shop · asserts: present inside overlap covered clipped tap hscroll focus console dismiss hindi
+
+## Order page, agent delivery (/orders/{code})
+
+### DLV-CUSTOMER — Customer delivery block: picked up by first name (vehicle), delivery code; never the shop or the agent phone
+
+Pairwise (all pairs of values); 16 states; scope `main`.
+
+- [ ] DLV-CUSTOMER-001 · 320px · light · en · customer · world=delivery · /orders/MD-RPR-2026-HND005 · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] DLV-CUSTOMER-002 · 320px · dark · hi · customer · world=delivery · /orders/MD-RPR-2026-HND005 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] DLV-CUSTOMER-003 · 390px · light · hi · customer · world=delivery · /orders/MD-RPR-2026-HND005 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] DLV-CUSTOMER-004 · 390px · dark · en · customer · world=delivery · /orders/MD-RPR-2026-HND005 · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] DLV-CUSTOMER-005 · 480px · light · en · customer · world=delivery · /orders/MD-RPR-2026-HND005 · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] DLV-CUSTOMER-006 · 480px · dark · hi · customer · world=delivery · /orders/MD-RPR-2026-HND005 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] DLV-CUSTOMER-007 · 768px · light · en · customer · world=delivery · /orders/MD-RPR-2026-HND005 · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] DLV-CUSTOMER-008 · 768px · dark · hi · customer · world=delivery · /orders/MD-RPR-2026-HND005 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] DLV-CUSTOMER-009 · 1024px · light · en · customer · world=delivery · /orders/MD-RPR-2026-HND005 · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] DLV-CUSTOMER-010 · 1024px · dark · hi · customer · world=delivery · /orders/MD-RPR-2026-HND005 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] DLV-CUSTOMER-011 · 1280px · light · en · customer · world=delivery · /orders/MD-RPR-2026-HND005 · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] DLV-CUSTOMER-012 · 1280px · dark · hi · customer · world=delivery · /orders/MD-RPR-2026-HND005 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] DLV-CUSTOMER-013 · 1440px · light · en · customer · world=delivery · /orders/MD-RPR-2026-HND005 · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] DLV-CUSTOMER-014 · 1440px · dark · hi · customer · world=delivery · /orders/MD-RPR-2026-HND005 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] DLV-CUSTOMER-015 · 1920px · light · en · customer · world=delivery · /orders/MD-RPR-2026-HND005 · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] DLV-CUSTOMER-016 · 1920px · dark · hi · customer · world=delivery · /orders/MD-RPR-2026-HND005 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
+## Order page, returned to the shop (/orders/{code})
+
+### DLV-CUSTOMER-RETURNED — Customer delivery block after a return: refund wording (parts only)
+
+Pairwise (all pairs of values); 16 states; scope `main`.
+
+- [ ] DLV-CUSTOMER-RETURNED-001 · 320px · light · en · customer · world=delivery · /orders/MD-RPR-2026-HND007 · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] DLV-CUSTOMER-RETURNED-002 · 320px · dark · hi · customer · world=delivery · /orders/MD-RPR-2026-HND007 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] DLV-CUSTOMER-RETURNED-003 · 390px · light · hi · customer · world=delivery · /orders/MD-RPR-2026-HND007 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] DLV-CUSTOMER-RETURNED-004 · 390px · dark · en · customer · world=delivery · /orders/MD-RPR-2026-HND007 · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] DLV-CUSTOMER-RETURNED-005 · 480px · light · en · customer · world=delivery · /orders/MD-RPR-2026-HND007 · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] DLV-CUSTOMER-RETURNED-006 · 480px · dark · hi · customer · world=delivery · /orders/MD-RPR-2026-HND007 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] DLV-CUSTOMER-RETURNED-007 · 768px · light · en · customer · world=delivery · /orders/MD-RPR-2026-HND007 · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] DLV-CUSTOMER-RETURNED-008 · 768px · dark · hi · customer · world=delivery · /orders/MD-RPR-2026-HND007 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] DLV-CUSTOMER-RETURNED-009 · 1024px · light · en · customer · world=delivery · /orders/MD-RPR-2026-HND007 · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] DLV-CUSTOMER-RETURNED-010 · 1024px · dark · hi · customer · world=delivery · /orders/MD-RPR-2026-HND007 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] DLV-CUSTOMER-RETURNED-011 · 1280px · light · en · customer · world=delivery · /orders/MD-RPR-2026-HND007 · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] DLV-CUSTOMER-RETURNED-012 · 1280px · dark · hi · customer · world=delivery · /orders/MD-RPR-2026-HND007 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] DLV-CUSTOMER-RETURNED-013 · 1440px · light · en · customer · world=delivery · /orders/MD-RPR-2026-HND007 · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] DLV-CUSTOMER-RETURNED-014 · 1440px · dark · hi · customer · world=delivery · /orders/MD-RPR-2026-HND007 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] DLV-CUSTOMER-RETURNED-015 · 1920px · light · en · customer · world=delivery · /orders/MD-RPR-2026-HND007 · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] DLV-CUSTOMER-RETURNED-016 · 1920px · dark · hi · customer · world=delivery · /orders/MD-RPR-2026-HND007 · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+
+## Admin → Delivery (/admin/delivery)
+
+### DLV-ADMIN — Delivery section tabs (jobs, applications, agents, payouts, shop requests, settings) and the jobs queue table with waiting chips
+
+Pairwise (all pairs of values); 16 states; scope `main`.
+
+- [ ] DLV-ADMIN-001 · 320px · light · en · admin · world=delivery · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss aligned axe
+- [ ] DLV-ADMIN-002 · 320px · dark · hi · admin · world=delivery · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss aligned hindi
+- [ ] DLV-ADMIN-003 · 390px · light · hi · admin · world=delivery · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss aligned hindi
+- [ ] DLV-ADMIN-004 · 390px · dark · en · admin · world=delivery · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss aligned
+- [ ] DLV-ADMIN-005 · 480px · light · en · admin · world=delivery · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss aligned axe
+- [ ] DLV-ADMIN-006 · 480px · dark · hi · admin · world=delivery · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss aligned hindi
+- [ ] DLV-ADMIN-007 · 768px · light · en · admin · world=delivery · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss aligned
+- [ ] DLV-ADMIN-008 · 768px · dark · hi · admin · world=delivery · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss aligned hindi
+- [ ] DLV-ADMIN-009 · 1024px · light · en · admin · world=delivery · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss aligned axe
+- [ ] DLV-ADMIN-010 · 1024px · dark · hi · admin · world=delivery · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss aligned hindi
+- [ ] DLV-ADMIN-011 · 1280px · light · en · admin · world=delivery · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss aligned
+- [ ] DLV-ADMIN-012 · 1280px · dark · hi · admin · world=delivery · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss aligned hindi
+- [ ] DLV-ADMIN-013 · 1440px · light · en · admin · world=delivery · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss aligned axe
+- [ ] DLV-ADMIN-014 · 1440px · dark · hi · admin · world=delivery · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss aligned hindi
+- [ ] DLV-ADMIN-015 · 1920px · light · en · admin · world=delivery · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss aligned
+- [ ] DLV-ADMIN-016 · 1920px · dark · hi · admin · world=delivery · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console dismiss aligned hindi
+
 ## Roadside help (/roadside)
 
 ### RSA-REQUEST — Roadside request: PIN code, vehicle types offered, problem choices, review and advance
@@ -2853,6 +3088,27 @@ Pairwise (all pairs of values); 16 states; scope `main`.
 - [ ] ADM-ROADSIDE-014 · 1440px · dark · hi · admin · world=busy · /admin/roadside · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
 - [ ] ADM-ROADSIDE-015 · 1920px · light · en · admin · world=empty · /admin/roadside · asserts: present inside overlap covered clipped tap hscroll focus console aligned
 - [ ] ADM-ROADSIDE-016 · 1920px · dark · hi · admin · world=busy · /admin/roadside · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+
+### ADM-DELIVERY — Admin section: delivery (section bar, tables, actions)
+
+Pairwise (all pairs of values); 16 states; scope `main`.
+
+- [ ] ADM-DELIVERY-001 · 320px · light · en · admin · world=empty · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] ADM-DELIVERY-002 · 320px · dark · hi · admin · world=busy · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-DELIVERY-003 · 390px · light · hi · admin · world=empty · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-DELIVERY-004 · 390px · dark · en · admin · world=busy · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] ADM-DELIVERY-005 · 480px · light · en · admin · world=busy · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] ADM-DELIVERY-006 · 480px · dark · hi · admin · world=empty · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-DELIVERY-007 · 768px · light · en · admin · world=empty · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] ADM-DELIVERY-008 · 768px · dark · hi · admin · world=busy · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-DELIVERY-009 · 1024px · light · en · admin · world=empty · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] ADM-DELIVERY-010 · 1024px · dark · hi · admin · world=busy · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-DELIVERY-011 · 1280px · light · en · admin · world=empty · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] ADM-DELIVERY-012 · 1280px · dark · hi · admin · world=busy · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-DELIVERY-013 · 1440px · light · en · admin · world=empty · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] ADM-DELIVERY-014 · 1440px · dark · hi · admin · world=busy · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] ADM-DELIVERY-015 · 1920px · light · en · admin · world=empty · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] ADM-DELIVERY-016 · 1920px · dark · hi · admin · world=busy · /admin/delivery · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
 
 ### ADM-QUOTES — Admin section: quotes (section bar, tables, actions)
 
@@ -3143,104 +3399,110 @@ Full cross of the high-risk dimensions, the rest pairwise; 30 states; scope `mai
 
 ### ADM-HEADER — Page pattern: one header per section (title = side bar item, one-line description, primary action on the right), status badges, empty states, table boxes; 320 to 1920 px, both themes, English and Hindi
 
-Pairwise (all pairs of values); 96 states; scope `main`.
+Pairwise (all pairs of values); 102 states; scope `main`.
 
 - [ ] ADM-HEADER-001 · 320px · light · en · admin · world=busy · /admin · asserts: present adminhead hscroll console axe
 - [ ] ADM-HEADER-002 · 320px · dark · hi · admin · world=busy · /admin/orders · asserts: present adminhead hscroll console hindi
 - [ ] ADM-HEADER-003 · 320px · light · hi · admin · world=busy · /admin/services · asserts: present adminhead hscroll console hindi
 - [ ] ADM-HEADER-004 · 320px · dark · en · admin · world=busy · /admin/roadside · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-005 · 320px · light · en · admin · world=busy · /admin/quotes · asserts: present adminhead hscroll console axe
-- [ ] ADM-HEADER-006 · 320px · dark · hi · admin · world=busy · /admin/applications · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-007 · 320px · light · en · admin · world=busy · /admin/partners · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-008 · 320px · dark · hi · admin · world=busy · /admin/catalogue · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-009 · 320px · light · en · admin · world=busy · /admin/customers · asserts: present adminhead hscroll console axe
-- [ ] ADM-HEADER-010 · 320px · dark · hi · admin · world=busy · /admin/reviews · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-011 · 320px · light · en · admin · world=busy · /admin/support · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-012 · 320px · dark · hi · admin · world=busy · /admin/coins · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-013 · 320px · light · en · admin · world=busy · /admin/content · asserts: present adminhead hscroll console axe
-- [ ] ADM-HEADER-014 · 320px · dark · hi · admin · world=busy · /admin/layout · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-015 · 320px · light · en · admin · world=busy · /admin/settings · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-016 · 320px · dark · hi · admin · world=busy · /admin/notifications · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-017 · 390px · dark · hi · admin · world=busy · /admin · asserts: present adminhead hscroll console hindi axe
-- [ ] ADM-HEADER-018 · 390px · light · en · admin · world=busy · /admin/orders · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-019 · 390px · dark · en · admin · world=busy · /admin/services · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-020 · 390px · light · hi · admin · world=busy · /admin/roadside · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-021 · 390px · dark · hi · admin · world=busy · /admin/quotes · asserts: present adminhead hscroll console hindi axe
-- [ ] ADM-HEADER-022 · 390px · light · en · admin · world=busy · /admin/applications · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-023 · 390px · dark · hi · admin · world=busy · /admin/partners · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-024 · 390px · light · en · admin · world=busy · /admin/catalogue · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-025 · 390px · dark · hi · admin · world=busy · /admin/customers · asserts: present adminhead hscroll console hindi axe
-- [ ] ADM-HEADER-026 · 390px · light · en · admin · world=busy · /admin/reviews · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-027 · 390px · dark · hi · admin · world=busy · /admin/support · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-028 · 390px · light · en · admin · world=busy · /admin/coins · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-029 · 390px · dark · hi · admin · world=busy · /admin/content · asserts: present adminhead hscroll console hindi axe
-- [ ] ADM-HEADER-030 · 390px · light · en · admin · world=busy · /admin/layout · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-031 · 390px · dark · hi · admin · world=busy · /admin/settings · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-032 · 390px · light · en · admin · world=busy · /admin/notifications · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-033 · 768px · light · en · admin · world=busy · /admin · asserts: present adminhead hscroll console axe
-- [ ] ADM-HEADER-034 · 768px · dark · hi · admin · world=busy · /admin/orders · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-035 · 768px · light · en · admin · world=busy · /admin/services · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-036 · 768px · dark · hi · admin · world=busy · /admin/roadside · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-037 · 768px · light · en · admin · world=busy · /admin/quotes · asserts: present adminhead hscroll console axe
-- [ ] ADM-HEADER-038 · 768px · dark · hi · admin · world=busy · /admin/applications · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-039 · 768px · light · en · admin · world=busy · /admin/partners · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-040 · 768px · dark · hi · admin · world=busy · /admin/catalogue · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-041 · 768px · light · en · admin · world=busy · /admin/customers · asserts: present adminhead hscroll console axe
-- [ ] ADM-HEADER-042 · 768px · dark · hi · admin · world=busy · /admin/reviews · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-043 · 768px · light · en · admin · world=busy · /admin/support · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-044 · 768px · dark · hi · admin · world=busy · /admin/coins · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-045 · 768px · light · en · admin · world=busy · /admin/content · asserts: present adminhead hscroll console axe
-- [ ] ADM-HEADER-046 · 768px · dark · hi · admin · world=busy · /admin/layout · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-047 · 768px · light · en · admin · world=busy · /admin/settings · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-048 · 768px · dark · hi · admin · world=busy · /admin/notifications · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-049 · 1024px · light · en · admin · world=busy · /admin · asserts: present adminhead hscroll console axe
-- [ ] ADM-HEADER-050 · 1024px · dark · hi · admin · world=busy · /admin/orders · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-051 · 1024px · light · en · admin · world=busy · /admin/services · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-052 · 1024px · dark · hi · admin · world=busy · /admin/roadside · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-053 · 1024px · light · en · admin · world=busy · /admin/quotes · asserts: present adminhead hscroll console axe
-- [ ] ADM-HEADER-054 · 1024px · dark · hi · admin · world=busy · /admin/applications · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-055 · 1024px · light · en · admin · world=busy · /admin/partners · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-056 · 1024px · dark · hi · admin · world=busy · /admin/catalogue · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-057 · 1024px · light · en · admin · world=busy · /admin/customers · asserts: present adminhead hscroll console axe
-- [ ] ADM-HEADER-058 · 1024px · dark · hi · admin · world=busy · /admin/reviews · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-059 · 1024px · light · en · admin · world=busy · /admin/support · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-060 · 1024px · dark · hi · admin · world=busy · /admin/coins · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-061 · 1024px · light · en · admin · world=busy · /admin/content · asserts: present adminhead hscroll console axe
-- [ ] ADM-HEADER-062 · 1024px · dark · hi · admin · world=busy · /admin/layout · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-063 · 1024px · light · en · admin · world=busy · /admin/settings · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-064 · 1024px · dark · hi · admin · world=busy · /admin/notifications · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-065 · 1440px · light · en · admin · world=busy · /admin · asserts: present adminhead hscroll console axe
-- [ ] ADM-HEADER-066 · 1440px · dark · hi · admin · world=busy · /admin/orders · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-067 · 1440px · light · en · admin · world=busy · /admin/services · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-068 · 1440px · dark · hi · admin · world=busy · /admin/roadside · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-069 · 1440px · light · en · admin · world=busy · /admin/quotes · asserts: present adminhead hscroll console axe
-- [ ] ADM-HEADER-070 · 1440px · dark · hi · admin · world=busy · /admin/applications · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-071 · 1440px · light · en · admin · world=busy · /admin/partners · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-072 · 1440px · dark · hi · admin · world=busy · /admin/catalogue · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-073 · 1440px · light · en · admin · world=busy · /admin/customers · asserts: present adminhead hscroll console axe
-- [ ] ADM-HEADER-074 · 1440px · dark · hi · admin · world=busy · /admin/reviews · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-075 · 1440px · light · en · admin · world=busy · /admin/support · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-076 · 1440px · dark · hi · admin · world=busy · /admin/coins · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-077 · 1440px · light · en · admin · world=busy · /admin/content · asserts: present adminhead hscroll console axe
-- [ ] ADM-HEADER-078 · 1440px · dark · hi · admin · world=busy · /admin/layout · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-079 · 1440px · light · en · admin · world=busy · /admin/settings · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-080 · 1440px · dark · hi · admin · world=busy · /admin/notifications · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-081 · 1920px · light · en · admin · world=busy · /admin · asserts: present adminhead hscroll console axe
-- [ ] ADM-HEADER-082 · 1920px · dark · hi · admin · world=busy · /admin/orders · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-083 · 1920px · light · en · admin · world=busy · /admin/services · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-084 · 1920px · dark · hi · admin · world=busy · /admin/roadside · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-085 · 1920px · light · en · admin · world=busy · /admin/quotes · asserts: present adminhead hscroll console axe
-- [ ] ADM-HEADER-086 · 1920px · dark · hi · admin · world=busy · /admin/applications · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-087 · 1920px · light · en · admin · world=busy · /admin/partners · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-088 · 1920px · dark · hi · admin · world=busy · /admin/catalogue · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-089 · 1920px · light · en · admin · world=busy · /admin/customers · asserts: present adminhead hscroll console axe
-- [ ] ADM-HEADER-090 · 1920px · dark · hi · admin · world=busy · /admin/reviews · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-091 · 1920px · light · en · admin · world=busy · /admin/support · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-092 · 1920px · dark · hi · admin · world=busy · /admin/coins · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-093 · 1920px · light · en · admin · world=busy · /admin/content · asserts: present adminhead hscroll console axe
-- [ ] ADM-HEADER-094 · 1920px · dark · hi · admin · world=busy · /admin/layout · asserts: present adminhead hscroll console hindi
-- [ ] ADM-HEADER-095 · 1920px · light · en · admin · world=busy · /admin/settings · asserts: present adminhead hscroll console
-- [ ] ADM-HEADER-096 · 1920px · dark · hi · admin · world=busy · /admin/notifications · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-005 · 320px · light · en · admin · world=busy · /admin/delivery · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-006 · 320px · dark · hi · admin · world=busy · /admin/quotes · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-007 · 320px · light · en · admin · world=busy · /admin/applications · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-008 · 320px · dark · hi · admin · world=busy · /admin/partners · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-009 · 320px · light · en · admin · world=busy · /admin/catalogue · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-010 · 320px · dark · hi · admin · world=busy · /admin/customers · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-011 · 320px · light · en · admin · world=busy · /admin/reviews · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-012 · 320px · dark · hi · admin · world=busy · /admin/support · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-013 · 320px · light · en · admin · world=busy · /admin/coins · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-014 · 320px · dark · hi · admin · world=busy · /admin/content · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-015 · 320px · light · en · admin · world=busy · /admin/layout · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-016 · 320px · dark · hi · admin · world=busy · /admin/settings · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-017 · 320px · light · en · admin · world=busy · /admin/notifications · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-018 · 390px · dark · hi · admin · world=busy · /admin · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-019 · 390px · light · en · admin · world=busy · /admin/orders · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-020 · 390px · dark · en · admin · world=busy · /admin/services · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-021 · 390px · light · hi · admin · world=busy · /admin/roadside · asserts: present adminhead hscroll console hindi axe
+- [ ] ADM-HEADER-022 · 390px · dark · hi · admin · world=busy · /admin/delivery · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-023 · 390px · light · en · admin · world=busy · /admin/quotes · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-024 · 390px · dark · hi · admin · world=busy · /admin/applications · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-025 · 390px · light · en · admin · world=busy · /admin/partners · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-026 · 390px · dark · hi · admin · world=busy · /admin/catalogue · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-027 · 390px · light · en · admin · world=busy · /admin/customers · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-028 · 390px · dark · hi · admin · world=busy · /admin/reviews · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-029 · 390px · light · en · admin · world=busy · /admin/support · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-030 · 390px · dark · hi · admin · world=busy · /admin/coins · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-031 · 390px · light · en · admin · world=busy · /admin/content · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-032 · 390px · dark · hi · admin · world=busy · /admin/layout · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-033 · 390px · light · en · admin · world=busy · /admin/settings · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-034 · 390px · dark · hi · admin · world=busy · /admin/notifications · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-035 · 768px · light · en · admin · world=busy · /admin · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-036 · 768px · dark · hi · admin · world=busy · /admin/orders · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-037 · 768px · light · en · admin · world=busy · /admin/services · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-038 · 768px · dark · hi · admin · world=busy · /admin/roadside · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-039 · 768px · light · en · admin · world=busy · /admin/delivery · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-040 · 768px · dark · hi · admin · world=busy · /admin/quotes · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-041 · 768px · light · en · admin · world=busy · /admin/applications · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-042 · 768px · dark · hi · admin · world=busy · /admin/partners · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-043 · 768px · light · en · admin · world=busy · /admin/catalogue · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-044 · 768px · dark · hi · admin · world=busy · /admin/customers · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-045 · 768px · light · en · admin · world=busy · /admin/reviews · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-046 · 768px · dark · hi · admin · world=busy · /admin/support · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-047 · 768px · light · en · admin · world=busy · /admin/coins · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-048 · 768px · dark · hi · admin · world=busy · /admin/content · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-049 · 768px · light · en · admin · world=busy · /admin/layout · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-050 · 768px · dark · hi · admin · world=busy · /admin/settings · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-051 · 768px · light · en · admin · world=busy · /admin/notifications · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-052 · 1024px · dark · hi · admin · world=busy · /admin · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-053 · 1024px · light · en · admin · world=busy · /admin/orders · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-054 · 1024px · dark · hi · admin · world=busy · /admin/services · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-055 · 1024px · light · en · admin · world=busy · /admin/roadside · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-056 · 1024px · dark · hi · admin · world=busy · /admin/delivery · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-057 · 1024px · light · en · admin · world=busy · /admin/quotes · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-058 · 1024px · dark · hi · admin · world=busy · /admin/applications · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-059 · 1024px · light · en · admin · world=busy · /admin/partners · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-060 · 1024px · dark · hi · admin · world=busy · /admin/catalogue · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-061 · 1024px · light · en · admin · world=busy · /admin/customers · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-062 · 1024px · dark · hi · admin · world=busy · /admin/reviews · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-063 · 1024px · light · en · admin · world=busy · /admin/support · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-064 · 1024px · dark · hi · admin · world=busy · /admin/coins · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-065 · 1024px · light · en · admin · world=busy · /admin/content · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-066 · 1024px · dark · hi · admin · world=busy · /admin/layout · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-067 · 1024px · light · en · admin · world=busy · /admin/settings · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-068 · 1024px · dark · hi · admin · world=busy · /admin/notifications · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-069 · 1440px · light · en · admin · world=busy · /admin · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-070 · 1440px · dark · hi · admin · world=busy · /admin/orders · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-071 · 1440px · light · en · admin · world=busy · /admin/services · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-072 · 1440px · dark · hi · admin · world=busy · /admin/roadside · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-073 · 1440px · light · en · admin · world=busy · /admin/delivery · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-074 · 1440px · dark · hi · admin · world=busy · /admin/quotes · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-075 · 1440px · light · en · admin · world=busy · /admin/applications · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-076 · 1440px · dark · hi · admin · world=busy · /admin/partners · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-077 · 1440px · light · en · admin · world=busy · /admin/catalogue · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-078 · 1440px · dark · hi · admin · world=busy · /admin/customers · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-079 · 1440px · light · en · admin · world=busy · /admin/reviews · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-080 · 1440px · dark · hi · admin · world=busy · /admin/support · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-081 · 1440px · light · en · admin · world=busy · /admin/coins · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-082 · 1440px · dark · hi · admin · world=busy · /admin/content · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-083 · 1440px · light · en · admin · world=busy · /admin/layout · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-084 · 1440px · dark · hi · admin · world=busy · /admin/settings · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-085 · 1440px · light · en · admin · world=busy · /admin/notifications · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-086 · 1920px · dark · hi · admin · world=busy · /admin · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-087 · 1920px · light · en · admin · world=busy · /admin/orders · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-088 · 1920px · dark · hi · admin · world=busy · /admin/services · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-089 · 1920px · light · en · admin · world=busy · /admin/roadside · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-090 · 1920px · dark · hi · admin · world=busy · /admin/delivery · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-091 · 1920px · light · en · admin · world=busy · /admin/quotes · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-092 · 1920px · dark · hi · admin · world=busy · /admin/applications · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-093 · 1920px · light · en · admin · world=busy · /admin/partners · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-094 · 1920px · dark · hi · admin · world=busy · /admin/catalogue · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-095 · 1920px · light · en · admin · world=busy · /admin/customers · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-096 · 1920px · dark · hi · admin · world=busy · /admin/reviews · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-097 · 1920px · light · en · admin · world=busy · /admin/support · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-098 · 1920px · dark · hi · admin · world=busy · /admin/coins · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-099 · 1920px · light · en · admin · world=busy · /admin/content · asserts: present adminhead hscroll console
+- [ ] ADM-HEADER-100 · 1920px · dark · hi · admin · world=busy · /admin/layout · asserts: present adminhead hscroll console hindi
+- [ ] ADM-HEADER-101 · 1920px · light · en · admin · world=busy · /admin/settings · asserts: present adminhead hscroll console axe
+- [ ] ADM-HEADER-102 · 1920px · dark · hi · admin · world=busy · /admin/notifications · asserts: present adminhead hscroll console hindi
 
 ## Navigation
 
@@ -3410,136 +3672,144 @@ Full cross of the high-risk dimensions, the rest pairwise; 80 states; scope `mai
 
 ### NAV-ADMIN — Admin section bar: current section on each demo section (scrolls on phones, column from 1024 px)
 
-Full cross of the high-risk dimensions, the rest pairwise; 128 states; scope `main nav.overflow-x-auto`.
+Full cross of the high-risk dimensions, the rest pairwise; 136 states; scope `main nav.overflow-x-auto`.
 
 - [!] NAV-ADMIN-001 · 320px · light · en · admin · world=empty · /admin · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe — 2026-11-15 FAIL: P1 nav-current-hidden ×1; P2 focus-clipped ×8 · [screenshot](../../apps/web/test-results/state-audit-2026-11-15/F/output/state-audit.audit.ts-NAV-A-b149b-rld-empty-·-admin-·-walk-no-audit/attachments/state-audit-failure-d2b70aab1b56ae6c1a9366ea73d4dc84cff5a586.png)
 - [!] NAV-ADMIN-002 · 320px · dark · hi · admin · world=busy · /admin/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 FAIL: P1 nav-current-hidden ×1; P2 focus-clipped ×8 · [screenshot](../../apps/web/test-results/state-audit-2026-11-15/F/output/state-audit.audit.ts-NAV-A-ee500-y-·-admin-orders-·-walk-yes-audit/attachments/state-audit-failure-22eab8f1fa9dc0dd261e1055e8bde27055b95827.png)
 - [!] NAV-ADMIN-003 · 320px · light · hi · admin · world=empty · /admin/services · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi — 2026-11-15 FAIL: P1 nav-current-hidden ×1; P2 focus-clipped ×8 · [screenshot](../../apps/web/test-results/state-audit-2026-11-15/F/output/state-audit.audit.ts-NAV-A-8a4ce-·-admin-services-·-walk-yes-audit/attachments/state-audit-failure-39bd3789af9b782984ca209c52617b17e8199813.png)
 - [ ] NAV-ADMIN-004 · 320px · dark · en · admin · world=busy · /admin/roadside · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-005 · 320px · light · en · admin · world=busy · /admin/quotes · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-006 · 320px · dark · hi · admin · world=empty · /admin/applications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-007 · 320px · light · en · admin · world=empty · /admin/partners · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-008 · 320px · dark · hi · admin · world=busy · /admin/catalogue · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-009 · 320px · light · en · admin · world=empty · /admin/customers · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-010 · 320px · dark · hi · admin · world=busy · /admin/reviews · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-011 · 320px · light · en · admin · world=empty · /admin/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-012 · 320px · dark · hi · admin · world=busy · /admin/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-013 · 320px · light · en · admin · world=empty · /admin/content · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-014 · 320px · dark · hi · admin · world=busy · /admin/layout · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-015 · 320px · light · en · admin · world=empty · /admin/settings · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-016 · 320px · dark · hi · admin · world=busy · /admin/notifications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-017 · 390px · dark · hi · admin · world=busy · /admin · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi axe
-- [ ] NAV-ADMIN-018 · 390px · light · en · admin · world=empty · /admin/orders · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-019 · 390px · dark · en · admin · world=busy · /admin/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-020 · 390px · light · hi · admin · world=empty · /admin/roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-021 · 390px · dark · hi · admin · world=empty · /admin/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi axe
-- [ ] NAV-ADMIN-022 · 390px · light · en · admin · world=busy · /admin/applications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-023 · 390px · dark · hi · admin · world=busy · /admin/partners · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-024 · 390px · light · en · admin · world=empty · /admin/catalogue · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-025 · 390px · dark · hi · admin · world=busy · /admin/customers · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi axe
-- [ ] NAV-ADMIN-026 · 390px · light · en · admin · world=empty · /admin/reviews · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-027 · 390px · dark · hi · admin · world=busy · /admin/support · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-028 · 390px · light · en · admin · world=empty · /admin/coins · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-029 · 390px · dark · hi · admin · world=busy · /admin/content · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi axe
-- [ ] NAV-ADMIN-030 · 390px · light · en · admin · world=empty · /admin/layout · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-031 · 390px · dark · hi · admin · world=busy · /admin/settings · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-032 · 390px · light · en · admin · world=empty · /admin/notifications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-033 · 480px · light · en · admin · world=empty · /admin · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-034 · 480px · dark · hi · admin · world=busy · /admin/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-035 · 480px · light · en · admin · world=empty · /admin/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-036 · 480px · dark · hi · admin · world=busy · /admin/roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-037 · 480px · light · en · admin · world=empty · /admin/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-038 · 480px · dark · hi · admin · world=busy · /admin/applications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-039 · 480px · light · en · admin · world=empty · /admin/partners · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-040 · 480px · dark · hi · admin · world=busy · /admin/catalogue · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-041 · 480px · light · en · admin · world=empty · /admin/customers · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-042 · 480px · dark · hi · admin · world=busy · /admin/reviews · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-043 · 480px · light · en · admin · world=empty · /admin/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-044 · 480px · dark · hi · admin · world=busy · /admin/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-045 · 480px · light · en · admin · world=empty · /admin/content · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-046 · 480px · dark · hi · admin · world=busy · /admin/layout · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-047 · 480px · light · en · admin · world=empty · /admin/settings · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-048 · 480px · dark · hi · admin · world=busy · /admin/notifications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-049 · 768px · light · en · admin · world=empty · /admin · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-050 · 768px · dark · hi · admin · world=busy · /admin/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-051 · 768px · light · en · admin · world=empty · /admin/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-052 · 768px · dark · hi · admin · world=busy · /admin/roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-053 · 768px · light · en · admin · world=empty · /admin/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-054 · 768px · dark · hi · admin · world=busy · /admin/applications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-055 · 768px · light · en · admin · world=empty · /admin/partners · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-056 · 768px · dark · hi · admin · world=busy · /admin/catalogue · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-057 · 768px · light · en · admin · world=empty · /admin/customers · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-058 · 768px · dark · hi · admin · world=busy · /admin/reviews · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-059 · 768px · light · en · admin · world=empty · /admin/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-060 · 768px · dark · hi · admin · world=busy · /admin/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-061 · 768px · light · en · admin · world=empty · /admin/content · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-062 · 768px · dark · hi · admin · world=busy · /admin/layout · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-063 · 768px · light · en · admin · world=empty · /admin/settings · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-064 · 768px · dark · hi · admin · world=busy · /admin/notifications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-065 · 1024px · light · en · admin · world=empty · /admin · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-066 · 1024px · dark · hi · admin · world=busy · /admin/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-067 · 1024px · light · en · admin · world=empty · /admin/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-068 · 1024px · dark · hi · admin · world=busy · /admin/roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-069 · 1024px · light · en · admin · world=empty · /admin/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-070 · 1024px · dark · hi · admin · world=busy · /admin/applications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-071 · 1024px · light · en · admin · world=empty · /admin/partners · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-072 · 1024px · dark · hi · admin · world=busy · /admin/catalogue · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-073 · 1024px · light · en · admin · world=empty · /admin/customers · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-074 · 1024px · dark · hi · admin · world=busy · /admin/reviews · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-075 · 1024px · light · en · admin · world=empty · /admin/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-076 · 1024px · dark · hi · admin · world=busy · /admin/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-077 · 1024px · light · en · admin · world=empty · /admin/content · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-078 · 1024px · dark · hi · admin · world=busy · /admin/layout · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-079 · 1024px · light · en · admin · world=empty · /admin/settings · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-080 · 1024px · dark · hi · admin · world=busy · /admin/notifications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-081 · 1280px · light · en · admin · world=empty · /admin · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-082 · 1280px · dark · hi · admin · world=busy · /admin/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-083 · 1280px · light · en · admin · world=empty · /admin/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-084 · 1280px · dark · hi · admin · world=busy · /admin/roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-085 · 1280px · light · en · admin · world=empty · /admin/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-086 · 1280px · dark · hi · admin · world=busy · /admin/applications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-087 · 1280px · light · en · admin · world=empty · /admin/partners · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-088 · 1280px · dark · hi · admin · world=busy · /admin/catalogue · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-089 · 1280px · light · en · admin · world=empty · /admin/customers · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-090 · 1280px · dark · hi · admin · world=busy · /admin/reviews · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-091 · 1280px · light · en · admin · world=empty · /admin/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-092 · 1280px · dark · hi · admin · world=busy · /admin/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-093 · 1280px · light · en · admin · world=empty · /admin/content · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-094 · 1280px · dark · hi · admin · world=busy · /admin/layout · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-095 · 1280px · light · en · admin · world=empty · /admin/settings · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-096 · 1280px · dark · hi · admin · world=busy · /admin/notifications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-097 · 1440px · light · en · admin · world=empty · /admin · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-098 · 1440px · dark · hi · admin · world=busy · /admin/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-099 · 1440px · light · en · admin · world=empty · /admin/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-100 · 1440px · dark · hi · admin · world=busy · /admin/roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-101 · 1440px · light · en · admin · world=empty · /admin/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-102 · 1440px · dark · hi · admin · world=busy · /admin/applications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-103 · 1440px · light · en · admin · world=empty · /admin/partners · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-104 · 1440px · dark · hi · admin · world=busy · /admin/catalogue · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-105 · 1440px · light · en · admin · world=empty · /admin/customers · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-106 · 1440px · dark · hi · admin · world=busy · /admin/reviews · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-107 · 1440px · light · en · admin · world=empty · /admin/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-108 · 1440px · dark · hi · admin · world=busy · /admin/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-109 · 1440px · light · en · admin · world=empty · /admin/content · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-110 · 1440px · dark · hi · admin · world=busy · /admin/layout · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-111 · 1440px · light · en · admin · world=empty · /admin/settings · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-112 · 1440px · dark · hi · admin · world=busy · /admin/notifications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-113 · 1920px · light · en · admin · world=empty · /admin · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-114 · 1920px · dark · hi · admin · world=busy · /admin/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-115 · 1920px · light · en · admin · world=empty · /admin/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-116 · 1920px · dark · hi · admin · world=busy · /admin/roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-117 · 1920px · light · en · admin · world=empty · /admin/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-118 · 1920px · dark · hi · admin · world=busy · /admin/applications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-119 · 1920px · light · en · admin · world=empty · /admin/partners · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-120 · 1920px · dark · hi · admin · world=busy · /admin/catalogue · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-121 · 1920px · light · en · admin · world=empty · /admin/customers · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-122 · 1920px · dark · hi · admin · world=busy · /admin/reviews · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-123 · 1920px · light · en · admin · world=empty · /admin/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-124 · 1920px · dark · hi · admin · world=busy · /admin/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-125 · 1920px · light · en · admin · world=empty · /admin/content · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
-- [ ] NAV-ADMIN-126 · 1920px · dark · hi · admin · world=busy · /admin/layout · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
-- [ ] NAV-ADMIN-127 · 1920px · light · en · admin · world=empty · /admin/settings · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
-- [ ] NAV-ADMIN-128 · 1920px · dark · hi · admin · world=busy · /admin/notifications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-005 · 320px · light · en · admin · world=busy · /admin/delivery · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-006 · 320px · dark · hi · admin · world=empty · /admin/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-007 · 320px · light · en · admin · world=empty · /admin/applications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-008 · 320px · dark · hi · admin · world=busy · /admin/partners · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-009 · 320px · light · en · admin · world=empty · /admin/catalogue · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-010 · 320px · dark · hi · admin · world=busy · /admin/customers · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-011 · 320px · light · en · admin · world=empty · /admin/reviews · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-012 · 320px · dark · hi · admin · world=busy · /admin/support · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-013 · 320px · light · en · admin · world=empty · /admin/coins · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-014 · 320px · dark · hi · admin · world=busy · /admin/content · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-015 · 320px · light · en · admin · world=empty · /admin/layout · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-016 · 320px · dark · hi · admin · world=busy · /admin/settings · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-017 · 320px · light · en · admin · world=empty · /admin/notifications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-018 · 390px · dark · hi · admin · world=busy · /admin · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-019 · 390px · light · en · admin · world=empty · /admin/orders · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-020 · 390px · dark · en · admin · world=busy · /admin/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-021 · 390px · light · hi · admin · world=empty · /admin/roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi axe
+- [ ] NAV-ADMIN-022 · 390px · dark · hi · admin · world=empty · /admin/delivery · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-023 · 390px · light · en · admin · world=busy · /admin/quotes · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-024 · 390px · dark · hi · admin · world=busy · /admin/applications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-025 · 390px · light · en · admin · world=empty · /admin/partners · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-026 · 390px · dark · hi · admin · world=busy · /admin/catalogue · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-027 · 390px · light · en · admin · world=empty · /admin/customers · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-028 · 390px · dark · hi · admin · world=busy · /admin/reviews · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-029 · 390px · light · en · admin · world=empty · /admin/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-030 · 390px · dark · hi · admin · world=busy · /admin/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-031 · 390px · light · en · admin · world=empty · /admin/content · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-032 · 390px · dark · hi · admin · world=busy · /admin/layout · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-033 · 390px · light · en · admin · world=empty · /admin/settings · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-034 · 390px · dark · hi · admin · world=busy · /admin/notifications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-035 · 480px · light · en · admin · world=empty · /admin · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-036 · 480px · dark · hi · admin · world=busy · /admin/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-037 · 480px · light · en · admin · world=empty · /admin/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-038 · 480px · dark · hi · admin · world=busy · /admin/roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-039 · 480px · light · en · admin · world=empty · /admin/delivery · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-040 · 480px · dark · hi · admin · world=busy · /admin/quotes · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-041 · 480px · light · en · admin · world=empty · /admin/applications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-042 · 480px · dark · hi · admin · world=busy · /admin/partners · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-043 · 480px · light · en · admin · world=empty · /admin/catalogue · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-044 · 480px · dark · hi · admin · world=busy · /admin/customers · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-045 · 480px · light · en · admin · world=empty · /admin/reviews · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-046 · 480px · dark · hi · admin · world=busy · /admin/support · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-047 · 480px · light · en · admin · world=empty · /admin/coins · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-048 · 480px · dark · hi · admin · world=busy · /admin/content · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-049 · 480px · light · en · admin · world=empty · /admin/layout · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-050 · 480px · dark · hi · admin · world=busy · /admin/settings · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-051 · 480px · light · en · admin · world=empty · /admin/notifications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-052 · 768px · dark · hi · admin · world=busy · /admin · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-053 · 768px · light · en · admin · world=empty · /admin/orders · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-054 · 768px · dark · hi · admin · world=busy · /admin/services · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-055 · 768px · light · en · admin · world=empty · /admin/roadside · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-056 · 768px · dark · hi · admin · world=busy · /admin/delivery · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-057 · 768px · light · en · admin · world=empty · /admin/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-058 · 768px · dark · hi · admin · world=busy · /admin/applications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-059 · 768px · light · en · admin · world=empty · /admin/partners · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-060 · 768px · dark · hi · admin · world=busy · /admin/catalogue · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-061 · 768px · light · en · admin · world=empty · /admin/customers · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-062 · 768px · dark · hi · admin · world=busy · /admin/reviews · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-063 · 768px · light · en · admin · world=empty · /admin/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-064 · 768px · dark · hi · admin · world=busy · /admin/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-065 · 768px · light · en · admin · world=empty · /admin/content · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-066 · 768px · dark · hi · admin · world=busy · /admin/layout · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-067 · 768px · light · en · admin · world=empty · /admin/settings · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-068 · 768px · dark · hi · admin · world=busy · /admin/notifications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-069 · 1024px · light · en · admin · world=empty · /admin · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-070 · 1024px · dark · hi · admin · world=busy · /admin/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-071 · 1024px · light · en · admin · world=empty · /admin/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-072 · 1024px · dark · hi · admin · world=busy · /admin/roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-073 · 1024px · light · en · admin · world=empty · /admin/delivery · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-074 · 1024px · dark · hi · admin · world=busy · /admin/quotes · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-075 · 1024px · light · en · admin · world=empty · /admin/applications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-076 · 1024px · dark · hi · admin · world=busy · /admin/partners · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-077 · 1024px · light · en · admin · world=empty · /admin/catalogue · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-078 · 1024px · dark · hi · admin · world=busy · /admin/customers · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-079 · 1024px · light · en · admin · world=empty · /admin/reviews · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-080 · 1024px · dark · hi · admin · world=busy · /admin/support · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-081 · 1024px · light · en · admin · world=empty · /admin/coins · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-082 · 1024px · dark · hi · admin · world=busy · /admin/content · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-083 · 1024px · light · en · admin · world=empty · /admin/layout · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-084 · 1024px · dark · hi · admin · world=busy · /admin/settings · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-085 · 1024px · light · en · admin · world=empty · /admin/notifications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-086 · 1280px · dark · hi · admin · world=busy · /admin · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-087 · 1280px · light · en · admin · world=empty · /admin/orders · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-088 · 1280px · dark · hi · admin · world=busy · /admin/services · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-089 · 1280px · light · en · admin · world=empty · /admin/roadside · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-090 · 1280px · dark · hi · admin · world=busy · /admin/delivery · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-091 · 1280px · light · en · admin · world=empty · /admin/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-092 · 1280px · dark · hi · admin · world=busy · /admin/applications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-093 · 1280px · light · en · admin · world=empty · /admin/partners · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-094 · 1280px · dark · hi · admin · world=busy · /admin/catalogue · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-095 · 1280px · light · en · admin · world=empty · /admin/customers · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-096 · 1280px · dark · hi · admin · world=busy · /admin/reviews · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-097 · 1280px · light · en · admin · world=empty · /admin/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-098 · 1280px · dark · hi · admin · world=busy · /admin/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-099 · 1280px · light · en · admin · world=empty · /admin/content · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-100 · 1280px · dark · hi · admin · world=busy · /admin/layout · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-101 · 1280px · light · en · admin · world=empty · /admin/settings · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-102 · 1280px · dark · hi · admin · world=busy · /admin/notifications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-103 · 1440px · light · en · admin · world=empty · /admin · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-104 · 1440px · dark · hi · admin · world=busy · /admin/orders · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-105 · 1440px · light · en · admin · world=empty · /admin/services · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-106 · 1440px · dark · hi · admin · world=busy · /admin/roadside · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-107 · 1440px · light · en · admin · world=empty · /admin/delivery · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-108 · 1440px · dark · hi · admin · world=busy · /admin/quotes · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-109 · 1440px · light · en · admin · world=empty · /admin/applications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-110 · 1440px · dark · hi · admin · world=busy · /admin/partners · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-111 · 1440px · light · en · admin · world=empty · /admin/catalogue · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-112 · 1440px · dark · hi · admin · world=busy · /admin/customers · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-113 · 1440px · light · en · admin · world=empty · /admin/reviews · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-114 · 1440px · dark · hi · admin · world=busy · /admin/support · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-115 · 1440px · light · en · admin · world=empty · /admin/coins · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-116 · 1440px · dark · hi · admin · world=busy · /admin/content · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-117 · 1440px · light · en · admin · world=empty · /admin/layout · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-118 · 1440px · dark · hi · admin · world=busy · /admin/settings · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-119 · 1440px · light · en · admin · world=empty · /admin/notifications · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-120 · 1920px · dark · hi · admin · world=busy · /admin · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-121 · 1920px · light · en · admin · world=empty · /admin/orders · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-122 · 1920px · dark · hi · admin · world=busy · /admin/services · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-123 · 1920px · light · en · admin · world=empty · /admin/roadside · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-124 · 1920px · dark · hi · admin · world=busy · /admin/delivery · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-125 · 1920px · light · en · admin · world=empty · /admin/quotes · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-126 · 1920px · dark · hi · admin · world=busy · /admin/applications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-127 · 1920px · light · en · admin · world=empty · /admin/partners · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-128 · 1920px · dark · hi · admin · world=busy · /admin/catalogue · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-129 · 1920px · light · en · admin · world=empty · /admin/customers · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-130 · 1920px · dark · hi · admin · world=busy · /admin/reviews · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-131 · 1920px · light · en · admin · world=empty · /admin/support · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-132 · 1920px · dark · hi · admin · world=busy · /admin/coins · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-133 · 1920px · light · en · admin · world=empty · /admin/content · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav axe
+- [ ] NAV-ADMIN-134 · 1920px · dark · hi · admin · world=busy · /admin/layout · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
+- [ ] NAV-ADMIN-135 · 1920px · light · en · admin · world=empty · /admin/settings · walk=no · asserts: present inside overlap covered clipped tap hscroll focus console nav
+- [ ] NAV-ADMIN-136 · 1920px · dark · hi · admin · world=busy · /admin/notifications · walk=yes · asserts: present inside overlap covered clipped tap hscroll focus console nav hindi
 
 ### NAV-CATEGORY — Shop category chips (scroll row): current chip, every chip applies its filter
 

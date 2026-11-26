@@ -152,7 +152,7 @@ export function deliveryWorld(now: number): Record<string, unknown> {
     ],
   };
   return {
-    'mechdost-demo-orders': [...(seedData(now)['mechdost-demo-orders'] as DemoOrder[]), ...orders],
+    'mechdost-demo-orders': [...seedData(now)['mechdost-demo-orders'], ...orders],
     'mechdost-demo-delivery': [state],
   };
 }

@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { portalField, portalPrimary } from '@/components/portal/portal-styles';
 import { deliverySettings, saveDeliverySettings, type DemoDeliverySettings } from '@/demo/delivery-store';
 import { track } from '@/lib/analytics';
-import { useStatusLine } from './parts';
+import { useStatusLine } from './status-line';
 
 type IntKey = 'offerTimeoutMin' | 'maxActiveJobs' | 'maxAttempts';
 const INT_SETTING: Record<IntKey, keyof typeof OPERATIONAL_SETTINGS> = {

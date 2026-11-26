@@ -14,7 +14,8 @@ import { localePath } from '@/lib/locale-path';
 import { site } from '@/lib/site';
 import { useAgentClient, useLiveReload } from '@/lib/delivery/use-delivery-client';
 import type { AgentClient, AgentJobCardView, AgentJobsView, AgentProfileView } from '@/lib/delivery/types';
-import { countdown, deliveryErrorKey, kmText, telHref } from '@/lib/delivery/view';
+import { countdown, kmText, telHref } from '@/lib/delivery/view';
+import { useDeliveryErrorText } from './error-text';
 import { LoadGate, ReasonFields, bigPrimary, bigQuiet, reasonProblem, useStatusLine } from './parts';
 
 const POLL_MS = 20_000;
@@ -31,18 +32,7 @@ export function useAgent(): AgentCtx | null {
   return useContext(Ctx);
 }
 
-/** Error copy for an API code: the contract's `delivery.errors.*` when it has one, else a generic line. */
-export function useDeliveryErrorText(): (code: string) => string {
-  const t = useTranslations('deliveryAgent');
-  const e = useTranslations('delivery.errors');
-  return useCallback(
-    (code: string) => {
-      const key = deliveryErrorKey(code);
-      return key ? e(key, { attemptsLeft: 0 }) : code === 'NOT_FOUND' ? t('noJob') : t('genericError');
-    },
-    [e, t],
-  );
-}
+export { useDeliveryErrorText } from './error-text';
 
 /**
  * Delivery agent portal frame (spec 24, `/partner/delivery`): the guard, the navy status strip (online switch, help

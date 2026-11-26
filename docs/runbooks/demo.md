@@ -15,17 +15,29 @@ Use Chrome. For the phone view press F12 → device toolbar → 390 px wide.
 
 ## Demo logins (password `Raipur@2026` for every number; staff code `123456`)
 
-| Role                              | Number     | Lands on            |
-| --------------------------------- | ---------- | ------------------- |
-| Customer (Ravi Sahu)              | 9876543210 | `/account`          |
-| Shop owner — Sharma Auto Parts    | 9000000001 | `/partner/shop`     |
-| Shop owner — Raipur Battery Point | 9000000004 | `/partner/shop`     |
-| Workshop — Telibandha Car Clinic  | 9000000002 | `/partner/workshop` |
-| Admin                             | 9000000003 | `/admin`            |
+| Role                                                         | Number     | Lands on            |
+| ------------------------------------------------------------ | ---------- | ------------------- |
+| Customer (Ravi Sahu)                                         | 9876543210 | `/account`          |
+| Shop owner — Sharma Auto Parts                               | 9000000001 | `/partner/shop`     |
+| Shop owner — Raipur Battery Point                            | 9000000004 | `/partner/shop`     |
+| Workshop — Telibandha Car Clinic                             | 9000000002 | `/partner/workshop` |
+| Admin                                                        | 9000000003 | `/admin`            |
+| Shop owner — Gupta Lubes & Spares (MechDost delivery agents) | 9000000006 | `/partner/shop`     |
+| Delivery agent — Sunil Yadav (motorcycle, online)            | 9000000005 | `/partner/delivery` |
+| Delivery agent — Deepak Sahu (three-wheeler, offline)        | 9000000007 | `/partner/delivery` |
 
 Sign in with the number **or** the email and the password; the admin also enters the code `123456`. "Create an account" signs up a new customer (phone → code `123456` → name, email, password, confirm). "Forgot password?" offers a code to the phone or an email link (the demo shows the link on screen instead of sending mail). The chips on `/login` fill the number and password.
 
 **Full loop to show:** place an order as a guest or customer → sign in as admin → **Order routing** → route to the recommended shop → sign in as that shop → accept (or decline with a reason → admin reroutes) → mark packed → mark out for delivery → open the order page: the customer's **4-digit delivery code** → back in the shop portal enter that code to mark it delivered (5 wrong codes lock it; admin can confirm without the code with a reason). Same for service requests: book at Telibandha Car Clinic → workshop login → propose slot + cost → customer accepts on the request page.
+
+**Delivery agents loop (spec 24):** order a lubricant (e.g. Castrol Activ) → admin routes it to **Gupta Lubes &
+Spares** → sign in as Gupta (9000000006) → accept → mark packed → **Mark ready for pickup** (the shop sees a 4-digit
+pickup code) → admin → **Delivery** → Jobs → Open → **Offer to Sunil Yadav** → sign in as Sunil (9000000005) →
+Offers → **Accept** → I'm at the shop → type the shop's pickup code + take a photo → the customer's details appear →
+I'm at the customer → type the customer's delivery code (on the order page) + a photo → delivered → the customer
+rates the delivery. Try **Couldn't deliver** → admin "Send it back to the shop" → the agent's return code → the shop
+types it → the order shows the refund wording. Admin → Delivery → Payouts records a manual payout; Sunil sees it under
+Profile → Earnings. The browser demo has no payments: its orders count as prepaid for the delivery mode.
 
 ## Suggested 10-minute walkthrough
 

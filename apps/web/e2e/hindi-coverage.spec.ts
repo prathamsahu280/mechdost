@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { DEMO_PRODUCTS } from '../src/demo/catalogue';
 import { DEMO_WORKSHOPS } from '../src/demo/workshops';
 import { CODES, seedData } from './fixtures/demo-world';
+import { DELIVERY_CODES, DELIVERY_JOB_IDS, deliveryWorld } from './fixtures/delivery-world';
 import { ACCOUNT_SECTIONS, ADMIN_SECTIONS } from '../src/lib/sections';
 import { latinOffenders } from '../test/hindi-allowlist';
 
@@ -111,6 +112,13 @@ const MUST_SHOW: Readonly<Record<string, string>> = {
   '/ustaad/messages/0193a000-0000-7000-8000-000000000301': 'Splendor ka self',
   '/ustaad/network?tab=requests': 'राजू निषाद',
   '/ustaad/discover': 'तेलीबांधा',
+  // Delivery agents (spec 24), with the delivery world seeded.
+  '/partner/delivery/jobs': DELIVERY_CODES.pickedUp,
+  [`/partner/delivery/jobs/${DELIVERY_JOB_IDS.pickedUp}`]: 'Ravi Sahu',
+  '/partner/shop?mode=agents': DELIVERY_CODES.ready,
+  [`/orders/${DELIVERY_CODES.pickedUp}`]: 'Sunil',
+  [`/orders/${DELIVERY_CODES.returned}`]: DELIVERY_CODES.returned,
+  '/admin/delivery?seeded=1': DELIVERY_CODES.ready,
 };
 
 /** Visits each page and returns "page: words" for every page with English left on it. */
@@ -160,6 +168,9 @@ const PUBLIC_PAGES = [
   '/partners/apply/garage',
   '/partners/apply/mechanic',
   '/partners/invite/not-a-real-invite',
+  // Delivery agents (spec 24): the short apply form and an invite link that is not valid.
+  '/partners/apply/delivery_agent',
+  '/partners/delivery-invite/0000000000000000000000000000000000000000',
   `/partners/applications/${CODES.application}`,
   '/account',
   '/admin',
@@ -234,6 +245,23 @@ const USTAAD_DM_PAGES = [
   '/ustaad/discover?work=ac',
 ];
 
+/** Delivery agents (spec 24): the delivery world on top of the busy world (orders merged once per browser). */
+async function prepareDelivery(page: Page) {
+  const world = deliveryWorld(Date.now());
+  await page.addInitScript((data: Record<string, unknown>) => {
+    if (window.localStorage.getItem('mechdost-demo-delivery') !== null) return;
+    for (const [key, value] of Object.entries(data)) window.localStorage.setItem(key, JSON.stringify(value));
+  }, world);
+}
+const AGENT_PAGES = [
+  '/partner/delivery',
+  '/partner/delivery/jobs',
+  `/partner/delivery/jobs/${DELIVERY_JOB_IDS.pickedUp}`,
+  `/partner/delivery/jobs/${DELIVERY_JOB_IDS.returned}`,
+  '/partner/delivery/history',
+  '/partner/delivery/profile',
+];
+
 const report = (failures: string[]) =>
   `English text on Hindi pages — translate it (or mark user-typed text with data-user-content):\n${failures.join('\n')}`;
 
@@ -279,6 +307,41 @@ test.describe('Hindi pages have no English left (hard rule 10)', () => {
     test.setTimeout(180_000);
     await signIn(page, PHONES.admin);
     const failures = await audit(page, USTAAD_DM_PAGES, true);
+    expect(failures, report(failures)).toEqual([]);
+  });
+
+  test('delivery agent portal', async ({ page }) => {
+    test.setTimeout(180_000);
+    await prepareDelivery(page);
+    await signIn(page, '9000000005');
+    const failures = await audit(page, AGENT_PAGES, true);
+    expect(failures, report(failures)).toEqual([]);
+  });
+
+  test('delivery: agent-mode shop, customer and admin screens', async ({ page }) => {
+    test.setTimeout(180_000);
+    await prepareDelivery(page);
+    await signIn(page, '9000000006');
+    const shop = await audit(page, ['/partner/shop?mode=agents'], true);
+    await page.evaluate(() => {
+      window.localStorage.setItem(
+        'mechdost-demo-session',
+        JSON.stringify([{ accountId: 'demo-customer', signedInAt: new Date().toISOString() }]),
+      );
+    });
+    const customer = await audit(
+      page,
+      [`/orders/${DELIVERY_CODES.pickedUp}`, `/orders/${DELIVERY_CODES.returned}`],
+      true,
+    );
+    await page.evaluate(() => {
+      window.localStorage.setItem(
+        'mechdost-demo-session',
+        JSON.stringify([{ accountId: 'demo-admin', signedInAt: new Date().toISOString() }]),
+      );
+    });
+    const admin = await audit(page, ['/admin/delivery?seeded=1'], true);
+    const failures = [...shop, ...customer, ...admin];
     expect(failures, report(failures)).toEqual([]);
   });
 

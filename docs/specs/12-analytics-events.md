@@ -313,3 +313,9 @@ period YYYY-MM }`, `admin_usage_limit_saved { metric, limit|null, alerts }`, `ad
 criticalPct, recipients (count), emailLocale }`. Client clicks (`data-track`): `admin_usage_check_now`,
 `admin_usage_limit_edit`, `admin_usage_limit_save`, `admin_usage_alerts_save`. The measurements themselves are in
 `usage_snapshots` (append-only, metric code with unit, bigint value, limit, source, UTC time, run id).
+
+## Delivery agents web screens (2026-11-27, spec 24)
+
+Client `click` ids for every agent, shop, customer and admin delivery action (list in spec 24 § Web screens →
+Analytics) and `code_submitted {kind:'delivery'}` for pickup, delivery and return codes. No PII: ids, codes and
+paths only (the invite token is redacted). Typed events in the shared catalogue: contract gap G6.

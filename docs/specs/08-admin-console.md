@@ -521,3 +521,10 @@ emailLocale, expectedVersion}`); compare-and-set on `version`, 409 when stale, a
 - **Tests:** `packages/db/test/usage.test.ts`, `apps/api/test/admin-usage.test.ts`, `packages/shared/test/usage.test.ts`,
   state-audit row `API-ADM-USAGE`, `e2e/state-audit/usage.shots.ts` (`playwright.usage.config.ts`).
 - **Later:** a recovery note when a metric drops back; Upstash and Supabase egress numbers (need other keys).
+
+## Delivery (2026-11-27, spec 24)
+
+Operations group → **Delivery**: jobs queue with ranked agent suggestions and timers, applications and invites,
+agents (status with history, documents with an audited view, rating), manual payouts (record, correct with a
+reversing entry, CSV), shop delivery-mode requests and the per-city settings (real builds: Settings → Partners). The
+order card shows the delivery timeline. Spec 24 § Web screens.

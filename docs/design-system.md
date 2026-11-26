@@ -218,3 +218,10 @@ A restyle of the real admin pages; no feature, control or data was added, and no
 ## Vehicle segments (2026-11-25)
 
 No new colours, fonts or radii. **Chips** (`segment-chips.tsx`): the same pill as the category chips but 44 px high (`min-h-11`), `accent-soft` when on, `line-card` border when off; label "Truck & bus (12)" in one string; the row sits under the category chips with a small "Kind of vehicle" label (the shop's only vehicle filter since the 2W/3W/4W select was retired, 2026-11-26), scrolls sideways inside its own box on a phone (no page overflow). **Card tag**: an `accent-soft` / `accent-soft-text` 11 px bold pill with `rounded-md` in the badge row under the picture, in normal flow (it wraps, so it can never overlap the info, save or edit buttons that live on the category line and picture corner); screen readers hear "Suitable for ..." before the name. **Home tiles** ("Shop by vehicle"): the category-tile look (rounded-tile, shadow-card, accent-soft round icon) laid out as a row (icon, name, description, count), three across from 640 px, one per row on a phone; icons are decorative emoji, the name carries the meaning. Light and dark use the existing tokens (contrast already covered by the tokens test).
+
+### Delivery agent status strip (2026-11-27, spec 24)
+
+The agent portal opens with the navy `blueprint` strip (existing utility): first name, vehicle, a white **Help** call
+button and a white inset holding the shared `Switch` ("Take new jobs") with its state in words. Below it a 4-tab bar
+(navy current tab). Countdown pills use `bg-pill`, turning `bg-warning-bg` under a minute. Job steps: a 4-segment
+bar (`bg-accent-button` done, `bg-line` to do) with "Step n of 4". All targets 48 px. No new colours, fonts or radii.

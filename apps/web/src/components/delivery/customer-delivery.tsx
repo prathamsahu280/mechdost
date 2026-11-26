@@ -13,7 +13,7 @@ import {
 } from '@/lib/delivery/types';
 import { site } from '@/lib/site';
 import { telHref } from '@/lib/delivery/view';
-import { useStatusLine } from './parts';
+import { useStatusLine } from './status-line';
 
 /**
  * The customer's delivery block for an agent-delivered part (spec 24, Lead's calls 7, 13): the stage in words with the

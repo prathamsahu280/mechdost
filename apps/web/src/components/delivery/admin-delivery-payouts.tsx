@@ -24,7 +24,7 @@ import {
   type PayoutMethod,
   type PayoutSummaryRow,
 } from '@/lib/delivery/types';
-import { useStatusLine } from './parts';
+import { useStatusLine } from './status-line';
 
 /** Today and seven days back as IST calendar dates (YYYY-MM-DD), the default period. */
 function lastWeek(): { from: string; to: string } {

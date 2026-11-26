@@ -46,8 +46,9 @@ async function start(page: Page) {
   await page.goto('/');
 }
 
-const desktopOnly = (name: string) =>
+const desktopOnly = (name: string) => {
   test.skip(name === 'mobile', 'agent portal runs on both; the rest desktop');
+};
 
 test.describe('delivery agents (demo)', () => {
   test('agent happy path: accept, pick up with the shop code, deliver with the customer code', async ({

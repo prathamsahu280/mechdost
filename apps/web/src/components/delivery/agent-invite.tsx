@@ -11,7 +11,7 @@ import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatDate } from '@/lib/format';
 import type { AgentInvitePreviewView } from '@/lib/delivery/types';
-import { useDeliveryErrorText } from './agent-portal';
+import { useDeliveryErrorText } from './error-text';
 
 const REAL = AUTH_MODE === 'firebase';
 const primary =

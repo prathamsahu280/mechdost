@@ -14,8 +14,9 @@ import { useLiveReload, useShopDeliveryClient } from '@/lib/delivery/use-deliver
 import type { ShopDeliveryClient, ShopDeliveryModeViewT, ShopOrderDeliveryView } from '@/lib/delivery/types';
 import { wrongCodeLeft } from '@/lib/delivery/view';
 import { portalCard, portalPrimary, portalQuiet } from '@/components/portal/portal-styles';
-import { useDeliveryErrorText } from './agent-portal';
-import { CodeEntry, ReasonFields, reasonProblem, useStatusLine } from './parts';
+import { useDeliveryErrorText } from './error-text';
+import { CodeEntry, ReasonFields, reasonProblem } from './parts';
+import { useStatusLine } from './status-line';
 
 /** Order statuses where the agent hand-over replaces the shop's own delivery buttons (agent-mode sub-orders). */
 export const AGENT_HANDOVER_STATUSES: readonly string[] = ['packed', 'ready_for_pickup', 'out_for_delivery'];

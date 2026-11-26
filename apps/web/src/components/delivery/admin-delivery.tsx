@@ -49,7 +49,7 @@ import type {
 } from '@/lib/delivery/types';
 import { countdown, kmText } from '@/lib/delivery/view';
 import { PayoutsTab } from './admin-delivery-payouts';
-import { useStatusLine } from './parts';
+import { useStatusLine } from './status-line';
 
 const TABS = ['jobs', 'applications', 'agents', 'payouts', 'requests', 'settings'] as const;
 type Tab = (typeof TABS)[number];
