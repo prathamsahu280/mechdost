@@ -126,26 +126,28 @@ test.describe('demo shop filters follow the URL (review B13)', () => {
   });
 });
 
-test.describe('vehicle type filter (decision 2026-11-12: 2W, 3W and 4W first-class)', () => {
-  test('filters the shop by vehicle type, keeps it in the URL, and clears it', async ({ page }) => {
+test.describe('vehicle filter = the "Kind of vehicle" chips (founder 2026-11-26: the 2W/3W/4W select is retired)', () => {
+  test('the shop has no Vehicle type select; old ?vehicle= links open the matching chip, other filters kept', async ({
+    page,
+  }) => {
     await page.goto('/shop');
-    const vehicle = page.getByLabel('Vehicle type');
-    await vehicle.selectOption('2W');
-    await expect(page).toHaveURL(/vehicle=2W/);
-    const cards = page.getByRole('article');
-    await expect.poll(() => cards.count()).toBeGreaterThan(0);
-    for (const text of await cards.allTextContents()) expect(text).toContain('2W');
+    await expect(page.locator('#shop-vehicle')).toHaveCount(0);
+    await expect(page.getByRole('combobox', { name: 'Vehicle type' })).toHaveCount(0);
 
-    // No demo product is tagged for three-wheelers yet: an empty list with one next action.
-    await vehicle.selectOption('3W');
-    await expect(page).toHaveURL(/vehicle=3W/);
-    await expect(cards).toHaveCount(0);
-    await page.getByRole('button', { name: 'Clear filters' }).click();
-    await expect(page).toHaveURL(/\/shop$/);
-    await expect(vehicle).toHaveValue('');
-
-    await page.goto('/shop?vehicle=4W');
-    await expect(vehicle).toHaveValue('4W');
+    for (const [old, segment, name] of [
+      ['2W', 'two_wheeler', /^Two-wheeler \(\d+\)$/],
+      ['4W', 'car_suv', /^Car & SUV \(\d+\)$/],
+    ] as const) {
+      await page.goto(`/shop?sort=price_asc&vehicle=${old}`);
+      await expect(page).toHaveURL(new RegExp(`/shop\\?sort=price_asc&segment=${segment}$`));
+      await expect(page.getByRole('button', { name })).toHaveAttribute('aria-pressed', 'true');
+      await expect(page.getByLabel('Sort by')).toHaveValue('price_asc');
+      const cards = page.getByRole('article');
+      await expect.poll(() => cards.count()).toBeGreaterThan(0);
+    }
+    // Hindi links keep their language.
+    await page.goto('/hi/shop?vehicle=2W');
+    await expect(page).toHaveURL(/\/hi\/shop\?segment=two_wheeler$/);
   });
 });
 

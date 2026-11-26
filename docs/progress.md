@@ -2,6 +2,26 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-26 (night) — four fixes agent (branch worktree-agent-a3b1a256dd1a31849, not pushed, no migration)
+
+- **Shop:** the 2W/3W/4W "Vehicle type" select is retired (founder ruling, Q-segments answered); old `?vehicle=` links
+  redirect to the matching segment chip (meta refresh + client replace; an HTTP 308 in `proxy.ts` is not built). "Fits your vehicle" never used the select (unchanged). Spec 02, spec 12, design
+  doc, design system, SEO runbook, decisions; e2e `demo-flows` + Hindi crawl `/shop?segment=two_wheeler`.
+- **Admin Ustaad lists:** the page widened at 320 px because `.sr-only` text escaped the table scroll box (absolute,
+  no positioned ancestor) → `AdminTable` / `ScrollRegion` are `relative`; rows read by their Hindi name on /hi, typed
+  names marked as user content. State audit `API-ADM-USTAAD*` 144/144 on the API-mode production build (incl.
+  CONSOLE-003 "REQ" and the LaterCard contrast rows).
+- **qa-regressions (5 failures):** B1 + QA 13 were tests left behind by copy rulings (2026-11-22, Q196) → re-pointed;
+  theme with full storage was a real regression from "light by default" (3b54a77c) → pre-paint observer fixed.
+- **Verified:** vitest web 1641/1641 (one file re-run after a port clash with the audit), shared 949/949; tsc web 0;
+  eslint on changed files 0; prettier on changed files 0; state audit `API-ADM-USTAAD*` 144/144 (API build) and
+  `SHOP-FILTERS` + `SHOP-SEGMENT-CHIPS` 88/88 (demo build); e2e qa-regressions + demo-flows + segments on :3105 with a
+  :3105 consent fixture (another agent held :3100): 123 passed, 6 skipped, 1 flaky (demo-flows "saved theme comes
+  back … another tab", mobile; 8/8 on repeat); the old B1 / QA 13 assertions fail on this build at the copy steps
+  (RED); Hindi crawl public + admin 2/2; `/shop` 178.5 KB.
+- **Next:** lead merge; open minor a11y items in decisions
+  2026-11-26 "Admin Ustaad lists".
+
 ## 2026-11-26 ~17:20 — end of afternoon session (handover)
 
 - **Live (deploy c6e2eaf8, staff_preview):** Ustaad A–C, E, F1–F3, G1, B (all rounds), D1 feed API, D2 social API,

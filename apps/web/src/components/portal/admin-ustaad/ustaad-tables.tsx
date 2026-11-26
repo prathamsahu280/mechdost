@@ -15,6 +15,8 @@ import {
   type TableForm,
   type TableRow,
   bodyFromForm,
+  rowName,
+  splitAroundName,
   tableErrorMessage,
 } from '@/lib/admin-ustaad-tables';
 import { track } from '@/lib/analytics';
@@ -179,7 +181,11 @@ function EditableTable({
     if (name === 'code' && config.id === 'reasons' && typeof v === 'string')
       return t(adminMessage(`e_reason_${v}`));
     if (typeof v === 'boolean')
-      return <StatusBadge tone={v ? 'success' : 'muted'}>{t(v ? 't_active' : 't_inactive')}</StatusBadge>;
+      return (
+        <StatusBadge tone={v ? 'success' : 'muted'} className="whitespace-nowrap">
+          {t(v ? 't_active' : 't_inactive')}
+        </StatusBadge>
+      );
     if (field?.kind === 'select' && typeof v === 'string') return t(adminMessage(`e_${field.group}_${v}`));
     if (field?.kind === 'datetime' && typeof v === 'string')
       return new Intl.DateTimeFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', {
@@ -267,12 +273,11 @@ function EditableTable({
             <tbody>
               {rows.map((row) => {
                 const id = String(row[config.idField]);
-                const hiName =
-                  config.id === 'cities' && locale === 'hi' && typeof row.nameHi === 'string'
-                    ? row.nameHi
-                    : null;
-                const name =
-                  hiName ?? (typeof row[config.nameField] === 'string' ? String(row[config.nameField]) : id);
+                // Read out in the page language (hard rule 10): the Hindi text on /hi, else the typed text,
+                // marked as user content (state audit API-ADM-USTAAD, 2026-11-26).
+                const own = rowName(config, row, locale);
+                const name = own.text === '' ? { text: id, localized: false } : own;
+                const hiName = config.id === 'cities' && locale === 'hi' ? name.text : null;
                 const merged =
                   typeof row.mergedIntoId === 'string'
                     ? rows.find((r) => r.id === row.mergedIntoId)
@@ -317,20 +322,27 @@ function EditableTable({
                                 )
                               }
                             >
-                              {t(row.enabled === true ? 't_city_close' : 't_city_open', { city: name })}
+                              <RowLabel
+                                name={name}
+                                message={(n) =>
+                                  t(row.enabled === true ? 't_city_close' : 't_city_open', { city: n })
+                                }
+                              />
                             </button>
                           ) : status === 'live' || status === 'ended' || merged ? null : (
                             <button
                               type="button"
                               disabled={busy}
-                              aria-label={t('t_edit_row', { name })}
                               data-disclosure-trigger={`ustaad-${config.id}-${id}`}
                               className={portalQuiet}
                               onClick={() => {
                                 open(row);
                               }}
                             >
-                              {t('t_edit')}
+                              <span aria-hidden="true">{t('t_edit')}</span>
+                              <span className="sr-only">
+                                <RowLabel name={name} message={(n) => t('t_edit_row', { name: n })} />
+                              </span>
                             </button>
                           )}
                           {config.id === 'tags' && !merged && row.active === true ? (
@@ -346,7 +358,9 @@ function EditableTable({
                               }}
                             >
                               <span aria-hidden="true">{t('t_merge')}</span>
-                              <span className="sr-only">{t('t_merge_row', { name })}</span>
+                              <span className="sr-only">
+                                <RowLabel name={name} message={(n) => t('t_merge_row', { name: n })} />
+                              </span>
                             </button>
                           ) : null}
                           {config.id === 'promotions' && status
@@ -369,7 +383,15 @@ function EditableTable({
                                   >
                                     <span aria-hidden="true">{t(adminMessage(`t_move_${to}`))}</span>
                                     <span className="sr-only">
-                                      {t('t_move_row', { action: t(adminMessage(`t_move_${to}`)), name })}
+                                      <RowLabel
+                                        name={name}
+                                        message={(n) =>
+                                          t('t_move_row', {
+                                            action: t(adminMessage(`t_move_${to}`)),
+                                            name: n,
+                                          })
+                                        }
+                                      />
                                     </span>
                                   </button>
                                 ))
@@ -553,6 +575,24 @@ function EditableTable({
         </form>
       ) : null}
     </section>
+  );
+}
+
+/** A translated label around a row's name; a name staff typed in one language only is marked as user content. */
+function RowLabel({
+  name,
+  message,
+}: {
+  name: { text: string; localized: boolean };
+  message: (name: string) => string;
+}) {
+  const { before, after } = splitAroundName(message);
+  return (
+    <>
+      {before}
+      {name.localized ? name.text : <span data-user-content>{name.text}</span>}
+      {after}
+    </>
   );
 }
 

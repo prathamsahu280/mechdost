@@ -1,5 +1,10 @@
-import type { VehicleType } from '@mechdost/shared/vehicles';
-import { formatSegmentParam, type VehicleSegment } from '@mechdost/shared/vehicle-segments';
+import { VEHICLE_TYPES } from '@mechdost/shared/vehicles';
+import {
+  formatSegmentParam,
+  parseSegmentParam,
+  SEGMENT_OF_VEHICLE_TYPE,
+  type VehicleSegment,
+} from '@mechdost/shared/vehicle-segments';
 import { CATEGORY_SLUGS, categoryFromSlug, type CategoryKey } from '@/demo/categories';
 import type { SortKey } from '@/demo/catalogue';
 
@@ -17,8 +22,6 @@ export interface ShopState {
   /** Narrows `category` to one sub-category; the URL's `category` parameter then holds this slug. */
   sub: SubCategory | undefined;
   sort: SortKey;
-  /** Only products tagged for this vehicle type (decision 2026-11-12). */
-  vehicle: VehicleType | undefined;
   /** Vehicle segments chosen with the chips (any of; design 2026-11-25); empty = all vehicles. */
   segments: readonly VehicleSegment[];
 }
@@ -29,8 +32,32 @@ export function shopUrl(base: string, s: ShopState): string {
   if (s.sub) params.set('category', s.sub.slug);
   else if (s.category) params.set('category', CATEGORY_SLUGS[s.category]);
   if (s.sort !== 'popular') params.set('sort', s.sort);
-  if (s.vehicle) params.set('vehicle', s.vehicle);
   const segment = formatSegmentParam(s.segments);
+  if (segment) params.set('segment', segment);
+  const qs = params.toString();
+  return qs ? `${base}?${qs}` : base;
+}
+
+/**
+ * Old shop links with the retired 2W/3W/4W "Vehicle type" select (`?vehicle=2W`; founder ruling 2026-11-26) go to the
+ * matching segment chip (2W -> two_wheeler, 3W -> three_wheeler, 4W -> car_suv), merged with any chosen segments and
+ * keeping every other parameter. An unknown value is dropped. Null when the URL has no `vehicle` parameter.
+ */
+export function legacyVehicleRedirect(
+  base: string,
+  search: Readonly<Record<string, string | string[] | undefined>>,
+): string | null {
+  const raw = search.vehicle;
+  if (raw === undefined) return null;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  const type = VEHICLE_TYPES.find((v) => v === value);
+  const params = new URLSearchParams();
+  for (const [key, v] of Object.entries(search)) {
+    if (key === 'vehicle' || key === 'segment' || v === undefined) continue;
+    for (const one of Array.isArray(v) ? v : [v]) params.append(key, one);
+  }
+  const segments = parseSegmentParam(search.segment);
+  const segment = formatSegmentParam(type ? [...segments, SEGMENT_OF_VEHICLE_TYPE[type]] : segments);
   if (segment) params.set('segment', segment);
   const qs = params.toString();
   return qs ? `${base}?${qs}` : base;

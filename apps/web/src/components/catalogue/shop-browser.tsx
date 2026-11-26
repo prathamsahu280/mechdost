@@ -37,7 +37,6 @@ import {
 } from '@/demo/catalogue';
 import { track } from '@/lib/analytics';
 import { shopUrl, type ShopState } from '@/lib/catalogue/shop-state';
-import { VEHICLE_LABEL_KEY, VEHICLE_TYPES } from '@mechdost/shared/vehicles';
 import { whatsappLink } from '@/lib/site';
 import { parseSegmentParam, type VehicleSegment } from '@mechdost/shared/vehicle-segments';
 import { activeDemoSegments, useDemoSegments } from '@/demo/segments';
@@ -59,7 +58,6 @@ function listingState(q: ListingQuery, known: State): State {
     category: sub ? known.category : categoryFromSlug(q.category ?? undefined),
     sub,
     sort: q.sort === 'price_asc' || q.sort === 'price_desc' ? q.sort : 'popular',
-    vehicle: q.vehicle ?? undefined,
     segments: q.segments,
   };
 }
@@ -77,7 +75,6 @@ function stateFrom(p: Pick<URLSearchParams, 'get'>, known: State): State {
     category: sub ? known.category : categoryFromSlug(slug),
     sub,
     sort: SORTS.find((s) => s === sort) ?? 'popular',
-    vehicle: VEHICLE_TYPES.find((v) => v === p.get('vehicle')),
     segments: parseSegmentParam(p.get('segment')),
   };
 }
@@ -147,7 +144,7 @@ export function ShopBrowser({
   const [state, setState] = useState<State>(initial);
   const [draft, setDraft] = useState(initial.query);
   // A new server render with other filters (header link, Back, a shared URL) resets the controls to match.
-  const initialKey = `${initial.query}|${initial.category ?? ''}|${initial.sub?.slug ?? ''}|${initial.sort}|${initial.vehicle ?? ''}|${initial.segments.join(',')}`;
+  const initialKey = `${initial.query}|${initial.category ?? ''}|${initial.sub?.slug ?? ''}|${initial.sort}|${initial.segments.join(',')}`;
   const [shownKey, setShownKey] = useState(initialKey);
   if (shownKey !== initialKey) {
     setShownKey(initialKey);
@@ -213,11 +210,10 @@ export function ShopBrowser({
         query: state.query,
         category: state.category,
         sort: state.sort,
-        vehicle: state.vehicle,
         categoryLabel: (k) => cat(k),
         hi: hiText,
       }),
-    [state.query, state.category, state.sort, state.vehicle, cat, hiText, smart],
+    [state.query, state.category, state.sort, cat, hiText, smart],
   );
   const demoResults = useMemo(
     () =>
@@ -411,7 +407,6 @@ export function ShopBrowser({
     state.category !== undefined ||
     state.sub !== undefined ||
     state.sort !== 'popular' ||
-    state.vehicle !== undefined ||
     state.segments.length > 0;
 
   return (
@@ -421,9 +416,9 @@ export function ShopBrowser({
         action={basePath}
         method="get"
         onSubmit={onSearch}
-        className="mt-8 grid gap-3 rounded-card border border-line-card bg-surface p-4 shadow-card tab:grid-cols-3 tab:items-end nav:grid-cols-[1fr_200px_180px_180px_auto]"
+        className="mt-8 grid gap-3 rounded-card border border-line-card bg-surface p-4 shadow-card tab:grid-cols-[1fr_1fr_auto] tab:items-end nav:grid-cols-[1fr_220px_200px_auto]"
       >
-        <div>
+        <div className="tab:col-span-3 nav:col-span-1">
           <label htmlFor="shop-q" className="text-xs font-bold text-muted">
             {c('searchLabel')}
           </label>
@@ -483,29 +478,6 @@ export function ShopBrowser({
             {CATEGORY_KEYS.map((k) => (
               <option key={k} value={CATEGORY_SLUGS[k]}>
                 {cat(k)}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label htmlFor="shop-vehicle" className="text-xs font-bold text-muted">
-            {c('vehicleLabel')}
-          </label>
-          <select
-            id="shop-vehicle"
-            name="vehicle"
-            value={state.vehicle ?? ''}
-            onChange={(e) => {
-              const vehicle = VEHICLE_TYPES.find((v) => v === e.target.value);
-              track('click', { id: `shop_vehicle_${vehicle ?? 'all'}`, path: window.location.pathname });
-              apply({ ...state, vehicle });
-            }}
-            className={field}
-          >
-            <option value="">{c('vehicleAll')}</option>
-            {VEHICLE_TYPES.map((v) => (
-              <option key={v} value={v}>
-                {c(VEHICLE_LABEL_KEY[v])}
               </option>
             ))}
           </select>
@@ -612,7 +584,6 @@ export function ShopBrowser({
                 category: undefined,
                 sub: undefined,
                 sort: 'popular',
-                vehicle: undefined,
                 segments: [],
               });
             }}

@@ -27,6 +27,11 @@ light-commercial-tyres 26, tractor-batteries 24, tractor-agri-oils 19, industria
   "Shop by vehicle" tiles for Truck & bus, Tractor & farm, Construction/OTR. Search understands segment words (truck,
   tractor, JCB, bus, tempo; Hindi too) through the existing admin-editable vocabulary.
 - Existing `VEHICLE_TYPES` (2W/3W/4W) keep working for vehicles in "My Vehicles", roadside and service requests.
+- **2026-11-26 (founder: "yes we can replace the old vehicle type drop down"):** the shop's 2W/3W/4W "Vehicle type"
+  select is removed; the chips are the only vehicle filter. Old `/shop?vehicle=2W|3W|4W` links redirect (meta refresh + client replace; not an HTTP 308) to the
+  matching segment (2W → two_wheeler, 3W → three_wheeler, 4W → car_suv) keeping the other filters. "Fits your
+  vehicle" on multi-size products never used the select (it matches the saved vehicle's type, make and model against
+  the size's fitment) and is unchanged. Spec 02 "Vehicle type select retired".
 
 ## Phase 2 — Recently viewed + Back keeps your place
 

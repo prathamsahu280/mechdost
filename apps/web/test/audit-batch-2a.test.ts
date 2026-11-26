@@ -49,6 +49,32 @@ describe('scrolling tables are keyboard reachable (API-ADM-ANALYTICS / COMPANY /
   }
 });
 
+describe('a sideways-scrolling box contains its screen-reader text (API-ADM-USTAAD-001, 320 px)', () => {
+  // `.sr-only` is `position: absolute`. Without a positioned ancestor its containing block is the page, so the
+  // scroll box never clips it: an "Actions" header or an "Edit <name>" label in a wide table widened the page by
+  // 12-43 px. The box itself must be the containing block.
+  const boxClass = (file: string, marker: RegExp) => {
+    const s = src(file);
+    const at = s.search(marker);
+    return /className=\{?[`"]([^`"]*overflow-x-auto[^`"]*)/.exec(s.slice(at, at + 600))?.[1] ?? '';
+  };
+  it('AdminTable is positioned', () => {
+    expect(boxClass('components/portal/admin-ui.tsx', /export function AdminTable/).split(/\s+/)).toContain(
+      'relative',
+    );
+  });
+  it('an on/off badge in a Ustaad list cell never breaks inside its word ("O / n" at 320 px)', () => {
+    expect(src('components/portal/admin-ustaad/ustaad-tables.tsx')).toMatch(
+      /<StatusBadge[^>]*className="whitespace-nowrap"[^>]*>\s*\{t\(v \? 't_active' : 't_inactive'\)\}/,
+    );
+  });
+  it('ScrollRegion is positioned', () => {
+    expect(
+      boxClass('components/ui/scroll-region.tsx', /export function ScrollRegion/).split(/\s+/),
+    ).toContain('relative');
+  });
+});
+
 describe('analytics tiles keep amounts inside their box (API-ADM-ANALYTICS 320 px)', () => {
   const s = src('components/portal/admin-analytics-api.tsx');
   it('values may wrap and the tile can shrink', () => {

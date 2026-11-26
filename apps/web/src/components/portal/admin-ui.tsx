@@ -90,7 +90,9 @@ export const adminRow = 'hover:bg-pill/60 aria-selected:bg-accent-soft';
 /**
  * The one table wrapper. A table scrolls sideways only inside this box (the page never does). The box is a named,
  * focusable region so keyboard users can scroll it (WCAG 2.1.1). No sticky header: a box that scrolls sideways owns
- * the sticky position, so a header cannot stick to the page at the same time (decision 2026-11-25).
+ * the sticky position, so a header cannot stick to the page at the same time (decision 2026-11-25). `relative` makes
+ * the box the containing block of `.sr-only` text inside the table (absolutely positioned), so it is clipped by the box
+ * instead of widening the page (state audit API-ADM-USTAAD-001, 320 px, 2026-11-26).
  */
 export function AdminTable({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -99,7 +101,7 @@ export function AdminTable({ label, children }: { label: string; children: React
       role="region"
       aria-label={label}
       tabIndex={0}
-      className="overflow-x-auto focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+      className="relative overflow-x-auto focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
     >
       {children}
     </div>

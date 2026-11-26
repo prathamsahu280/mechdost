@@ -7,3 +7,4 @@
 - 2026-11-15 · UI state audit also covers every navigation bar (`NAV-*`, check `nav`) and the real-sign-in screens in a second config on a mocked API (`API-*`, chunk G, runbook § 9.7). Bug classes N9, N10, learning T79.
 - 2026-11-15 - Bug catalogue section O (live updates: stale ping after sign-out, ping for another uid, connection while hidden, duplicates, bundle leak, polling kept, CSP origin) and a live-listener recipe, after the browser listener build; learning T145.
 - 2026-11-16 - Bug catalogue section P (client message bundles) and learning T149 after the second raw-keys bug; the coverage guard test is a standing gate.
+- 2026-11-26 - Bug catalogue section Q (sr-only escaping scroll boxes, observers that fight the user, e2e literals left behind by copy rulings) and learnings T-QA5a-c, T-FX5.

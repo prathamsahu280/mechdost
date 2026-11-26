@@ -52,7 +52,7 @@ Launch: Postgres `tsvector` (name, brand, sku, part numbers, spec — **English 
 - `GET /v1/catalogue/products/{slug}?city&pincode&locale`: each active variant's best offer with the **seller name** (E-Commerce Rules), photos, OE/manufacturer part numbers, spec, country of origin, GST rate; drafts/unknown → 404.
 - Public, no sign-in; per-IP limits (global 600/min + `catalogue_ip` 240/min on listings); `Cache-Control: public, max-age=30, stale-while-revalidate=120` (categories 300 s). Responses carry no internal ids. City defaults to `DEFAULT_CITY_CODE` (RPR). Hindi fields with the English fallback per `locale`.
 - Demo data: `pnpm db:seed:demo` loads the web demo catalogue (Hindi included) for the API; removed before launch with `--remove` (Q21, `docs/runbooks/demo.md`).
-- **Vehicle types (2026-11-12, Q76 default):** `products.vehicle_types` (2W/3W/4W, empty = fitment not listed; migration 0037, CHECK + GIN index). `GET /v1/catalogue/products?vehicle=3W` keeps only tagged products; cards and product pages return `vehicleTypes`; staff set them with `PUT /v1/admin/catalogue/products/{slug}/vehicle-types` (`products:write`, version, audited `product.vehicle_types_updated`). Web: the card chip shows the codes ("2W · 3W", screen readers hear "Vehicle type:"), untagged shows "Fitment not listed"; the shop has a "Vehicle type" select kept in the URL (`?vehicle=`), demo and API mode, event `shop_vehicle_<type>`. Demo/seed tags come only from the demo `fits` values (EV is a fuel: no type).
+- **Vehicle types (2026-11-12, Q76 default):** `products.vehicle_types` (2W/3W/4W, empty = fitment not listed; migration 0037, CHECK + GIN index). `GET /v1/catalogue/products?vehicle=3W` keeps only tagged products; cards and product pages return `vehicleTypes`; staff set them with `PUT /v1/admin/catalogue/products/{slug}/vehicle-types` (`products:write`, version, audited `product.vehicle_types_updated`). Web: the card chip shows the codes ("2W · 3W", screen readers hear "Vehicle type:"), untagged shows "Fitment not listed"; the shop had a "Vehicle type" select kept in the URL (`?vehicle=`), event `shop_vehicle_<type>` — **retired 2026-11-26** (founder ruling, see "Vehicle type select retired" below); the API parameter `?vehicle=` stays for other clients. Demo/seed tags come only from the demo `fits` values (EV is a fuel: no type).
 - Not yet: exact make/model/year fitment and "Fits your {vehicle}" (Q76/Q10), Redis cache, Meilisearch (`suggest` and the synonyms table are built, see "Smart search" above); web pages still read the demo catalogue until Phase 1 wiring.
 
 ## Web on the API (built 2026-11-10, behind `NEXT_PUBLIC_DATA_MODE`, Q70)
@@ -292,6 +292,25 @@ One product per tread pattern (or oil grade, battery model), each size a **varia
 ## Staff edit shortcut on cards and the product page (2026-11-25)
 
 The product card and the product page carry a staff-only "Edit" link after hydration (never in the cached server HTML); see spec 08 "Storefront edit shortcut". It sits at the picture's top right on cards (the ⓘ and ♡ buttons stay on the category line) and beside the title on the page.
+
+## Vehicle type select retired (2026-11-26, founder: "yes we can replace the old vehicle type drop down"; Q-segments)
+
+- The shop's 2W/3W/4W "Vehicle type" select is gone (web, demo and API mode); the "Kind of vehicle" chips are the only
+  vehicle filter. The filter form is search · category · sort · Search (`tab`: search on its own row; `nav`: one row).
+- **Old links keep working:** `/shop?vehicle=2W|3W|4W` (and `/hi/shop?…`) are sent on (Next `permanentRedirect` in the page: the streamed response is HTTP 200 with a `<meta http-equiv="refresh">` plus a client replace, so it works without JavaScript; a true HTTP 308 in `proxy.ts` is not built) to the same URL with the
+  matching segment added to any chosen ones (2W → `two_wheeler`, 3W → `three_wheeler`, 4W → `car_suv`; shared order)
+  and every other parameter kept (`q`, `category`, `sort`, `pages`); an unknown value is dropped. Code
+  `legacyVehicleRedirect` (`apps/web/src/lib/catalogue/shop-state.ts`), unit test
+  `apps/web/test/shop-vehicle-dropdown-retired.test.ts`, e2e `demo-flows.spec.ts` "Kind of vehicle chips".
+- **Results differ slightly from the old filter, on purpose:** the segment comes from the category first, then the
+  vehicle types (a CV battery tagged 4W is `truck_bus`, not `car_suv`; a general product tagged 2W is `two_wheeler`).
+- **"Fits your vehicle" is unaffected:** the per-size fit (`GET /v1/me/vehicles/fit`, `fitsFitment`) compares the saved
+  vehicle's type, make and model with the size's private fitment lines; it never read the shop select, so nothing
+  moves. The saved vehicle's 2W/3W/4W type maps to segments with `SEGMENT_OF_VEHICLE_TYPE` wherever a segment is
+  needed.
+- **Analytics:** the click ids `shop_vehicle_<type>` stop; vehicle filtering is `shop_segment_filtered` (spec 12).
+- `VEHICLE_TYPES` (2W/3W/4W) stays for My vehicles, roadside and service requests; locale keys
+  `catalogue.vehicleLabel` / `catalogue.vehicleAll` removed (en + hi).
 
 ## Vehicle segments (2026-11-25, design `docs/superpowers/specs/2026-11-25-shopping-personalisation-design.md` phase 1; migration `0087_vehicle_segments`, not applied)
 

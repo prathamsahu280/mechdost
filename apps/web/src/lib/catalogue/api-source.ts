@@ -1,4 +1,3 @@
-import type { VehicleType } from '@mechdost/shared/vehicles';
 import { formatSegmentParam, type VehicleSegment } from '@mechdost/shared/vehicle-segments';
 import type { SegmentFacet } from '@mechdost/shared/vehicle-segments-api';
 import {
@@ -35,7 +34,6 @@ export interface CatalogueQuery {
   q?: string;
   category?: string;
   sort?: ApiSort;
-  vehicle?: VehicleType;
   /** Only products in any of these vehicle segments (design 2026-11-25). */
   segments?: readonly VehicleSegment[];
   cursor?: string;
@@ -65,7 +63,6 @@ export async function fetchCataloguePage(
   if (q) url.searchParams.set('q', q);
   if (query.category) url.searchParams.set('category', query.category);
   if (query.sort) url.searchParams.set('sort', query.sort);
-  if (query.vehicle) url.searchParams.set('vehicle', query.vehicle);
   const segment = formatSegmentParam(query.segments ?? []);
   if (segment) url.searchParams.set('segment', segment);
   if (query.cursor) url.searchParams.set('cursor', query.cursor);

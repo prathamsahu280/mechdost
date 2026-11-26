@@ -36,7 +36,6 @@ describe('shopUrl', () => {
         category: 'lubricants',
         sub,
         sort: 'popular',
-        vehicle: undefined,
         segments: [],
       }),
     ).toBe('/shop?category=car-engine-oil');
@@ -46,7 +45,6 @@ describe('shopUrl', () => {
         category: 'lubricants',
         sub: undefined,
         sort: 'popular',
-        vehicle: undefined,
         segments: [],
       }),
     ).toBe('/shop?category=lubricants');

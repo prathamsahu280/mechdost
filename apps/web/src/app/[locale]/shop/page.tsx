@@ -10,7 +10,8 @@ import { CATEGORY_SLUGS, DEMO_PRODUCTS, type SortKey } from '@/demo/catalogue';
 import type { Locale } from '@/i18n/routing';
 import { fetchCataloguePage, fetchCatalogueCategories, fetchDidYouMean } from '@/lib/catalogue/api-source';
 import { demoCard } from '@/lib/catalogue/demo-source';
-import { resolveCategoryParam } from '@/lib/catalogue/shop-state';
+import { legacyVehicleRedirect, resolveCategoryParam } from '@/lib/catalogue/shop-state';
+import { permanentRedirect } from 'next/navigation';
 import type { CardView } from '@/lib/catalogue/view';
 import { DATA_MODE } from '@/lib/data-mode';
 import { MAX_LIST_PAGES } from '@/lib/catalogue/load-more';
@@ -18,7 +19,6 @@ import { loadMoreCards, type ListingQuery } from './actions';
 import { alternatesFor, openGraphFor } from '@/lib/seo';
 import { site } from '@/lib/site';
 import { localePath } from '@/lib/locale-path';
-import { VEHICLE_TYPES } from '@mechdost/shared/vehicles';
 import { parseSegmentParam } from '@mechdost/shared/vehicle-segments';
 import { RoadsideCard } from '@/components/roadside/roadside-promo';
 import { publishedRoadside } from '@/lib/site-config-content';
@@ -27,6 +27,7 @@ type Search = Promise<{
   q?: string | string[];
   category?: string | string[];
   sort?: string | string[];
+  /** Retired 2W/3W/4W select (founder 2026-11-26): old links are sent on to the matching `segment`. */
   vehicle?: string | string[];
   segment?: string | string[];
   pages?: string | string[];
@@ -42,7 +43,7 @@ const SORTS: SortKey[] = ['popular', 'price_asc', 'price_desc'];
 
 /**
  * The plain shop and each category are landing pages with their own canonical (`/shop?category=tyres`); sort,
- * vehicle and page parameters point back to that canonical, and a search result is `noindex, follow` (thin,
+ * segment and page parameters point back to that canonical, and a search result is `noindex, follow` (thin,
  * endless URL space).
  */
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
@@ -100,6 +101,8 @@ export default async function ShopPage({ searchParams }: Props) {
     getLocale(),
   ]);
   const sp = await searchParams;
+  const legacy = legacyVehicleRedirect(localePath('/shop', locale), sp);
+  if (legacy) permanentRedirect(legacy);
   const sortParam = first(sp.sort);
   const sort: SortKey = SORTS.find((s) => s === sortParam) ?? 'popular';
   const resolved = await resolveCategory(first(sp.category), locale);
@@ -108,7 +111,6 @@ export default async function ShopPage({ searchParams }: Props) {
     category: resolved.category,
     sub: resolved.sub,
     sort,
-    vehicle: VEHICLE_TYPES.find((v) => v === first(sp.vehicle)),
     segments: parseSegmentParam(sp.segment),
   };
   let cards: Record<string, ReactNode>;
@@ -120,7 +122,6 @@ export default async function ShopPage({ searchParams }: Props) {
       q: initial.query,
       category: initial.sub?.slug ?? (initial.category ? CATEGORY_SLUGS[initial.category] : null),
       sort: sort === 'popular' ? null : sort,
-      vehicle: initial.vehicle ?? null,
       segments: [...initial.segments],
     };
     const pages = Math.min(MAX_LIST_PAGES, Math.max(1, Math.trunc(Number(first(sp.pages))) || 1));
@@ -133,7 +134,6 @@ export default async function ShopPage({ searchParams }: Props) {
         q: query.q,
         category: query.category ?? undefined,
         sort: query.sort ?? undefined,
-        vehicle: query.vehicle ?? undefined,
         segments: query.segments,
         cursor: cursor ?? undefined,
       });

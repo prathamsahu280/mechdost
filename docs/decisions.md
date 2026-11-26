@@ -2394,3 +2394,41 @@ Spec 23 § 21f. Rulings made while building (lead brief + security review of the
   4W → car_suv) so "fits my vehicle" keeps working. Q-segments answered.
 - "fix the test failures": the pre-existing qa-regressions failures (B1 Hindi rejection, theme with full storage,
   QA 13 free-delivery line) are fixed at their root cause.
+
+## 2026-11-26 — Vehicle type select retired (as built); qa-regressions root causes
+
+- **Shop (founder ruling above, Q-segments):** the 2W/3W/4W select, its `?vehicle=` URL state and click ids
+  `shop_vehicle_<type>` are gone from the web; the "Kind of vehicle" chips are the only vehicle filter. Old
+  `/shop?vehicle=2W|3W|4W` links are sent on (page-level `permanentRedirect`: HTTP 200 + meta refresh + client replace, not an HTTP 308) to `?segment=two_wheeler|three_wheeler|car_suv` (merged with chosen
+  segments, other parameters kept). The catalogue API keeps `?vehicle=` for other clients. Spec 02 "Vehicle type select
+  retired". **Correction to the ruling's wording:** "fits my vehicle" never used the select (the per-size fit matches the
+  saved vehicle's type, make and model against each size's fitment), so nothing had to move; results under a chip
+  differ slightly from the old type filter because the category decides first (a CV battery tagged 4W is truck & bus).
+- **qa-regressions (five failures, three causes):** (1) B1 desktop + mobile — the test asserted the Hindi rejection
+  sentence that named "a nearby shop", reworded by the 2026-11-22 ruling "customers never see the shop" (8559dfec):
+  test re-pointed to the current sentence, every assertion kept. (2) Theme with full storage (desktop; mobile skips by
+  design) — **product bug:** "light by default" (3b54a77c, 2026-11-23) made the pre-paint guard's MutationObserver
+  re-apply "saved or light" on every change, so a dark choice that could not be saved was reverted at once; the
+  observer now restores only a missing or invalid `data-theme` (unit test). (3) QA 13 desktop + mobile — the test
+  expected the city free-delivery amount at a demo checkout, removed on purpose by Q196 (2026-11-16, 69f077f0): test
+  re-pointed to the ruling (neutral delivery line shown while a fee is charged, no city amount).
+
+## 2026-11-26 — Admin Ustaad lists at 320 / 768 px and in Hindi (state audit API-ADM-USTAAD)
+
+- **Root cause of the sideways page (320 px, 12 px, later 43 px):** not the tables themselves — `AdminTable` already
+  scrolls inside its own box — but the `.sr-only` text inside them (the "Actions" column header and the row-action
+  names). `.sr-only` is `position: absolute`; with no positioned ancestor its containing block is the page, so the
+  scroll box did not clip it and the page widened. **Fix:** `AdminTable` and `ScrollRegion` are `relative` (one class,
+  every admin table and scroll region benefits). Kept the existing pattern (a wide table scrolls inside its named,
+  focusable box; design-system § Tables) instead of a card layout: the tables specialist confirmed it meets 1.4.10;
+  a stacked/card layout under 640 px stays a possible product improvement (not built).
+- **Hindi (rule 10):** row actions were read with the English column (`titleEn`, `nameEn`, `labelEn`) — "batteries",
+  "Spam", "Something else" on /hi. Rows now speak their Hindi text on /hi; a name staff typed in one language only
+  (word-list phrases, hashtag slugs, an English fallback) is wrapped as user content around the name only
+  (`splitAroundName` keeps each language's word order). Edit buttons moved from `aria-label` to visible "Edit" +
+  screen-reader name (label-in-name kept). No allowlist widened, no fixture rewritten.
+- **Accessibility review (aria, keyboard, tables, i18n specialists, 2026-11-26):** no critical or serious finding;
+  applied the i18n one (English fallback marked as user content). Open, pre-existing, minor: `position` is the row
+  header in the tutorial-card and coach-mark tables; the merged-into note sits in the row header; no table
+  `<caption>`; the segment chip row has no top padding for focus rings; Latin user content has no `lang` (left
+  unset on purpose: it may be Hinglish).

@@ -484,3 +484,16 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
   got wrong in every panel: the success message lived in a StatusLine inside the form that the refresh unmounts, and
   focus fell to <body>. → Keep one status line per panel outside the swapped forms (children report via `onResult`),
   focus the panel heading after a decision, and never move focus on a <select> change.
+- L-FX1 · 2026-11-26 · ui/layout · A table inside an `overflow-x-auto` box still widened the page at 320 px: its
+  `.sr-only` text (absolute) had the page as containing block → every scroll box that can hold sr-only text must be
+  `relative`. Find such causes with a probe that lists elements past the viewport whose ancestors do not clip them,
+  plus absolutely positioned ones (the audit's "widest" names the visible table, not the culprit). · active
+- L-FX2 · 2026-11-26 · i18n/admin · Row actions named from `nameField` (the English column) put English into Hindi
+  screen-reader labels; aria-label cannot carry a user-content marker → speak the Hindi column on /hi and render the
+  name as sr-only text with only the name wrapped in `data-user-content` (`splitAroundName`). · active
+- L-FX3 · 2026-11-26 · process/briefs · Briefs and Q text can misstate the code (`?type=` was really `?vehicle=`; "the
+  dropdown drives saved-vehicle fit" was false — fit uses make/model fitment) → check with `git log -S` and the fit
+  code before building to a brief's wording; record the correction in decisions. · active
+- L-FX4 · 2026-11-26 · tests/stale · Three of five "pre-existing" e2e failures were tests left behind by copy rulings
+  (2026-11-22 customer copy, Q196) and one was a real regression from "light by default" → for each failure run
+  `git log -S '<asserted literal>'` first; a ruling that changes UI must update the e2e that asserted the old UI. · active
