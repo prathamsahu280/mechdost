@@ -10,6 +10,8 @@ import { Container, PageIntro } from '@/components/ui/page-intro';
 import type { PartnerKind } from '@/demo/store';
 import { routing, type Locale } from '@/i18n/routing';
 import { alternatesFor } from '@/lib/seo';
+import { publishedUstaadAccess } from '@/lib/site-config-content';
+import { mechanicApplyView } from '@/lib/ustaad/join';
 
 const KINDS: PartnerKind[] = ['seller', 'garage', 'mechanic'];
 
@@ -35,6 +37,8 @@ export default async function ApplyPage({ params }: Props) {
   const { kind } = await params;
   if (!isKind(kind)) notFound();
   const t = await getTranslations('apply');
+  const ustaadJoin =
+    kind === 'mechanic' && mechanicApplyView(await publishedUstaadAccess()) === 'ustaad_join';
   return (
     <Container className="py-10 tab:py-14">
       <LocalLink href="/partners" className="text-sm font-bold text-ink hover:underline">
@@ -43,8 +47,8 @@ export default async function ApplyPage({ params }: Props) {
       <div className="mt-5 grid gap-8 nav:grid-cols-[1fr_minmax(0,640px)] nav:items-start">
         <PageIntro eyebrow={t('eyebrow')} line1={t(`title_${kind}`)} lead={t('intro')} />
         <div className="rounded-card border border-line-card bg-surface p-6 shadow-card tab:p-8">
-          {kind === 'mechanic' ? (
-            // Spec 23 § 4a: "Apply as a mechanic" is the Ustaad Network join (same component as /ustaad/join).
+          {ustaadJoin ? (
+            // Spec 23 § 4a: once the network is open, "Apply as a mechanic" is the Ustaad join (same as /ustaad/join).
             <ClientMessages namespaces={['ustaad.join']}>
               <UstaadJoinFlow via="partners_apply" />
             </ClientMessages>

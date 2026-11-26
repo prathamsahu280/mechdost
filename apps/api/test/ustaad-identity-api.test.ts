@@ -192,13 +192,36 @@ describe('member onboarding and verification', () => {
   });
 });
 
-describe('Apply as a mechanic moved to the network (§ 4a)', () => {
-  it('a mechanic application body gets 410 MOVED_TO_USTAAD', async () => {
-    const r = await call(null, 'POST', '/partner-applications', {
-      application: { kind: 'mechanic', name: 'Old Form' },
-      turnstileToken: 'human-token-123',
+describe('Apply as a mechanic moves to the network only when it is open (§ 4a, lead 2026-11-26)', () => {
+  const mechanicBody = {
+    application: { kind: 'mechanic', name: 'Old Form' },
+    turnstileToken: 'human-token-123',
+  };
+  async function access(mode: 'off' | 'staff_preview' | 'open') {
+    const list = await call(superAdmin, 'GET', '/admin/ustaad/settings');
+    const row = (list.body.settings as { key: string; version: number | null }[]).find(
+      (r) => r.key === 'ustaad.access',
+    );
+    const r = await call(superAdmin, 'PUT', '/admin/ustaad/settings/ustaad.access', {
+      value: mode,
+      version: row?.version ?? null,
     });
+    expect(r.status).toBe(200);
+  }
+
+  it('open: a mechanic application body gets 410 MOVED_TO_USTAAD', async () => {
+    await access('open');
+    const r = await call(null, 'POST', '/partner-applications', mechanicBody);
     expect(r.status).toBe(410);
     expect(r.body.error.code).toBe('MOVED_TO_USTAAD');
   });
+
+  for (const mode of ['off', 'staff_preview'] as const)
+    it(`${mode}: the public form behaves as before (never 410, never mentions the network)`, async () => {
+      await access(mode);
+      const r = await call(null, 'POST', '/partner-applications', mechanicBody);
+      expect(r.status).not.toBe(410);
+      expect(r.body.error.code).toBe('APPLICATION_INVALID');
+      expect(JSON.stringify(r.body)).not.toMatch(/ustaad/i);
+    });
 });

@@ -10,6 +10,7 @@ import {
   JOIN_STEPS,
   joinBody,
   joinErrorKey,
+  mechanicApplyView,
   stepErrors,
   type JoinDraft,
 } from '../src/lib/ustaad/join';
@@ -106,5 +107,13 @@ describe('Ustaad join draft', () => {
     expect(joinErrorKey('USTAAD_ALREADY_MEMBER')).toBe('errAlready');
     expect(joinErrorKey('USTAAD_INVITE_INVALID')).toBe('errInvite');
     expect(joinErrorKey('SOMETHING_ELSE')).toBe('errGeneric');
+  });
+});
+
+describe('/partners/apply/mechanic (spec 23 § 4a, lead 2026-11-26)', () => {
+  it('shows the Ustaad join only when the network is open; otherwise the old mechanic application', () => {
+    expect(mechanicApplyView('open')).toBe('ustaad_join');
+    expect(mechanicApplyView('staff_preview')).toBe('application');
+    expect(mechanicApplyView('off')).toBe('application');
   });
 });

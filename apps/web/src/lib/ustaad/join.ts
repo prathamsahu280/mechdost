@@ -8,6 +8,14 @@ import { PINCODE_RE } from '@mechdost/shared/geo';
 import type { USTAAD_JOIN_CONSENTS, UstaadSpecialityCode, UstaadTrack } from '@mechdost/shared/ustaad/codes';
 import type { Join } from '@mechdost/shared/ustaad/dto/members';
 
+/**
+ * What `/partners/apply/mechanic` shows (spec 23 § 4a, lead 2026-11-26): the Ustaad join only once the network is open
+ * to everyone; during `off` and `staff_preview` the old mechanic application stays, with no mention of the network.
+ */
+export function mechanicApplyView(access: 'off' | 'staff_preview' | 'open'): 'ustaad_join' | 'application' {
+  return access === 'open' ? 'ustaad_join' : 'application';
+}
+
 export const JOIN_STEPS = ['who', 'work', 'details', 'verify', 'choices'] as const;
 export type JoinStep = (typeof JOIN_STEPS)[number];
 export type JoinConsent = (typeof USTAAD_JOIN_CONSENTS)[number];
