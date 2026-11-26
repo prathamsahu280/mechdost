@@ -63,7 +63,7 @@ const SAMPLE: Record<string, string> = {
   rsaCode: 'RSA-RPR-2026-6M4QZB',
   acceptMinutes: '10',
   minutes: '15',
-  name: 'Ravi',
+  name: 'Ravi Sahu',
   hours: '72',
 };
 
