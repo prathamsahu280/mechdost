@@ -4,6 +4,12 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-26 (morning): Ustaad workstream C (Q&A + Learn) partly built on branch worktree-agent-a493031f33b2dd989
+  (not pushed, no migration).** Done: shared DTOs + `ustaadPublicCode`, repositories `repo/ustaad/{qa,learn}.ts`,
+  API `routes/ustaad/qa.ts` (questions, answers, helpful, best, parts, learn, progress) behind the gate and member
+  guard with rate limits; db tests 20/20, api tests 5/5. **Next:** web screens (Ask, composer with hold-to-talk +
+  photo, thread, Learn) with en + hi strings, question photos migration, widen/auto-close worker, admin course CRUD +
+  seed course, Hindi topic label for `question_waiting` (spec 23 § 21b).
 - **2026-11-26: Ustaad task F1 (smart correction) built on branch worktree-agent-a6d13b26cba34e51b (merged A's
   worktree-agent-ab4a65aaaa99d51c1 first; not pushed, no migration).** `POST /v1/ustaad/correct` (gate before sign-in,
   members only, suggest/auto/off, protected words, per-member limit, daily LLM budget, consent-gated LLM, masked cache),
