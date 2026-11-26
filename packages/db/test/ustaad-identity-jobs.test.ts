@@ -407,6 +407,25 @@ describe('non-partner owner link (SR-6)', () => {
     expect(np).toMatchObject({ status: 'requested', ownerDistanceFailures: 1, ownerDistanceM: null });
   });
 
+  it('parallel bad-distance attempts close the link after exactly the tries setting (fresh count under the lock)', async () => {
+    const far = { lat: 21.27, lng: 81.65, accuracyM: 10 };
+    const { a } = await setup({ phone: '+919876500055' });
+    const { token } = await issueUstaadOwnerAttestLink(t(), ring, staffActor(), { id: a.id });
+    const attempt = () =>
+      decideUstaadAttestByToken(t(), ring, token, {
+        decision: 'confirmed',
+        businessId: '22CCCCC2222C1Z5',
+        shop: far,
+      });
+    const results = await Promise.allSettled([attempt(), attempt(), attempt(), attempt()]);
+    const received = results.filter((r) => r.status === 'fulfilled');
+    expect(received).toHaveLength(2);
+    for (const r of results)
+      if (r.status === 'rejected') expect(r.reason).toMatchObject({ code: 'NOT_FOUND' });
+    const [row] = await db.select().from(s.ustaadAttestations).where(eq(s.ustaadAttestations.id, a.id));
+    expect(row).toMatchObject({ status: 'requested', ownerDistanceFailures: 2, tokenHash: null });
+  });
+
   it('quarter cap per owner phone and per GSTIN/Udyam holds when two confirmations race; the member cannot name their own phone', async () => {
     await saveUstaadSetting(t(), {
       key: 'ustaad.verify.attest_per_owner_quarter',

@@ -359,6 +359,28 @@ export async function decideUstaadAttestByToken(
     const phoneKey = `ustaad_owner_phone:${a.ownerPhoneHash ?? a.id}`;
     const businessKey = `ustaad_owner_business:${businessHash}`;
     for (const key of [phoneKey, businessKey].sort()) await lockOwnerKey(tx, key);
+    // Re-read the row under a row lock now that the owner locks are held (security review: the failure count and
+    // the version read before the locks can be stale when attempts run in parallel).
+    const [fresh] = await tx
+      .select()
+      .from(ustaadAttestations)
+      .where(
+        and(
+          eq(ustaadAttestations.id, a.id),
+          eq(ustaadAttestations.status, 'requested'),
+          eq(ustaadAttestations.tokenHash, tokenHash(token)),
+          gt(ustaadAttestations.expiresAt, new Date()),
+        ),
+      )
+      .for('update')
+      .limit(1);
+    if (!fresh) throw new NotFoundError('Not found');
+    const freshCas = and(
+      eq(ustaadAttestations.id, fresh.id),
+      eq(ustaadAttestations.status, 'requested'),
+      eq(ustaadAttestations.version, fresh.version),
+      eq(ustaadAttestations.tokenHash, tokenHash(token)),
+    );
     const confirmedSince = async (
       column: typeof ustaadAttestations.ownerPhoneHash | typeof ustaadAttestations.ownerBusinessHash,
       value: string,
@@ -407,20 +429,22 @@ export async function decideUstaadAttestByToken(
       }) === null;
 
     if (!near) {
-      const failures = a.ownerDistanceFailures + 1;
-      const closes = failures >= Number(s['ustaad.verify.attest_distance_tries']);
+      const tries = Number(s['ustaad.verify.attest_distance_tries']);
+      // Counted in SQL on the locked row; the token is cleared in the same statement when the count reaches the cap.
       const [row] = await tx
         .update(ustaadAttestations)
         .set({
-          ownerDistanceFailures: failures,
+          ownerDistanceFailures: sql`${ustaadAttestations.ownerDistanceFailures} + 1`,
           ownerDistanceM: distanceM,
           ownerBusinessId: businessId,
           ownerBusinessHash: businessHash,
-          ...(closes ? { tokenHash: null } : {}),
+          tokenHash: sql`case when ${ustaadAttestations.ownerDistanceFailures} + 1 >= ${tries} then null else ${ustaadAttestations.tokenHash} end`,
         })
-        .where(cas)
-        .returning({ id: ustaadAttestations.id });
+        .where(freshCas)
+        .returning({ failures: ustaadAttestations.ownerDistanceFailures });
       if (!row) throw new NotFoundError('Not found');
+      const failures = row.failures;
+      const closes = failures >= tries;
       await recordUstaadEvent(tx, {
         entityType: 'attestation',
         entityId: a.id,
@@ -445,7 +469,7 @@ export async function decideUstaadAttestByToken(
         ownerBusinessHash: businessHash,
         ownerDistanceM: distanceM,
       })
-      .where(cas)
+      .where(freshCas)
       .returning({ id: ustaadAttestations.id });
     if (!row) throw new NotFoundError('Not found');
     await decidedEvent(tx, a, found.cityId, 'confirmed');

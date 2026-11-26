@@ -80,7 +80,15 @@ const PAIRS: readonly (readonly [RegExp, string])[] = [
 ];
 
 /** Combining accents (Latin, Greek, Cyrillic) and the Devanagari nukta; vowel signs stay (they change the word). */
-const ACCENTS = /[̀-ͯ᪰-᫿᷀-᷿⃐-⃿︠-़︯]/g;
+const ACCENT_RANGES: readonly (readonly [number, number])[] = [
+  [0x0300, 0x036f],
+  [0x1ab0, 0x1aff],
+  [0x1dc0, 0x1dff],
+  [0x20d0, 0x20ff],
+  [0xfe20, 0xfe2f],
+  [0x093c, 0x093c],
+];
+const isAccent = (cp: number) => ACCENT_RANGES.some(([lo, hi]) => cp >= lo && cp <= hi);
 
 /** Any decimal digit in any script → its ASCII digit (Devanagari ६ → 6) before the look-alike map. */
 function asciiDigits(s: string): string {
@@ -95,8 +103,9 @@ function asciiDigits(s: string): string {
 
 /** One run of text → its skeleton (letters, digits and Devanagari signs only). */
 export function nameSkeleton(name: string): string {
-  let s = asciiDigits(name.normalize('NFKC').toLowerCase()).normalize('NFD').replace(ACCENTS, '');
-  s = [...s].map((ch) => CONFUSABLE[ch] ?? ch).join('');
+  let s = '';
+  for (const ch of asciiDigits(name.normalize('NFKC').toLowerCase()).normalize('NFD'))
+    if (!isAccent(ch.codePointAt(0) ?? 0)) s += CONFUSABLE[ch] ?? ch;
   // Drop everything that is not a letter, digit or (Devanagari) sign: spaces, punctuation, joiners, controls.
   s = s.replace(/[^\p{L}\p{N}\p{M}]/gu, '');
   for (const [re, to] of PAIRS) s = s.replace(re, to);
@@ -117,13 +126,14 @@ export function isReservedName(name: string, reservedSkeletons: ReadonlySet<stri
   for (const r of reservedSkeletons) if (r.length >= SUBSTRING_MIN && whole.includes(r)) return true;
   const words = name
     .normalize('NFKC')
-    .split(/[^\p{L}\p{N}\p{M}\u200c\u200d$|]+/u)
+    .replace(/\u200c|\u200d/gu, '')
+    .split(/[^\p{L}\p{N}\p{M}$|]+/u)
     .map(nameSkeleton)
     .filter((w) => w.length > 0);
   for (let i = 0; i < words.length; i += 1) {
     let run = '';
     for (let j = i; j < words.length; j += 1) {
-      run += words[j];
+      run += words[j] ?? '';
       if (reservedSkeletons.has(run)) return true;
     }
   }
