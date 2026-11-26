@@ -16,6 +16,7 @@ import {
   Coins,
   FileDown,
   Handshake,
+  HardHat,
   Headset,
   Hourglass,
   IndianRupee,
@@ -156,6 +157,11 @@ const AdminAuditApi = dynamic(() => import('./admin-audit-api').then((m) => m.Ad
   ssr: false,
   loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
 });
+/** Real sign-in: Admin → Ustaad Network settings and tables (spec 23, task G1); demo builds never load it. */
+const AdminUstaadApi = dynamic(() => import('./admin-ustaad/ustaad-settings').then((m) => m.AdminUstaadApi), {
+  ssr: false,
+  loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
+});
 /** Real sign-in: CSV exports (design 2026-11-15 item 4); demo builds never load it. */
 const AdminExportsApi = dynamic(() => import('./admin-exports-api').then((m) => m.AdminExportsApi), {
   ssr: false,
@@ -212,6 +218,7 @@ const SECTION_ICON: Record<AdminSection, LucideIcon> = {
   audit: ScrollText,
   exports: FileDown,
   errors: TriangleAlert,
+  ustaad: HardHat,
 };
 
 /**
@@ -276,6 +283,7 @@ export function AdminConsole({
       {section === 'audit' && AUTH_MODE === 'firebase' ? <AdminAuditApi /> : null}
       {section === 'exports' && AUTH_MODE === 'firebase' ? <AdminExportsApi /> : null}
       {section === 'errors' && AUTH_MODE === 'firebase' ? <AdminErrorsApi /> : null}
+      {section === 'ustaad' && AUTH_MODE === 'firebase' ? <AdminUstaadApi /> : null}
     </div>
   );
 }

@@ -9,6 +9,9 @@ import { createApp } from './app';
 import { r2MediaHost } from './ustaad/media/r2';
 import { supabaseMediaHost } from './ustaad/media/supabase';
 import { createAnthropicProvider } from './assistant/provider';
+import { createAnthropicCorrection } from './ustaad/correction/anthropic';
+import { memoryCorrectionCache, redisCorrectionCache } from './ustaad/correction/cache';
+import { createGeminiCorrection } from './ustaad/correction/gemini';
 import { createFirebaseEmailActionLinks } from './auth/email-actions';
 import { createFirebaseVerifier } from './auth/firebase-verifier';
 import { createFirebasePasswordAuthority } from './auth/password-authority';
@@ -42,9 +45,8 @@ const { db, sql } = createDb(config.databaseUrl, { max: config.databasePoolMax, 
 // Open connections at boot and keep two warm: the first request after a pause no longer pays a TLS + SCRAM handshake.
 const stopWarm = keepPoolWarm(() => sql`select 1`, { connections: Math.min(2, config.databasePoolMax) });
 // The server's own Redis behind SRH (or Upstash), spoken to with the Upstash REST client (decision 2026-11-24).
-const rateLimiter = config.upstash
-  ? new RedisRestRateLimiter(new Redis({ url: config.upstash.url, token: config.upstash.token }))
-  : new MemoryRateLimiter();
+const redis = config.upstash ? new Redis({ url: config.upstash.url, token: config.upstash.token }) : null;
+const rateLimiter = redis ? new RedisRestRateLimiter(redis) : new MemoryRateLimiter();
 if (!config.upstash) log('warn', 'rate_limit_memory', { note: 'in-memory limiter — development only' });
 
 // Data keyring (spec 13): delivery codes are encrypted. Required in production; without it in development the
@@ -91,6 +93,13 @@ const app = createApp({
   verifier: createFirebaseVerifier(config.firebaseProjectId, config.firebaseKeyFile),
   rateLimiter,
   assistant: config.assistant ? createAnthropicProvider(config.assistant) : null,
+  // Ustaad smart correction (spec 23 § 11): an LLM only when SMART_CORRECTION_PROVIDER names one; else the word list.
+  smartCorrection: !config.smartCorrection
+    ? null
+    : config.smartCorrection.provider === 'anthropic'
+      ? createAnthropicCorrection(config.smartCorrection)
+      : createGeminiCorrection(config.smartCorrection),
+  correctionCache: redis ? redisCorrectionCache(redis) : memoryCorrectionCache(),
   passwordAuth: config.firebaseApiKey
     ? createFirebasePasswordAuthority({
         projectId: config.firebaseProjectId,

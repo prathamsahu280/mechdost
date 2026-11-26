@@ -205,3 +205,13 @@ which are automated. Add new classes at the end of the relevant section.
 ## R. Opened panels
 
 - **R1 · Opened panel cannot be closed** — a button opens a form/panel/sheet in place and there is no Cancel, Escape does nothing, or focus is lost on close. Recipe: click every `[data-disclosure-trigger]`, expect a visible `[data-panel-cancel]` (>= 44 px), press Escape, expect it gone and focus on the opener (`e2e/state-audit/dismiss.ts`, rule `dismiss`); source guard `test/panel-dismiss.test.ts` fails any component with `setOpen(true)`-style openers and no `data-panel-cancel`.
+
+## S. Personal data to a third-party processor
+
+- **S1 · PII mask split past the gate** — a phone, Aadhaar or account number reaches an LLM because the masking regex
+  and a segment-based safety check can be split (other digit scripts, zero-width or combining marks, NFKC letters,
+  long separator runs, several "safe" tokens side by side). Test: an `it.each` bypass table asserting
+  `safeForLlm === false` and zero captured requests, plus an allowlist table of ordinary mechanic text that must still
+  pass (`apps/api/test/ustaad-correction-engine.test.ts`). Guard: count numerals over the whole text, never per segment.
+- **S2 · Key presence switches a processor on** — an existing API key for another feature makes a new feature send
+  personal text. Test: config default `none` and a route test that sends nothing without the purpose consent.

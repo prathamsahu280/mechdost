@@ -277,6 +277,13 @@ and provide the API key and model id as server env values (`SMART_CORRECTION_PRO
 data); the provider is a data processor under DPDP and is not India-hosted (masking of phone numbers, plates and
 names happens before every call). Default meanwhile: the word-list engine only.
 
+#### Q-U7: smart-correction word list and residual masking risk (Decision, P2, default: as built)
+
+1. The built-in Hinglish misspelling list lives in code (admin rows override it, but cannot switch a built-in off).
+   Seed it into `ustaad_word_lists` so Admin → Ustaad can edit every entry? Default: yes, in workstream G1.
+2. Before the LLM is switched on (Q-U3): a phone number disguised as tyre sizes or rupee amounts split by words can
+   still reach the LLM provider. Tighten the tyre pattern (sizes from a real list) before go-live? Default: yes.
+
 #### Q-U4: Grievance Officer (Input, P0 before launch, default: company support number + grievance mailbox)
 
 The IT Rules need a named Grievance Officer with published contact (name, designation, e-mail, phone, address) and a
@@ -319,3 +326,19 @@ Defaults meanwhile: build to the strictest reading; nothing goes live before cou
    or prizes above ₹20,000 a year.
 7. **Q-UC7** May the Terms of Use carry an "I am an adult working mechanic" self-declaration line without breaking the
    founder's no-age-check ruling? (Not added until counsel and the founder agree.)
+
+#### Q-U-G1a: default lists for the network admin (Decision, P2, default: empty lists, staff fill them)
+
+Admin → Network settings has the lists (level rules, badges, hashtags, protected words, scam phrases, banned words,
+tutorial cards, coach-marks) but only report reasons and the launch cities come pre-filled by the migrations. Should
+the spec's defaults (founder's level rules § 9.2, the five seed hashtags, the ten protected words, six scam phrases,
+the six tutorial cards and six coach-marks in en + hi) be added by a seed so the network opens ready? Default
+meanwhile: empty lists with "Add the first one"; the levels engine (workstream B) and smart correction (F) treat an
+empty list as "no rule".
+
+#### Q-U-G1b: a promotions screen for marketing (Decision, P3, default: super admin uses the Promotions section)
+
+Marketing holds `ustaad:promotions` and the API lets them create and schedule promotions, but the Network settings
+page needs `ustaad:read` or `ustaad:settings`, so a marketing account sees "cannot see or change this". Should
+marketing get the Promotions list alone (a small page in the same group)? Default meanwhile: the super admin runs
+promotions from Network settings → Promotions.
