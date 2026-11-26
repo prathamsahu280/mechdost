@@ -57,6 +57,21 @@ async function memberRow(tx: Tx, memberId: string): Promise<MemberRow> {
   return row;
 }
 
+/**
+ * The member row for a write (ask, answer, helpful, best answer, parts): only an `active` member with no restricted
+ * mode may write; a restricted member (status `restricted`, or a minor report / review mode, SR-42) reads only.
+ */
+export function assertUstaadMemberCanWrite(me: Pick<MemberRow, 'status' | 'restrictedMode'>): void {
+  if (me.status !== 'active' || me.restrictedMode !== 'none')
+    throw new ForbiddenError('Your account can only read for now', 'USTAAD_RESTRICTED');
+}
+
+async function writerRow(tx: Tx, memberId: string): Promise<MemberRow> {
+  const me = await memberRow(tx, memberId);
+  assertUstaadMemberCanWrite(me);
+  return me;
+}
+
 /** Nobody blocked between `viewer` and the member in `author` (SR-35). */
 const notBlocked = (viewer: string, author: SQL | typeof ustaadQuestions.askerId) =>
   sql`not exists (select 1 from ustaad_blocks bl where (bl.member_id = ${author} and bl.target_id = ${viewer})
@@ -132,7 +147,7 @@ export async function askUstaadQuestion(
   input: AskQuestion,
 ): Promise<{ id: string; code: string; status: string }> {
   return db.transaction(async (tx) => {
-    const me = await memberRow(tx, actor.memberId);
+    const me = await writerRow(tx, actor.memberId);
     const [existing] = await tx
       .select({ id: ustaadQuestions.id, code: ustaadQuestions.code, status: ustaadQuestions.status })
       .from(ustaadQuestions)
@@ -268,7 +283,7 @@ export async function answerUstaadQuestion(
   input: AnswerInput,
 ): Promise<{ id: string; status: string }> {
   return db.transaction(async (tx) => {
-    const me = await memberRow(tx, actor.memberId);
+    const me = await writerRow(tx, actor.memberId);
     const q = await visibleQuestion(tx, me, code);
     const [existing] = await tx
       .select({ id: ustaadAnswers.id, status: ustaadAnswers.status })
@@ -277,7 +292,7 @@ export async function answerUstaadQuestion(
       .limit(1);
     if (existing) return existing;
     const s = await readUstaadSettingValues(tx, ['ustaad.qa.apprentice_can_answer', 'ustaad.qa.voice_max_s']);
-    if (me.status !== 'active' || (me.track !== 'ustaad' && s['ustaad.qa.apprentice_can_answer'] !== true))
+    if (me.track !== 'ustaad' && s['ustaad.qa.apprentice_can_answer'] !== true)
       throw new ForbiddenError('Only Ustaads can answer', 'USTAAD_CANNOT_ANSWER');
     if (q.status !== 'open' && q.status !== 'answered')
       throw new ConflictError('This question is closed', 'USTAAD_QUESTION_CLOSED');
@@ -413,7 +428,7 @@ export async function voteUstaadAnswerHelpful(
   answerId: string,
 ): Promise<{ helpfulCount: number; voted: boolean }> {
   return db.transaction(async (tx) => {
-    const me = await memberRow(tx, actor.memberId);
+    const me = await writerRow(tx, actor.memberId);
     const { answer, question } = await visibleAnswer(tx, me, answerId);
     if (answer.authorId === me.id)
       throw new ValidationError('You cannot vote for yourself', 'USTAAD_SELF_VOTE');
@@ -481,7 +496,7 @@ export async function chooseUstaadBestAnswer(
   answerId: string,
 ): Promise<{ status: 'solved' }> {
   return db.transaction(async (tx) => {
-    const me = await memberRow(tx, actor.memberId);
+    const me = await writerRow(tx, actor.memberId);
     const q = await visibleQuestion(tx, me, code);
     if (q.askerId !== me.id) throw new NotFoundError('Question not found');
     const [a] = await tx
@@ -591,7 +606,7 @@ export async function setUstaadAnswerParts(
 ): Promise<{ count: number }> {
   if (productIds.length > 5) throw new ValidationError('At most 5 parts', 'USTAAD_PART_INVALID');
   return db.transaction(async (tx) => {
-    const me = await memberRow(tx, actor.memberId);
+    const me = await writerRow(tx, actor.memberId);
     const { answer, question } = await visibleAnswer(tx, me, answerId);
     if (answer.authorId !== me.id) throw new NotFoundError('Answer not found');
     if (question.bestAnswerId !== answer.id)
@@ -806,6 +821,7 @@ export async function ustaadQuestionDetail(
         open &&
         q.askerId !== me.id &&
         me.status === 'active' &&
+        me.restrictedMode === 'none' &&
         (me.track === 'ustaad' || s['ustaad.qa.apprentice_can_answer'] === true),
       chooseBest: q.askerId === me.id && q.status === 'answered',
     },

@@ -131,13 +131,16 @@ export type QuestionDetail = z.infer<typeof QuestionDetailDto>;
 // ── Learn (Seekho) ────────────────────────────────────────────────────────────────────────────────────────────
 export const LearnProgressDto = z
   .object({
-    /** Hosted video: seconds watched so far (monotonic; the server keeps the max). */
-    watchedSeconds: z.number().int().min(0).max(86_400).optional(),
+    /**
+     * Hosted video: seconds watched since the last write (a heartbeat, ≤ 5 minutes). The server counts at most the
+     * wall-clock time since its last write for this member and resource, so a jump to the end never completes it.
+     */
+    deltaSeconds: z.number().int().min(1).max(300).optional(),
     /** External link: "I watched it" (self-marked, capped per day). */
     selfMark: z.literal(true).optional(),
   })
   .strict()
-  .refine((p) => (p.watchedSeconds === undefined) !== (p.selfMark === undefined), {
+  .refine((p) => (p.deltaSeconds === undefined) !== (p.selfMark === undefined), {
     message: 'Send watched seconds or a self mark',
   });
 export type LearnProgress = z.infer<typeof LearnProgressDto>;

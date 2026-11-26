@@ -34,9 +34,10 @@ describe('ustaad Q&A DTOs', () => {
   });
 
   it('progress: watched seconds or a self mark, not both', () => {
-    expect(LearnProgressDto.safeParse({ watchedSeconds: 10, selfMark: true }).success).toBe(false);
+    expect(LearnProgressDto.safeParse({ deltaSeconds: 10, selfMark: true }).success).toBe(false);
     expect(LearnProgressDto.safeParse({}).success).toBe(false);
     expect(LearnProgressDto.safeParse({ selfMark: true }).success).toBe(true);
+    expect(LearnProgressDto.safeParse({ deltaSeconds: 301 }).success).toBe(false);
   });
 });
 

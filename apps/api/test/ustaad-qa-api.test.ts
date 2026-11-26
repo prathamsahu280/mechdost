@@ -190,6 +190,39 @@ describe('ask → answer → helpful → best', () => {
   });
 });
 
+describe('restricted members read only', () => {
+  it('each write route → 403 USTAAD_RESTRICTED; reads still work', async () => {
+    const asked = await call(chhotu, 'POST', '/ustaad/questions', { title: 'Clutch slip', idemKey: key() });
+    const code = asked.body.code as string;
+    const a = await call(ustaad, 'POST', `/ustaad/questions/${code}/answers`, {
+      body: 'Plate badlo',
+      idemKey: key(),
+    });
+    const answerId = a.body.id as string;
+    const { eq } = await import('@mechdost/db/testing');
+    const [row] = await ctx.db.select().from(s.ustaadMembers).where(eq(s.ustaadMembers.userId, chhotu.id));
+    await ctx.db
+      .update(s.ustaadMembers)
+      .set({ restrictedMode: 'review' })
+      .where(eq(s.ustaadMembers.id, row?.id ?? ''));
+    const writes = [
+      await call(chhotu, 'POST', '/ustaad/questions', { title: 'Another', idemKey: key() }),
+      await call(chhotu, 'POST', `/ustaad/answers/${answerId}/helpful`),
+      await call(chhotu, 'POST', `/ustaad/questions/${code}/best`, { answerId }),
+      await call(chhotu, 'PUT', `/ustaad/answers/${answerId}/parts`, { productIds: [] }),
+    ];
+    for (const w of writes) {
+      expect(w.status).toBe(403);
+      expect(w.body.error.code).toBe('USTAAD_RESTRICTED');
+    }
+    expect((await call(chhotu, 'GET', `/ustaad/questions/${code}`)).status).toBe(200);
+    await ctx.db
+      .update(s.ustaadMembers)
+      .set({ restrictedMode: 'none' })
+      .where(eq(s.ustaadMembers.id, row?.id ?? ''));
+  });
+});
+
 describe('learn', () => {
   it('lists courses and records progress', async () => {
     const [course] = await ctx.db

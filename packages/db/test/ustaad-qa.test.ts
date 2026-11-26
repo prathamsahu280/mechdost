@@ -355,6 +355,30 @@ describe('parts used in this fix', () => {
   });
 });
 
+describe('restricted members cannot write', () => {
+  it('status restricted or a restricted mode → USTAAD_RESTRICTED on ask, answer, helpful, best and parts', async () => {
+    const q = await ask(asker);
+    const a = await answer(ustaad, q.code);
+    const r = await member('ustaad', 'naya');
+    const q2 = await ask(r);
+    const a2 = await answer(ustaad, q2.code);
+    const own = await answer(r, q.code);
+    await db.update(s.ustaadMembers).set({ status: 'restricted' }).where(eq(s.ustaadMembers.id, r.memberId));
+    const refused = { code: 'USTAAD_RESTRICTED' };
+    await expect(ask(r)).rejects.toMatchObject(refused);
+    await expect(answer(r, q.code)).rejects.toMatchObject(refused);
+    await expect(voteUstaadAnswerHelpful(t(), r, a.id)).rejects.toMatchObject(refused);
+    await expect(chooseUstaadBestAnswer(t(), r, q2.code, a2.id)).rejects.toMatchObject(refused);
+    await expect(setUstaadAnswerParts(t(), r, own.id, [productId])).rejects.toMatchObject(refused);
+    await db
+      .update(s.ustaadMembers)
+      .set({ status: 'active', restrictedMode: 'review' })
+      .where(eq(s.ustaadMembers.id, r.memberId));
+    await expect(ask(r)).rejects.toMatchObject(refused);
+    await expect(voteUstaadAnswerHelpful(t(), r, a.id)).rejects.toMatchObject(refused);
+  });
+});
+
 describe('reads', () => {
   it('a blocked member gets 404 on the thread and never sees it in lists; no phone anywhere', async () => {
     const q = await ask(asker);
@@ -424,19 +448,32 @@ describe('learn', () => {
     link = rows[1]?.id ?? '';
   });
 
-  it('a hosted video completes at ≥ 80 % watched; watched seconds never go down', async () => {
-    expect((await writeUstaadLearnProgress(t(), asker, video, { watchedSeconds: 79 })).completed).toBe(false);
-    expect((await writeUstaadLearnProgress(t(), asker, video, { watchedSeconds: 10 })).watchedSeconds).toBe(
-      79,
-    );
-    expect((await writeUstaadLearnProgress(t(), asker, video, { watchedSeconds: 80 })).completed).toBe(true);
+  it('jump to the end is refused: a delta counts only up to the wall-clock time since the last write', async () => {
+    const m = await member('apprentice');
+    const first = await writeUstaadLearnProgress(t(), m, video, { deltaSeconds: 100 });
+    expect(first.completed).toBe(false);
+    expect(first.watchedSeconds).toBeLessThanOrEqual(30);
+    // Straight away again: almost no time has passed, so almost nothing more counts.
+    const again = await writeUstaadLearnProgress(t(), m, video, { deltaSeconds: 100 });
+    expect(again.completed).toBe(false);
+    expect(again.watchedSeconds).toBeLessThanOrEqual(first.watchedSeconds + 31);
+  });
+
+  it('a hosted video completes at ≥ 80 % watched, in real time; seconds only go up', async () => {
+    const t0 = Date.now();
+    const w1 = await writeUstaadLearnProgress(t(), asker, video, { deltaSeconds: 30 }, new Date(t0));
+    expect(w1).toEqual({ watchedSeconds: 30, completed: false });
+    const w2 = await writeUstaadLearnProgress(t(), asker, video, { deltaSeconds: 49 }, new Date(t0 + 60_000));
+    expect(w2).toEqual({ watchedSeconds: 79, completed: false });
+    const w3 = await writeUstaadLearnProgress(t(), asker, video, { deltaSeconds: 1 }, new Date(t0 + 120_000));
+    expect(w3.completed).toBe(true);
     const [c] = await db
       .select()
       .from(s.ustaadMemberCounters)
       .where(eq(s.ustaadMemberCounters.memberId, asker.memberId));
     expect(c?.videosWatched).toBe(1);
     // A replay after completion does not count twice.
-    await writeUstaadLearnProgress(t(), asker, video, { watchedSeconds: 100 });
+    await writeUstaadLearnProgress(t(), asker, video, { deltaSeconds: 20 }, new Date(t0 + 180_000));
     const [c2] = await db
       .select()
       .from(s.ustaadMemberCounters)
@@ -449,6 +486,35 @@ describe('learn', () => {
       code: 'USTAAD_LEARN_KIND',
     });
     expect((await writeUstaadLearnProgress(t(), asker, link, { selfMark: true })).completed).toBe(true);
+  });
+
+  it('hosted video completions share the daily completion cap with self marks', async () => {
+    const vids = await db
+      .insert(s.ustaadLearningResources)
+      .values(
+        await Promise.all(
+          Array.from({ length: 6 }, async (_, i) => ({
+            kind: 'hosted_video',
+            titleEn: `Clip ${String(i)}`,
+            titleHi: `क्लिप ${String(i)}`,
+            durationS: 10,
+            mediaId: await audio(ustaad.memberId, {
+              kind: 'video',
+              declaredMime: 'video/mp4',
+              objectKey: `m/${ustaad.memberId}/${randomUUID()}.mp4`,
+            }),
+          })),
+        ),
+      )
+      .returning();
+    const m = await member('apprentice');
+    for (const r of vids.slice(0, 5))
+      expect((await writeUstaadLearnProgress(t(), m, r.id, { deltaSeconds: 10 })).completed).toBe(true);
+    await expect(
+      writeUstaadLearnProgress(t(), m, vids[5]?.id ?? '', { deltaSeconds: 10 }),
+    ).rejects.toMatchObject({
+      code: 'USTAAD_DAILY_CAP',
+    });
   });
 
   it('self marks are capped at learn.self_mark_daily_cap a day', async () => {

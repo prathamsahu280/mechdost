@@ -21,6 +21,8 @@ import type { UstaadActor } from './qa';
 import { readUstaadSettingValues } from './settings';
 
 const COMPLETE_PCT = 80;
+/** Seconds credited beyond the measured gap (network and timer jitter; also the first heartbeat). */
+const HEARTBEAT_SLACK_S = 30;
 const istDayStart = sql`(date_trunc('day', now() at time zone 'Asia/Kolkata') at time zone 'Asia/Kolkata')`;
 
 export async function ustaadLearnView(db: Tx, actor: UstaadActor): Promise<LearnView> {
@@ -72,13 +74,19 @@ export async function ustaadLearnView(db: Tx, actor: UstaadActor): Promise<Learn
 
 /**
  * Write progress. Refuses 404 for an unknown or inactive resource, `USTAAD_LEARN_KIND` for a self mark on a hosted
- * video (or seconds on a link), `USTAAD_DAILY_CAP` past the daily self-mark cap.
+ * video (or seconds on a link), `USTAAD_DAILY_CAP` when a first completion would pass the daily completion cap
+ * (`learn.self_mark_daily_cap`, counting hosted videos and self marks together, IST day).
+ *
+ * A hosted video takes `deltaSeconds` (a heartbeat). The server never trusts a position: it adds at most the
+ * wall-clock time since its last write for this member and resource (`updated_at`, touched on every write) plus a
+ * small slack, so jumping to the end counts as only a few seconds. `now` is injectable for tests.
  */
 export async function writeUstaadLearnProgress(
   db: Tx,
   actor: UstaadActor,
   resourceId: string,
   input: LearnProgress,
+  now: Date = new Date(),
 ): Promise<{ watchedSeconds: number; completed: boolean }> {
   return db.transaction(async (tx) => {
     const [r] = await tx
@@ -88,46 +96,40 @@ export async function writeUstaadLearnProgress(
       .limit(1);
     if (!r) throw new NotFoundError('Resource not found');
     const hosted = r.kind === 'hosted_video';
-    if (hosted !== (input.watchedSeconds !== undefined))
+    if (hosted !== (input.deltaSeconds !== undefined))
       throw new ValidationError('Wrong progress for this resource', 'USTAAD_LEARN_KIND');
-    if (!hosted) {
-      const s = await readUstaadSettingValues(tx, ['ustaad.learn.self_mark_daily_cap']);
-      const [today] = await tx
-        .select({ n: sql<number>`count(*)::int` })
-        .from(ustaadLearningProgress)
-        .innerJoin(ustaadLearningResources, eq(ustaadLearningResources.id, ustaadLearningProgress.resourceId))
-        .where(
-          and(
-            eq(ustaadLearningProgress.memberId, actor.memberId),
-            eq(ustaadLearningResources.kind, 'external_link'),
-            isNotNull(ustaadLearningProgress.completedAt),
-            sql`${ustaadLearningProgress.completedAt} >= ${istDayStart}`,
-          ),
-        );
-      const [already] = await tx
-        .select({ c: ustaadLearningProgress.completedAt })
-        .from(ustaadLearningProgress)
-        .where(
-          and(
-            eq(ustaadLearningProgress.memberId, actor.memberId),
-            eq(ustaadLearningProgress.resourceId, r.id),
-          ),
-        )
-        .limit(1);
-      if (!already?.c && (today?.n ?? 0) >= Number(s['ustaad.learn.self_mark_daily_cap']))
-        throw new ValidationError('Daily limit reached', 'USTAAD_DAILY_CAP');
-    }
-    const watched = Math.min(input.watchedSeconds ?? 0, r.durationS ?? 86_400);
-    const done = hosted ? r.durationS !== null && watched * 100 >= r.durationS * COMPLETE_PCT : true;
-    // Upsert that never lowers the seconds; completed_at is set once (the RETURNING tells us if this call set it).
+    // The row is locked so two heartbeats at once cannot both claim the same elapsed time.
     const [before] = await tx
-      .select({ c: ustaadLearningProgress.completedAt })
+      .select({
+        c: ustaadLearningProgress.completedAt,
+        watched: ustaadLearningProgress.watchedSeconds,
+        at: ustaadLearningProgress.updatedAt,
+      })
       .from(ustaadLearningProgress)
       .where(
         and(eq(ustaadLearningProgress.memberId, actor.memberId), eq(ustaadLearningProgress.resourceId, r.id)),
       )
       .for('update')
       .limit(1);
+    const elapsedS = before ? Math.max(0, Math.floor((now.getTime() - before.at.getTime()) / 1000)) : 0;
+    const credited = Math.min(input.deltaSeconds ?? 0, elapsedS + HEARTBEAT_SLACK_S);
+    const watched = Math.min((before?.watched ?? 0) + credited, r.durationS ?? 86_400);
+    const done = hosted ? r.durationS !== null && watched * 100 >= r.durationS * COMPLETE_PCT : true;
+    if (done && !before?.c) {
+      const s = await readUstaadSettingValues(tx, ['ustaad.learn.self_mark_daily_cap']);
+      const [today] = await tx
+        .select({ n: sql<number>`count(*)::int` })
+        .from(ustaadLearningProgress)
+        .where(
+          and(
+            eq(ustaadLearningProgress.memberId, actor.memberId),
+            isNotNull(ustaadLearningProgress.completedAt),
+            sql`${ustaadLearningProgress.completedAt} >= ${istDayStart}`,
+          ),
+        );
+      if ((today?.n ?? 0) >= Number(s['ustaad.learn.self_mark_daily_cap']))
+        throw new ValidationError('Daily limit reached', 'USTAAD_DAILY_CAP');
+    }
     const [row] = await tx
       .insert(ustaadLearningProgress)
       .values({
