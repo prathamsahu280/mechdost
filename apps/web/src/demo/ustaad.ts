@@ -483,7 +483,7 @@ function seedJobs(): Job[] {
 }
 
 /** A short silent WAV as a `blob:` URL (the CSP allows `blob:` media, not `data:`), so sample voice notes play. */
-function silentWav(seconds: number): string {
+export function silentWav(seconds: number): string {
   const rate = 8000;
   const n = rate * seconds;
   const buf = new ArrayBuffer(44 + n);

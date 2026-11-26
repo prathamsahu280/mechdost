@@ -28,7 +28,23 @@ function isCurrent(pathname: string, path: string): boolean {
  * site's dock hides itself inside `/ustaad` (`isPortalPath`). Labels and icons come from the server (no i18n runtime
  * here); the current tab carries `aria-current="page"`; every target is at least 52 px tall.
  */
-export function UstaadNav({ tabs, label }: { tabs: readonly UstaadTab[]; label: string }) {
+/** Rail-only entries under the five tabs (My network, Messages, Saved); on phones they live on Home and the header. */
+export interface UstaadRailLink {
+  key: string;
+  href: string;
+  label: string;
+  icon: ReactNode;
+}
+
+export function UstaadNav({
+  tabs,
+  extras = [],
+  label,
+}: {
+  tabs: readonly UstaadTab[];
+  extras?: readonly UstaadRailLink[];
+  label: string;
+}) {
   const pathname = canonicalPath(usePathname());
   return (
     <>
@@ -93,6 +109,25 @@ export function UstaadNav({ tabs, label }: { tabs: readonly UstaadTab[]; label: 
                 >
                   {tab.icon}
                   <span>{create ? (tab.ariaLabel ?? tab.label) : tab.label}</span>
+                </Link>
+              </li>
+            );
+          })}
+          {extras.length > 0 ? <li aria-hidden="true" className="my-2 border-t border-line" /> : null}
+          {extras.map((x) => {
+            const current = isCurrent(pathname, `/ustaad/${x.key}`);
+            return (
+              <li key={x.key}>
+                <Link
+                  href={x.href}
+                  aria-current={current ? 'page' : undefined}
+                  data-track={`ustaad_rail_${x.key}`}
+                  className={`press flex min-h-12 items-center gap-3 rounded-button px-4 text-[15px] font-bold transition-colors duration-200 focus-visible:outline-3 focus-visible:outline-focus ${
+                    current ? 'bg-accent-soft text-accent-soft-text' : 'text-ink hover:bg-pill'
+                  }`}
+                >
+                  {x.icon}
+                  <span>{x.label}</span>
                 </Link>
               </li>
             );

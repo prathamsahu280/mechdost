@@ -65,7 +65,8 @@ export interface Job {
 }
 
 export interface MediaDeclare {
-  kind: 'image' | 'audio';
+  /** Video and PDF come from the feed composer (workstream D web); single PUT only (≤ 16 MB) until multipart lands. */
+  kind: 'image' | 'audio' | 'video' | 'document';
   mime: string;
   durationMs?: number;
   width?: number;

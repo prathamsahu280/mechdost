@@ -24,9 +24,10 @@
 		format filter {
 			# Query strings (reset codes, tokens) and path-embedded secrets (partner invite tokens: /partners/invite/<token>,
 			# /hi/partners/invite/<token>, /v1/partner-invites/<token>) and the Ustaad garage-owner link
-			# (/ustaad-attest/<token>, /v1/ustaad-attest/<token>, 2026-11-26) never reach the log.
-			request>uri regexp (/partners/invite/|/partner-invites/|/ustaad-attest/|\?)[^?]* ${1}REDACTED
-			request>headers>Referer regexp (/partners/invite/|/partner-invites/|/ustaad-attest/|\?)[^?]* ${1}REDACTED
+			# (/ustaad-attest/<token>, /v1/ustaad-attest/<token>, 2026-11-26) and the share teaser (/ustaad/s/<token>,
+			# /v1/ustaad/s/<token>, 2026-11-26) never reach the log.
+			request>uri regexp (/partners/invite/|/partner-invites/|/ustaad-attest/|/ustaad/s/|\?)[^?]* ${1}REDACTED
+			request>headers>Referer regexp (/partners/invite/|/partner-invites/|/ustaad-attest/|/ustaad/s/|\?)[^?]* ${1}REDACTED
 			request>tls delete
 			resp_headers delete
 		}

@@ -21,7 +21,7 @@ const MAX_EDGE = 1600;
  * the right way up, and is at most 1600 px on the long edge. WebP where the browser can encode it, else JPEG (both on
  * the API's list).
  */
-async function prepare(file: File): Promise<PreparedImage> {
+export async function prepareImage(file: File): Promise<PreparedImage> {
   const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
   const size = fitWithin(bitmap.width, bitmap.height, MAX_EDGE);
   const canvas = document.createElement('canvas');
@@ -74,7 +74,7 @@ export function ImagePicker({
     if (!file) return;
     setStatus('preparing');
     try {
-      const img = await prepare(file);
+      const img = await prepareImage(file);
       setPreview({ url: URL.createObjectURL(img.blob), width: img.width, height: img.height });
       setStatus('ready');
       onChange(img);

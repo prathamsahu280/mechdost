@@ -4,6 +4,8 @@
  * `apps/api/src/routes/ustaad/{qa,local,media}.ts`.
  */
 import { z } from 'zod';
+import { USTAAD_CONNECTION_STATUSES, USTAAD_THREAD_STATUSES } from '../../state';
+import { CommentViewDto, PostViewDto, StoryRingDto, TagListItemDto } from './feed';
 import { JobDto, MyLocationDto, ZoneDto } from './local';
 import { QuestionCardDto } from './qa';
 
@@ -29,3 +31,45 @@ export const DeclaredUploadResponse = z.object({
 });
 export const VerifiedMediaResponse = z.object({ id: z.uuid(), status: z.string() });
 export const SignedUrlResponse = z.object({ url: z.string(), expiresAt: z.string() });
+
+// ── Feed, graph and messages (workstream D; keep in step with routes/ustaad/{feed,social,messages}.ts) ─────────────
+
+export const CreatedResponse = z.object({ id: z.uuid(), status: z.string() });
+export const StoryCreatedResponse = CreatedResponse.extend({ expiresAt: z.string() });
+export const StatusResponse = z.object({ status: z.string() });
+export const LikeStateResponse = z.object({ liked: z.boolean(), likes: z.number().int().nullable() });
+export const SavedResponse = z.object({ saved: z.boolean() });
+export const ShareLinkResponse = z.object({ token: z.string(), path: z.string() });
+export const CommentPageResponse = z.object({
+  items: z.array(CommentViewDto),
+  nextCursor: z.string().nullable(),
+});
+export const VotedResponse = z.object({ optionId: z.uuid() });
+export const StoryRingsResponse = z.object({ rings: z.array(StoryRingDto) });
+export const SeenResponse = z.object({ seen: z.boolean() });
+export const TagsResponse = z.object({ tags: z.array(TagListItemDto) });
+export const TagPageResponse = z.object({
+  tag: TagListItemDto,
+  items: z.array(PostViewDto),
+  nextCursor: z.string().nullable(),
+});
+export const TagFollowResponse = z.object({ followed: z.boolean() });
+export const OpenShareResponse = z.object({ postId: z.uuid() });
+/** The public teaser (`GET /ustaad/s/{token}`, no sign-in): a generic card only. */
+export const ShareTeaserResponse = z.object({ kind: z.literal('ustaad_post') });
+export const RemovedResponse = z.object({ removed: z.boolean() });
+export const BlockedResponse = z.object({ blocked: z.boolean() });
+export const MutedResponse = z.object({ muted: z.boolean() });
+export const ConnectionMovedResponse = z.object({
+  id: z.uuid(),
+  status: z.enum(USTAAD_CONNECTION_STATUSES),
+});
+export const ThreadStartedResponse = z.object({
+  threadId: z.uuid(),
+  status: z.enum(USTAAD_THREAD_STATUSES),
+  messageId: z.uuid(),
+  pending: z.boolean(),
+});
+export const ThreadStatusResponse = z.object({ status: z.enum(USTAAD_THREAD_STATUSES) });
+export const PromotionHiddenResponse = z.object({ hidden: z.literal(true) });
+export const MessageSentResponse = z.object({ messageId: z.uuid(), pending: z.boolean() });

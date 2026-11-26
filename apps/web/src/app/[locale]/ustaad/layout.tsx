@@ -8,6 +8,7 @@ import { Container, EmptyState } from '@/components/ui/page-intro';
 import { UstaadIcon } from '@/components/ustaad/shell/icons';
 import { UstaadGate } from '@/components/ustaad/shell/ustaad-gate';
 import { UstaadNav, type UstaadTab } from '@/components/ustaad/shell/ustaad-nav';
+import { UstaadPublicSwitch } from '@/components/ustaad/shell/public-switch';
 import type { Locale } from '@/i18n/routing';
 import { localePath } from '@/lib/locale-path';
 import { publishedUstaadAccess } from '@/lib/site-config-content';
@@ -96,35 +97,54 @@ export default async function UstaadLayout({ children, params }: Props) {
     </p>
   );
 
+  const extras = (['network', 'messages', 'saved'] as const).map((key) => ({
+    key,
+    href: localePath(`/ustaad/${key}`, locale),
+    label: t(key),
+    icon: <UstaadIcon name={key === 'messages' ? 'message' : key} size={22} />,
+  }));
+
   return (
-    <UstaadGate access={access} notFound={notFoundView} signIn={signIn} preview={preview}>
-      <div className="mx-auto w-full max-w-[1200px] px-4 pt-4 pb-32 tab:px-6 nav:grid nav:grid-cols-[220px_minmax(0,1fr)] nav:gap-10 nav:pt-8 nav:pb-14">
-        {/* One navigation: the dock (fixed, under 1024 px) and the rail (this column, above). */}
-        <div>
-          <p className="mb-5 hidden px-4 nav:block">
-            <span className="block font-heading text-lg font-extrabold text-ink">{t('brand')}</span>
-            <span className="block text-sm text-muted">{t('tagline')}</span>
-          </p>
-          <UstaadNav tabs={tabs} label={t('navLabel')} />
-        </div>
-        <div className="min-w-0">
-          <header className="mb-4 flex items-center justify-between gap-3 nav:hidden">
-            <p>
+    <UstaadPublicSwitch open={children}>
+      <UstaadGate access={access} notFound={notFoundView} signIn={signIn} preview={preview}>
+        <div className="mx-auto w-full max-w-[1200px] px-4 pt-4 pb-32 tab:px-6 nav:grid nav:grid-cols-[220px_minmax(0,1fr)] nav:gap-10 nav:pt-8 nav:pb-14">
+          {/* One navigation: the dock (fixed, under 1024 px) and the rail (this column, above). */}
+          <div>
+            <p className="mb-5 hidden px-4 nav:block">
               <span className="block font-heading text-lg font-extrabold text-ink">{t('brand')}</span>
-              <span className="block text-[13px] text-muted">{t('tagline')}</span>
+              <span className="block text-sm text-muted">{t('tagline')}</span>
             </p>
-            <Link
-              href={localePath('/notifications', locale)}
-              aria-label={t('bell')}
-              data-track="ustaad_bell"
-              className="press inline-flex size-12 items-center justify-center rounded-full bg-surface text-ink shadow-card"
-            >
-              <UstaadIcon name="bell" />
-            </Link>
-          </header>
-          {children}
+            <UstaadNav tabs={tabs} extras={extras} label={t('navLabel')} />
+          </div>
+          <div className="min-w-0">
+            <header className="mb-4 flex items-center justify-between gap-3 nav:hidden">
+              <p>
+                <span className="block font-heading text-lg font-extrabold text-ink">{t('brand')}</span>
+                <span className="block text-[13px] text-muted">{t('tagline')}</span>
+              </p>
+              <span className="flex gap-2">
+                <Link
+                  href={localePath('/ustaad/messages', locale)}
+                  aria-label={t('messages')}
+                  data-track="ustaad_header_messages"
+                  className="press inline-flex size-12 items-center justify-center rounded-full bg-surface text-ink shadow-card focus-visible:outline-3 focus-visible:outline-focus"
+                >
+                  <UstaadIcon name="message" />
+                </Link>
+                <Link
+                  href={localePath('/notifications', locale)}
+                  aria-label={t('bell')}
+                  data-track="ustaad_bell"
+                  className="press inline-flex size-12 items-center justify-center rounded-full bg-surface text-ink shadow-card focus-visible:outline-3 focus-visible:outline-focus"
+                >
+                  <UstaadIcon name="bell" />
+                </Link>
+              </span>
+            </header>
+            {children}
+          </div>
         </div>
-      </div>
-    </UstaadGate>
+      </UstaadGate>
+    </UstaadPublicSwitch>
   );
 }

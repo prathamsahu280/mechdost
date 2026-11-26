@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { ClientMessages } from '@/components/ui/client-messages';
+import { MemberGate } from '@/components/ustaad/common';
+import { HomeFeed } from '@/components/ustaad/feed/feed-list';
+import { StoryRow } from '@/components/ustaad/feed/story-row';
 import { UstaadIcon, type UstaadIconName } from '@/components/ustaad/shell/icons';
 import { CoachMark } from '@/components/ustaad/tutorial/coach-mark';
 import { UstaadGreeting } from '@/components/ustaad/shell/ustaad-gate';
@@ -18,6 +21,16 @@ interface Props {
  * shows "page not found" to those refused, so the title must not name the network (review 2026-11-26).
  */
 export const metadata: Metadata = { robots: { index: false, follow: false } };
+
+/** Message bundles the feed islands read (cards, sheets, media, correction, the join card). */
+const FEED_NS = [
+  'ustaad.feed',
+  'ustaad.labels',
+  'ustaad.media',
+  'ustaad.correction',
+  'ustaad.shell',
+  'segments',
+] as const;
 
 /** Shortcut tiles (spec 23 § 5 Home). Each opens its workstream's screen (B–E build them). */
 type ShortcutKey = 'ask' | 'jobs' | 'dukaan' | 'learn' | 'network' | 'area' | 'saved' | 'pin' | 'card';
@@ -86,21 +99,11 @@ export default async function UstaadHome({ params, searchParams }: Props) {
         <h2 id="ustaad-stories" className="font-heading text-lg font-extrabold text-ink">
           {t('storiesTitle')}
         </h2>
-        <ul className="mt-3 flex gap-4 overflow-x-auto pb-1">
-          <li>
-            <Link
-              href={href('/ustaad/create?story=1')}
-              data-track="ustaad_story_add"
-              className="press flex w-[76px] flex-col items-center gap-1.5 text-center text-[13px] font-bold text-ink"
-            >
-              <span className="flex size-[64px] items-center justify-center rounded-full border-2 border-dashed border-accent bg-surface text-accent-soft-text">
-                <UstaadIcon name="plus" size={26} />
-              </span>
-              {t('storyAdd')}
-            </Link>
-          </li>
-          <li className="flex items-center text-sm text-muted">{t('storiesEmpty')}</li>
-        </ul>
+        <div className="mt-3">
+          <ClientMessages namespaces={[...FEED_NS]}>
+            <StoryRow />
+          </ClientMessages>
+        </div>
       </section>
 
       <section aria-labelledby="ustaad-shortcuts">
@@ -163,16 +166,12 @@ export default async function UstaadHome({ params, searchParams }: Props) {
             </li>
           </ul>
         </nav>
-        <div className="mt-4 rounded-2xl border border-line-card bg-surface p-6 text-center shadow-card">
-          <p className="font-heading text-lg font-extrabold text-ink">{t('feedEmptyTitle')}</p>
-          <p className="mx-auto mt-1 max-w-sm text-[15px] leading-relaxed text-muted">{t('feedEmptyBody')}</p>
-          <Link
-            href={href('/ustaad/create')}
-            data-track="ustaad_feed_empty_create"
-            className="press mt-4 inline-flex min-h-12 items-center rounded-button bg-accent-button px-6 text-[15px] font-bold text-white hover:bg-accent-button-hover"
-          >
-            {t('feedEmptyCta')}
-          </Link>
+        <div className="mt-4">
+          <ClientMessages namespaces={[...FEED_NS]}>
+            <MemberGate>
+              <HomeFeed tab={following ? 'following' : 'for_you'} />
+            </MemberGate>
+          </ClientMessages>
         </div>
       </section>
 
