@@ -397,3 +397,4 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
 - L-UE2 · 2026-11-26 · security/filters · Scam filters on user text must normalise first (NFKC, strip \p{Cf}, map all
   script digits) and must not rely on "not followed by ." to tell UPI ids from emails (sentence-ending full stops) →
   match a known PSP list first, then the generic rule; screen every member-visible free-text field, not just the body.
+- L-B2 · 2026-11-26 · ustaad/ui a11y · Specialist review of the new Ustaad screens found the same misses three times: status shown only by aria-hidden glyphs, live regions mounted together with their text, focus lost when the focused control unmounts (dismiss, retry, disabled submit), field errors not focused → for every new client screen: always-mounted role=status, sr-only state words beside glyphs, focus moved before unmounting, aria-disabled instead of disabled on a focused submit, focus the first invalid control after a failed step.

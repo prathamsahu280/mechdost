@@ -115,6 +115,7 @@ describe('role leak (§ 3)', () => {
       ['GET', '/ustaad/onboarding'],
       ['GET', '/ustaad/tutorial'],
       ['GET', '/ustaad/verification-status'],
+      ['GET', '/ustaad/me/card'],
       ['POST', '/ustaad/verifications'],
       ['POST', '/ustaad/vouches'],
     ] as const)
@@ -175,6 +176,14 @@ describe('member onboarding and verification', () => {
     expect(again.status).toBe(409);
     const me = await call(mechanic, 'GET', '/ustaad/me');
     expect((me.body.member as { level: string; verificationState: string }).level).toBe('naya');
+  });
+
+  it('my card: level after approval, the ladder, no phone', async () => {
+    const r = await call(mechanic, 'GET', '/ustaad/me/card');
+    expect(r.status).toBe(200);
+    expect(r.body).toMatchObject({ current: 'naya' });
+    expect((r.body.ladder as unknown[]).length).toBe(4);
+    expect(JSON.stringify(r.body)).not.toContain('+91');
   });
 
   it('reject needs a note for "other"', async () => {

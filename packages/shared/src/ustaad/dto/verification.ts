@@ -16,6 +16,7 @@ import {
   USTAAD_VERIFICATION_STATUSES,
   USTAAD_VOUCH_STATUSES,
 } from '../../state/ustaad-verification';
+import { MemberViewDto } from './members';
 
 const REQUESTABLE = ['naya', 'pakka', 'bada', 'master'] as const;
 const version = z.number().int().min(1);
@@ -73,6 +74,10 @@ export const VerificationViewDto = z.object({
   version: z.number().int(),
 });
 export type VerificationView = z.infer<typeof VerificationViewDto>;
+/** `GET /ustaad/verification-status`. */
+export const VerificationStatusDto = z.object({ verification: VerificationViewDto.nullable() });
+/** `GET /ustaad/media/{id}/url` (A's route), as the browser reads it. */
+export const SignedMediaUrlDto = z.object({ url: z.string(), expiresAt: z.string() });
 
 /** Staff queue row: the member's public card facts only, phone never (SR-38 masks it everywhere). */
 export const VerificationQueueItemDto = VerificationViewDto.extend({
@@ -142,3 +147,41 @@ export const TutorialDto = z.object({
   ),
 });
 export type Tutorial = z.infer<typeof TutorialDto>;
+
+// ── My card and ladder (`GET /ustaad/me/card`) ─────────────────────────────────────────────────────────────────
+
+export const MyCardDto = z.object({
+  member: MemberViewDto,
+  /** Plain follower count, rounded above 1,000 ("1.2k"). */
+  followers: z.string(),
+  /** Followers that count for levels (SR-9), shown next to the rule. */
+  qualifiedFollowers: z.number().int(),
+  izzat: z.number().int(),
+  answers: z.number().int(),
+  bestAnswers: z.number().int(),
+  videos: z.number().int(),
+  recommendations: z.number().int(),
+  badges: z.array(
+    z.object({ code: z.string(), name: z.string(), rule: z.string(), icon: z.string(), held: z.boolean() }),
+  ),
+  ladder: z.array(
+    z.object({
+      level: z.enum(['naya', 'pakka', 'bada', 'master']),
+      name: z.string(),
+      perk: z.string(),
+      groups: z.array(
+        z.object({
+          minFollowers: z.number().int(),
+          minBestAnswers: z.number().int(),
+          minHelpfulPct: z.number().int(),
+          minVerifiedYears: z.number().int(),
+          minVideos: z.number().int(),
+          minRecommendations: z.number().int(),
+        }),
+      ),
+      staffReview: z.boolean(),
+    }),
+  ),
+  current: z.enum(USTAAD_LEVELS),
+});
+export type MyCard = z.infer<typeof MyCardDto>;

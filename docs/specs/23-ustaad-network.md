@@ -1225,11 +1225,18 @@ members at the next run. Data dictionary: this § 6.
 - **Worker:** one hourly timer (attestation expiry; once a day the ring check then the level recompute).
 - **Migration `0094_ustaad_identity_seed`** (data only): level rules (founder's demo rules), 8 badges, 6 tutorial cards
   and 6 coach-marks, en + hi, `ON CONFLICT DO NOTHING`.
-- **Web:** `/ustaad/join` and `/partners/apply/mechanic` render the same 5-step `UstaadJoinFlow` (`ustaad.join` en + hi).
+- **Web:** `/ustaad/join` and (only while `ustaad.access` = `open`) `/partners/apply/mechanic` render the same 5-step
+  `UstaadJoinFlow` (`ustaad.join` en + hi). `/ustaad/welcome`: the guide (cards from the admin table, Listen = staff
+  recording via a signed URL or the browser's speech, never autoplay; Next / Back / Skip; swipe with button
+  equivalents; `tutorial_*` events). Coach-mark on Home under the mic (one at a time, inline, "Samajh gaya").
+  `/ustaad/me`: ID card (level chip, verified tick, specialities, WhatsApp teaser share = fixed sentence + join link
+  only), stats (Izzat never money), level ladder with "You are here" and qualified followers, badges, "Kaise use
+  karein" (resets progress, replays the guide). `/partners/status`: a signed-in member's verification progress (asked →
+  proof → MechDost review → verified, or the reason); nothing for anyone else. API `GET /ustaad/me/card`.
 - **Script:** `pnpm db:ustaad:map-mechanic-applications [--dry-run]` (links only; partner application rows untouched
   because their status list has no "closed").
-- **Not built yet (B):** `/ustaad/welcome` tutorial screen and coach-marks UI, ID card / Me / level ladder / badges UI,
-  `/partners/status` progress, profile/choices/specialities routes (`PATCH /ustaad/me`, `PUT …/choices`), reserved-name
+- **Not built yet (B):** QR on the card, coach-marks on the other five controls (their screens belong to C–E),
+  profile/choices/specialities routes (`PATCH /ustaad/me`, `PUT …/choices`), reserved-name
   TR39 skeleton (A's stub still), SR-2 security freeze, non-partner owner one-time link + public attest page, evidence
   purge, badge award job, counter reconcile and 30-day counters, admin Partners notice, screenshots.
 

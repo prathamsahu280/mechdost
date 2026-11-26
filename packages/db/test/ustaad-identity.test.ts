@@ -12,6 +12,8 @@ import {
   decideUstaadVouch,
   getUstaadOnboarding,
   ustaadTutorial,
+  ustaadMyCard,
+  roundedCount,
   joinUstaad,
   mapMechanicApplications,
   giveUstaadVouch,
@@ -855,5 +857,37 @@ describe('old mechanic applications → invites (§ 4a)', () => {
       .from(s.ustaadApplicationLinks)
       .where(eq(s.ustaadApplicationLinks.memberId, m.id));
     expect(link?.status).toBe('joined');
+  });
+});
+
+describe('my card and ladder (§ 5 /ustaad/me, § 9)', () => {
+  it('shows counters, badges held vs not, the seeded ladder in Hindi and the qualified followers; no phone', async () => {
+    const m = await mkMember({ level: 'naya' });
+    await db
+      .update(s.ustaadMemberCounters)
+      .set({ followers: 1234, izzat: -5, bestAnswers: 3 })
+      .where(eq(s.ustaadMemberCounters.memberId, m.memberId));
+    await db.insert(s.ustaadBadgeAwards).values({ memberId: m.memberId, badgeCode: 'first_post' });
+    await follow((await mkMember()).memberId, m.memberId);
+    await follow((await mkMember({ ageDays: 3 })).memberId, m.memberId);
+    const card = await ustaadMyCard(t(), m.userId, 'hi');
+    expect(card).toMatchObject({
+      followers: '1.2k',
+      izzat: 0,
+      bestAnswers: 3,
+      qualifiedFollowers: 1,
+      current: 'naya',
+    });
+    expect(card.badges.find((b) => b.code === 'first_post')).toMatchObject({
+      held: true,
+      name: 'पहली पोस्ट',
+    });
+    expect(card.badges.find((b) => b.code === 'pehla_jawab')?.held).toBe(false);
+    expect(card.ladder.map((l) => l.level)).toEqual(['naya', 'pakka', 'bada', 'master']);
+    expect(card.ladder[0]?.groups).toHaveLength(2);
+    expect(card.ladder[2]?.staffReview).toBe(true);
+    expect(JSON.stringify(card)).not.toContain('+91');
+    expect(roundedCount(999)).toBe('999');
+    expect(roundedCount(25_400)).toBe('25.4k');
   });
 });

@@ -15,6 +15,7 @@ export * from './notify';
 export * from './verification';
 export * from './onboarding';
 export * from './application-links';
+export * from './card';
 // G1 (Admin → Ustaad settings and tables).
 export * from './admin';
 export * from './qa';
