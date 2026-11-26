@@ -104,7 +104,7 @@ describe('bandZone (SR-31, AT-LOC-2)', () => {
     expect(z.segments.ev).toEqual({ kind: 'few' });
     // The next smallest cell is suppressed too, so ev + car (12) is hidden together.
     expect(z.segments.car).toEqual({ kind: 'few' });
-    expect(z.segments.two_wheeler.kind).toBe('exact');
+    expect(z.segments.two_wheeler?.kind).toBe('exact');
     // The total is rounded to five.
     expect(z.total).toEqual({ kind: 'exact', value: 35 });
   });
