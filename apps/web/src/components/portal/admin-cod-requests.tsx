@@ -131,10 +131,17 @@ export function AdminCodRequests({ actor }: { actor: string }) {
     setReason('');
     setError(null);
     setDone(null);
+    // The pressed button is replaced by the form: focus its first field (a11y review 2026-11-26).
+    const field = `${uid}-${id}-${kind === 'approve' ? 'cap' : 'reason'}`;
+    window.requestAnimationFrame(() => document.getElementById(field)?.focus());
   }
 
+  const focusField = (item: Item, part: 'cap' | 'exp' | 'reason') => {
+    window.requestAnimationFrame(() => document.getElementById(`${uid}-${item.id}-${part}`)?.focus());
+  };
+
   async function confirm(item: Item) {
-    if (!form) return;
+    if (!form || saving) return;
     let capPaise: number | null = null;
     let expiresAt: string | null = null;
     if (form.kind === 'approve') {
@@ -142,6 +149,7 @@ export function AdminCodRequests({ actor }: { actor: string }) {
         const rupees = Number(cap);
         if (!Number.isInteger(rupees) || rupees < 1 || rupees > 100_000) {
           setError('errCap');
+          focusField(item, 'cap');
           return;
         }
         capPaise = rupees * 100;
@@ -151,12 +159,14 @@ export function AdminCodRequests({ actor }: { actor: string }) {
         const at = new Date(`${expires}T23:59:59+05:30`);
         if (Number.isNaN(at.getTime()) || at.getTime() <= Date.now() + 3_600_000) {
           setError('errExpires');
+          focusField(item, 'exp');
           return;
         }
         expiresAt = at.toISOString();
       }
     } else if (reason === '') {
       setError('errReason');
+      focusField(item, 'reason');
       return;
     }
     setSaving(true);
@@ -197,6 +207,8 @@ export function AdminCodRequests({ actor }: { actor: string }) {
     );
     setForm(null);
     refresh();
+    // The card leaves this list: focus the result line, where the outcome is read.
+    window.requestAnimationFrame(() => document.getElementById(`${uid}-result`)?.focus());
   }
 
   const date = (iso: string) =>
@@ -228,7 +240,7 @@ export function AdminCodRequests({ actor }: { actor: string }) {
           {FILTERS.map((f) => (
             <label
               key={f}
-              className={`press inline-flex min-h-11 cursor-pointer items-center rounded-button border px-3 text-sm font-bold ${status === f ? 'border-ink bg-ink text-surface' : 'border-input-border text-ink hover:bg-pill'}`}
+              className={`press inline-flex min-h-11 cursor-pointer items-center gap-1 rounded-button border px-3 text-sm font-bold has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus ${status === f ? 'border-ink bg-ink text-surface' : 'border-input-border text-ink hover:bg-pill'}`}
             >
               <input
                 type="radio"
@@ -239,17 +251,21 @@ export function AdminCodRequests({ actor }: { actor: string }) {
                   setStatus(f);
                   setForm(null);
                   setDone(null);
+                  if (REAL) setReal({ state: 'loading' });
                 }}
                 className="sr-only"
               />
+              {/* Not colour alone: the chosen filter also carries a tick. */}
+              {status === f ? <span aria-hidden="true">✓</span> : null}
               {t(`status_${f}`)}
             </label>
           ))}
         </div>
       </fieldset>
 
-      <div role="status" aria-live="polite" className="mt-3 text-sm font-bold text-ink">
-        {done ? t(done) : null}
+      {/* One persistent live region: decision results, else how many requests the filter shows. */}
+      <div id={`${uid}-result`} tabIndex={-1} role="status" className="mt-3 text-sm font-bold text-ink">
+        {done ? t(done) : load.state === 'ready' ? t('results', { count: load.items.length }) : ''}
       </div>
 
       {load.state === 'loading' ? (
@@ -275,7 +291,7 @@ export function AdminCodRequests({ actor }: { actor: string }) {
             return (
               <li key={item.id} className="rounded-tile border border-line-card p-4 text-sm">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <p className="font-bold text-ink">
+                  <p id={`${formId}-who`} className="font-bold text-ink">
                     <span translate="no">{item.customerName ?? '—'}</span>{' '}
                     <span className="font-normal text-muted" translate="no">
                       {item.customerPhone ?? ''}
@@ -314,7 +330,8 @@ export function AdminCodRequests({ actor }: { actor: string }) {
                       <>
                         <button
                           type="button"
-                          data-disclosure-trigger={`cod-${item.id}`}
+                          data-disclosure-trigger={`cod-${item.id}-approve`}
+                          aria-describedby={`${formId}-who`}
                           className={portalPrimary}
                           onClick={() => {
                             open(item.id, 'approve');
@@ -324,7 +341,8 @@ export function AdminCodRequests({ actor }: { actor: string }) {
                         </button>
                         <button
                           type="button"
-                          data-disclosure-trigger={`cod-${item.id}`}
+                          data-disclosure-trigger={`cod-${item.id}-reject`}
+                          aria-describedby={`${formId}-who`}
                           className={portalQuiet}
                           onClick={() => {
                             open(item.id, 'reject');
@@ -336,7 +354,8 @@ export function AdminCodRequests({ actor }: { actor: string }) {
                     ) : (
                       <button
                         type="button"
-                        data-disclosure-trigger={`cod-${item.id}`}
+                        data-disclosure-trigger={`cod-${item.id}-revoke`}
+                        aria-describedby={`${formId}-who`}
                         className={portalQuiet}
                         onClick={() => {
                           open(item.id, 'revoke');
@@ -437,8 +456,7 @@ export function AdminCodRequests({ actor }: { actor: string }) {
                     <div className="mt-3 flex flex-wrap gap-2">
                       <button
                         type="button"
-                        disabled={saving}
-                        aria-busy={saving}
+                        aria-disabled={saving}
                         className={portalPrimary}
                         onClick={() => void confirm(item)}
                       >
@@ -454,7 +472,7 @@ export function AdminCodRequests({ actor }: { actor: string }) {
                       </button>
                       <button
                         type="button"
-                        data-panel-cancel={`cod-${item.id}`}
+                        data-panel-cancel={`cod-${item.id}-${form.kind}`}
                         className={portalQuiet}
                         onClick={() => {
                           setForm(null);
@@ -562,15 +580,16 @@ function DemoSwitches() {
           {t(label)}
         </label>
       ))}
-      {risk ? (
-        <p
-          id={`${uid}-risk`}
-          role="status"
-          className="mt-2 rounded-input bg-warning-bg px-3 py-2 text-sm font-bold text-warning"
-        >
-          {a('risk_codEveryone')}
-        </p>
-      ) : null}
+      {/* Always mounted so the warning is announced when it appears. */}
+      <p
+        id={`${uid}-risk`}
+        role="status"
+        className={
+          risk ? 'mt-2 rounded-input bg-warning-bg px-3 py-2 text-sm font-bold text-warning' : 'sr-only'
+        }
+      >
+        {risk ? a('risk_codEveryone') : ''}
+      </p>
     </fieldset>
   );
 }

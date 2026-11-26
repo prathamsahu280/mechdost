@@ -677,7 +677,6 @@ export function CheckoutForm() {
                   <button
                     type="button"
                     data-disclosure-trigger="cod-request"
-                    aria-expanded="false"
                     onClick={() => {
                       setCodPanel(true);
                     }}
@@ -702,21 +701,6 @@ export function CheckoutForm() {
                     {t(codAction === 'ustaad_verify' ? 'codAction_ustaad_verify' : 'codAction_ustaad_join')}
                   </Link>
                 ) : null}
-                {codPanel ? (
-                  <Suspense fallback={<div className="skeleton mt-3 h-40 rounded-card" aria-hidden="true" />}>
-                    <CodRequestPanel
-                      surface="checkout"
-                      pincode={quotePin}
-                      accountId={session?.role === 'customer' ? session.id : null}
-                      onClose={() => {
-                        setCodPanel(false);
-                      }}
-                      onSent={() => {
-                        setCodRequested(true);
-                      }}
-                    />
-                  </Suspense>
-                ) : null}
               </div>
             ) : null}
             <label
@@ -737,6 +721,22 @@ export function CheckoutForm() {
             </label>
             {method === 'online' ? <p className="mt-2 text-xs text-muted">{t('onlineNote')}</p> : null}
           </fieldset>
+          {/* The request panel sits after the payment choice, not inside its radio group (a11y review 2026-11-26). */}
+          {codPanel ? (
+            <Suspense fallback={<div className="skeleton mt-3 h-40 rounded-card" aria-hidden="true" />}>
+              <CodRequestPanel
+                surface="checkout"
+                pincode={quotePin}
+                accountId={session?.role === 'customer' ? session.id : null}
+                onClose={() => {
+                  setCodPanel(false);
+                }}
+                onSent={() => {
+                  setCodRequested(true);
+                }}
+              />
+            </Suspense>
+          ) : null}
         </div>
         <div className="mt-5 rounded-tile border border-line-card bg-surface-alt p-4">
           <label className="flex items-start gap-3 text-sm text-ink">

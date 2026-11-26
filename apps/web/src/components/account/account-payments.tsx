@@ -73,6 +73,7 @@ export default function AccountPayments({ account }: { account: DemoAccount }) {
   const [reload, setReload] = useState(0);
   const [panel, setPanel] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [notice, setNotice] = useState<'withdrawn' | 'withdrawError' | null>(null);
 
   useEffect(() => {
     if (!REAL) return;
@@ -112,13 +113,18 @@ export default function AccountPayments({ account }: { account: DemoAccount }) {
   }, []);
 
   async function withdraw(r: RequestRow) {
+    if (busy) return;
     setBusy(r.id);
+    let ok: boolean;
     if (REAL) {
       const { withdrawCodRequest } = await import('@/lib/cod-api');
-      await withdrawCodRequest(locale, r.id, r.version);
-    } else withdrawDemoCod(r.id, r.version);
+      ok = (await withdrawCodRequest(locale, r.id, r.version)).ok;
+    } else ok = withdrawDemoCod(r.id, r.version).ok;
     setBusy(null);
+    setNotice(ok ? 'withdrawn' : 'withdrawError');
     refresh();
+    // The button is gone after a withdraw: keep focus on the section, where the result is announced.
+    window.requestAnimationFrame(() => document.getElementById('payments-title')?.focus());
   }
 
   const date = (iso: string) =>
@@ -130,10 +136,14 @@ export default function AccountPayments({ account }: { account: DemoAccount }) {
   return (
     <div className="space-y-6">
       <section className={card} aria-labelledby="payments-title">
-        <h2 id="payments-title" className="font-heading text-xl font-extrabold text-ink">
+        <h2 id="payments-title" tabIndex={-1} className="font-heading text-xl font-extrabold text-ink">
           {t('title')}
         </h2>
         <p className="mt-1 text-sm text-muted">{t('intro')}</p>
+        {/* Persistent live region for results (withdraw), read when its text changes. */}
+        <p role="status" className="mt-2 text-sm font-bold text-ink empty:hidden">
+          {notice ? t(notice) : ''}
+        </p>
         <div className="mt-4 rounded-tile border border-line-card p-4">
           <h3 className="text-sm font-bold text-ink">{t('onlineTitle')}</h3>
           <p className="mt-1 text-sm text-muted">{t('onlineBody')}</p>
@@ -176,7 +186,6 @@ export default function AccountPayments({ account }: { account: DemoAccount }) {
                 <button
                   type="button"
                   data-disclosure-trigger="cod-request"
-                  aria-expanded="false"
                   onClick={() => {
                     setPanel(true);
                   }}
@@ -239,10 +248,9 @@ export default function AccountPayments({ account }: { account: DemoAccount }) {
                   {r.status === 'pending' ? (
                     <button
                       type="button"
-                      disabled={busy === r.id}
-                      aria-busy={busy === r.id}
+                      aria-disabled={busy === r.id}
                       onClick={() => void withdraw(r)}
-                      className="press mt-2 min-h-11 rounded-button border border-input-border px-4 text-sm font-bold text-ink hover:bg-pill disabled:opacity-70"
+                      className="press mt-2 min-h-11 rounded-button border border-input-border px-4 text-sm font-bold text-ink hover:bg-pill aria-disabled:opacity-70"
                     >
                       {busy === r.id ? t('withdrawing') : t('withdraw')}
                     </button>

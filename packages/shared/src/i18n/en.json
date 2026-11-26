@@ -8933,7 +8933,9 @@
     "why_cod_refused": "A cash parcel was not accepted at the door.",
     "why_misuse": "Cash on delivery was not used as agreed.",
     "why_customer_request": "You asked us to turn it off.",
-    "why_other": "Contact support to know more."
+    "why_other": "Contact support to know more.",
+    "withdrawn": "Request withdrawn.",
+    "withdrawError": "The request could not be withdrawn. Please try again."
   },
   "adminCod": {
     "tab": "COD requests",
@@ -8999,6 +9001,7 @@
     "switchesTitle": "Who can pay cash on delivery (demo)",
     "switch_everyone": "Every customer",
     "switch_approved": "Customers you approve",
-    "switch_ustaad": "Verified Ustaad mechanics"
+    "switch_ustaad": "Verified Ustaad mechanics",
+    "results": "{count, plural, =0 {No requests shown} one {# request shown} other {# requests shown}}"
   }
 }

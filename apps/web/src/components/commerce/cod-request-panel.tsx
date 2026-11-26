@@ -79,6 +79,7 @@ export default function CodRequestPanel({
   }, [surface]);
 
   async function send() {
+    if (sending) return;
     if (!reason) {
       setError('errReason');
       document.getElementById(`${id}-reason-0`)?.focus();
@@ -112,14 +113,21 @@ export default function CodRequestPanel({
     }
     setSent(true);
     onSent();
+    // The Send button is gone: focus the heading, next to the confirmation (a11y review 2026-11-26).
+    window.requestAnimationFrame(() => heading.current?.focus());
   }
 
   const errorId = `${id}-error`;
   return (
-    <section
+    <div
+      role="group"
       aria-labelledby={`${id}-title`}
       className="mt-3 rounded-card border border-line-card bg-surface p-4 shadow-card"
     >
+      {/* One persistent live region: it exists before its text, so "Sending" and "Request sent" are read. */}
+      <p role="status" className="sr-only">
+        {sending ? t('sending') : sent ? t('sent') : ''}
+      </p>
       <h3
         id={`${id}-title`}
         ref={heading}
@@ -130,9 +138,7 @@ export default function CodRequestPanel({
       </h3>
       {sent ? (
         <>
-          <p role="status" className="mt-2 text-sm text-ink">
-            {t('sent')}
-          </p>
+          <p className="mt-2 text-sm text-ink">{t('sent')}</p>
           <button
             type="button"
             data-panel-cancel="cod-request"
@@ -157,6 +163,8 @@ export default function CodRequestPanel({
                     id={`${id}-reason-${String(i)}`}
                     type="radio"
                     name={`${id}-reason`}
+                    // Not part of the checkout order form around it: no stray field, no Enter-to-submit.
+                    form={`${id}-detached`}
                     value={r}
                     checked={reason === r}
                     onChange={() => {
@@ -221,10 +229,9 @@ export default function CodRequestPanel({
           <div className="mt-4 flex flex-wrap gap-2">
             <button
               type="button"
-              disabled={sending}
-              aria-busy={sending}
+              aria-disabled={sending}
               onClick={() => void send()}
-              className="press min-h-11 rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover disabled:opacity-70"
+              className="press min-h-11 rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover aria-disabled:opacity-70"
             >
               {sending ? t('sending') : t('submit')}
             </button>
@@ -239,6 +246,6 @@ export default function CodRequestPanel({
           </div>
         </>
       )}
-    </section>
+    </div>
   );
 }
