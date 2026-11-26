@@ -2538,4 +2538,4 @@ rule (founder accepted). Q217 answered.
   not to everyone; admin-configurable (`checkout.cod_eligibility`). Supersedes "COD for every verified customer"
   (spec 03).
 - **Positioning:** "our website would target mechanics and workshops a lot more than normal users" — direction
-  recorded; what changes (home, navigation, copy, SEO, onboarding, pricing) is being discussed with the founder.
+  recorded; founder 2026-11-26: "we will do that later, we keep the design as it is for now" — no design change yet.
