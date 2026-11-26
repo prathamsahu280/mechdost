@@ -160,7 +160,7 @@ export default function PinMap({
   return (
     <div
       ref={container}
-      role="application"
+      role="group"
       aria-label={label}
       className="h-[300px] w-full overflow-hidden rounded-2xl border border-line-card bg-surface-alt tab:h-[360px]"
     />

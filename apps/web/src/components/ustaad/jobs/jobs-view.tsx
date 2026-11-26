@@ -1,6 +1,16 @@
 'use client';
 
-import { BadgeCheck, Briefcase, Clock, IndianRupee, MapPin, Plus, ShieldAlert, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  BadgeCheck,
+  Briefcase,
+  Clock,
+  IndianRupee,
+  MapPin,
+  Plus,
+  ShieldAlert,
+  X,
+} from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
@@ -188,6 +198,8 @@ export function JobDetail({ code }: { code: string }) {
   const [status, setStatus] = useState<string | null>(null);
   const [sheet, setSheet] = useState(false);
   const opener = useRef<HTMLButtonElement>(null);
+  const statusRef = useRef<HTMLParagraphElement>(null);
+  const [confirm, setConfirm] = useState<'close' | 'fill' | null>(null);
 
   if (loaded.state === 'loading') return <LoadingBlock />;
   if (loaded.state === 'error')
@@ -216,6 +228,8 @@ export function JobDetail({ code }: { code: string }) {
     }
     set({ ...j, status: r.data.status });
     setStatus(t('moved'));
+    setConfirm(null);
+    statusRef.current?.focus();
   }
 
   const facts: { icon: typeof Clock; label: string; value: string; user?: boolean }[] = [
@@ -235,7 +249,8 @@ export function JobDetail({ code }: { code: string }) {
         href={localePath('/ustaad/jobs', locale)}
         className="press inline-flex min-h-12 items-center gap-2 justify-self-start text-[15px] font-bold text-ink hover:text-accent-soft-text"
       >
-        ← {t('backToList')}
+        <ArrowLeft aria-hidden="true" className="size-5" />
+        {t('backToList')}
       </Link>
       <ScamBanner />
       <SampleNote show={sample} />
@@ -297,7 +312,12 @@ export function JobDetail({ code }: { code: string }) {
         <p className="text-sm text-muted">{t('openTill', { date: formatDate(j.expiresAt, locale) })}</p>
       </article>
 
-      <p role="status" className="text-[15px] font-bold text-ink empty:hidden">
+      <p
+        ref={statusRef}
+        tabIndex={-1}
+        role="status"
+        className="text-[15px] font-bold text-ink outline-none empty:sr-only"
+      >
         {applied ? t('appSent') : (status ?? '')}
       </p>
 
@@ -328,7 +348,9 @@ export function JobDetail({ code }: { code: string }) {
               <button
                 type="button"
                 className={btnQuiet}
-                onClick={() => void move('fill')}
+                onClick={() => {
+                  setConfirm('fill');
+                }}
                 data-track="ustaad_job_fill"
               >
                 {t('act_fill')}
@@ -336,12 +358,44 @@ export function JobDetail({ code }: { code: string }) {
               <button
                 type="button"
                 className={btnQuiet}
-                onClick={() => void move('close')}
+                onClick={() => {
+                  setConfirm('close');
+                }}
                 data-track="ustaad_job_close"
               >
                 {t('act_close')}
               </button>
             </>
+          ) : null}
+          {confirm ? (
+            <div
+              role="group"
+              aria-labelledby="ustaad-job-confirm"
+              className="grid w-full gap-2 rounded-2xl bg-warning-bg p-4"
+            >
+              <p id="ustaad-job-confirm" className="text-[15px] font-bold text-warning">
+                {confirm === 'close' ? t('confirmClose') : t('confirmFill')}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className={btnPrimary}
+                  onClick={() => void move(confirm)}
+                  data-track={`ustaad_job_${confirm}_confirm`}
+                >
+                  {t('confirmYes')}
+                </button>
+                <button
+                  type="button"
+                  className={btnQuiet}
+                  onClick={() => {
+                    setConfirm(null);
+                  }}
+                >
+                  {l('cancel')}
+                </button>
+              </div>
+            </div>
           ) : null}
         </div>
       ) : j.status === 'open' && !applied ? (
@@ -363,8 +417,10 @@ export function JobDetail({ code }: { code: string }) {
           code={j.code}
           onClose={(done) => {
             setSheet(false);
-            if (done) setApplied(true);
-            else opener.current?.focus();
+            if (done) {
+              setApplied(true);
+              requestAnimationFrame(() => statusRef.current?.focus());
+            } else opener.current?.focus();
           }}
         />
       ) : null}
@@ -429,7 +485,7 @@ function ApplySheet({ code, onClose }: { code: string; onClose: (applied: boolea
         dialog.current?.close();
         onClose(false);
       }}
-      className="m-0 mt-auto max-h-[92dvh] w-full max-w-none rounded-t-[26px] bg-surface p-0 text-ink shadow-dialog backdrop:bg-navy/50 tab:m-auto tab:max-w-lg tab:rounded-[26px]"
+      className="m-0 mt-auto max-h-[92dvh] overscroll-contain w-full max-w-none rounded-t-[26px] bg-surface p-0 text-ink shadow-dialog backdrop:bg-navy/50 tab:m-auto tab:max-w-lg tab:rounded-[26px]"
     >
       <div className="grid gap-4 p-5">
         <div className="flex items-start justify-between gap-3">
@@ -464,13 +520,13 @@ function ApplySheet({ code, onClose }: { code: string; onClose: (applied: boolea
           <VoiceRecorder maxSeconds={INTRO_MAX_S} onChange={setIntro} label={t('voiceIntro')} hint="" />
         </div>
         {pct !== null ? <UploadProgress pct={pct} /> : null}
-        <p role="alert" className="text-sm font-bold text-error empty:hidden">
+        <p role="alert" className="text-sm font-bold text-error empty:sr-only">
           {error ?? ''}
         </p>
         <button
           type="button"
           className={`${btnPrimary} min-h-14`}
-          disabled={busy}
+          aria-disabled={busy}
           onClick={() => void send()}
           data-track="ustaad_job_apply_send"
         >

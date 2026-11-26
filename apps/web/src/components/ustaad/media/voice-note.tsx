@@ -80,11 +80,9 @@ export function VoiceNote({ mediaId, tone = 'light' }: { mediaId: string; tone?:
           ))}
         </span>
       </button>
-      {state === 'failed' ? (
-        <p role="status" className="text-sm font-bold text-error">
-          {t('voiceFailed')}
-        </p>
-      ) : null}
+      <p role="status" className="text-sm font-bold text-error empty:sr-only">
+        {state === 'failed' ? t('voiceFailed') : ''}
+      </p>
     </div>
   );
 }

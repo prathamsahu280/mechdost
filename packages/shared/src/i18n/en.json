@@ -6757,7 +6757,9 @@
       "err_USTAAD_WEEKLY_CAP": "You have chosen as many best answers as allowed this week.",
       "err_USTAAD_SELF_VOTE": "You cannot mark your own answer.",
       "err_USTAAD_MEDIA_INVALID": "The voice note could not be used. Record it again.",
-      "err_USTAAD_QUESTION_CLOSED": "This question is closed for new answers."
+      "err_USTAAD_QUESTION_CLOSED": "This question is closed for new answers.",
+      "anyVehicle": "Not sure",
+      "anyWork": "Not sure"
     },
     "feed": {},
     "local": {
@@ -6833,7 +6835,9 @@
       "whoHere": "Who works here",
       "noZones": "Area counts are not ready yet. They are made every night.",
       "listH": "All areas",
-      "selectArea": "Show {name}"
+      "selectArea": "Show {name}",
+      "placeByHand": "Place the pin myself",
+      "pinMoved": "Pin moved about 10 m."
     },
     "jobs": {
       "title": "Jobs near you",
@@ -6903,7 +6907,12 @@
       "err_USTAAD_PERKS_FROZEN": "Jobs are paused on your account for now.",
       "err_USTAAD_JOB_CLOSED": "This job is not taking applications any more.",
       "err_USTAAD_OWN_JOB": "This is your own job.",
-      "err_CONFLICT": "You have already applied for this job."
+      "err_CONFLICT": "You have already applied for this job.",
+      "confirmClose": "Close this job? It cannot be opened again.",
+      "confirmFill": "Mark this job as filled? It stops taking applications.",
+      "confirmYes": "Yes, do it",
+      "viewMine": "Open my job",
+      "moreLoaded": "More jobs shown below."
     },
     "correction": {
       "check": "Make it clearer",
@@ -7550,7 +7559,9 @@
       "voiceFailed": "Could not play the voice note.",
       "listen": "Listen",
       "listenStop": "Stop reading",
-      "listenAria": "Listen: read this text aloud"
+      "listenAria": "Listen: read this text aloud",
+      "recName": "Record voice note",
+      "recStarted": "Recording started."
     },
     "labels": {
       "seg_ev": "EV",

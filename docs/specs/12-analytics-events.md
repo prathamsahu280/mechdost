@@ -246,3 +246,13 @@ Server `admin_ustaad_settings_saved { keys }`, `admin_ustaad_invariant_refused {
 { from, to }` and `admin_ustaad_table_saved { table, action }` (`levels|badges|tags|words|reasons|reach_cities|
 promotions|tutorial_cards|coachmarks`, `create|update|merge|move`); client `admin_ustaad_change { area, action,
 fields }` from Admin → Network settings. Codes and counts only, never the values or the words of a list.
+
+## Ustaad Q&A, Learn, pin, area and jobs screens (2026-11-26, spec 23 § 21c)
+
+No new event names. The screens send the catalogue's client events `ustaad_voice_played {}` (a voice note in a
+question or answer starts), `ustaad_video_played { secondsBand }` (once per Learn player, how long it actually played),
+`ustaad_data_saver { on }` (Learn's switch), `ustaad_learn_completed { resource }` (first completion seen by the
+phone) and the smart-correction events; every control also carries `data-track` (`ustaad_ask_*`, `ustaad_answer_*`,
+`ustaad_voice_*`, `ustaad_learn_*`, `ustaad_pin_*`, `ustaad_area_zone`, `ustaad_job_*`). Questions asked, answers,
+votes, best answers, job posts, applications and pin confirmations are counted server-side (spec 23 § 16). Never
+text, names, phones or locations.

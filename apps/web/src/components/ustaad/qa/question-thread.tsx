@@ -48,7 +48,7 @@ export function QuestionThread({ code }: { code: string }) {
   const label = useCodeLabel();
   const ago = useTimeAgo();
   const errorText = useErrorText('qa');
-  const { loaded, reload, sample, set } = useUstaad((c) => c.question(code), code);
+  const { loaded, reload, refresh, sample, set } = useUstaad((c) => c.question(code), code);
   const [status, setStatus] = useState<string | null>(null);
 
   if (loaded.state === 'loading') return <LoadingBlock />;
@@ -90,7 +90,7 @@ export function QuestionThread({ code }: { code: string }) {
       return;
     }
     setStatus(t('bestDone'));
-    reload();
+    refresh();
   }
 
   return (
@@ -175,14 +175,14 @@ export function QuestionThread({ code }: { code: string }) {
             </li>
           ))}
         </ul>
-        <p role="status" className="text-sm font-bold text-ink empty:hidden">
+        <p role="status" className="text-sm font-bold text-ink empty:sr-only">
           {status ?? ''}
         </p>
         <p className="text-sm leading-relaxed text-muted">{t('disclaimer')}</p>
       </section>
 
       {q.can.answer ? (
-        <AnswerComposer q={q} onPosted={reload} />
+        <AnswerComposer q={q} onPosted={refresh} />
       ) : q.mine ? null : (
         <p className="rounded-2xl bg-surface-alt p-4 text-[15px] leading-relaxed text-ink">
           {t('onlyUstaad')}
@@ -262,15 +262,15 @@ function AnswerBubble({
         {a.mine ? null : (
           <button
             type="button"
-            onClick={onVote}
-            disabled={a.votedByMe}
+            onClick={() => {
+              if (!a.votedByMe) onVote();
+            }}
             aria-pressed={a.votedByMe}
-            aria-label={t('helpfulAria', { n: a.helpfulCount })}
             data-track="ustaad_answer_helpful"
             className="press inline-flex min-h-11 items-center gap-1.5 rounded-full border border-line-card bg-surface px-4 text-sm font-bold text-ink hover:border-accent aria-pressed:border-accent aria-pressed:bg-accent-soft aria-pressed:text-accent-soft-text focus-visible:outline-3 focus-visible:outline-focus"
           >
             <ThumbsUp aria-hidden="true" className="size-4" />
-            <span aria-hidden="true">{t('helpfulCount', { n: a.helpfulCount })}</span>
+            <span>{t('helpfulCount', { n: a.helpfulCount })}</span>
           </button>
         )}
         {a.mine && a.helpfulCount > 0 ? (
@@ -302,6 +302,7 @@ function AnswerComposer({ q, onPosted }: { q: QuestionDetail; onPosted: () => vo
   const [progress, setProgress] = useState<number | null>(null);
   const [msg, setMsg] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [need, setNeed] = useState(false);
   const [round, setRound] = useState(0);
   const idem = useRef(newIdemKey());
   const field = useRef<HTMLTextAreaElement>(null);
@@ -310,7 +311,7 @@ function AnswerComposer({ q, onPosted }: { q: QuestionDetail; onPosted: () => vo
     if (busy) return;
     setMsg(null);
     if (!voice && text.trim() === '') {
-      setMsg({ kind: 'error', text: t('answerNeed') });
+      setNeed(true);
       field.current?.focus();
       return;
     }
@@ -392,13 +393,21 @@ function AnswerComposer({ q, onPosted }: { q: QuestionDetail; onPosted: () => vo
             ref={field}
             value={text}
             rows={3}
+            aria-invalid={need || undefined}
+            aria-describedby={need ? 'ustaad-answer-err' : undefined}
             maxLength={2000}
             onChange={(e) => {
               setText(e.target.value);
+              setNeed(false);
               setMeta({ correction: 'none', original: null });
             }}
             className={`${fieldClass} min-h-24`}
           />
+          {need ? (
+            <p id="ustaad-answer-err" className="text-sm font-bold text-error">
+              {t('answerNeed')}
+            </p>
+          ) : null}
           <SmartCorrection
             value={text}
             fieldRef={field}
@@ -411,14 +420,14 @@ function AnswerComposer({ q, onPosted }: { q: QuestionDetail; onPosted: () => vo
         {progress !== null ? <UploadProgress pct={progress} /> : null}
         <p
           role="status"
-          className={`text-sm font-bold empty:hidden ${msg?.kind === 'error' ? 'text-error' : 'text-success'}`}
+          className={`text-sm font-bold empty:sr-only ${msg?.kind === 'error' ? 'text-error' : 'text-success'}`}
         >
           {msg?.text ?? ''}
         </p>
         <button
           type="submit"
           className={`${btnPrimary} min-h-14`}
-          disabled={busy}
+          aria-disabled={busy}
           data-track="ustaad_answer_post"
         >
           {t('postAnswer')}

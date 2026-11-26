@@ -40,7 +40,7 @@ export function AskList({ filter }: { filter: QuestionFilter }) {
   const next = extra ? extra.next : (first?.nextCursor ?? null);
 
   async function loadMore() {
-    if (!next) return;
+    if (!next || loadingMore) return;
     setLoadingMore(true);
     const r = await (await ustaadClient(locale)).questions(filter, next);
     setLoadingMore(false);
@@ -109,7 +109,7 @@ export function AskList({ filter }: { filter: QuestionFilter }) {
       ) : null}
 
       {items.length > 0 ? (
-        <ul className="grid gap-3" aria-label={t(`f_${filter}`)}>
+        <ul className="grid gap-3">
           {items.map((q) => (
             <li key={q.code}>
               <QuestionRow q={q} />
@@ -123,7 +123,7 @@ export function AskList({ filter }: { filter: QuestionFilter }) {
           type="button"
           className={`${btnQuiet} justify-self-center`}
           onClick={() => void loadMore()}
-          disabled={loadingMore}
+          aria-disabled={loadingMore}
           aria-busy={loadingMore}
           data-track="ustaad_ask_more"
         >

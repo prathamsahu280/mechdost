@@ -121,12 +121,7 @@ export function AreaZones() {
       ) : (
         <>
           <figure className={`${card} grid gap-3`}>
-            <svg
-              viewBox={`0 0 ${String(W)} ${String(H)}`}
-              className="h-auto w-full"
-              role="img"
-              aria-label={t('areaMapLabel')}
-            >
+            <svg viewBox={`0 0 ${String(W)} ${String(H)}`} className="h-auto w-full" aria-hidden="true">
               {zones.map((z, i) => {
                 const p = pts[i] ?? { x: W / 2, y: H / 2 };
                 const shade = zoneShade(z.total);
@@ -179,7 +174,6 @@ export function AreaZones() {
                     <button
                       type="button"
                       aria-expanded={open}
-                      aria-controls={`zone-${z.zoneCell}`}
                       onClick={() => {
                         setSelected(open ? null : z.zoneCell);
                       }}

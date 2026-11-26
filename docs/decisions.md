@@ -2167,6 +2167,18 @@ Spec `docs/specs/23-ustaad-network.md`, design `docs/superpowers/specs/2026-11-2
   extra counter table is needed.
 - Learn self-marks count per IST day; a hosted video completes at ≥ 80 % (spec 23 § 9.2). Details in spec 23 § 21b.
 
+## 2026-11-26 - Ustaad C + E web screens (as built, spec 23 § 21c)
+
+- Pin my garage lives at `/ustaad/me/location` (beside its API, as the lead's brief named it); spec 23 § 5 said
+  `/ustaad/pin`, which now redirects, and Home links to the new path.
+- One client seam for the network's screens: real sign-in builds call the API; the browser demo (staff preview without
+  an API) shows labelled sample data kept in memory only (same rule as other browser-only demo features).
+- Smart correction in the ask composer runs on "More details" (the body), so `bodyOriginal` stays the body's original
+  as the DTO defines it; the one-line title is sent as typed.
+- Learn's data saver is a per-phone convenience (`localStorage`, on by default) until B mounts member choices.
+- No new colours: zone shades are accent tints, the safety note uses the error tokens, the anti-scam banner the warning
+  tokens.
+
 ## 2026-11-26 — Ustaad workstream E (local): build rulings
 
 - Distance noise is ± 25 % of the true distance, seeded per pair by HMAC-SHA256 of the sorted member ids; band codes

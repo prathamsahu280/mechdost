@@ -125,7 +125,7 @@ export function ImagePicker({
           className="h-auto max-h-56 w-auto max-w-full rounded-2xl border border-line-card object-contain"
         />
       ) : null}
-      <p role="status" className="text-sm text-muted empty:hidden">
+      <p role="status" className="text-sm text-muted empty:sr-only">
         {status === 'preparing'
           ? t('photoPreparing')
           : status === 'ready'

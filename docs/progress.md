@@ -4,6 +4,16 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-26 (midday): Ustaad C + E web screens built (worktree branch worktree-agent-aeb70f803004d8abf on main
+  d06c6ba5; not pushed, no migration).** `/ustaad/ask`, `/ustaad/ask/new` (composer sheet: hold-to-talk + tap,
+  SmartCorrection on details, vehicle and work choices), `/ustaad/q/[code]` (chat bubbles, Listen, Helpful, best
+  answer + parts), `/ustaad/learn` (heartbeat, data saver), `/ustaad/me/location` (pin; `/ustaad/pin` redirects),
+  `/ustaad/area`, `/ustaad/jobs`, `/ustaad/jobs/[code]` (anti-scam banner, apply dialog), `/ustaad/jobs/new`; media
+  components in `components/ustaad/media/*` for D; one client seam (API, or labelled sample data in the demo). Spec 23
+  § 21c, decision 2026-11-26 "Ustaad C + E web screens", questions Q-U-CE1–5 (photos on questions, applicants list +
+  jobs/mine, workshop employer, work place change, video size / zone names). **Next:** lead merge + a build + the
+  e2e/Hindi crawl rerun (the a11y-review fixes landed after this branch's one build), then the API gaps above.
+
 - **2026-11-26 (morning): Ustaad workstream C (Q&A + Learn) partly built on branch worktree-agent-a493031f33b2dd989
   (not pushed, no migration).** Done: shared DTOs + `ustaadPublicCode`, repositories `repo/ustaad/{qa,learn}.ts`,
   API `routes/ustaad/qa.ts` (questions, answers, helpful, best, parts, learn, progress) behind the gate and member

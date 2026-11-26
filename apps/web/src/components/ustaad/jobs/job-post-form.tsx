@@ -3,7 +3,7 @@
 import { CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { JOB_ROLES, USTAAD_SEGMENT_CODES, type UstaadSegmentCode } from '@mechdost/shared/ustaad/codes';
 import { localePath } from '@/lib/locale-path';
 import { ustaadClient, type JobRole } from '@/lib/ustaad/client';
@@ -45,6 +45,11 @@ export function JobPostForm() {
   const [busy, setBusy] = useState(false);
   const [posted, setPosted] = useState<string | null>(null);
   const idem = useRef(newIdemKey());
+  const doneRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (posted) doneRef.current?.focus();
+  }, [posted]);
 
   async function submit() {
     if (busy) return;
@@ -100,6 +105,7 @@ export function JobPostForm() {
     ) : null;
   const a11y = (f: Field) => ({
     id: `${ids}-${f}`,
+    'aria-required': true,
     'aria-invalid': errors[f] ? true : undefined,
     'aria-describedby': errors[f] ? `${ids}-${f}-err` : undefined,
   });
@@ -107,11 +113,15 @@ export function JobPostForm() {
   if (posted)
     return (
       <div className="mx-auto grid max-w-2xl gap-5">
-        <div role="status" className={`${card} grid justify-items-center gap-3 text-center`}>
+        <div
+          ref={doneRef}
+          tabIndex={-1}
+          className={`${card} grid justify-items-center gap-3 text-center outline-none`}
+        >
           <CheckCircle2 aria-hidden="true" className="size-10 text-success" />
           <p className="text-[16px] font-bold text-ink">{t('postedOk')}</p>
           <Link href={localePath(`/ustaad/jobs/${posted}`, locale)} className={btnPrimary}>
-            {t('mine')}
+            {t('viewMine')}
           </Link>
         </div>
       </div>
@@ -340,13 +350,13 @@ export function JobPostForm() {
           {err('adult')}
         </div>
 
-        <p role="alert" className="text-sm font-bold text-error empty:hidden">
+        <p role="alert" className="text-sm font-bold text-error empty:sr-only">
           {formError ?? ''}
         </p>
         <button
           type="submit"
           className={`${btnPrimary} min-h-14 text-base`}
-          disabled={busy}
+          aria-disabled={busy}
           data-track="ustaad_job_post_send"
         >
           {busy ? t('posting') : t('postSend')}

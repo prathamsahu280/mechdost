@@ -396,3 +396,14 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
 - L-UE2 · 2026-11-26 · security/filters · Scam filters on user text must normalise first (NFKC, strip \p{Cf}, map all
   script digits) and must not rely on "not followed by ." to tell UPI ids from emails (sentence-ending full stops) →
   match a known PSP list first, then the generic rule; screen every member-visible free-text field, not just the body.
+
+- L-UCE1 · 2026-11-26 · ui/e2e · A screenshot helper that visits the Hindi page last left the test on `/hi`, so every
+  English locator after it timed out (5 of 7 failures) → a shot helper must end where it started (same path, same
+  language), or run shots at the end of a test.
+- L-UCE2 · 2026-11-26 · a11y · Three static a11y specialists found what axe did not: a toggle whose name flips while
+  `aria-pressed` also flips, checkboxes used as single-select, focused buttons that unmount (recorder done panel,
+  apply success, post success) and a `reload()` that blanked the thread after a write → run the specialists before
+  the single build, not after; use `aria-disabled` + a guard on busy buttons, a silent refresh after writes, and keep
+  live regions mounted (`empty:sr-only`, never `empty:hidden`).
+- L-UCE3 · 2026-11-26 · worktree tooling · `next start` warns with `output: standalone` but serves; the worktree
+  guard refuses multi-file heredocs → write files with the Write tool and patch with a scratchpad `python -I` script.

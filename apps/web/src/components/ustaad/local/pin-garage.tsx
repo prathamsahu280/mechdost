@@ -38,6 +38,8 @@ const PinMap = dynamic(() => import('./pin-map'), {
 
 /** `loc.gps_max_m` default (spec 23 § 15): worse readings are not a pin, the member places it and adds a landmark. */
 const GPS_MAX_M = 100;
+/** Where a hand-placed pin starts when there is no GPS fix (Raipur; the API checks the city region). */
+const CITY_CENTRE: LatLng = { lat: 21.2514, lng: 81.6296 };
 
 interface Choices {
   useForVerify: boolean;
@@ -79,6 +81,7 @@ export function PinGarage() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [landmarkError, setLandmarkError] = useState(false);
+  const [moved, setMoved] = useState(0);
 
   useEffect(() => {
     if (saved.loaded.state !== 'ok' || !saved.loaded.data) return;
@@ -204,21 +207,25 @@ export function PinGarage() {
         <button
           type="button"
           className={`${btnQuiet} min-h-14 text-base`}
-          onClick={locate}
-          disabled={gps === 'finding'}
+          onClick={() => {
+            if (gps !== 'finding') locate();
+          }}
+          aria-disabled={gps === 'finding'}
           data-track="ustaad_pin_locate"
         >
           <LocateFixed aria-hidden="true" className="size-5 text-accent-soft-text" />
           {gps === 'finding' ? t('gpsFinding') : fix ? t('gpsAgain') : t('useLoc')}
         </button>
-        <p role="status" className="text-[15px] leading-relaxed text-ink empty:hidden">
-          {gps === 'denied'
-            ? t('gpsDenied')
-            : fix
-              ? gpsIsWeak(fix.accuracyM, GPS_MAX_M)
-                ? t('gpsWeak', { m: fix.accuracyM })
-                : t('gpsFound', { m: fix.accuracyM })
-              : ''}
+        <p role="status" className="text-[15px] leading-relaxed text-ink empty:sr-only">
+          {moved > 0
+            ? `${t('pinMoved')}${moved % 2 === 0 ? '\u00a0' : ''}`
+            : gps === 'denied'
+              ? t('gpsDenied')
+              : fix
+                ? gpsIsWeak(fix.accuracyM, GPS_MAX_M)
+                  ? t('gpsWeak', { m: fix.accuracyM })
+                  : t('gpsFound', { m: fix.accuracyM })
+                : ''}
         </p>
         <PinMap
           value={pin}
@@ -227,7 +234,7 @@ export function PinGarage() {
           markerLabel={t('pinMarker')}
           onChange={setPin}
         />
-        <fieldset disabled={!pin} className="disabled:opacity-60">
+        <fieldset>
           <legend className="text-sm font-bold text-ink">{t('nudgeL')}</legend>
           <div className="mt-2 flex flex-wrap gap-2">
             {nudgeButtons.map(({ dir, icon: Icon, label }) => (
@@ -236,7 +243,9 @@ export function PinGarage() {
                 type="button"
                 className={`${btnQuiet} min-w-12 px-3`}
                 onClick={() => {
-                  if (pin) setPin(nudge(pin, dir));
+                  // No pin yet (no GPS, desktop, keyboard): the first press places it at the city centre.
+                  setPin(nudge(pin ?? CITY_CENTRE, dir));
+                  setMoved((n) => n + 1);
                 }}
                 data-track={`ustaad_pin_nudge_${dir}`}
               >
@@ -328,7 +337,7 @@ export function PinGarage() {
 
       <p
         role="status"
-        className={`text-[15px] font-bold empty:hidden ${msg?.ok ? 'text-success' : 'text-error'}`}
+        className={`text-[15px] font-bold empty:sr-only ${msg?.ok ? 'text-success' : 'text-error'}`}
       >
         {msg ? (
           <span className="inline-flex items-start gap-2">
@@ -343,7 +352,7 @@ export function PinGarage() {
       <button
         type="button"
         className={`${btnPrimary} min-h-14 text-[17px]`}
-        disabled={!pin || busy}
+        aria-disabled={!pin || busy}
         onClick={() => void save(false)}
         data-track="ustaad_pin_confirm"
       >
@@ -432,7 +441,7 @@ function Signboard({ verified }: { verified: boolean }) {
           ) : null}
           <p
             role="status"
-            className={`text-sm font-bold empty:hidden ${msg?.ok ? 'text-success' : 'text-error'}`}
+            className={`text-sm font-bold empty:sr-only ${msg?.ok ? 'text-success' : 'text-error'}`}
           >
             {msg?.text ?? ''}
           </p>

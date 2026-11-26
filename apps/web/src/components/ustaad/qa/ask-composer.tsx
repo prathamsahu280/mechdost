@@ -50,6 +50,7 @@ export function AskComposer() {
   const [work, setWork] = useState<UstaadWorkCode | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [titleError, setTitleError] = useState(false);
   const [sent, setSent] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const idem = useRef(newIdemKey());
@@ -68,8 +69,9 @@ export function AskComposer() {
   async function send() {
     if (busy) return;
     setError(null);
+    setTitleError(false);
     if (!voice && title.trim() === '') {
-      setError(t('sendNeed'));
+      setTitleError(true);
       titleRef.current?.focus();
       return;
     }
@@ -151,12 +153,7 @@ export function AskComposer() {
       <SampleNote show={sample} />
 
       {sent ? (
-        <div
-          ref={doneRef}
-          tabIndex={-1}
-          role="status"
-          className={`${card} grid gap-3 text-center outline-none`}
-        >
+        <div ref={doneRef} tabIndex={-1} className={`${card} grid gap-3 text-center outline-none`}>
           <CheckCircle2 aria-hidden="true" className="mx-auto size-10 text-success" />
           <p className="text-[16px] leading-relaxed font-bold text-ink">{t('sent')}</p>
           <Link
@@ -197,12 +194,20 @@ export function AskComposer() {
                 value={title}
                 maxLength={200}
                 autoComplete="off"
-                aria-describedby="ustaad-q-title-help"
+                aria-invalid={titleError || undefined}
+                aria-describedby={
+                  titleError ? 'ustaad-q-title-err ustaad-q-title-help' : 'ustaad-q-title-help'
+                }
                 onChange={(e) => {
                   setTitle(e.target.value);
                 }}
                 className={fieldClass}
               />
+              {titleError ? (
+                <p id="ustaad-q-title-err" className="text-sm font-bold text-error">
+                  {t('sendNeed')}
+                </p>
+              ) : null}
               <p id="ustaad-q-title-help" className="text-sm text-muted">
                 {t('titleHelp')} {voice ? t('titleOptional') : ''}
               </p>
@@ -250,14 +255,24 @@ export function AskComposer() {
                     onChange={() => {
                       setSegment(s);
                     }}
-                    onClick={() => {
-                      if (segment === s) setSegment(null);
-                    }}
                     className="size-5 accent-accent-button"
                   />
                   {label(s)}
                 </label>
               ))}
+              <label className="press flex min-h-14 cursor-pointer items-center gap-2 rounded-2xl border border-line-card bg-surface px-3 text-[15px] font-bold text-ink has-checked:border-accent has-checked:bg-accent-soft has-checked:text-accent-soft-text has-focus-visible:outline-3 has-focus-visible:outline-focus">
+                <input
+                  type="radio"
+                  name="segment"
+                  value=""
+                  checked={segment === null}
+                  onChange={() => {
+                    setSegment(null);
+                  }}
+                  className="size-5 accent-accent-button"
+                />
+                {t('anyVehicle')}
+              </label>
             </div>
           </fieldset>
 
@@ -270,16 +285,31 @@ export function AskComposer() {
                   className="press inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-full border border-line-card bg-surface px-4 text-[15px] font-bold text-ink has-checked:border-accent has-checked:bg-accent-soft has-checked:text-accent-soft-text has-focus-visible:outline-3 has-focus-visible:outline-focus"
                 >
                   <input
-                    type="checkbox"
+                    type="radio"
+                    name="work"
+                    value={w}
                     checked={work === w}
                     onChange={() => {
-                      setWork(work === w ? null : w);
+                      setWork(w);
                     }}
                     className="size-5 accent-accent-button"
                   />
                   {label(w)}
                 </label>
               ))}
+              <label className="press inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-full border border-line-card bg-surface px-4 text-[15px] font-bold text-ink has-checked:border-accent has-checked:bg-accent-soft has-checked:text-accent-soft-text has-focus-visible:outline-3 has-focus-visible:outline-focus">
+                <input
+                  type="radio"
+                  name="work"
+                  value=""
+                  checked={work === null}
+                  onChange={() => {
+                    setWork(null);
+                  }}
+                  className="size-5 accent-accent-button"
+                />
+                {t('anyWork')}
+              </label>
             </div>
           </fieldset>
 
@@ -290,14 +320,14 @@ export function AskComposer() {
           ) : null}
 
           {progress !== null ? <UploadProgress pct={progress} /> : null}
-          <p role="alert" className="text-sm font-bold text-error empty:hidden">
+          <p role="alert" className="text-sm font-bold text-error empty:sr-only">
             {error ?? ''}
           </p>
 
           <button
             type="submit"
             className={`${btnPrimary} min-h-14 text-base`}
-            disabled={busy}
+            aria-disabled={busy}
             data-track="ustaad_ask_send"
           >
             {busy ? t('sending') : t('send')}

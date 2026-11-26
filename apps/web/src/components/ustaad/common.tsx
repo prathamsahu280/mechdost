@@ -12,9 +12,9 @@ import { ustaadClient, type UstaadClient } from '@/lib/ustaad/client';
  */
 
 export const btnPrimary =
-  'press inline-flex min-h-12 items-center justify-center gap-2 rounded-button bg-accent-button px-6 text-[15px] font-bold text-white hover:bg-accent-button-hover disabled:opacity-60 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus';
+  'press inline-flex min-h-12 items-center justify-center gap-2 rounded-button bg-accent-button px-6 text-[15px] font-bold text-white hover:bg-accent-button-hover disabled:opacity-60 aria-disabled:opacity-60 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus';
 export const btnQuiet =
-  'press inline-flex min-h-12 items-center justify-center gap-2 rounded-button border border-input-border bg-surface px-4 text-[15px] font-bold text-ink hover:bg-pill disabled:opacity-60 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus';
+  'press inline-flex min-h-12 items-center justify-center gap-2 rounded-button border border-input-border bg-surface px-4 text-[15px] font-bold text-ink hover:bg-pill disabled:opacity-60 aria-disabled:opacity-60 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus';
 export const card = 'rounded-2xl border border-line-card bg-surface p-4 shadow-card tab:p-5';
 export const fieldClass =
   'min-h-12 w-full rounded-[8px] border border-input-border bg-surface px-3.5 py-2.5 text-base text-ink placeholder:text-muted focus-visible:outline-3 focus-visible:outline-offset-1 focus-visible:outline-focus';
@@ -26,16 +26,25 @@ export type Loaded<T> =
 export function useUstaad<T>(
   fn: (c: UstaadClient) => Promise<ApiResult<T>>,
   key: string,
-): { loaded: Loaded<T>; reload: () => void; sample: boolean; set: (data: T) => void } {
+): {
+  loaded: Loaded<T>;
+  reload: () => void;
+  /** Fetch again without the loading state (the screen, focus and scroll stay; used after a write). */
+  refresh: () => void;
+  sample: boolean;
+  set: (data: T) => void;
+} {
   const locale = useLocale();
   const [loaded, setLoaded] = useState<Loaded<T>>({ state: 'loading' });
   const [sample, setSample] = useState(false);
   const [tick, setTick] = useState(0);
+  const silent = useRef(false);
   const run = useRef(fn);
   run.current = fn;
   useEffect(() => {
     let live = true;
-    setLoaded({ state: 'loading' });
+    if (!silent.current) setLoaded({ state: 'loading' });
+    silent.current = false;
     void ustaadClient(locale).then(async (c) => {
       const r = await run.current(c);
       if (!live) return;
@@ -49,10 +58,14 @@ export function useUstaad<T>(
   const reload = useCallback(() => {
     setTick((n) => n + 1);
   }, []);
+  const refresh = useCallback(() => {
+    silent.current = true;
+    setTick((n) => n + 1);
+  }, []);
   const set = useCallback((data: T) => {
     setLoaded({ state: 'ok', data });
   }, []);
-  return { loaded, reload, sample, set };
+  return { loaded, reload, refresh, sample, set };
 }
 
 /** Error text for an API code: the screen's own key (`err_CODE`) first, then the shared one, then the generic. */

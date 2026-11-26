@@ -277,7 +277,7 @@ action; Hindi default for new members (`general.default_lang`), English switch i
 | `/ustaad/messages`, `/ustaad/messages/[id]`                | Message requests and threads                                                                                                                                                                                                 |
 | `/ustaad/jobs`, `/ustaad/jobs/[code]`, `/ustaad/jobs/mine` | Jobs list, detail + apply sheet, employer's jobs and applicants                                                                                                                                                              |
 | `/ustaad/learn`                                            | Courses, short videos, MechDost training                                                                                                                                                                                     |
-| `/ustaad/area`, `/ustaad/pin`                              | Zone map; pin my garage                                                                                                                                                                                                      |
+| `/ustaad/area`, `/ustaad/me/location`                      | Zone map; pin my garage (`/ustaad/pin` redirects here, § 21c)                                                                                                                                                                |
 | `/ustaad/saved`, `/ustaad/notifications`                   | Saved posts; notices filtered to the network (reuses the bell inbox, spec 10)                                                                                                                                                |
 
 Admin (`/admin/ustaad`, page pattern of spec 08 "Page pattern"): sections General, Levels & Izzat, Verification (queue),
@@ -1278,6 +1278,69 @@ members at the next run. Data dictionary: this § 6.
   (needs D's connections), "near you" lists (D's Discover calls `ustaadDistanceBands` with a server secret; a
   `USTAAD_LOCATION_SECRET` env variable is still to be added to config and `.env.example`), notifications on
   application moves, AT-LOC-1 trilateration simulation.
+
+## 21c. Workstreams C + E web screens as built (2026-11-26)
+
+- **Routes** (`apps/web/src/app/[locale]/ustaad/`): `ask` (filters All · For you · Mine · No answer yet as links,
+  `?filter=`; keyset "Show more"), `ask/new` (the composer as a sheet with Close; Home's mic opens it), `q/[code]`
+  (thread; malformed codes 404 before any request), `learn`, `me/location` (Pin my garage; **`/ustaad/pin` redirects
+  here**, Home links updated), `area`, `jobs` (`?role=`), `jobs/[code]`, `jobs/new`. All server shells with one client
+  island each, inside A's layout (shared frame, no reload; noindex).
+- **One client seam** `apps/web/src/lib/ustaad/client.ts`: real sign-in builds load `api-client.ts` (signed calls, every
+  answer checked with the shared schemas, response shapes in `packages/shared/src/ustaad/dto/responses.ts`); the browser
+  demo (staff preview, no API) loads `apps/web/src/demo/ustaad.ts`, labelled **Sample data** on every screen, kept in
+  memory only. Both are dynamic imports: no storefront bundle carries them.
+- **Media components** (`components/ustaad/media/`, for D to reuse): `VoiceRecorder` (hold to talk, release to finish;
+  tap to start / tap to stop on the same button for keyboards, screen readers and single-pointer use; timer; auto-stop at
+  the limit; under 0.7 s discarded; playback with native controls; record again / remove; Opus WebM → Ogg → MP4 by
+  `MediaRecorder.isTypeSupported`, declared as the plain MIME; duration measured on the phone), `ImagePicker` (camera
+  or gallery, canvas re-encode = EXIF/GPS stripped, upright, long edge ≤ 1600 px, WebP else JPEG), `UploadProgress`
+  (native progress + words), `VoiceNote` (signed URL fetched on tap, `preload="none"`, no autoplay), `ListenButton`
+  (browser `speechSynthesis`, hi-IN for Devanagari or the Hindi page, en-IN otherwise; never starts by itself). Upload =
+  declare (sha256 on the phone) → PUT with progress (XHR) → complete; multipart (> 16 MB) is left to D.
+- **Q&A:** composer = big mic first, one typed line (title) and "More details" with `SmartCorrection` (the corrected
+  field is the body, so `bodyOriginal` matches the DTO), vehicle tiles (segments + EV) and optional work chips, one
+  primary "Send question"; voice uploads on send with progress; the idempotency key is kept across retries. Thread =
+  navy question bubble (voice note, Listen, chips), safety note for brake/steering/fuel/airbag/EV tags, answers as chat
+  bubbles with the best answer first (badge, "Parts used in this fix" linking to `/shop/{slug}`), Helpful once
+  (`aria-pressed`, disabled after), "Mark as best" only when the API says `can.chooseBest`, answer composer (voice or
+  text) only when `can.answer`, otherwise the "Ustaads answer here" note; the disclaimer under the answers.
+- **Learn:** courses with "N of M lessons done" and a bar, short videos; data saver on by default (this phone only,
+  `localStorage`, `ustaad_data_saver`): nothing loads before Play; off loads the first picture (`preload="metadata"`).
+  Hosted video: heartbeat `deltaSeconds` every 15 s while playing (`learn-meter.ts`: only play time, seeks pause the
+  clock, fractions carried, ≤ 300); `ustaad_video_played {secondsBand}` once per player; `ustaad_learn_completed` on
+  the first completion. External links open in a new tab and can be self-marked (`USTAAD_DAILY_CAP` shown in words).
+- **Pin my garage:** shows where the member works (from `GET /ustaad/me`, read-only: `PATCH /ustaad/me` is not
+  mounted yet, B); "Use my location" with the accuracy circle on a lazy MapLibre map, drag / tap / four arrow buttons
+  (~10 m each); source is `gps` while the pin stays inside a good fix (≥ 30 m), else `manual` and a landmark is
+  required (`pinSource`); readings worse than 100 m (`loc.gps_max_m` default) say "rough location only"; the three
+  choices start off; "Show my exact pin" and its audience are hidden for home/roadside members; "This is my garage" /
+  "यही मेरा गैराज है" saves; API errors (`USTAAD_PIN_LIMIT`, `_FIX_REQUIRED`, `_GPS_WEAK`, `USTAAD_REGION`) in words;
+  then the signboard photo and "Hide my location for now" / "Show my area again".
+- **Area map:** stylised SVG of the zone cells (hexagons shaded by the server's band, numbered) plus the same zones as a
+  list (the accessible view; tap for the per-work cells). Text is exactly the band: "Few mechanics nearby", "N+ mechanics"
+  or "N mechanics"; nothing is summed. `USTAAD_VERIFIED_ONLY` → a lock card with one next action (pin your garage).
+- **Jobs:** the anti-scam banner (`role="note"`) on the list, the job, and the post form; list with role filter links;
+  detail with pay (₹ a month from paise), timing, experience, area (Hindi label when given), vehicles, the employer's
+  18+ line, "Open till"; one primary "Apply with my card" opening a native modal `<dialog>` (Escape closes, focus back to
+  the button; phone shared only when ticked; optional 30 s voice intro). The employer sees "Your job · status" with
+  pause / open again / filled / close. Post form: fields with errors beside them, whole rupees → paise, the locked 18+
+  box, posts as `employer.kind = trade`.
+- **Copy:** `ustaad.qa`, `ustaad.learn`, `ustaad.local`, `ustaad.jobs`, `ustaad.labels` (levels, work, roles, safety,
+  shared errors, sample note) and more of `ustaad.media`, en + hi (`test/ustaad-ce-view.test.ts` checks key parity).
+- **Analytics:** existing client events only (`ustaad_voice_played`, `ustaad_video_played`, `ustaad_data_saver`,
+  `ustaad_learn_completed`, the correction events) plus `data-track` on every control; question, answer, job and
+  location events are server-side (spec 23 § 16).
+- **Tests:** `apps/web/test/ustaad-media-core.test.ts`, `ustaad-ce-view.test.ts` (recorder MIME, photo fit, hold vs
+  tap, watch meter, zone text and shade, projection, pin source, pay, copy parity); e2e `apps/web/e2e/ustaad-ce.spec.ts`
+  (every screen, axe on `main`, fake-microphone recording, apply dialog focus, post form errors, landmark rule) and the
+  Hindi crawl (`hindi-coverage.spec.ts`, ten `/hi/ustaad/*` pages).
+- **Not built (API gaps, queued Q-U-CE1…5):** question **photos** (no field in `AskQuestionDto`, no table) — the
+  picker exists and is used for the signboard; the employer's **applicants list** and `GET /ustaad/jobs/mine` (no
+  route lists applications; `POST /ustaad/applications/{id}/{action}` exists) — so no applicants screen; "already
+  applied" state on a job (not in `JobDto`); posting for a **MechDost workshop** (needs a workshop picker); changing
+  **shop vs home/roadside** on the pin screen (`PATCH /ustaad/me`, B); vehicle **model** picker (no data); video **size**
+  on Learn (no bytes in `LearnResourceView`; duration is shown); zone **names** (cells are numbered "Area 1…").
 
 ## 22. Not built / later
 

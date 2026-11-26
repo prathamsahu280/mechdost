@@ -304,3 +304,7 @@ T203 · 2026-11-24 · notifications · the WhatsApp approval gate is per event (
 - T226 · 2026-11-26 · locked items · a value that is "not a setting" (locked label, locked approval) must still answer the business error (422 SETTING_INVARIANT) when named, not a 400 from a strict schema; test both the settings route and any entity body that could carry it (promotion `label`).
 - T-UE1 · 2026-11-26 · ustaad/jobs · Job insert failed on `ustaad_jobs_code_format` CHECK about half the time · Crockford `publicCode` vs a [A-Z2-7] CHECK · `packages/db/test/ustaad-local.test.ts` "a clean job opens…" (code regex asserted).
 - T-UE2 · 2026-11-26 · ustaad/filters · UPI id at sentence end (`ramesh@ybl.`) or with zero-width chars slipped the scam filter · regex excluded any trailing dot, no normalisation · `packages/shared/test/ustaad-local.test.ts` "UPI ids at sentence end…".
+
+- 2026-11-26 (Ustaad C + E web): bug class "test left in another language" — a screenshot loop that ends on `/hi/...`
+  breaks every later English locator; and axe `label-content-name-mismatch` fires when `aria-label` replaces visible
+  text ("Play · 1 min" named "Play <title>") → keep the visible words in the name, add context with `sr-only`.

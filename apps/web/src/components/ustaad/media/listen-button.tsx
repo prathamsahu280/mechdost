@@ -56,7 +56,6 @@ export function ListenButton({ text }: { text: string }) {
     <button
       type="button"
       onClick={toggle}
-      aria-label={speaking ? t('listenStop') : t('listenAria')}
       data-track="ustaad_listen"
       className="press inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-bold text-accent-soft-text hover:bg-accent-soft focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
     >
@@ -65,7 +64,7 @@ export function ListenButton({ text }: { text: string }) {
       ) : (
         <Volume2 aria-hidden="true" className="size-[18px]" />
       )}
-      <span aria-hidden="true">{speaking ? t('listenStop') : t('listen')}</span>
+      <span>{speaking ? t('listenStop') : t('listen')}</span>
     </button>
   );
 }

@@ -262,11 +262,11 @@ function Resource({
             className={`${btnQuiet} justify-self-start`}
             onClick={() => void open(true)}
             disabled={opening}
-            aria-label={t('playAria', { title })}
             data-track="ustaad_learn_play"
           >
             <Play aria-hidden="true" className="size-5 text-accent-soft-text" />
             {t('play')}
+            <span className="sr-only">{title}</span>
             {length ? <span className="font-normal text-muted">· {length}</span> : null}
           </button>
         )
@@ -299,7 +299,7 @@ function Resource({
       ) : null}
       <p
         role="status"
-        className={`text-sm font-bold empty:hidden ${msg?.ok ? 'text-success' : 'text-error'}`}
+        className={`text-sm font-bold empty:sr-only ${msg?.ok ? 'text-success' : 'text-error'}`}
       >
         {msg?.text ?? ''}
       </p>
@@ -381,6 +381,7 @@ function HostedPlayer({
     <video
       ref={video}
       src={src}
+      aria-label={locale === 'hi' ? r.titleHi : r.titleEn}
       controls
       playsInline
       preload={saver ? 'none' : 'metadata'}
