@@ -16,6 +16,8 @@ import type { RateLimiter } from './rate-limit/limiter';
 import type { Revalidator } from './revalidate';
 import type { CorrectionCache } from './ustaad/correction/cache';
 import type { SmartCorrectionEngine } from './ustaad/correction/engine';
+import type { FeedSnapshotStore } from './ustaad/feed/snapshot';
+import type { PreviewDeps } from './ustaad/link-preview';
 import type { MediaHost } from './ustaad/media/host';
 import type { ImageSafetyClassifier } from './ustaad/safety/classifier';
 
@@ -53,6 +55,10 @@ export interface AppDeps {
   mediaHost?: MediaHost | null;
   /** Ustaad image-safety classifier (spec 23 § 10 step 4, Q-U6); null/absent = none (pre-moderation applies). */
   safetyClassifier?: ImageSafetyClassifier | null;
+  /** For you snapshots (spec 23 § 9.5); absent = a per-instance memory store. */
+  feedSnapshots?: FeedSnapshotStore;
+  /** SSRF-safe link-preview fetcher (spec 23 § 10a); null/absent = no previews (tests, development). */
+  linkPreview?: PreviewDeps | null;
 }
 
 export interface AuthContext {

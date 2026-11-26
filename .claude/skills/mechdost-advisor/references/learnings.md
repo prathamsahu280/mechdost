@@ -425,3 +425,10 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
   using a powerful browser API (mic, camera, geolocation) checks `next.config.ts` headers first and gets a real-API e2e.
 - L-UCE5 · 2026-11-26 · e2e · visiting `/hi/...` stores `NEXT_LOCALE=hi`, so a later `goto('/path')` redirects to Hindi →
   clear the `NEXT_LOCALE` cookie before returning to English in a test.
+- L-D1 · 2026-11-26 · Ustaad feed API · (1) Node's `net.BlockList` matches IPv4 addresses against IPv6 rules too, so
+  one list holding `::ffff:0:0/96` blocks every IPv4 address → keep separate v4 and v6 lists. (2) A public route under
+  a gated prefix must be registered (`app.route`) before the gate's `app.use`: Hono runs matched handlers in
+  registration order. (3) A client-supplied "original" text that other members can open must be screened like the
+  body (lead security review): use `ustaadScreenText` / `ustaadStoredOriginal`. (4) Python edits on Windows write CRLF:
+  run prettier on every python-edited file before committing. (5) Fixture members exceed `posts.per_day` quickly in
+  repository tests: raise the cap in `beforeEach` and test the cap with a fresh member.

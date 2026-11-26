@@ -32,6 +32,7 @@ import {
   purgeUstaadRemovedArchive,
   runUstaadReportClock,
   sendUstaadRulesReminders,
+  expireUstaadStories,
   releaseDueCoinRewards,
   expireQuotes,
   globalIntSetting,
@@ -619,6 +620,24 @@ const ustaadHousekeepingTimer = setInterval(() => {
     });
 }, 3_600_000);
 ustaadHousekeepingTimer.unref();
+// d) `ustaad_story_expire` (D1): visible stories past `expires_at` → expired and their media scheduled for the purge
+//    after `stories.purge_grace_hours` (every 5 min; reads already hide expired stories on the DB clock).
+let expiringStories = false;
+const ustaadStoriesTimer = setInterval(() => {
+  if (expiringStories) return;
+  expiringStories = true;
+  void expireUstaadStories(db, { limit: 500 })
+    .then((n) => {
+      if (n > 0) log('info', 'ustaad_stories_expired', { count: n });
+    })
+    .catch((err: unknown) => {
+      log('error', 'ustaad_story_expire_failed', safeError(err));
+    })
+    .finally(() => {
+      expiringStories = false;
+    });
+}, 300_000);
+ustaadStoriesTimer.unref();
 // 2) Data downloads (Account -> Privacy): build the waiting ones (a few per run, each its own transaction with a row
 //    lock) and clear the files past their 24 hours. Every 30 s.
 let exporting = false;

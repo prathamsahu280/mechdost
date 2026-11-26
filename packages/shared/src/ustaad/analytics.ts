@@ -49,6 +49,13 @@ export interface UstaadServerEventProps {
     correction: Of<typeof CORRECTION_APPLIED>;
   };
   ustaad_story_created: { postId: string; kind: Of<typeof POST_KINDS> };
+  /** D1: a reply on a post (voice, photo or text); `reply` = an answer to another comment. */
+  ustaad_comment_posted: {
+    commentId: string;
+    postId: string;
+    input: 'voice' | 'photo' | 'text';
+    reply: boolean;
+  };
   ustaad_question_asked: {
     questionCode: string;
     input: 'voice' | 'photo' | 'text';
@@ -123,6 +130,7 @@ export const USTAAD_SERVER_EVENTS = [
   'ustaad_badge_earned',
   'ustaad_post_created',
   'ustaad_story_created',
+  'ustaad_comment_posted',
   'ustaad_question_asked',
   'ustaad_answer_posted',
   'ustaad_answer_helpful',

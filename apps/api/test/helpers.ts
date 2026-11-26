@@ -8,6 +8,7 @@ import type { PasswordAuthority } from '../src/auth/password-authority';
 import type { TurnstileVerifier } from '../src/auth/turnstile';
 import { TokenError, type TokenVerifier, type VerifiedToken } from '../src/auth/token-verifier';
 import { loadConfig } from '../src/config';
+import type { PreviewDeps } from '../src/ustaad/link-preview';
 import type { PhotoByteCache } from '../src/photos/byte-cache';
 import type { PhotoStorage } from '../src/photos/storage';
 import type { RazorpayGateway } from '../src/payments/razorpay';
@@ -167,6 +168,7 @@ export async function buildApp(
     smartCorrection?: SmartCorrectionEngine | null;
     mediaHost?: MediaHost | null;
     safetyClassifier?: ImageSafetyClassifier | null;
+    linkPreview?: PreviewDeps | null;
   } = {},
 ) {
   setLogSink(() => undefined);
@@ -196,6 +198,7 @@ export async function buildApp(
     smartCorrection: opts.smartCorrection ?? null,
     mediaHost: opts.mediaHost ?? null,
     safetyClassifier: opts.safetyClassifier ?? null,
+    linkPreview: opts.linkPreview ?? null,
   });
   return { app, db, verifier };
 }

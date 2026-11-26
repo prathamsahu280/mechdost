@@ -372,7 +372,7 @@ export const NOTICE_CATALOGUE = {
     entity: 'ustaad',
     audience: 'member',
     text: ['memberName'],
-    link: at('/ustaad/notifications'),
+    link: (p) => (p.postId ? `/ustaad/p/${enc(p.postId)}` : '/ustaad/notifications'),
   }),
   'ustaad.likes_digest': def({
     category: T,

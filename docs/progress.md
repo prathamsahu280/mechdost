@@ -15,6 +15,14 @@ This file is the single source of truth for **where the build is right now**. It
   (en + hi, `policy.community_rules`). Open: Q-UF1 (ICT logs), Q-UF2; consent toggles (B3), `ustaad_grievance` ticket
   kind, D surfaces in AT-TAKEDOWN-1, G2 console UI; screenshots of the Community Rules page; e2e not run (rules).
 
+- **2026-11-26: Ustaad workstream D part 1 (feed API) built on branch worktree-agent-af781c8d402431a61 (not pushed,
+  no migration, no UI).** Shared feed DTOs, link rules, feed score; repositories `repo/ustaad/{feed-common,posts,
+stories,comments,reactions,tags,previews,feed}.ts`; API `routes/ustaad/feed.ts` (feed tabs with a 10-min For you
+  snapshot, posts of every kind, stories, like/save/share/comments/poll votes, tags, public share teaser before the
+  gate), SSRF-safe link-preview fetcher, `ustaad_story_expire` worker timer, `USTAAD_SHARE_SECRET`. Lead security
+  fix applied (originals screened via `ustaadScreenText`). Spec 23 § 21d, decision 2026-11-26 "workstream D part 1",
+  Q-U-D1 queued. **Next:** feed web UI (composer, post card, stories, Saved, tag page, teaser page) with en + hi
+  strings; og:image pipeline; separate preview process; warning page for outbound links; real-Postgres race suite.
 - **2026-11-26 (midday): Ustaad workstream B round 2** (branch worktree-agent-a08ecec98c37890df, not pushed). Apply-as-a-mechanic follows `ustaad.access` (old form unless `open`), level-rule Coins guard, `/ustaad/welcome` guide, coach-mark, `/ustaad/me` card + ladder + badges, `/partners/status` progress, `GET /ustaad/me/card`. Left: QR, profile/choices routes, reserved names, SR-2 freeze, non-partner attest link, badge award job, counter reconcile, screenshots.
 - **2026-11-26 (morning): Ustaad Network workstream B (identity) partial** (branch worktree-agent-a08ecec98c37890df, not pushed, migration **0094_ustaad_identity_seed** data only, not applied). Engines, Izzat, levels, verification with staff final approval, vouches, workshop attestations, ring check, tutorial progress API, staff/workshop verification routes, 410 for old mechanic applications, invite mapping script, 5-step join UI. Security review fixes in. Not built: tutorial UI, ID card/Me UI, /partners/status, profile/choices routes, reserved names, SR-2 freeze, non-partner attest link (spec 23 § 21b).
 - **2026-11-26 (midday): Ustaad C + E web screens built (worktree branch worktree-agent-aeb70f803004d8abf on main

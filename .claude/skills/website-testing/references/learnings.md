@@ -315,3 +315,5 @@ T203 · 2026-11-24 · notifications · the WhatsApp approval gate is per event (
 - 2026-11-26 (Ustaad C + E web): bug class "test left in another language" — a screenshot loop that ends on `/hi/...`
   breaks every later English locator; and axe `label-content-name-mismatch` fires when `aria-label` replaces visible
   text ("Play · 1 min" named "Play <title>") → keep the visible words in the name, add context with `sr-only`.
+- T-UD1 · 2026-11-26 · ustaad/feed · A clean `body` with an abusive `bodyOriginal` ("see original") passed the content screen on posts and comments · only the body was screened · screen every member-readable text incl. the original, store the original only with a correction; test with a screen double that holds on a marker word in any field (`packages/db/test/ustaad-feed.test.ts`).
+- T-UD2 · 2026-11-26 · ustaad/ssrf · An IPv4-mapped IPv6 deny rule in a shared `net.BlockList` blocked every public IPv4 address (Node maps v4 into v6 rules) · one list for both families · separate v4/v6 lists and a test that public addresses pass (`apps/api/test/ustaad-link-preview.test.ts`).

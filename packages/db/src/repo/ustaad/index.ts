@@ -20,7 +20,16 @@ export * from './card';
 export * from './admin';
 export * from './qa';
 export * from './learn';
-// D: export * from './posts'; export * from './feed'; export * from './graph'; export * from './threads'; …
+// D part 1 (feed): posts, stories, comments, reactions, tags, previews, feed.
+export * from './posts';
+export * from './stories';
+export * from './comments';
+export * from './reactions';
+export * from './tags';
+export * from './previews';
+export * from './feed';
+export { visibleUstaadPost } from './feed-common';
+// D part 2: export * from './graph'; export * from './threads'; …
 export * from './location';
 export * from './zones';
 export * from './jobs';
