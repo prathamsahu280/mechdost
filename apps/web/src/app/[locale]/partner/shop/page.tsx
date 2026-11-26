@@ -38,6 +38,10 @@ export default async function PartnerPage() {
             'storefront',
             'coupons',
             'trust',
+            // Delivery agents (spec 24): ready for pickup, pickup/return codes, delivery mode requests.
+            'deliveryShop',
+            'deliveryAgent',
+            'delivery',
           ]}
         >
           <ShopPortal />

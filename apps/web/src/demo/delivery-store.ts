@@ -1572,6 +1572,15 @@ function areaOfPin(pin: string, locale: string): string | null {
 }
 
 /** The customer's block (Lead's call 7): stage, the agent's first name and vehicle; never the shop or a phone. */
+type CustomerStage =
+  | 'finding_agent'
+  | 'agent_assigned'
+  | 'picked_up'
+  | 'attempt_failed'
+  | 'retrying'
+  | 'returning'
+  | 'delivered'
+  | 'returned';
 export function customerDelivery(orderCode: string) {
   const s = deliveryState();
   const jobs = s.jobs.filter((j) => j.orderCode === orderCode);
@@ -1580,7 +1589,7 @@ export function customerDelivery(orderCode: string) {
   const agent = s.agents.find((a) => a.id === j.agentId);
   const o = findOrder(orderCode);
   const failed = jobs.some((x) => x.failReason);
-  const stage =
+  const stage: CustomerStage =
     o?.returned || j.status === 'returned'
       ? 'returned'
       : j.status === 'delivered'

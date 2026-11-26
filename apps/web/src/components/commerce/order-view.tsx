@@ -33,6 +33,8 @@ import { SHOW_DEMO_CONTROLS } from '@/lib/data-mode';
 const OrderSavingsDemo = lazy(() =>
   import('../savings/order-savings-demo').then((m) => ({ default: m.OrderSavingsDemo })),
 );
+/** Delivery by a MechDost delivery partner (spec 24): its own chunk, loaded only once the order is packed. */
+const DemoCustomerDelivery = lazy(() => import('../delivery/customer-delivery-demo'));
 
 /** Order tracking (spec 04): timeline of the real flow — placed → admin routes → shop accepts → … → delivered. */
 export function OrderView({
@@ -170,6 +172,11 @@ export function OrderView({
             <div className="mt-5">
               <OrderAgain code={order.code} source="page" />
             </div>
+          ) : null}
+          {maySeeCode && order.stage >= ORDER_STAGES.indexOf('packed') ? (
+            <Suspense fallback={null}>
+              <DemoCustomerDelivery code={order.code} />
+            </Suspense>
           ) : null}
           {maySeeCode && order.delivery && !order.delivery.confirmedAt && !isClosed(order) ? (
             <section

@@ -11,6 +11,10 @@ const STEP_OF: Record<string, number> = {
   needs_rerouting: 1,
   confirmed: 2,
   packed: 3,
+  // Agent-delivered parts (spec 24): waiting for the delivery partner still reads "Packed" for the customer; a part
+  // brought back after a failed delivery stays on "Out for delivery" and the delivery block says what happened.
+  ready_for_pickup: 3,
+  returned: 4,
   shipped: 4,
   out_for_delivery: 4,
   // Delivered: every step is done.

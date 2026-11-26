@@ -9214,7 +9214,8 @@
     "rateSaved": "Thanks for rating your delivery.",
     "rateYours": "You rated {count, plural, one {# star} other {# stars}}.",
     "rateEditUntil": "You can change it until {time}.",
-    "rateEdit": "Change rating"
+    "rateEdit": "Change rating",
+    "rateFailed": "Could not save your rating. Try again."
   },
   "deliveryApply": {
     "title": "Apply as a delivery agent",
