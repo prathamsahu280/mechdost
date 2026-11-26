@@ -9736,7 +9736,7 @@
     "appStatus_invited": "Invited",
     "appStatus_rejected": "Rejected",
     "invite": "Invite",
-    "inviteSent": "Invite sent. The email has the joining link; the WhatsApp message has no link and asks them to sign in with this mobile number. The link works once, until {date}:",
+    "inviteSent": "Invite sent. The email (when one was given) has the joining link; the WhatsApp message has no link and asks them to sign in with this mobile number. The link works once, until {date}:",
     "copyLink": "Copy link",
     "copied": "Link copied.",
     "reject": "Reject",

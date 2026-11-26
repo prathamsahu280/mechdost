@@ -5,11 +5,18 @@
  * codes lock after 5 wrong tries, and a failed delivery comes back to the shop with the agent's return code.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
+import {
+  AdminJobDetail,
+  AgentJobDetail,
+  CustomerDeliveryBlock,
+  ShopOrderDelivery,
+} from '@mechdost/shared/delivery/api';
 import { storeCore, type DemoOrder } from '../src/demo/store';
 import {
   DEMO_AGENT_IDS,
   acceptInvite,
   acceptOffer,
+  adminJob,
   adminJobs,
   agentJobDetail,
   agentJobs,
@@ -141,8 +148,10 @@ describe('demo delivery agents', () => {
   });
 
   it('happy path: ready → offer → accept → pickup (shop code) → deliver (customer code)', () => {
-    seedPackedOrder();
-    const code = 'MD-RPR-2026-ABC234';
+    // A sub-order code (`-1`) as the API serves it, so the answers can be parsed with the contract's `OrderCode`
+    // (the demo's own orders have no suffix: spec 24 § 16, still open).
+    const code = 'MD-RPR-2026-ABC234-1';
+    seedPackedOrder(code);
     expect(customerDelivery(code)).toBeNull();
     const jobId = toPickedUp(code);
     // Picked up: the order is out for delivery and the customer's code exists; the customer sees the first name.
@@ -153,6 +162,11 @@ describe('demo delivery agents', () => {
       vehicleType: 'bike',
     });
     const detail = agentJobDetail(A, jobId, 'en');
+    // The demo answers are the contract's shapes (spec 24 § 16): parse them with the shared schemas.
+    expect(AgentJobDetail.safeParse(detail).error).toBeUndefined();
+    expect(AdminJobDetail.safeParse(adminJob(jobId)).error).toBeUndefined();
+    expect(ShopOrderDelivery.safeParse(shopOrderDelivery(code, SHOP)).error).toBeUndefined();
+    expect(CustomerDeliveryBlock.safeParse(customerDelivery(code)).error).toBeUndefined();
     expect(detail?.contact.stage).toBe('drop');
     expect(detail?.contact.customer?.phone).toBe('9876543210');
     const wrong = deliverJob(
@@ -175,6 +189,7 @@ describe('demo delivery agents', () => {
     // Delivered: nothing of the customer stays visible to the agent.
     expect(agentJobDetail(A, jobId, 'en')?.contact.customer).toBeNull();
     expect(customerDelivery(code)?.stage).toBe('delivered');
+    expect(CustomerDeliveryBlock.safeParse(customerDelivery(code)).error).toBeUndefined();
   });
 
   it('before pickup the agent sees the customer area and PIN only', () => {

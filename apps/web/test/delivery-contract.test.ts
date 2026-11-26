@@ -12,7 +12,6 @@ import {
   AgentPayoutPage,
   AgentPayoutSummary,
   AgentProfile,
-  CustomerDeliveryBlock,
 } from '@mechdost/shared/delivery/api';
 import {
   DEMO_AGENT_IDS,
@@ -102,17 +101,7 @@ describe('demo delivery store speaks the shared contract', () => {
     expect(adminPayouts({}).items).toHaveLength(1);
   });
 
-  it('customer delivery block parses with the shared schema (sample)', () => {
-    const block = {
-      stage: 'delivered',
-      agentFirstName: 'Sunil',
-      vehicleType: 'bike',
-      failReason: null,
-      canRate: true,
-      rating: null,
-    };
-    expect(CustomerDeliveryBlock.safeParse(block).success).toBe(true);
-  });
+  // Job, shop and customer views are parsed on a real demo run in `demo-delivery.test.ts` (happy path).
 });
 
 describe('payout idempotency key', () => {

@@ -273,7 +273,9 @@ name, cityCode, vehicleType, status, reasonCode, createdAt` (phone masked).
 - G6: the delivery screens send the 16 typed `delivery_*` events (below). ✅
 - Still open: the delivery-application list rows have no shared schema (`api-clients.ts` checks them with a guard
   that requires `version`); the API's customer block has no refund kind, so a returned parcel is worded generally
-  ("the amount is shown under Refunds") unless the demo knows full / parts only.
+  ("the amount is shown under Refunds") unless the demo knows full / parts only; the browser demo's order codes have no
+  sub-order suffix (`MD-RPR-2026-XXXXXX`, the contract's `OrderCode` wants `…-N`), so the demo store's views parse
+  with the shared schemas only for suffixed codes (`demo-delivery.test.ts` happy path uses one).
 
 # Spec 24 — Delivery agents
 
@@ -404,6 +406,9 @@ customer view) on `fixtures/delivery-world.ts`. Hindi gate: apply, invite, agent
 admin pages. State audit: rows `DLV-*` (chunk E).
 
 ### Contract gaps (for the backend stream)
+
+All answered by the backend (§ 16) and taken up by the web on 2026-11-27 (§ 16 "resolved"); the list below is
+the historical request.
 
 - G1 Invite web link path: the web serves `/partners/delivery-invite/{token}`; the email/WhatsApp link must use it.
 - G2 `ShopOrder` (order-views) and `MyOrder` schemas must carry `delivery` (they strip unknown keys today); the web

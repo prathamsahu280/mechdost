@@ -14,6 +14,7 @@
  */
 import {
   AGENT_DOCUMENT_KINDS,
+  AGENT_PAYOUT_MAX_PAISE,
   DEFAULT_VEHICLE_MAX_LOAD_KG,
   DELIVERY_ACTIVE_JOB_STATES,
   HANDOVER_CODE_MAX_ATTEMPTS,
@@ -1871,8 +1872,8 @@ export interface PayoutInput {
 }
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const blankToNull = (v: string | undefined) => (v === undefined || v === '' ? null : v);
-/** ₹10 lakh: a typo guard, not a business limit. */
-const MAX_PAYOUT_PAISE = 100_000_000;
+/** The contract's typo guard (`AGENT_PAYOUT_MAX_PAISE`, ₹2 lakh), not a business limit. */
+const MAX_PAYOUT_PAISE = AGENT_PAYOUT_MAX_PAISE;
 
 export function recordPayout(input: PayoutInput): Res<{ id: string }> {
   if (!Number.isInteger(input.amountPaise) || input.amountPaise <= 0 || input.amountPaise > MAX_PAYOUT_PAISE)
