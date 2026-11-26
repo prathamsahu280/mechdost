@@ -4,6 +4,7 @@ import {
   Award,
   Bookmark,
   Hash,
+  Link2,
   Heart,
   MessageCircle,
   Search,
@@ -218,6 +219,7 @@ function PersonCard({ p }: { p: DiscoverPerson }) {
   const [following, setFollowing] = useState(false);
   const [followers, setFollowers] = useState(p.followers);
   const [note, setNote] = useState<string | null>(null);
+  const [asked, setAsked] = useState(false);
 
   async function toggle() {
     const r = await act('follow', (c) => c.follow(p.id, !following));
@@ -225,6 +227,14 @@ function PersonCard({ p }: { p: DiscoverPerson }) {
     setFollowing(r.following);
     setFollowers(r.followers);
     setNote(r.following ? t('followedNote', { name }) : t('unfollowedNote', { name }));
+  }
+
+  /** Ask to connect (two-way; they accept or decline in My network). Caps and the cooldown come back as words. */
+  async function connect() {
+    const r = await act('connect', (c) => c.connect(p.id));
+    if (!r) return;
+    setAsked(true);
+    setNote(r.status === 'accepted' ? t('connectedNote', { name }) : t('connectSentNote', { name }));
   }
 
   return (
@@ -279,6 +289,20 @@ function PersonCard({ p }: { p: DiscoverPerson }) {
             <UserPlus aria-hidden="true" className="size-5" />
           )}
           {following ? t('unfollow') : t('follow')}
+        </button>
+        {/* Stays mounted after the request (focus is kept); it just says the request went. */}
+        <button
+          type="button"
+          className={`${btnQuiet} ${small}`}
+          onClick={() => {
+            if (!asked) void connect();
+          }}
+          aria-disabled={asked || busy !== null}
+          aria-busy={busy === 'connect'}
+          data-track="ustaad_discover_connect"
+        >
+          <Link2 aria-hidden="true" className="size-5" />
+          {asked ? t('connectSent') : t('connect')}
         </button>
         <Link
           href={localePath(`/ustaad/messages?to=${encodeURIComponent(p.handle)}`, locale)}

@@ -8095,7 +8095,11 @@
       "kind_mixed": "फ़ोटो और आवाज़ वाली पोस्ट",
       "kind_story": "स्टोरी",
       "likes": "{n} पसंद",
-      "saves": "{n} सेव"
+      "saves": "{n} सेव",
+      "connect": "जुड़ो",
+      "connectSent": "अनुरोध भेजा",
+      "connectedNote": "अब आप {name} से जुड़ गए।",
+      "connectSentNote": "{name} को जुड़ने का अनुरोध भेजा। वे मेरा नेटवर्क में मान सकते हैं।"
     }
   }
 }

@@ -8095,7 +8095,11 @@
       "kind_mixed": "Photo and voice post",
       "kind_story": "Story",
       "likes": "{n, plural, one {# like} other {# likes}}",
-      "saves": "{n, plural, one {# save} other {# saves}}"
+      "saves": "{n, plural, one {# save} other {# saves}}",
+      "connect": "Connect",
+      "connectSent": "Request sent",
+      "connectedNote": "You are now connected with {name}.",
+      "connectSentNote": "Connect request sent to {name}. They can accept in My network."
     }
   }
 }

@@ -139,7 +139,7 @@ const PROFILE: Record<string, Omit<DiscoverPerson, keyof MemberCard>> = {
 };
 
 const TAGS: DiscoverTag[] = [
-  { slug: 'splendor', nameEn: 'Splendor', nameHi: 'Splendor', uses: 42 },
+  { slug: 'splendor', nameEn: 'Splendor', nameHi: 'स्प्लेंडर', uses: 42 },
   { slug: 'self-start', nameEn: 'Self start', nameHi: 'सेल्फ़ स्टार्ट', uses: 31 },
   { slug: 'brake', nameEn: 'Brakes', nameHi: 'ब्रेक', uses: 27 },
   { slug: 'ac-gas', nameEn: 'AC gas', nameHi: 'एसी गैस', uses: 19 },
@@ -198,6 +198,7 @@ function seedThreads(): DemoThread[] {
     message(1, true, 'Namaste Suresh bhai', 50, { read: true }),
   ];
   const anil = [
+    message(13, false, 'Gauge yahan dekho.', 60 * 19, { kind: 'photo', mediaId: uid(702) }),
     message(12, false, 'AC gas ka pressure 35 psi rakhna, zyada mat bharna.', 60 * 20),
     message(11, true, 'Dhanyavaad Anil ji, Swift ka AC thanda nahi kar raha tha.', 60 * 21, { read: true }),
   ];
@@ -398,6 +399,14 @@ export function demoSocialClient(): SocialClient {
       const other = byId(memberId);
       if (!other || !visible(memberId)) return fail(404, 'NOT_FOUND');
       if (cooldown.has(memberId)) return fail(409, 'USTAAD_CONNECT_COOLDOWN');
+      const open = connections.find(
+        (x) => x.other.id === memberId && (x.status === 'requested' || x.status === 'accepted'),
+      );
+      // Crossed requests become a connection (as in the API); an existing one is answered as it is.
+      if (open) {
+        if (open.status === 'requested' && !open.mine) open.status = 'accepted';
+        return ok({ id: open.id, status: open.status });
+      }
       const c: ConnectionView = {
         id: nextId(450),
         status: 'requested',
