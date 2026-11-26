@@ -1,5 +1,5 @@
 /**
- * Garage owner not on MechDost confirms a member (spec 23 § 4 flow 2, § 8 `GET|POST /ustaad/attest/{token}`, SR-6;
+ * Garage owner not on MechDost confirms a member (spec 23 § 4 flow 2, § 8, public path `/ustaad-attest/{token}`, SR-6;
  * plan task B4). The member gives the owner's phone; it is stored encrypted (spec 13 envelope) with a keyed hash for
  * the per-owner quarter cap. The member never sees a link: a staff member issues the one-time link (and calls the
  * owner while WhatsApp/SMS templates are off), so a member cannot confirm themselves. The link is single use (the
@@ -8,7 +8,9 @@
  *
  * The owner confirms with a GSTIN or Udyam number and their position at the shop, which must be within
  * `verify.attest_photo_max_m` of the member's garage pin (only when the member allowed "use pin for verification").
- * Only the distance is stored, never the owner's position. The shop photo of SR-6 is not built yet (it needs a public
+ * The public caller never learns whether the distance check passed (every confirmation answers "received"); failures
+ * are recorded for staff and close the link after `verify.attest_distance_tries`. Quarter caps per owner phone and per
+ * business number are counted under advisory locks. Only the distance is stored, never the owner's position. The shop photo of SR-6 is not built yet (it needs a public
  * upload path; report). Staff still give the final approval (SR-8). Evidence is cleared after
  * `verify.evidence_retention_days` by `purgeUstaadAttestationEvidence`.
  */

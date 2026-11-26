@@ -8,6 +8,7 @@ import type { Join } from '@mechdost/shared/ustaad/dto/members';
 import { nameSkeleton } from '@mechdost/shared/ustaad/names';
 import {
   addUstaadReservedName,
+  ensureUser,
   freezeUstaadPerksAfterCredentialChange,
   getUstaadChoices,
   insertUserRole,
@@ -304,5 +305,23 @@ describe('SR-2 freeze after a credential change', () => {
 
   it('no member, a left member or a non-member user: nothing happens', async () => {
     expect(await freezeUstaadPerksAfterCredentialChange(t(), f.other, 'phone_changed')).toBe(false);
+  });
+
+  it('wiring: a new phone in the verified token (ensureUser) freezes a Pakka member; the same phone again does not', async () => {
+    const identity = {
+      firebaseUid: 'ustp-sr2-wire',
+      phone: '+919833399001',
+      email: null,
+      emailVerified: false,
+    };
+    const user = await ensureUser(t(), identity);
+    const m = await joinUstaad(t(), { userId: user.id }, join({ displayName: 'Wire Test' }), {
+      via: 'ustaad',
+    });
+    await db.update(s.ustaadMembers).set({ level: 'pakka' }).where(eq(s.ustaadMembers.id, m.id));
+    await ensureUser(t(), identity);
+    expect((await memberRow(m.id)).perksFrozenUntil).toBeNull();
+    await ensureUser(t(), { ...identity, phone: '+919833399002' });
+    expect((await memberRow(m.id)).perksFrozenUntil?.getTime()).toBeGreaterThan(Date.now() + 70 * 3_600_000);
   });
 });
