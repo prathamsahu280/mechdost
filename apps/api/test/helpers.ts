@@ -17,6 +17,7 @@ import type { Revalidator } from '../src/revalidate';
 import { MemoryRateLimiter, type RateLimiter } from '../src/rate-limit/limiter';
 import type { SmartCorrectionEngine } from '../src/ustaad/correction/engine';
 import type { MediaHost } from '../src/ustaad/media/host';
+import type { ImageSafetyClassifier } from '../src/ustaad/safety/classifier';
 
 export const ALLOWED_ORIGIN = 'http://localhost:3000';
 
@@ -165,6 +166,7 @@ export async function buildApp(
     revalidate?: Revalidator;
     smartCorrection?: SmartCorrectionEngine | null;
     mediaHost?: MediaHost | null;
+    safetyClassifier?: ImageSafetyClassifier | null;
   } = {},
 ) {
   setLogSink(() => undefined);
@@ -193,6 +195,7 @@ export async function buildApp(
     ...(opts.revalidate ? { revalidate: opts.revalidate } : {}),
     smartCorrection: opts.smartCorrection ?? null,
     mediaHost: opts.mediaHost ?? null,
+    safetyClassifier: opts.safetyClassifier ?? null,
   });
   return { app, db, verifier };
 }

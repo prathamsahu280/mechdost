@@ -160,7 +160,7 @@ describe('Ustaad tables (spec 23 § 6)', () => {
     const kinds = await db.select().from(s.ustaadMediaTotals);
     expect(kinds.map((k) => k.kind).sort()).toEqual(['audio', 'document', 'image', 'video']);
     const reasons = await db.select().from(s.ustaadReportReasons);
-    expect(reasons).toHaveLength(11);
+    expect(reasons).toHaveLength(12); // + ncii_impersonation (0096, F2)
     await rejects(
       db.execute(sql`update ustaad_report_reasons set active = false where code = 'other'`),
       '23514',

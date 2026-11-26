@@ -3527,6 +3527,35 @@
       "ustaadContentBody": "Post only your own work or content you have the right to share. Not allowed: abuse or hate; sexual content, and anything sexual involving children, which we report to the police; photos or videos of children working; customers' faces, number plates or phone numbers; illegal modifications such as silencer, odometer, emission or number plate tampering; fake or misleading claims; spam and selling; job scams, including asking anyone to pay for a job; and AI-made content that falsely shows a real person. Mark content made or edited with AI. What you post stays yours, and you allow MechDost to show it to network members.",
       "ustaadEnforcementTitle": "Moderation, takedowns, jobs and appeals",
       "ustaadEnforcementBody": "We may hold, remove or limit content, and warn, restrict or ban accounts that break these rules; we also remove content when a court or the government lawfully orders it. You are told why and can appeal through MechDost support. Employers who post jobs must state the pay, must hire only people aged 18 or older, and may never ask candidates for money; MechDost never charges anyone for a job. Report anyone who asks for money to 1930 or at cybercrime.gov.in."
+    },
+    "communityRules": {
+      "eyebrow": "Policies",
+      "title": "Ustaad Network Community Rules",
+      "lead": "The Ustaad Network is a place for mechanics to learn from each other. These rules keep it useful, safe and fair for everyone.",
+      "whoTitle": "Who can join",
+      "whoBody": "Only people who repair vehicles. Join with your own details, keep one account, and never pretend to be someone else or to speak for MechDost.",
+      "respectTitle": "Be respectful",
+      "respectBody": "No abuse, bad language, threats, or hate about caste, religion, region, gender or anything else. Disagree about the work, never about the person.",
+      "safetyTitle": "Share safe advice",
+      "safetyBody": "Advice here is community advice, not a professional guarantee. Say when work touches brakes, steering, fuel, airbags or high-voltage electric parts, and check safety work yourself.",
+      "privacyTitle": "Protect your customers",
+      "privacyBody": "Never post a customer's face, number plate or phone number. Blur them before you post. Do not share anyone's private details.",
+      "illegalTitle": "No illegal modifications",
+      "illegalBody": "Do not post or ask for silencer, odometer, emission, DPF or catalytic converter tampering, number plate or chassis number changes, or kits that are not approved.",
+      "childrenTitle": "Children are protected",
+      "childrenBody": "No photos or videos of children working, and nothing that praises or asks for child labour. Anything sexual involving a child is removed at once, the account is frozen and we report it to the police.",
+      "honestTitle": "Be honest",
+      "honestBody": "No fake or misleading claims, spam or selling. Post only your own work or content you have the right to share. Mark content made or edited with AI; never use AI to falsely show a real person.",
+      "jobsTitle": "Fair jobs",
+      "jobsBody": "Job posts must state the pay and hire only people aged 18 or older. Nobody may ask a candidate for money: MechDost never charges anyone for a job. Report anyone who asks for money to 1930 or at cybercrime.gov.in.",
+      "reportTitle": "Report what breaks these rules",
+      "reportBody": "Use Report on any post, comment, answer, profile, job or message. Our team checks every report; intimate or fake pictures of a person are handled within hours.",
+      "enforcementTitle": "What happens if rules are broken",
+      "enforcementBody": "We may hold or remove content, warn, restrict or ban an account, and remove content when a court or the government lawfully orders it. You are told why in your language.",
+      "appealTitle": "Appeals and complaints",
+      "appealBody": "Disagree with a decision? Write to MechDost support; a different staff member decides your appeal. You can also write to our Grievance Officer, and if you are still not satisfied, to the Grievance Appellate Committee at gac.gov.in.",
+      "help": "Questions about these rules? Call us:",
+      "updated": "Last updated 26 November 2026."
     }
   },
   "support": {
@@ -5458,7 +5487,8 @@
     "com_save": "Save company details",
     "com_saved": "Saved. The website and emails use these details.",
     "com_invalid": "Fix the field marked above.",
-    "pol_name_terms": "Terms of service"
+    "pol_name_terms": "Terms of service",
+    "pol_name_communityRules": "Community Rules"
   },
   "workshopAnalytics": {
     "unit_s": "{n} s",

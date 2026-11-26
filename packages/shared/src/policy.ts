@@ -13,6 +13,8 @@ export const POLICY_KEYS = [
   'policy.delivery',
   'policy.service',
   'policy.terms',
+  // Ustaad Network Community Rules (spec 23 § 13, task F3), /policies/community-rules.
+  'policy.community_rules',
 ] as const;
 export type PolicyKey = (typeof POLICY_KEYS)[number];
 

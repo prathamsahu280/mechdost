@@ -16,6 +16,21 @@ export function policyDateLabel(isoDate: string, locale: string): string {
   }).format(d);
 }
 
+/** Ustaad Network Community Rules sections (spec 23 § 13, task F3), shared by the page and the editor. */
+export const COMMUNITY_RULES_SECTIONS = [
+  { key: 'who', emoji: '🔧' },
+  { key: 'respect', emoji: '🤝' },
+  { key: 'safety', emoji: '⚠️' },
+  { key: 'privacy', emoji: '🙈' },
+  { key: 'illegal', emoji: '🚫' },
+  { key: 'children', emoji: '🧒' },
+  { key: 'honest', emoji: '✅' },
+  { key: 'jobs', emoji: '💼' },
+  { key: 'report', emoji: '🚩' },
+  { key: 'enforcement', emoji: '🛡️' },
+  { key: 'appeal', emoji: '📮' },
+] as const;
+
 /** Public path of each policy page (the page shows the published text, else its built-in text). */
 export const POLICY_PATH: Record<PolicyKey, string> = {
   'policy.privacy': '/policies/privacy',
@@ -23,6 +38,7 @@ export const POLICY_PATH: Record<PolicyKey, string> = {
   'policy.delivery': '/policies/delivery',
   'policy.service': '/policies/service-terms',
   'policy.terms': '/terms',
+  'policy.community_rules': '/policies/community-rules',
 };
 
 /** The built-in section keys of each policy page, in page order (the `policies.<page>.<key>Title/Body` texts). */
@@ -94,6 +110,10 @@ export const POLICY_PAGES: Record<
       { key: 'changes', emoji: '📝' },
       { key: 'contact', emoji: '📞' },
     ],
+  },
+  'policy.community_rules': {
+    namespace: 'policies.communityRules',
+    sections: COMMUNITY_RULES_SECTIONS,
   },
   'policy.service': {
     namespace: 'policies.service',

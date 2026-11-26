@@ -29,6 +29,9 @@ import {
   recomputeCopurchase,
   buildUstaadZoneCounts,
   expireUstaadJobs,
+  purgeUstaadRemovedArchive,
+  runUstaadReportClock,
+  sendUstaadRulesReminders,
   releaseDueCoinRewards,
   expireQuotes,
   globalIntSetting,
@@ -569,6 +572,53 @@ const ustaadJobsTimer = setInterval(() => {
     });
 }, 600_000);
 ustaadJobsTimer.unref();
+// c) `ustaad_report_clock` (every minute, F2): moderators get `staff.ustaad_report_overdue` at 50 % and 100 % of each
+//    report's clock (once per stage, the notice version dedupes), and bans/restrictions past their end date end.
+let ustaadClockRunning = false;
+const ustaadClockTimer = setInterval(() => {
+  if (ustaadClockRunning) return;
+  ustaadClockRunning = true;
+  void runUstaadReportClock(db)
+    .then((r) => {
+      if (r.half + r.overdue + r.lifted > 0) log('info', 'ustaad_report_clock', r);
+    })
+    .catch((err: unknown) => {
+      log('error', 'ustaad_report_clock_failed', safeError(err));
+    })
+    .finally(() => {
+      ustaadClockRunning = false;
+    });
+}, 60_000);
+ustaadClockTimer.unref();
+// d) `ustaad_removed_archive_purge` (hourly check, F2): archive rows past `mod.retention_days` (180) without a legal
+//    hold are deleted and their archived media marked for the media purge; held rows and their media stay.
+// e) `ustaad_rules_reminder` (same hourly tick): the Community Rules reminder once per `mod.rules_reminder_days`
+//    period to every member (notice version = period number, so reruns and overlapping workers send nothing twice).
+let ustaadHousekeeping = false;
+const ustaadHousekeepingTimer = setInterval(() => {
+  if (ustaadHousekeeping) return;
+  ustaadHousekeeping = true;
+  void (async () => {
+    const purged = await purgeUstaadRemovedArchive(db);
+    if (purged > 0) log('info', 'ustaad_removed_archive_purged', { count: purged });
+    let afterId: string | null = null;
+    let sent = 0;
+    for (let i = 0; i < 200; i += 1) {
+      const r = await sendUstaadRulesReminders(db, { afterId, batch: 500 });
+      sent += r.sent;
+      if (!r.lastId) break;
+      afterId = r.lastId;
+    }
+    if (sent > 0) log('info', 'ustaad_rules_reminder_sent', { count: sent });
+  })()
+    .catch((err: unknown) => {
+      log('error', 'ustaad_housekeeping_failed', safeError(err));
+    })
+    .finally(() => {
+      ustaadHousekeeping = false;
+    });
+}, 3_600_000);
+ustaadHousekeepingTimer.unref();
 // 2) Data downloads (Account -> Privacy): build the waiting ones (a few per run, each its own transaction with a row
 //    lock) and clear the files past their 24 hours. Every 30 s.
 let exporting = false;
@@ -677,6 +727,8 @@ function shutdown(signal: string) {
   clearInterval(waitlistTimer);
   clearInterval(ustaadZoneTimer);
   clearInterval(ustaadJobsTimer);
+  clearInterval(ustaadClockTimer);
+  clearInterval(ustaadHousekeepingTimer);
   void Promise.all([relay.stop(), dispatcher.stop(), posthog?.stop()])
     .then(() =>
       Promise.all([

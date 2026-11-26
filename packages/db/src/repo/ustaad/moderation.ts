@@ -48,6 +48,7 @@ import {
   supportTickets,
   ustaadEvents,
   ustaadMedia,
+  ustaadMediaVariants,
   ustaadMembers,
   ustaadMessages,
   ustaadModerationActions,
@@ -646,13 +647,42 @@ async function archiveMedia(
 
 /** After the API moved an object to another bucket: record its new place (archive or back to live). */
 export async function relocateUstaadMedia(
-  tx: Tx,
-  input: { mediaId: string; bucket: MediaRelocation['bucket']; objectKey: string },
+  db: Tx,
+  input: {
+    mediaId: string;
+    bucket: MediaRelocation['bucket'];
+    /** Every object of the file (the main key and its image variants), old key → new key. */
+    moves: readonly { from: string; to: string }[];
+  },
 ): Promise<void> {
-  await tx
-    .update(ustaadMedia)
-    .set({ bucket: input.bucket, objectKey: input.objectKey })
-    .where(eq(ustaadMedia.id, input.mediaId));
+  await db.transaction(async (tx) => {
+    const [m] = await tx.select().from(ustaadMedia).where(eq(ustaadMedia.id, input.mediaId)).limit(1);
+    if (!m) return;
+    const main = input.moves.find((x) => x.from === m.objectKey);
+    await tx
+      .update(ustaadMedia)
+      .set({ bucket: input.bucket, ...(main ? { objectKey: main.to } : {}) })
+      .where(eq(ustaadMedia.id, m.id));
+    for (const mv of input.moves)
+      await tx
+        .update(ustaadMediaVariants)
+        .set({ objectKey: mv.to })
+        .where(and(eq(ustaadMediaVariants.mediaId, m.id), eq(ustaadMediaVariants.objectKey, mv.from)));
+  });
+}
+
+/** The objects of one file: its main key and its image variants (distinct). */
+export async function ustaadMediaObjectKeys(tx: Tx, mediaId: string): Promise<string[]> {
+  const [m] = await tx
+    .select({ key: ustaadMedia.objectKey })
+    .from(ustaadMedia)
+    .where(eq(ustaadMedia.id, mediaId))
+    .limit(1);
+  const variants = await tx
+    .select({ key: ustaadMediaVariants.objectKey })
+    .from(ustaadMediaVariants)
+    .where(eq(ustaadMediaVariants.mediaId, mediaId));
+  return [...new Set([...(m ? [m.key] : []), ...variants.map((v) => v.key)])];
 }
 
 async function notifyAuthor(
