@@ -1,0 +1,260 @@
+/**
+ * Ustaad moderation rules as pure functions (spec 23 § 7.6, § 13; SR-18, SR-36, SR-39; plan task F2). No Zod, no I/O.
+ *
+ * - `normaliseForScreen`: one normaliser for both sides of every match (NFKC, format characters stripped, every
+ *   script's digits → ASCII, lower case, spaces collapsed). Stored `phrase_norm` stays as G1 wrote it (NFC + lower
+ *   case, the unique index depends on it); the screen re-normalises the phrase at match time (review focus 5).
+ * - `screenTextSignals` + `screenDecision`: the automatic first pass. Holds never tell the author why (no filter
+ *   oracle); blocks are only for things the author can fix (a phone number or number plate in public text, a link
+ *   from a new account or to a denied domain).
+ * - Clocks: which clock a report gets and its due time from the admin settings; the overdue stage (50 % / 100 %).
+ * - Four-eyes: which actions need a second staff member.
+ */
+import { normaliseDigits } from './local';
+import type { REPORT_CLOCKS, UstaadReportReason, UstaadReportSource } from './codes';
+
+export type UstaadClock = (typeof REPORT_CLOCKS)[number];
+
+/** NFKC, no format characters, ASCII digits, lower case, single spaces. */
+export function normaliseForScreen(text: string): string {
+  return normaliseDigits(text).toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Illegal-modification phrases (spec 23 § 13 report reason; Motor Vehicles Act s.52, emission and odometer rules).
+ * Matched after normalisation; the admin list (`banned` words) adds to these. A hit holds the item for review.
+ */
+export const ILLEGAL_MODIFICATION_PHRASES: readonly string[] = [
+  'silencer cut',
+  'silencer kaat',
+  'silencer modify',
+  'pressure horn lagao',
+  'odometer rollback',
+  'odometer back',
+  'meter back kar',
+  'km kam kar',
+  'km ghata',
+  'reading kam kar',
+  'dpf delete',
+  'dpf remove',
+  'cat delete',
+  'catalytic converter remove',
+  'catalytic hata',
+  'egr delete',
+  'egr block',
+  'adblue delete',
+  'adblue bypass',
+  'emission bypass',
+  'puc jugaad',
+  'number plate badal',
+  'plate change kar',
+  'fake plate',
+  'chassis number badal',
+  'engine number badal',
+  'मीटर पीछे',
+  'साइलेंसर काट',
+];
+
+/** "Share the OTP" asks in English, Hinglish and Hindi (scam controls, SR-36). */
+const OTP_ASK =
+  /\b(otp|o\.t\.p|one time password|verification code)\b.{0,30}\b(share|bhej|bata|batao|send|de do|dedo|do|dijiye|batana|forward)\b|\b(share|bhej|bata|batao|send|de do|dedo|forward)\b.{0,30}\b(otp|o\.t\.p)\b|ओटीपी/i;
+
+/** An Indian mobile number: optional +91 / 0, then 10 digits starting 6–9 (spaces or dashes allowed between). */
+const PHONE = /(?<![0-9])(?:(?:\+|00)?91[\s-]?|0)?[6-9](?:[\s-]?[0-9]){9}(?![0-9])/;
+
+/** A registration plate (CG04AB1234, CG 04 A 1234) or a Bharat-series plate (22 BH 1234 AA). */
+const PLATE =
+  /(?<![a-z0-9])(?:[a-z]{2}[\s-]?[0-9]{1,2}[\s-]?[a-z]{1,3}[\s-]?[0-9]{4}|[0-9]{2}[\s-]?bh[\s-]?[0-9]{4}[\s-]?[a-z]{1,2})(?![a-z0-9])/;
+
+/** A link: a scheme, `www.`, or a bare domain with a common top-level domain. */
+const LINK =
+  /\bhttps?:\/\/|\bwww\.|(?<![@a-z0-9-])[a-z0-9][a-z0-9-]{0,62}\.(?:com|in|net|org|xyz|io|me|co|app|link|ly|info|biz|site|online|shop|top|live|club|store)(?![a-z0-9-])/;
+
+const UPI_PSP =
+  /[a-z0-9._-]{2,}@(?:ybl|ibl|axl|okaxis|oksbi|okhdfcbank|okicici|paytm|pthdfc|ptsbi|ptyes|ptaxis|upi|apl|yapl|rapl|fbl|ikwik|freecharge|airtel|axisbank|icici|sbi|hdfcbank|kotak|indus|yesbank|idfcbank|federal|pnb|barodampay)(?![a-z0-9])/;
+const UPI_GENERIC = /[a-z0-9._-]{2,}@[a-z]{2,}(?![a-z0-9]|[.][a-z])/;
+const PAY_APP = /\b(paytm|phonepe|gpay|google ?pay|bhim)\s*(kar|karo|kare|number|no\.?|pe|par|to)\b/;
+
+export type ScreenSignal =
+  | 'banned_word'
+  | 'scam_phrase'
+  | 'upi_id'
+  | 'pay_app'
+  | 'otp_ask'
+  | 'phone_number'
+  | 'number_plate'
+  | 'link'
+  | 'link_denied'
+  | 'illegal_modification';
+
+export interface ScreenLists {
+  banned: readonly string[];
+  scamPhrases: readonly string[];
+  /** Denied link domains (admin `link_domain` list). */
+  linkDomains: readonly string[];
+}
+
+/** A phrase hit on normalised text; Latin phrases must start and end on a word edge ("deposit" ≠ "redeposited"). */
+export function phraseHit(textNorm: string, phrase: string): boolean {
+  const p = normaliseForScreen(phrase);
+  if (p.length < 2) return false;
+  if (!/^[a-z0-9 ]+$/.test(p)) return textNorm.includes(p);
+  const escaped = p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(?<![a-z0-9])${escaped}(?![a-z0-9])`).test(textNorm);
+}
+
+/** Every signal in a text. Pure; the repository adds the account facts (age, media count). */
+export function screenTextSignals(text: string, lists: ScreenLists): ScreenSignal[] {
+  const t = normaliseForScreen(text);
+  if (!t) return [];
+  const out = new Set<ScreenSignal>();
+  if (lists.banned.some((p) => phraseHit(t, p))) out.add('banned_word');
+  if (lists.scamPhrases.some((p) => phraseHit(t, p))) out.add('scam_phrase');
+  if (ILLEGAL_MODIFICATION_PHRASES.some((p) => phraseHit(t, p))) out.add('illegal_modification');
+  if (UPI_PSP.test(t) || UPI_GENERIC.test(t)) out.add('upi_id');
+  if (PAY_APP.test(t)) out.add('pay_app');
+  if (OTP_ASK.test(t)) out.add('otp_ask');
+  if (PHONE.test(t)) out.add('phone_number');
+  if (PLATE.test(t)) out.add('number_plate');
+  if (LINK.test(t)) {
+    out.add('link');
+    const denied = lists.linkDomains.map((d) => normaliseForScreen(d)).filter((d) => d.length > 3);
+    if (denied.some((d) => t.includes(d))) out.add('link_denied');
+  }
+  return [...out];
+}
+
+export type ScreenKind = 'post' | 'story' | 'comment' | 'question' | 'answer' | 'message' | 'job';
+export type ScreenOutcome = 'ok' | 'hold' | 'block';
+
+/** Account facts the repository reads (never the member's text or phone). */
+export interface ScreenAccount {
+  accountAgeDays: number;
+  /** Visible media posts the author already has. */
+  priorMediaPosts: number;
+  hasMedia: boolean;
+  premodFirstPosts: number;
+  premodAccountDays: number;
+  linksMinAccountDays: number;
+}
+
+/** Kinds other members see in public (a phone number or plate here is blocked, spec 23 § 13). */
+const PUBLIC_KINDS: readonly ScreenKind[] = ['post', 'story', 'question', 'answer', 'comment', 'job'];
+/** Pre-moderation covers media posts (spec 23 § 10 step 4), not voice notes on questions or answers. */
+const PREMOD_KINDS: readonly ScreenKind[] = ['post', 'story', 'comment'];
+
+export interface ScreenVerdict {
+  outcome: ScreenOutcome;
+  /** Why (for the auto report and the staff queue; never shown to the author). */
+  signals: (ScreenSignal | 'new_account_media' | 'new_account_link')[];
+}
+
+export function screenDecision(
+  kind: ScreenKind,
+  signals: readonly ScreenSignal[],
+  account: ScreenAccount,
+): ScreenVerdict {
+  const all: ScreenVerdict['signals'] = [...signals];
+  const has = (s: ScreenSignal) => signals.includes(s);
+  const block =
+    has('link_denied') ||
+    (has('link') && account.accountAgeDays < account.linksMinAccountDays) ||
+    (kind !== 'message' && kind !== 'job' && kind !== 'comment' && has('phone_number')) ||
+    (PUBLIC_KINDS.includes(kind) && has('number_plate'));
+  if (has('link') && account.accountAgeDays < account.linksMinAccountDays) all.push('new_account_link');
+  if (block) return { outcome: 'block', signals: all };
+  const premod =
+    account.hasMedia &&
+    PREMOD_KINDS.includes(kind) &&
+    (account.accountAgeDays < account.premodAccountDays ||
+      account.priorMediaPosts < account.premodFirstPosts);
+  if (premod) all.push('new_account_media');
+  const hold =
+    premod ||
+    has('banned_word') ||
+    has('scam_phrase') ||
+    has('illegal_modification') ||
+    has('upi_id') ||
+    has('pay_app') ||
+    has('otp_ask') ||
+    has('phone_number');
+  return { outcome: hold ? 'hold' : 'ok', signals: all };
+}
+
+/** The report source of an automatic hold: scam signals → `auto_scam`, the rest → `auto_word`. */
+export function autoReportSource(signals: readonly string[]): 'auto_scam' | 'auto_word' {
+  return signals.some((s) => ['scam_phrase', 'upi_id', 'pay_app', 'otp_ask', 'phone_number'].includes(s))
+    ? 'auto_scam'
+    : 'auto_word';
+}
+
+/** The report reason of an automatic hold. */
+export function autoReportReason(signals: readonly string[]): UstaadReportReason {
+  if (signals.includes('illegal_modification')) return 'illegal_modification';
+  if (autoReportSource(signals) === 'auto_scam') return 'spam';
+  if (signals.includes('new_account_media')) return 'other';
+  return 'abuse';
+}
+
+// ── Clocks ────────────────────────────────────────────────────────────────────────────────────────────────────
+
+export interface ClockSettings {
+  'ustaad.mod.clock_intimate_h': number;
+  'ustaad.mod.clock_legal_h': number;
+  'ustaad.mod.clock_removal_h': number;
+  'ustaad.mod.clock_standard_h': number;
+  'ustaad.mod.clock_grievance_days': number;
+}
+
+const HOUR = 3_600_000;
+
+/** Length of a clock in milliseconds from the admin settings (counsel can change every one). */
+export function clockMs(clock: UstaadClock, s: ClockSettings): number {
+  switch (clock) {
+    case 'intimate_2h':
+      return s['ustaad.mod.clock_intimate_h'] * HOUR;
+    case 'legal_3h':
+      return s['ustaad.mod.clock_legal_h'] * HOUR;
+    case 'removal_36h':
+      return s['ustaad.mod.clock_removal_h'] * HOUR;
+    case 'standard_24h':
+      return s['ustaad.mod.clock_standard_h'] * HOUR;
+    case 'grievance_7d':
+      return s['ustaad.mod.clock_grievance_days'] * 24 * HOUR;
+  }
+}
+
+/**
+ * Which clock a report runs on: a legal order 3 h; an intimate-image or impersonation complaint 2 h; a grievance
+ * the clock staff picked (36 h for removal, 7 days otherwise); anything else the reason's default (admin table).
+ */
+export function clockFor(input: {
+  source: UstaadReportSource;
+  reason: UstaadReportReason;
+  reasonDefault: UstaadClock;
+  grievanceClock?: 'removal_36h' | 'grievance_7d';
+}): UstaadClock {
+  if (input.source === 'legal_order') return 'legal_3h';
+  if (input.reason === 'ncii_impersonation' || input.source === 'auto_safety') return 'intimate_2h';
+  if (input.source === 'grievance') return input.grievanceClock ?? 'grievance_7d';
+  return input.reasonDefault;
+}
+
+/** 0 = within the first half, 50 = half the clock used, 100 = overdue. */
+export function overdueStage(createdAt: Date, dueAt: Date, now: Date): 0 | 50 | 100 {
+  const total = dueAt.getTime() - createdAt.getTime();
+  const used = now.getTime() - createdAt.getTime();
+  if (used >= total) return 100;
+  if (used * 2 >= total) return 50;
+  return 0;
+}
+
+// ── Four-eyes ─────────────────────────────────────────────────────────────────────────────────────────────────
+
+/** A ban of `fromDays` or longer (or permanent) needs a second staff member (spec 23 § 3, 403 `FOUR_EYES`). */
+export function banNeedsFourEyes(days: number | null, fromDays: number): boolean {
+  return days === null || days >= fromDays;
+}
+
+/** A minor report restricts at once only from a verified member with an account this old (spec 23 § 13, locked). */
+export const MINOR_REPORTER_MIN_ACCOUNT_DAYS = 30;

@@ -204,7 +204,16 @@ export const REPORT_TARGETS = [
   'job',
   'message',
 ] as const;
-export const REPORT_SOURCES = ['member', 'auto_word', 'auto_scam', 'legal_order', 'grievance'] as const;
+/** `auto_safety` (F2): the image-safety classifier or a CSAM hash match opened the report (SR-18, POCSO task). */
+export const REPORT_SOURCES = [
+  'member',
+  'auto_word',
+  'auto_scam',
+  'auto_safety',
+  'legal_order',
+  'grievance',
+] as const;
+export type UstaadReportSource = (typeof REPORT_SOURCES)[number];
 export const REPORT_REASONS = [
   'wrong_unsafe',
   'illegal_modification',
@@ -216,10 +225,22 @@ export const REPORT_REASONS = [
   'fake',
   'job_scam',
   'ip',
+  // F2 (security review L3): nudity, sexual content, impersonation or a morphed picture, on the person's complaint;
+  // 2 h clock and the item is hidden at once pending review.
+  'ncii_impersonation',
   'other',
 ] as const;
 export type UstaadReportReason = (typeof REPORT_REASONS)[number];
-export const REPORT_CLOCKS = ['intimate_2h', 'legal_3h', 'standard_24h', 'grievance_7d'] as const;
+/** `removal_36h` (F2): a Rule 3(1)(b) removal grievance (security review L4). */
+export const REPORT_CLOCKS = [
+  'intimate_2h',
+  'legal_3h',
+  'removal_36h',
+  'standard_24h',
+  'grievance_7d',
+] as const;
+export type UstaadReportClock = (typeof REPORT_CLOCKS)[number];
+export type UstaadReportTarget = (typeof REPORT_TARGETS)[number];
 export const MODERATION_ACTIONS = [
   'keep',
   'hold',
