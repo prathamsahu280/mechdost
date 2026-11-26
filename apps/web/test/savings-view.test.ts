@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import en from '@mechdost/shared/i18n/en.json';
 import hi from '@mechdost/shared/i18n/hi.json';
+import { createTranslator } from 'next-intl';
 import { demoOrderSavings, demoPeriodSavings, savingsRows } from '../src/lib/savings-view';
 
 const line = (qty: number, unitPaise: number, mrpPaise: number | null) => ({ qty, unitPaise, mrpPaise });
@@ -80,6 +81,17 @@ describe('copy', () => {
     // Honest wording: never "sale price" or a percentage claim.
     for (const v of Object.values(e)) expect(v).not.toMatch(/sale price|% off|was ₹/i);
   });
+
+  it('the admin field labels show the literal {amount} token (ICU-escaped; a bare one rendered "undefined")', () => {
+    for (const [locale, messages] of [
+      ['en', en],
+      ['hi', hi],
+    ] as const) {
+      const t = createTranslator({ locale, messages, namespace: 'portal' });
+      expect(t('field_savings_order')).toContain('{amount}');
+      expect(t('field_savings_account')).toContain('{amount}');
+    }
+  });
 });
 
 describe('import graph (JS budget)', () => {
@@ -99,5 +111,9 @@ describe('import graph (JS budget)', () => {
     expect(src('components/commerce/cart-view.tsx')).not.toMatch(
       /savings-view|savings-api|order-savings|savings-card/,
     );
+    // The bundler did not tree-shake `@mechdost/shared/savings` (+1.0 KB gz on /cart, build 2026-11-26): the cart
+    // imports only the tiny band module.
+    expect(src('components/commerce/cart-view.tsx')).not.toMatch(/@mechdost\/shared\/savings'/);
+    expect(src('components/commerce/cart-view.tsx')).toMatch(/@mechdost\/shared\/savings-band'/);
   });
 });

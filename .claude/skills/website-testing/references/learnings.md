@@ -342,3 +342,10 @@ T203 · 2026-11-24 · notifications · the WhatsApp approval gate is per event (
   the publish side effects once (counters, Izzat, notices, thread time). Regression tests: `packages/db/test/
 ustaad-console.test.ts` (held answer/question/comment/post/message, NCII re-hold not double-counted). New class
   "reversal bypasses four-eyes": test the undo path of every four-eyes action (unban suite in the same file + API).
+- 2026-11-26 (savings): money side-ledgers need four test layers: property tests on the pure maths (any split of
+  partial refunds never reverses more than saved; refunds summing to the total reverse exactly), DB tests through the
+  real transition and refund paths (webhook replayed 3x, sync called again and twice concurrently, append-only trigger),
+  API role-leak (a foreign code is 404 with no figure in the body) and a switch-off test (all surfaces + the quote).
+  PGlite proves idempotency, not contention: say so and queue a real-Postgres run.
+- T-SAV1 · 2026-11-26 · i18n/admin · A locale label meant to show the literal token `{amount}` ("keep {amount}") was parsed as an ICU argument and the Hindi crawl found "undefined" on /hi/admin/content · ICU braces are arguments · ICU-escape literal tokens as `'{amount}'`; guard `apps/web/test/savings-view.test.ts` ("admin field labels show the literal {amount} token").
+- T-SAV2 · 2026-11-26 · JS budget · Importing one helper (`savingsBand`) from `@mechdost/shared/savings` shipped the whole module (+1.0 KB gz) into the /cart first-load chunk: the bundler did not tree-shake the shared package · first-load code imports a tiny dedicated module (`@mechdost/shared/savings-band`); guard: import-graph assertion in `savings-view.test.ts`.

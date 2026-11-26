@@ -90,6 +90,7 @@
     "./service-api": "./src/service-api.ts",
     "./free-delivery": "./src/free-delivery.ts",
     "./savings": "./src/savings.ts",
+    "./savings-band": "./src/savings-band.ts",
     "./savings-api": "./src/savings-api.ts",
     "./shop-hours": "./src/shop-hours.ts",
     "./shop-api": "./src/shop-api.ts",

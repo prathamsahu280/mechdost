@@ -3322,8 +3322,8 @@
     "adminHeader_ustaad": "Moderation, verification and settings of the Ustaad Network, the mechanics-only network.",
     "navGroup_ustaad": "Ustaad Network",
     "content_group_savings": "Savings wording",
-    "field_savings_order": "Order page line (keep {amount})",
-    "field_savings_account": "Account card line (keep {amount})",
+    "field_savings_order": "Order page line (keep '{amount}')",
+    "field_savings_account": "Account card line (keep '{amount}')",
     "field_savings_cart": "Cart estimate label",
     "api_set_customers_savings_enabled": "Show “Your savings” to customers (order page, cart, account)"
   },

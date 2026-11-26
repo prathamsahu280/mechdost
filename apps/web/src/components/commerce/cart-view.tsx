@@ -21,7 +21,7 @@ import { DEFAULT_PIN, useCartPricing } from '@/lib/use-cart-pricing';
 import { CATEGORY_EMOJI, UI_EMOJI } from '@/lib/emoji';
 import { formatPrice } from '@/lib/format';
 import { track } from '@/lib/analytics';
-import { savingsBand } from '@mechdost/shared/savings';
+import { savingsBand } from '@mechdost/shared/savings-band';
 import { ProductVisualClient } from './product-visual-client';
 import { productNameFor } from '@/demo/i18n/localize';
 

@@ -3322,8 +3322,8 @@
     "adminHeader_ustaad": "उस्ताद नेटवर्क (सिर्फ़ मिस्त्रियों का नेटवर्क) की निगरानी, सत्यापन और सेटिंग।",
     "navGroup_ustaad": "उस्ताद नेटवर्क",
     "content_group_savings": "बचत के शब्द",
-    "field_savings_order": "ऑर्डर पेज की लाइन ({amount} रखें)",
-    "field_savings_account": "अकाउंट कार्ड की लाइन ({amount} रखें)",
+    "field_savings_order": "ऑर्डर पेज की लाइन ('{amount}' रखें)",
+    "field_savings_account": "अकाउंट कार्ड की लाइन ('{amount}' रखें)",
     "field_savings_cart": "कार्ट में अनुमान का लेबल",
     "api_set_customers_savings_enabled": "ग्राहकों को “आपकी बचत” दिखाएँ (ऑर्डर पेज, कार्ट, अकाउंट)"
   },

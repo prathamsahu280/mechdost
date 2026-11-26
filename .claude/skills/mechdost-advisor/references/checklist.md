@@ -95,6 +95,9 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 - ⚠️ A deadline (offer, invite, quote, block, SLA) with no test on both sides of it.
 - ⚠️ Demo-only controls ("advance", "demo reply", "demo offer") visible to customers: flag for removal before launch.
 - ⚠️ Admin-editable content hard-coded (rule 8).
+- ❌ A "Retry" or refresh that swaps the focused panel for a skeleton or another form: keep the control mounted
+  (aria-busy on the region), focus the panel heading after, never return a bare skeleton after the first load
+  (promoted from L-G2d + L-SAV3, 2026-11-26).
 
 ## Performance & scalability (spec 16, rule 6, 7)
 
