@@ -74,6 +74,8 @@ const LISTS = [
 
 beforeAll(async () => {
   ctx = await buildApp();
+  // Migration `ustaad_identity_seed` (workstream B) seeds the six coach-marks; this CRUD test creates one itself.
+  await ctx.db.delete(s.ustaadCoachmarks);
   const [state] = await ctx.db
     .insert(s.states)
     .values({ code: 'CG', name: 'Chhattisgarh', gstStateCode: '22' })
