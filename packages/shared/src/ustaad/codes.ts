@@ -150,6 +150,16 @@ export const MESSAGE_KINDS = ['text', 'voice', 'photo', 'post_share'] as const;
 export const PROMOTION_SLOTS = ['feed', 'stories', 'search', 'jobs', 'learn', 'answer_parts'] as const;
 export const PROMOTION_TARGETS = ['product', 'category', 'coupon', 'learning', 'url_internal'] as const;
 export const PROMOTION_STATES = ['draft', 'scheduled', 'live', 'ended'] as const;
+/** Slots served to members (D2): `answer_parts` is never served (no promotions on ask/answer screens, spec 23 § 9.5). */
+export const PROMOTION_SERVED_SLOTS = ['feed', 'stories', 'search', 'jobs', 'learn'] as const;
+/** Why a member hid a promotion (`POST /ustaad/promotions/{id}/hide`). */
+export const PROMOTION_HIDE_REASONS = ['not_relevant', 'seen_too_often', 'misleading', 'other'] as const;
+/** Why a message was held for staff (D2): the screening hook said hold, or a scam signal (fee, UPI, pay app). */
+export const MESSAGE_HOLD_REASONS = ['screened', 'scam_phrase'] as const;
+/** Per-member daily counters with an admin cap (D2): promotions served, Discover profiles served (SR-37). */
+export const USTAAD_DAILY_COUNTER_KINDS = ['promo_served', 'profiles_served'] as const;
+/** Why a mentorship ended when a block forced it (spec 23 § 7.9). */
+export const MENTORSHIP_END_REASONS = ['blocked', 'left', 'ended_by_member'] as const;
 export const LEARNING_KINDS = ['hosted_video', 'external_link'] as const;
 export const LEARNING_LABELS = ['none', 'mechdost_training'] as const;
 

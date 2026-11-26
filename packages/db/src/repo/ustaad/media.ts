@@ -412,7 +412,8 @@ export async function readableUstaadMedia(
       or exists (select 1 from ustaad_answers a join ustaad_questions q on q.id = a.question_id
               where a.voice_media_id = ${m} and ${liveAnswer})
       or exists (select 1 from ustaad_messages msg join ustaad_threads t on t.id = msg.thread_id
-              where msg.media_id = ${m} and msg.deleted_at is null and t.status <> 'blocked'
+              where msg.media_id = ${m} and msg.deleted_at is null and msg.held_reason_code is null
+                and t.status = 'open'
                 and ${v} in (t.low_id, t.high_id))
       or exists (select 1 from ustaad_members mb where mb.photo_media_id = ${m} and mb.status in ('active', 'restricted'))
       or exists (select 1 from ustaad_job_applications ja join ustaad_jobs j on j.id = ja.job_id

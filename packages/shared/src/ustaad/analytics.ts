@@ -20,9 +20,12 @@ import {
   type USTAAD_TRACKS,
   type USTAAD_VERIFY_METHODS,
   type USTAAD_ACCESS_MODES,
+  type MESSAGE_KINDS,
+  type PROMOTION_HIDE_REASONS,
   COACHMARK_TARGETS,
   PROMOTION_SLOTS,
 } from './codes';
+import type { USTAAD_CONNECTION_STATUSES, USTAAD_THREAD_STATUSES } from '../state';
 
 type Of<T extends readonly string[]> = T[number];
 
@@ -63,6 +66,19 @@ export interface UstaadServerEventProps {
   ustaad_connected: { memberId: string; otherId: string };
   ustaad_mentorship_changed: { mentorshipId: string; to: string };
   ustaad_message_thread_started: { threadId: string };
+  /** D2 graph and messages: ids and codes only (never text). */
+  ustaad_unfollowed: { followerId: string; followeeId: string };
+  ustaad_connection_changed: { connectionId: string; to: Of<typeof USTAAD_CONNECTION_STATUSES> };
+  ustaad_member_blocked: { memberId: string; on: boolean };
+  ustaad_member_muted: { memberId: string; on: boolean };
+  ustaad_message_thread_changed: { threadId: string; to: Of<typeof USTAAD_THREAD_STATUSES> };
+  ustaad_message_sent: { threadId: string; kind: Of<typeof MESSAGE_KINDS>; held: boolean };
+  ustaad_dm_read_by_staff: { threadId: string; reason: string };
+  /** D2 Discover and promotions (server side; the client events stay for the UI's own impressions). */
+  ustaad_discover_served: { results: number; filters: number };
+  ustaad_promo_served: { promo: string; slot: Of<typeof PROMOTION_SLOTS> };
+  ustaad_promo_clicked: { promo: string; slot: Of<typeof PROMOTION_SLOTS> };
+  ustaad_promo_hidden_by_member: { promo: string; reason: Of<typeof PROMOTION_HIDE_REASONS> };
   ustaad_job_posted: { jobCode: string; role: Of<typeof JOB_ROLES> };
   ustaad_job_applied: { jobCode: string; applicationId: string };
   ustaad_application_moved: { applicationId: string; to: string };
@@ -131,6 +147,17 @@ export const USTAAD_SERVER_EVENTS = [
   'ustaad_connected',
   'ustaad_mentorship_changed',
   'ustaad_message_thread_started',
+  'ustaad_unfollowed',
+  'ustaad_connection_changed',
+  'ustaad_member_blocked',
+  'ustaad_member_muted',
+  'ustaad_message_thread_changed',
+  'ustaad_message_sent',
+  'ustaad_dm_read_by_staff',
+  'ustaad_discover_served',
+  'ustaad_promo_served',
+  'ustaad_promo_clicked',
+  'ustaad_promo_hidden_by_member',
   'ustaad_job_posted',
   'ustaad_job_applied',
   'ustaad_application_moved',

@@ -4,18 +4,34 @@
  * (`low_id < high_id`); a block removes follows and the connection both ways in the same transaction (repository).
  */
 import { sql } from 'drizzle-orm';
-import { boolean, check, index, pgTable, primaryKey, text, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
-import { MESSAGE_KINDS } from '@mechdost/shared/ustaad/codes';
+import {
+  boolean,
+  check,
+  date,
+  index,
+  integer,
+  pgTable,
+  primaryKey,
+  text,
+  uniqueIndex,
+  uuid,
+} from 'drizzle-orm/pg-core';
+import {
+  MESSAGE_HOLD_REASONS,
+  MESSAGE_KINDS,
+  PROMOTION_HIDE_REASONS,
+  USTAAD_DAILY_COUNTER_KINDS,
+} from '@mechdost/shared/ustaad/codes';
 import {
   USTAAD_CONNECTION_STATUSES,
   USTAAD_MENTORSHIP_STATUSES,
   USTAAD_THREAD_STATUSES,
 } from '@mechdost/shared/state';
 import { createdAt, id, ts, updatedAt, version } from './_common';
-import { oneOf } from './ustaad-common';
+import { nullOrOneOf, oneOf } from './ustaad-common';
 import { ustaadMedia } from './ustaad-media';
 import { ustaadMembers } from './ustaad-members';
-import { ustaadPosts, ustaadTags } from './ustaad-content';
+import { ustaadPosts, ustaadPromotions, ustaadTags } from './ustaad-content';
 
 const member = () =>
   uuid()
@@ -111,6 +127,8 @@ export const ustaadThreads = pgTable(
     highId: member(),
     requestedBy: member(),
     status: text().notNull().default('requested'),
+    /** The status before a block (D2): unblock restores it, so a request never opens without being accepted. */
+    blockedFrom: text(),
     lastMessageAt: ts(),
     version: version(),
     createdAt: createdAt(),
@@ -124,6 +142,10 @@ export const ustaadThreads = pgTable(
     check('ustaad_threads_ordered', sql`${t.lowId} < ${t.highId}`),
     check('ustaad_threads_requester_in_pair', sql`${t.requestedBy} in (${t.lowId}, ${t.highId})`),
     check('ustaad_threads_status_valid', oneOf(t.status, USTAAD_THREAD_STATUSES)),
+    check(
+      'ustaad_threads_blocked_from_valid',
+      sql`(${t.status} = 'blocked') = (${t.blockedFrom} is not null) and (${t.blockedFrom} is null or ${t.blockedFrom} in ('requested','open','declined'))`,
+    ),
   ],
 );
 
@@ -139,6 +161,8 @@ export const ustaadMessages = pgTable(
     body: text(),
     mediaId: uuid().references(() => ustaadMedia.id, { onDelete: 'set null' }),
     postId: uuid().references(() => ustaadPosts.id, { onDelete: 'set null' }),
+    /** Held for staff (D2): visible to the sender only, no notice, not counted as the thread's last message. */
+    heldReasonCode: text(),
     deletedAt: ts(),
     createdAt: createdAt(),
   },
@@ -148,6 +172,7 @@ export const ustaadMessages = pgTable(
     index().on(t.mediaId),
     index().on(t.postId),
     check('ustaad_messages_kind_valid', oneOf(t.kind, MESSAGE_KINDS)),
+    check('ustaad_messages_held_reason_valid', nullOrOneOf(t.heldReasonCode, MESSAGE_HOLD_REASONS)),
     check('ustaad_messages_len', sql`${t.body} is null or char_length(${t.body}) <= 2000`),
     check(
       'ustaad_messages_content',
@@ -166,4 +191,63 @@ export const ustaadTagFollows = pgTable(
     createdAt: createdAt(),
   },
   (t) => [primaryKey({ columns: [t.memberId, t.tagId] }), index().on(t.tagId)],
+);
+
+/**
+ * Per side of a thread (D2): read receipt and per-thread mute. Separate from `ustaad_threads` so a read marker never
+ * moves the thread's `version` (accept/decline compare-and-set, L195). Created with the thread for both members.
+ */
+export const ustaadThreadMembers = pgTable(
+  'ustaad_thread_members',
+  {
+    threadId: uuid()
+      .notNull()
+      .references(() => ustaadThreads.id, { onDelete: 'cascade' }),
+    memberId: member(),
+    lastReadAt: ts(),
+    muted: boolean().notNull().default(false),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [primaryKey({ columns: [t.threadId, t.memberId] }), index().on(t.memberId)],
+);
+
+/**
+ * Per-member daily counters with an admin cap (D2): promotions served (`promo.daily_cap_per_member`) and Discover
+ * profiles served (`discover.profiles_per_day`, SR-37). `day` is the IST calendar day; one conditional upsert
+ * (`n + 1 where n < cap`) per serve, never count-then-insert.
+ */
+export const ustaadDailyCounters = pgTable(
+  'ustaad_daily_counters',
+  {
+    memberId: member(),
+    kind: text().notNull(),
+    day: date({ mode: 'string' }).notNull(),
+    n: integer().notNull().default(0),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.memberId, t.kind, t.day] }),
+    index().on(t.day),
+    check('ustaad_daily_counters_kind_valid', oneOf(t.kind, USTAAD_DAILY_COUNTER_KINDS)),
+    check('ustaad_daily_counters_n', sql`${t.n} >= 0`),
+  ],
+);
+
+/** A member hid a promotion (D2): never served to them again; the reason is a code. */
+export const ustaadPromoHides = pgTable(
+  'ustaad_promo_hides',
+  {
+    memberId: member(),
+    promotionId: uuid()
+      .notNull()
+      .references(() => ustaadPromotions.id, { onDelete: 'cascade' }),
+    reasonCode: text().notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.memberId, t.promotionId] }),
+    index().on(t.promotionId),
+    check('ustaad_promo_hides_reason_valid', oneOf(t.reasonCode, PROMOTION_HIDE_REASONS)),
+  ],
 );
