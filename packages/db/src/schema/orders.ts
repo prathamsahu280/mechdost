@@ -160,6 +160,11 @@ export const orders = pgTable(
     codFeePaise: paise().notNull().default(0),
     taxPaise: paise().notNull().default(0),
     totalPaise: paise().notNull(),
+    /**
+     * The delivery charge the free-delivery threshold waived on this part (paise; 0 when it was charged or never set).
+     * Snapshot for "Your savings" (decision 2026-11-26); orders before migration 0101 carry 0.
+     */
+    deliveryWaivedPaise: paise().notNull().default(0),
     /** This sub-order's share of the checkout's MechDost Coins and the part of `discountPaise` they paid (spec 20). */
     coinsRedeemed: integer().notNull().default(0),
     coinDiscountPaise: paise().notNull().default(0),
@@ -199,6 +204,7 @@ export const orders = pgTable(
       'orders_amounts_nonneg',
       sql`${t.subtotalPaise} >= 0 and ${t.totalPaise} >= 0 and ${t.taxPaise} >= 0 and ${t.codFeePaise} >= 0`,
     ),
+    check('orders_delivery_waived_nonneg', sql`${t.deliveryWaivedPaise} >= 0`),
     // What the delivering shop collects is exactly the sum of its parts (the group total = sum of sub-orders).
     check(
       'orders_total_matches',
@@ -252,6 +258,11 @@ export const orderItems = pgTable(
     hsn: text().notNull(),
     gstRateBp: integer().notNull(),
     unitPaise: paise().notNull(),
+    /**
+     * The maker's printed MRP per unit when the order was placed (snapshot for "Your savings", decision 2026-11-26).
+     * Null on lines placed before migration 0101: they are excluded from savings, never filled from today's MRP.
+     */
+    mrpPaise: paise(),
     /** The chosen shop's approved price per unit (what it is paid); `unit_paise` - this = MechDost's margin (Q11). Null on orders before 2026-11-13. */
     shopUnitPaise: paise(),
     qty: integer().notNull(),
@@ -283,6 +294,7 @@ export const orderItems = pgTable(
       'order_items_shop_unit_valid',
       sql`${t.shopUnitPaise} is null or (${t.shopUnitPaise} >= 0 and (${t.shopUnitPaise} <= ${t.unitPaise} or ${t.priceSource} = 'quote'))`,
     ),
+    check('order_items_mrp_nonneg', sql`${t.mrpPaise} is null or ${t.mrpPaise} >= 0`),
     check('order_items_line_discount_max', sql`${t.lineDiscountPaise} <= ${t.unitPaise} * ${t.qty}`),
     check('order_items_cgst_equals_sgst', sql`${t.cgstPaise} = ${t.sgstPaise}`),
     check('order_items_intra_or_inter', sql`${t.igstPaise} = 0 or ${t.cgstPaise} = 0`),

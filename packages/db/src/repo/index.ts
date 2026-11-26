@@ -8,6 +8,7 @@ export * from './users';
 export * from './rbac';
 export * from './health';
 export * from './coins';
+export * from './savings';
 export * from './delivery';
 export * from './partners';
 export * from './partner-warnings';

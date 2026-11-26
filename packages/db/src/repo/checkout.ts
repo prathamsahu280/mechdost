@@ -7,6 +7,7 @@ import { variantLabel } from '@mechdost/shared/variants';
 import { OPERATIONAL_SETTINGS, type SettingKey } from '@mechdost/shared/settings';
 import { splitInclusiveGst } from '@mechdost/shared/money';
 import { freeDeliveryMinPaise, groupShippingPaise } from '@mechdost/shared/free-delivery';
+import { savingsBreakdown } from '@mechdost/shared/savings';
 import { auditLog, orderGroups, orderItems, orders, settings } from '../schema';
 import { blockEffects } from '@mechdost/shared/customers';
 import { setActor } from './actor';
@@ -119,6 +120,19 @@ export interface CheckoutQuote {
   /** Every line can be bought as asked. */
   ok: boolean;
   cod: { allowed: boolean; reason: 'over_cap' | 'pincode' | null; capPaise: number };
+  /**
+   * "Your savings" estimate for this cart (decision 2026-11-26): the printed-MRP saving of the priced lines plus the
+   * delivery fee the free-delivery threshold waives. Coupon and Coins are chosen at checkout and are not in it; the
+   * final figure is written only after delivery. `excludedLines` = priced lines without a printed MRP.
+   */
+  savingsEstimate: SavingsEstimate;
+}
+
+export interface SavingsEstimate {
+  mrpPaise: number;
+  deliveryPaise: number;
+  totalPaise: number;
+  excludedLines: number;
 }
 
 /** The size of a variant of a product sold in several sizes, else null (a single size is never named). */
@@ -151,6 +165,8 @@ interface PricedLine {
   priceSource: 'catalogue' | 'quote';
   /** Quote lines: the catalogue price this line had (the most a shop may be paid; routing ceiling). */
   costCeilingPaise: number | null;
+  /** The printed MRP per unit right now (snapshot onto `order_items.mrp_paise` for "Your savings"). */
+  mrpPaise: number | null;
 }
 
 export interface InternalQuote {
@@ -158,6 +174,29 @@ export interface InternalQuote {
   cityId: string;
   priced: PricedLine[];
   groupShops: string[];
+  /** Per group: the delivery charge the free-delivery threshold waived (0 when charged); `orders.delivery_waived_paise`. */
+  groupWaivedPaise: number[];
+}
+
+/** The cart's savings estimate from the priced lines and the waived delivery (one breakdown for every surface). */
+function savingsEstimateOf(priced: readonly PricedLine[], waived: readonly number[]): SavingsEstimate {
+  const b = savingsBreakdown({
+    lines: priced.map((l, i) => ({
+      itemId: String(i),
+      qty: l.qty,
+      unitPaise: l.unitPaise,
+      mrpPaise: l.mrpPaise,
+    })),
+    couponPaise: 0,
+    coinsPaise: 0,
+    deliveryWaivedPaise: waived.reduce((a, v) => a + v, 0),
+  });
+  return {
+    mrpPaise: b.mrpPaise,
+    deliveryPaise: b.deliveryPaise,
+    totalPaise: b.totalPaise,
+    excludedLines: b.excludedLines,
+  };
 }
 
 /** The cart as the coupon maths sees it: per sub-order its shop, product line totals (cart order) and delivery. */
@@ -435,6 +474,7 @@ export async function quoteInternal(
       interState,
       priceSource: 'catalogue',
       costCeilingPaise: null,
+      mrpPaise: numOrNull(r.mrp_paise),
     });
     return { ...base, unitPaise: unit, totalPaise: gross, group: g, issue: null, available: null };
   });
@@ -442,15 +482,17 @@ export async function quoteInternal(
   // Free delivery per group (spec 03): PIN override ?? shop override ?? city setting (`@mechdost/shared/free-delivery`).
   const cityFreeMin = await setting(db, place.city_id, CHECKOUT_SETTINGS.freeDeliveryMinPaise.key);
   const pinFreeMin = numOrNull(place.free_delivery_min_paise);
-  groups.forEach((g, i) => {
+  const groupWaivedPaise = groups.map((g, i) => {
     const freeMinPaise = freeDeliveryMinPaise({
       pin: pinFreeMin,
       shop: groupShopFreeMin[i] ?? null,
       city: cityFreeMin,
     });
+    const base = g.shippingPaise;
     g.freeDeliveryMinPaise = freeMinPaise;
     g.shippingPaise = groupShippingPaise({ ...g, freeMinPaise });
     g.totalPaise = g.subtotalPaise + g.shippingPaise;
+    return base - g.shippingPaise;
   });
   const subtotal = groups.reduce((a, g) => a + g.subtotalPaise, 0);
   const shipping = groups.reduce((a, g) => a + g.shippingPaise, 0);
@@ -463,6 +505,7 @@ export async function quoteInternal(
     cityId: place.city_id,
     priced,
     groupShops,
+    groupWaivedPaise,
     quote: {
       cityCode: place.city_code,
       deliveryStateCode: place.state_gst_code,
@@ -477,6 +520,7 @@ export async function quoteInternal(
       onlineTotalPaise: subtotal + shipping,
       ok: lines.every((l) => l.issue === null),
       cod: { allowed: reason === null, reason, capPaise: cap },
+      savingsEstimate: savingsEstimateOf(priced, groupWaivedPaise),
     },
   };
 }
@@ -637,6 +681,9 @@ function applyQuotePricing(internal: InternalQuote, pricing: QuotePricing): void
   quote.onlineTotalPaise = quote.totalPaise;
   const pincodeCod = quote.cod.reason !== 'pincode';
   quote.cod = { allowed: pincodeCod, reason: pincodeCod ? null : 'pincode', capPaise: quote.cod.capPaise };
+  // A negotiated delivery charge is what was agreed, not a waiver: nothing to count as saved on delivery.
+  internal.groupWaivedPaise = internal.groupWaivedPaise.map(() => 0);
+  quote.savingsEstimate = savingsEstimateOf(priced, internal.groupWaivedPaise);
 }
 
 /** Place a cash-on-delivery order (see `placeOrder`). */
@@ -849,6 +896,7 @@ export async function placeOrder(
           couponDiscountPaise: subCouponDiscount,
           couponFunder: subCouponDiscount > 0 ? (couponEval?.coupon.rule.funder ?? null) : null,
           shippingPaise: g.shippingPaise,
+          deliveryWaivedPaise: internal.groupWaivedPaise[index] ?? 0,
           // The COD fee rides on the first sub-order, so sub-order totals add up to the group total and
           // someone collects it (code review 2026-11-03).
           codFeePaise: index === 0 ? codFeePaise : 0,
@@ -871,6 +919,7 @@ export async function placeOrder(
           hsn: line.hsn,
           gstRateBp: line.gstRateBp,
           unitPaise: line.unitPaise,
+          mrpPaise: line.mrpPaise,
           shopUnitPaise: line.shopUnitPaise,
           qty: line.qty,
           lineDiscountPaise: subCoupon?.lines[lineIndex] ?? 0,
