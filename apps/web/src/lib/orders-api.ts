@@ -96,11 +96,21 @@ export interface QuoteLine {
   qty: number;
 }
 
-/** Server prices for the cart at a PIN: per-shop groups, delivery, GST, COD eligibility, line issues. */
-export function quoteCart(locale: string, pincode: string, lines: readonly QuoteLine[]) {
+/**
+ * Server prices for the cart at a PIN: per-shop groups, delivery, GST, COD eligibility, line issues. With personal = true (checkout, signed in) it sends the token so the cash-on-delivery answer is the person's own (founder ruling
+ * 2026-11-26); the cart page stays anonymous.
+ */
+export async function quoteCart(
+  locale: string,
+  pincode: string,
+  lines: readonly QuoteLine[],
+  personal = false,
+) {
+  const bearer = personal ? await token(locale) : null;
   return call<CheckoutQuote>('/checkout/quote', CheckoutQuoteDto, {
     method: 'POST',
     body: { pincode, lines, locale: locale === 'hi' ? 'hi' : 'en' },
+    bearer,
   });
 }
 

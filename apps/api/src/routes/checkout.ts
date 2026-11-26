@@ -11,6 +11,7 @@ import {
 } from '@mechdost/db/repo';
 import { CustomerRefundDto } from '@mechdost/shared/refunds-api';
 import { SavingsEstimateDto } from '@mechdost/shared/savings-api';
+import { QuoteCodDto } from '@mechdost/shared/cod-api';
 import { PERSON_CANCEL_REASONS } from '@mechdost/shared/state';
 import type { SessionCache } from '../auth/session-cache';
 import { ensureRazorpayOrder } from '../payments/service';
@@ -97,11 +98,8 @@ const Quote = z
     /** Paid online: no COD fee. */
     onlineTotalPaise: z.number().int(),
     ok: z.boolean(),
-    cod: z.object({
-      allowed: z.boolean(),
-      reason: z.enum(['over_cap', 'pincode']).nullable(),
-      capPaise: z.number().int(),
-    }),
+    /** COD for this cart and person: a bearer token makes `eligibility` personal (founder ruling 2026-11-26). */
+    cod: QuoteCodDto,
     /** "Your savings" estimate (MRP saving + waived delivery; coupon and Coins not in it); null when switched off. */
     savingsEstimate: SavingsEstimateDto.nullable(),
   })
@@ -202,7 +200,7 @@ const place = createRoute({
     ),
     422: json(
       ErrorSchema,
-      'CHECKOUT_UNAVAILABLE (details.lines), COD_NOT_ALLOWED, COUPON_INVALID (details.reason), PAYMENT_METHOD_UNAVAILABLE',
+      'CHECKOUT_UNAVAILABLE (details.lines), COD_NOT_ALLOWED (details.reason), COD_NOT_ELIGIBLE (details.reason, canRequest), COUPON_INVALID (details.reason), PAYMENT_METHOD_UNAVAILABLE',
     ),
     ...errorResponses,
   },
@@ -354,7 +352,10 @@ export function checkoutRoutes(deps: AppDeps, cache: SessionCache) {
   return app
     .openapi(quote, async (c) => {
       const body = c.req.valid('json');
-      const q = await quoteCheckout(deps.db, body);
+      // Optional sign-in (forbidSignedInSellers ran `authenticate` when a bearer came): COD answers per person.
+      const signedIn = (c.var as Partial<AppEnv['Variables']>).auth;
+      const q = await quoteCheckout(deps.db, body, { userId: signedIn?.user.id ?? null });
+      c.header('Cache-Control', 'no-store');
       // The admin switch hides the estimate (decision 2026-11-26); the quote itself is unchanged.
       const savingsOn = await globalFlagSetting(deps.db, 'customers.savings_enabled');
       return c.json({ ...q, savingsEstimate: savingsOn ? q.savingsEstimate : null }, 200);

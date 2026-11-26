@@ -6,6 +6,7 @@
 import { z } from 'zod';
 import { SavingsEstimateDto } from './savings-api';
 import { CustomerRefundDto } from './refunds-api';
+import { QuoteCodDto } from './cod-api';
 
 export const CheckoutQuoteDto = z.object({
   cityCode: z.string(),
@@ -42,11 +43,8 @@ export const CheckoutQuoteDto = z.object({
   totalPaise: z.number().int(),
   onlineTotalPaise: z.number().int(),
   ok: z.boolean(),
-  cod: z.object({
-    allowed: z.boolean(),
-    reason: z.enum(['over_cap', 'pincode']).nullable(),
-    capPaise: z.number().int(),
-  }),
+  /** Cash on delivery for this cart and person (eligibility: founder ruling 2026-11-26, see cod-api.ts). */
+  cod: QuoteCodDto,
   /** "Your savings" estimate (decision 2026-11-26); null when switched off, absent from an older API. */
   savingsEstimate: SavingsEstimateDto.nullable().optional(),
 });

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { redactPath } from './analytics-path';
 import { scrubFreeText } from './privacy';
 import { COUPON_FUNDERS, COUPON_REASONS } from './coupon';
+import { COD_CART_REASONS, COD_PERSON_REASONS } from './cod-eligibility';
 import { ORDER_CANCEL_REASONS } from './state';
 import { VEHICLE_SEGMENTS } from './vehicle-segments';
 import { RECO_ALGOS, RECO_SURFACES } from './recommendation-limits';
@@ -61,6 +62,23 @@ export interface ServerEventProps extends UstaadServerEventProps {
     step: 'packed' | 'shipped' | 'out_for_delivery';
   };
   admin_customer_blocked: { customerId: string; level: string; reasonCode: string };
+  /** Cash-on-delivery requests (founder ruling 2026-11-26, spec 03): ids and codes only, never the note. */
+  cod_requested: { requestId: string; reasonCode: string; hasNote: boolean };
+  cod_request_withdrawn: { requestId: string };
+  cod_request_approved: {
+    requestId: string;
+    customerId: string;
+    capSet: boolean;
+    expires: boolean;
+    hoursToDecision: number;
+  };
+  cod_request_rejected: {
+    requestId: string;
+    customerId: string;
+    reasonCode: string;
+    hoursToDecision: number;
+  };
+  cod_approval_revoked: { requestId: string; customerId: string; reasonCode: string };
   admin_customer_unblocked: { customerId: string; level: string };
   /** Staff roles changed from the console (design 2026-11-15): role key and whether a city limits it; ids only. */
   admin_staff_role_changed: {
@@ -776,6 +794,15 @@ export const CLIENT_EVENT_SCHEMAS = {
     })
     .strict(),
   booking_started: z.object({ workshop: id }).strict(),
+  // Cash on delivery not offered to this person or cart (founder ruling 2026-11-26): the reason code and the surface.
+  checkout_cod_unavailable_shown: z
+    .object({
+      surface: z.enum(['checkout', 'account']),
+      reason: z.enum([...COD_PERSON_REASONS, ...COD_CART_REASONS, 'over_cap', 'pincode', 'customer']),
+      canRequest: z.boolean(),
+    })
+    .strict(),
+  cod_request_opened: z.object({ surface: z.enum(['checkout', 'account']) }).strict(),
   // Home servicing (spec 06): the customer chose where the service happens.
   // Job photos (spec 06): the customer opened the photo viewer on their request, or a visitor on a workshop page.
   service_photos_viewed: z

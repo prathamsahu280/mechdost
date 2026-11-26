@@ -541,3 +541,13 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
 - L-USAGE3 · 2026-11-26 · settings design · The `settings` registry only takes ints and booleans and renders on Admin →
   Settings; a feature with lists (email recipients) and per-metric limits fits better in its own versioned tables
   edited on its own page, audited like settings. → Check the registry's kinds before planning an admin-editable list.
+- L-COD1 · 2026-11-26 · product rule flip · Turning a default off (COD for everyone → on request) breaks every older
+  suite that places COD orders as a plain user (35 files) → keep the old behaviour in the shared test-DB factory with
+  one settings row and give the new suites an opt-in for the real default (`createTestDb({ codDefaults: true })`);
+  never change the product default to make tests pass.
+- L-COD2 · 2026-11-26 · public endpoint made personal · `POST /checkout/quote` is public and cached nowhere, but a
+  personal answer needs `no-store` and an optional bearer; keep the old response fields (`cod.reason`) and add new
+  optional ones so a web build one deploy behind does not fail its Zod parse. The cart page stays anonymous (no
+  token, no Firebase load).
+- L-COD3 · 2026-11-26 · shell · `node -e` strings containing backticks inside bash double quotes are command-
+  substituted silently (comments lost text twice) → write such edits with the Edit tool or a script file.

@@ -369,3 +369,5 @@ ustaad-console.test.ts` (held answer/question/comment/post/message, NCII re-hold
   `apps/api/test/admin-usage.test.ts` are 20+ chars; reuse the `token-<area>-0000000NN` shape.
 - T-USAGE2 · 2026-11-26 · notices · a new bell kind with placeholders fails `notice-catalogue.test.ts` until its
   placeholders are in the test's `SAMPLE` (`metric`, `percent` added) · add the sample values in the same change.
+- T-COD1 · 2026-11-26 · API tests · FakeVerifier tokens must match `BEARER` (20+ chars): `token-cod-000000NN` was 18
+  and every request was a silent 401 (the public quote fell back to the guest answer) · use `token-<area>-requests-0000NN`.

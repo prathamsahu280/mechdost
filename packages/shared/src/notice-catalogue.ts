@@ -238,6 +238,28 @@ export const NOTICE_CATALOGUE = {
     text: ['pincode'],
     link: at('/shop'),
   }),
+  // Cash on delivery decided by staff (founder ruling 2026-11-26): the account's Payments page explains it.
+  'account.cod_approved': def({
+    category: T,
+    entity: 'account',
+    audience: 'customer',
+    text: [],
+    link: at('/account/payments'),
+  }),
+  'account.cod_rejected': def({
+    category: T,
+    entity: 'account',
+    audience: 'customer',
+    text: [],
+    link: at('/account/payments'),
+  }),
+  'account.cod_revoked': def({
+    category: T,
+    entity: 'account',
+    audience: 'customer',
+    text: [],
+    link: at('/account/payments'),
+  }),
   'quote.expiring': def({
     category: 'reminders',
     entity: 'quote',
@@ -595,6 +617,9 @@ export const NOTICE_FOR_EMAIL: Partial<Record<EmailTemplateKey, NoticeKind>> = {
   ticket_resolved: 'ticket.resolved',
   shop_order_routed: 'shop.order_routed',
   partner_warning_issued: 'partner.warning',
+  cod_approved: 'account.cod_approved',
+  cod_rejected: 'account.cod_rejected',
+  cod_revoked: 'account.cod_revoked',
 };
 
 export type NoticeLocale = 'en' | 'hi';

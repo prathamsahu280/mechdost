@@ -69,14 +69,25 @@ export async function buildTestDbTemplate(): Promise<string> {
   return file;
 }
 
-export async function createTestDb() {
+/**
+ * Cash on delivery for everyone was the behaviour every older suite was written against; since the founder ruling of
+ * 2026-11-26 the product default is "approved customers and verified Ustaad members only". Test databases keep the
+ * old behaviour through one global setting row unless `codDefaults: true` asks for the real defaults (the COD
+ * eligibility suites do).
+ */
+export async function createTestDb(opts: { codDefaults?: boolean } = {}) {
   const template = process.env[TEMPLATE_ENV];
+  let handle: ReturnType<typeof wrap>;
   if (template && existsSync(template)) {
     const client = await PGlite.create({ extensions, loadDataDir: new Blob([readFileSync(template)]) });
     await client.exec(SEARCH_PATH);
-    return wrap(client);
-  }
-  return migratedFromScratch();
+    handle = wrap(client);
+  } else handle = await migratedFromScratch();
+  if (!opts.codDefaults)
+    await handle.client.exec(
+      `insert into settings (city_id, key, value) values (null, 'checkout.cod_everyone', 'true'::jsonb)`,
+    );
+  return handle;
 }
 
 export type TestDb = Awaited<ReturnType<typeof createTestDb>>['db'];

@@ -2539,3 +2539,43 @@ rule (founder accepted). Q217 answered.
   (spec 03).
 - **Positioning:** "our website would target mechanics and workshops a lot more than normal users" — direction
   recorded; founder 2026-11-26: "we will do that later, we keep the design as it is for now" — no design change yet.
+
+## 2026-11-26 — Cash on delivery only on request (founder ruling)
+
+Founder (verbatim): "cash on delivery would be only available on request if the admin approves it for that user or
+like only for ustaad mechanics, not availble to everyone (make it admin configurable)". Addendum the same day:
+"we wont really give cash on delivery for one piece for normal users bc cash handling would be an issue".
+
+- **Supersedes** "COD for every verified customer within the cap" (spec 03 § Built 2026-11-03). Normal customers (not
+  approved, not verified Ustaad members) get **no** cash on delivery, not even for one piece. The cap, the PIN's
+  `cod_allowed` and customer blocks still apply on top. Cost if wrong: cheap (one setting per city).
+- **Three independent routes, admin settings per city with a global fallback** (Settings → Payments):
+  `checkout.cod_everyone` (default **off**; turning it on shows a risk warning), `checkout.cod_approved_customers`
+  (default on), `checkout.cod_ustaad_verified` (default on) with `checkout.cod_ustaad_min_level` (0 Naya … 3 Master,
+  default 0). Kept as scalar keys in the existing typed registry (int/boolean) instead of one object setting, so the
+  settings API, audit, city override and admin screen need no new kind.
+- **Cart minimums for eligible customers** (founder addendum): `checkout.cod_min_order_paise` (default 0) on what is
+  paid at the door, and `checkout.cod_min_items` (pieces, default 1); both off by default.
+- **Ustaad perk** = `verification_state = 'verified'`, `status = 'active'`, `restricted_mode = 'none'`, perks not
+  frozen (SR-2), level ≥ the minimum; Chhotu and pending levels never count.
+- **Requests** (`cod_requests`, migration 0109): one pending per customer (partial unique index), one approval per
+  customer **and city** (partial unique index; an approval is for the city of the PIN asked from, so a city manager
+  never grants COD in another city), reason **codes** + optional note, `codRequestMachine` (pending → approved |
+  rejected | withdrawn; approved → revoked | expired), CAS on `version`, append-only `cod_request_events`, audit rows,
+  analytics events, bell + email (en + hi). Approve takes an optional personal cap (the lower of it and the city cap
+  counts) and an end date; an expired approval reads as `expired` and is closed by the next approval. After a reject
+  or revoke the customer waits `checkout.cod_request_reapply_days` (default 7, global). 5 requests a day per customer.
+- **Permission** `customers:cod_approve` (ops managers and city managers, city-scoped; super admin): another city's
+  request is a 404; staff cannot decide their own request. Support agents and finance cannot decide.
+- **Server-authoritative**: the quote answers `cod.eligibility` (personal when a bearer is sent; guests get
+  `sign_in_required`) next to the old `cod.reason` (kept for older screens); `POST /orders` refuses with 422
+  `COD_NOT_ELIGIBLE` (`details.reason`, `canRequest`) and `COD_NOT_ALLOWED` with `below_min_order|below_min_items`.
+- **Bulk quote orders are exempt** from eligibility (staff agreed the order; Q-COD-2). **The browser demo** starts with
+  "everyone" on because it has no online payment (Q-COD-3). **P0 before going live:** Razorpay live keys (Q-COD-1).
+
+## 2026-11-27 — Lead (overnight): COD "everyone" stays ON in production until live Razorpay keys
+
+The COD-by-approval code ships tonight, but production still runs Razorpay **test** keys (Q-COD-1, P0): with
+"everyone" off, ordinary customers would have no working way to pay. So the production setting
+`checkout.cod_everyone` is set ON (today's behaviour) at deploy; the founder flips it OFF once live keys are in.
+Approved customers and verified Ustaad mechanics keep COD either way.

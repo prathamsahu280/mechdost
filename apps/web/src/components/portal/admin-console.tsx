@@ -100,6 +100,11 @@ import { Applications } from './admin-applications';
 import { GstInvoiceLine } from '@/components/commerce/gst-invoice-line';
 
 /** Real sign-in: order routing reads and acts through the API; demo builds never load it (Stream C2, 2026-11-14). */
+// Cash-on-delivery requests (founder ruling 2026-11-26): loaded with the Customers section only.
+const AdminCodRequests = dynamic(() => import('./admin-cod-requests').then((m) => m.AdminCodRequests), {
+  ssr: false,
+  loading: () => <div className="skeleton mt-6 h-48 rounded-card" aria-hidden="true" />,
+});
 const OrderRoutingApi = dynamic(() => import('./admin-orders-api').then((m) => m.OrderRoutingApi), {
   ssr: false,
   loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
@@ -271,7 +276,12 @@ export function AdminConsole({
           {AUTH_MODE === 'firebase' ? <AdminRecoApi /> : null}
         </div>
       ) : null}
-      {section === 'customers' ? <AdminCustomers actor={account.name} /> : null}
+      {section === 'customers' ? (
+        <>
+          <AdminCustomers actor={account.name} />
+          <AdminCodRequests actor={account.name} />
+        </>
+      ) : null}
       {section === 'content' && contentDefaults ? (
         <div className="space-y-8">
           <ContentEditor actor={account.name} defaults={contentDefaults} />

@@ -29,6 +29,7 @@ import { searchRoutes } from './routes/search';
 import { adminRefundRoutes } from './routes/admin-refunds';
 import { paymentRoutes, razorpayWebhookRoutes } from './routes/payments';
 import { checkoutRoutes } from './routes/checkout';
+import { codRoutes } from './routes/cod';
 import { couponRoutes } from './routes/coupons';
 import { coinRoutes } from './routes/coins';
 import { savingsRoutes } from './routes/savings';
@@ -138,6 +139,7 @@ export function createApp(deps: AppDeps) {
   v1.route('/', siteConfigAdminRoutes(deps, sessions));
   v1.route('/', eventRoutes(deps));
   v1.route('/', checkoutRoutes(deps, sessions));
+  v1.route('/', codRoutes(deps, sessions));
   v1.route('/', couponRoutes(deps, sessions));
   v1.route('/', paymentRoutes(deps, sessions));
   v1.route('/', adminRefundRoutes(deps, sessions));

@@ -59,6 +59,8 @@ export const REAL_ACCOUNT_SECTIONS = [
   'quotes',
   'support',
   'coins',
+  // Payment options and cash on delivery on request (founder ruling 2026-11-26).
+  'payments',
   'vehicles',
   'addresses',
   // Saved products (design 2026-11-15 item 5): real sign-in only.

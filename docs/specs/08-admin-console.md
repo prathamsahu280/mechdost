@@ -521,3 +521,30 @@ emailLocale, expectedVersion}`); compare-and-set on `version`, 409 when stale, a
 - **Tests:** `packages/db/test/usage.test.ts`, `apps/api/test/admin-usage.test.ts`, `packages/shared/test/usage.test.ts`,
   state-audit row `API-ADM-USAGE`, `e2e/state-audit/usage.shots.ts` (`playwright.usage.config.ts`).
 - **Later:** a recovery note when a metric drops back; Upstash and Supabase egress numbers (need other keys).
+
+## COD requests (2026-11-26, founder ruling "cash on delivery only on request")
+
+Admin → **Customers** → **Cash-on-delivery requests** (`apps/web/src/components/portal/admin-cod-requests.tsx`, below
+the customer blocks; loaded with the section only). One status at a time (Waiting first, oldest first; decided ones
+newest first, "Show more" by keyset). Each card: customer name and masked phone (unmasked only with
+`customers:read_pii`), PIN and city, asked date, reason (code shown in words), the customer's note (user text), their
+delivered and cancelled/rejected order counts, a "Verified Ustaad" badge. Actions: **Approve** (optional personal limit
+per order in ₹, the lower of it and the city cap counts; optional end date, end of that day IST), **Turn down** (reason
+code: `insufficient_history | unverified_details | rto_history | area_not_supported | risk_signals | other`), **Take
+back** on an approved one (reason code: `cod_refused | misuse | customer_request | risk_signals | other`); each opens an
+inline form with Cancel (Escape closes, focus returns). Result in a polite status line; a changed row (409
+`STALE_COD_REQUEST`) refreshes the list.
+
+API: `GET /v1/admin/cod-requests?status=&cursor=&limit=`, `POST /v1/admin/cod-requests/{id}/approve|reject|revoke`
+(strict bodies with `version`), permission **`customers:cod_approve`** (ops manager; city manager for its city; super
+admin), verified staff, 120 decisions an hour per staff member. City scope: requests carry the city of the PIN they
+were asked from; another city's request is a 404 and the queue lists only the grant's cities. Staff cannot decide
+their own request (403 `COD_SELF_DECISION`). Every decision writes `cod_request_events`, an audit row
+(`cod_request.approved|rejected|revoked|expired`) and an analytics event, and tells the customer (bell + email, en + hi:
+`cod_approved`, `cod_rejected`, `cod_revoked`, editable under Notifications → Emails).
+
+Switches (who may pay cash): Settings → **Payments** (`checkout.cod_everyone` with a risk warning when turned on,
+`checkout.cod_approved_customers`, `checkout.cod_ustaad_verified`, `checkout.cod_ustaad_min_level`,
+`checkout.cod_min_order_paise`, `checkout.cod_min_items`, `checkout.cod_request_reapply_days`), per city with the
+all-cities value as fallback. The demo shows the three switches on the COD requests card (its "everyone" starts on,
+Q-COD-3). Spec 03 § Cash-on-delivery eligibility has the rule.

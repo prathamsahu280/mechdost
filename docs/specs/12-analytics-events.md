@@ -313,3 +313,11 @@ period YYYY-MM }`, `admin_usage_limit_saved { metric, limit|null, alerts }`, `ad
 criticalPct, recipients (count), emailLocale }`. Client clicks (`data-track`): `admin_usage_check_now`,
 `admin_usage_limit_edit`, `admin_usage_limit_save`, `admin_usage_alerts_save`. The measurements themselves are in
 `usage_snapshots` (append-only, metric code with unit, bigint value, limit, source, UTC time, run id).
+
+- **Cash on delivery on request (2026-11-26, founder ruling; spec 03 § Cash-on-delivery eligibility):** server
+  `cod_requested {requestId, reasonCode, hasNote}`, `cod_request_withdrawn {requestId}`, `cod_request_approved
+{requestId, customerId, capSet, expires, hoursToDecision}`, `cod_request_rejected {requestId, customerId, reasonCode,
+hoursToDecision}`, `cod_approval_revoked {requestId, customerId, reasonCode}` (staff events carry the staff id as
+  `userId`, the city on the row; never the note); client `checkout_cod_unavailable_shown {surface: checkout|account,
+reason, canRequest}` (once per reason shown) and `cod_request_opened {surface}`. The table `cod_request_events` is the
+  append-only ML record of every move.
