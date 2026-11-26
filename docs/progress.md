@@ -24,6 +24,18 @@ This file is the single source of truth for **where the build is right now**. It
 
 ## Current status
 
+- **2026-11-26 (evening): Usage & free-limit monitoring built** (founder: "list the storage and stuff … give me
+  warnings when we are about to exceed the free limits"; branch worktree-agent-a185a4d356a237c20, not pushed;
+  migration **0103_usage_monitoring** written, NOT applied; 0101–0102 left for other streams, apply them before 0103
+  or re-stamp `when`, L106). Adapters per provider (R2 ListObjectsV2 with our SigV4 signer + optional Cloudflare
+  GraphQL for exact Class A/B; Supabase DB size + storage.objects; server disk/memory; Resend counts from our outbox),
+  each `not_configured` without keys; snapshots/runs/alerts append-only; one bell + one email per metric, level and
+  month at 70/90 % (admin-editable thresholds, limits, recipients, email language); daily worker check (hourly tick,
+  runs when the last one is > 23 h old); Admin → Usage & limits (System group, super admin edits, ops reads + Check
+  now); `pnpm usage:check [--record]`. Docs: runbooks monitoring + deploy, spec 08/10/12, decisions 2026-11-26
+  "Usage & free-limit monitoring", Q-USAGE-1..3, .env.example (CLOUDFLARE_ANALYTICS_TOKEN, USAGE_DISK_PATH).
+  **Next:** lead merge; apply 0103; set the optional token; run `pnpm usage:check` live (lead).
+
 - **2026-11-26 (afternoon): Ustaad workstream D web screens (feed + social)** (branch
   worktree-agent-a7e40993294570795 on main c6e2eaf8, not pushed, no migration). Home feed with story ring, post cards
   of every kind (like / comment / save / WhatsApp teaser / ⋯ report-hide-mute-block-delete), comments sheet, composer

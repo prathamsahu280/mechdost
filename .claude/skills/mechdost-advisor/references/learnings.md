@@ -484,3 +484,17 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
   got wrong in every panel: the success message lived in a StatusLine inside the form that the refresh unmounts, and
   focus fell to <body>. → Keep one status line per panel outside the swapped forms (children report via `onResult`),
   focus the panel heading after a decision, and never move focus on a <select> change.
+- L-USAGE1 · 2026-11-26 · schema/migrations · `drizzle-kit generate` named the new file 0100 (journal count) and
+  overwrote `0100_snapshot.json` of another stream; renumbering to a reserved slot (0103) needs: restore the old
+  snapshot from git, copy the generated one to the new name (its `prevId` already chains), rename the SQL and the
+  journal tag. A later schema tweak is folded in by generating a temp delta, moving its SQL in, taking its snapshot
+  (prevId reset to the previous one) and dropping the temp journal entry; `generate` must then say "No schema
+  changes". → Do this before writing hand SQL into the file, and check `git status drizzle/meta` after every generate.
+- L-USAGE2 · 2026-11-26 · a11y/forms · Seven specialists agreed on the same three defects in a fresh admin panel:
+  `disabled` on a focused busy button drops focus (use `aria-disabled` + early return), a save with no announcement
+  (route it to the page's one status line), and a reset effect keyed on a new array every reload wiping unsaved edits
+  (key it on `version`). → Write busy buttons with `aria-disabled`, keep one status line outside swapped forms, and
+  key form resets on the stored version from the start.
+- L-USAGE3 · 2026-11-26 · settings design · The `settings` registry only takes ints and booleans and renders on Admin →
+  Settings; a feature with lists (email recipients) and per-metric limits fits better in its own versioned tables
+  edited on its own page, audited like settings. → Check the registry's kinds before planning an admin-editable list.
