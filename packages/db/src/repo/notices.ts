@@ -254,6 +254,7 @@ const STAFF_PERMISSION = {
   'staff.delivery_declined': 'delivery_jobs:assign',
   'staff.delivery_failed': 'delivery_jobs:assign',
   'staff.delivery_switch_declined': 'delivery_jobs:assign',
+  'staff.delivery_agent_unavailable': 'delivery_jobs:assign',
 } as const satisfies Partial<Record<NoticeKind, Permission>>;
 
 export type StaffNoticeKind = keyof typeof STAFF_PERMISSION;

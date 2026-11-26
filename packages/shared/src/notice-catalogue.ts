@@ -705,6 +705,13 @@ export const NOTICE_CATALOGUE = {
     text: [],
     link: at('/admin/delivery'),
   }),
+  'staff.delivery_agent_unavailable': def({
+    category: T,
+    entity: 'order',
+    audience: 'staff',
+    text: ['orderCode'],
+    link: at('/admin/delivery'),
+  }),
   'staff.delivery_low_rating': def({
     category: T,
     entity: 'account',

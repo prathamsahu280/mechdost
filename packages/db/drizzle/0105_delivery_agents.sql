@@ -399,7 +399,9 @@ CREATE INDEX "delivery_ratings_order_id_index" ON "delivery_ratings" USING btree
 CREATE INDEX "delivery_ratings_user_id_index" ON "delivery_ratings" USING btree ("user_id");--> statement-breakpoint
 ALTER TABLE "delivery_agents" ADD CONSTRAINT "delivery_agents_rating_range" CHECK ("delivery_agents"."rating_count" >= 0 and "delivery_agents"."rating_sum" between "delivery_agents"."rating_count" and "delivery_agents"."rating_count" * 5);--> statement-breakpoint
 ALTER TABLE "delivery_jobs" ADD COLUMN "return_intent" text;--> statement-breakpoint
-ALTER TABLE "delivery_jobs" ADD CONSTRAINT "delivery_jobs_return_intent" CHECK (("delivery_jobs"."return_intent" is null or "delivery_jobs"."return_intent" in ('retry','close')) and ("delivery_jobs"."status" <> 'returning' or "delivery_jobs"."return_intent" is not null));
+ALTER TABLE "delivery_jobs" ADD CONSTRAINT "delivery_jobs_return_intent" CHECK (("delivery_jobs"."return_intent" is null or "delivery_jobs"."return_intent" in ('retry','close')) and ("delivery_jobs"."status" <> 'returning' or "delivery_jobs"."return_intent" is not null));--> statement-breakpoint
+ALTER TABLE "delivery_job_events" DROP CONSTRAINT "delivery_job_events_kind_valid";--> statement-breakpoint
+ALTER TABLE "delivery_job_events" ADD CONSTRAINT "delivery_job_events_kind_valid" CHECK ("delivery_job_events"."kind" in ('created','status','offered','offer_declined','offer_expired','offer_withdrawn','offer_given_up','contact_revealed','photo','code_wrong','code_locked','override','agent_unavailable'));
 --> statement-breakpoint
 -- Hand-written (spec 24): RLS deny-all, version and updated_at triggers, append-only timelines.
 ALTER TABLE public.delivery_agent_documents ENABLE ROW LEVEL SECURITY;--> statement-breakpoint

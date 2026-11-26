@@ -4547,6 +4547,10 @@
     "staff_delivery_low_rating": {
       "title": "एजेंट की कम रेटिंग",
       "body": "एक डिलीवरी एजेंट की औसत रेटिंग सूचना स्तर से नीचे आ गई।"
+    },
+    "staff_delivery_agent_unavailable": {
+      "title": "एजेंट डिलीवरी के बीच रुका",
+      "body": "ऑर्डर {orderCode} ले जा रहा एजेंट अब सक्रिय नहीं है। डिलीवरी संभालें।"
     }
   },
   "adminNotices": {

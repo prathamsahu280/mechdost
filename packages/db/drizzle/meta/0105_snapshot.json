@@ -1,5 +1,5 @@
 {
-  "id": "aa113a69-e54e-45f1-a088-abaa3a3118be",
+  "id": "2cc2ddc4-8e35-4787-a8a8-5c263fa5726c",
   "prevId": "968a20f6-a4d9-4abb-b53b-9e633a0143f0",
   "version": "7",
   "dialect": "postgresql",
@@ -37406,7 +37406,7 @@
       "checkConstraints": {
         "delivery_job_events_kind_valid": {
           "name": "delivery_job_events_kind_valid",
-          "value": "\"delivery_job_events\".\"kind\" in ('created','status','offered','offer_declined','offer_expired','offer_withdrawn','offer_given_up','contact_revealed','photo','code_wrong','code_locked','override')"
+          "value": "\"delivery_job_events\".\"kind\" in ('created','status','offered','offer_declined','offer_expired','offer_withdrawn','offer_given_up','contact_revealed','photo','code_wrong','code_locked','override','agent_unavailable')"
         },
         "delivery_job_events_actor_valid": {
           "name": "delivery_job_events_actor_valid",

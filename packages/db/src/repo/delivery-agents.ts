@@ -28,6 +28,7 @@ import {
   partnerApplications,
   users,
 } from '../schema';
+import { lockAgentWork, releaseAgentWork } from './delivery-jobs';
 import { agentOfUser, auditDelivery, deliverySettings, type AgentRow } from './delivery-common';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError, pgCode } from './errors';
 import { recordServerEvent } from './events';
@@ -572,6 +573,8 @@ export async function submitAgentDocument(
     );
   const number = normaliseDocumentNumber(input.kind, input.number);
   await db.transaction(async (tx) => {
+    const me = await agentOfUser(tx, input.userId);
+    const work = await lockAgentWork(tx, me.id);
     const a = await agentOfUser(tx, input.userId, { lock: true });
     if (a.status === 'offboarded' || a.status === 'suspended')
       throw new ForbiddenError('Documents cannot be changed now', 'AGENT_NOT_ACTIVE');
@@ -611,9 +614,19 @@ export async function submitAgentDocument(
       .from(deliveryAgentDocuments)
       .where(and(eq(deliveryAgentDocuments.agentId, a.id), eq(deliveryAgentDocuments.kind, input.kind)))
       .for('update');
-    if (prev)
+    if (prev) {
       await tx.update(deliveryAgentDocuments).set(values).where(eq(deliveryAgentDocuments.id, prev.id));
-    else await tx.insert(deliveryAgentDocuments).values({ agentId: a.id, kind: input.kind, ...values });
+      // A replaced document must be verified again before any new work (security review 2026-11-26): offline, and
+      // open offers withdrawn in the same transaction. Jobs already accepted stay with the agent.
+      if (a.online) await tx.update(deliveryAgents).set({ online: false }).where(eq(deliveryAgents.id, a.id));
+      await releaseAgentWork(tx, {
+        agentId: a.id,
+        jobs: work,
+        all: false,
+        actor: 'system',
+        actorId: input.userId,
+      });
+    } else await tx.insert(deliveryAgentDocuments).values({ agentId: a.id, kind: input.kind, ...values });
     await agentEvent(tx, {
       agentId: a.id,
       kind: 'document_submitted',
@@ -787,6 +800,9 @@ export async function setAgentStatus(
   },
 ): Promise<{ version: number }> {
   return db.transaction(async (tx) => {
+    // Order rows and jobs of this agent first, then the agent row (lock order, spec 14).
+    const probe = await scopedAgent(tx, input.scope, input.agentId);
+    const work = input.to === 'active' ? [] : await lockAgentWork(tx, probe.id);
     const a = await scopedAgent(tx, input.scope, input.agentId, true);
     const from = a.status as AgentStatus;
     agentStatusMachine.assert(from, input.to, 'admin');
@@ -821,25 +837,19 @@ export async function setAgentStatus(
       .returning({ version: deliveryAgents.version });
     if (!row) throw new ConflictError('The agent changed meanwhile', 'STALE');
     if (leaving) {
-      const offers = await tx
-        .update(deliveryJobOffers)
-        .set({ status: 'withdrawn', respondedAt: sql`now()`, reasonCode: 'agent_unresponsive' })
-        .where(and(eq(deliveryJobOffers.agentId, a.id), eq(deliveryJobOffers.status, 'offered')))
-        .returning({ jobId: deliveryJobOffers.jobId });
-      if (offers.length > 0)
-        await tx
-          .update(deliveryJobs)
-          .set({ status: 'needs_agent' })
-          .where(
-            and(
-              inArray(
-                deliveryJobs.id,
-                offers.map((o) => o.jobId),
-              ),
-              eq(deliveryJobs.status, 'offered'),
-            ),
-          );
+      // Suspended or offboarded: accepted jobs go back to the queue and carried parcels are flagged; a pause only
+      // withdraws open offers (security review 2026-11-26).
+      await releaseAgentWork(tx, {
+        agentId: a.id,
+        jobs: work,
+        all: input.to === 'suspended' || input.to === 'offboarded',
+        actor: 'admin',
+        actorId: input.staffUserId,
+      });
     }
+    if (input.to === 'offboarded')
+      await tx.execute(sql`delete from user_roles ur using roles r
+        where r.id = ur.role_id and r.key = 'delivery_agent' and ur.user_id = ${a.userId}::uuid`);
     await agentEvent(tx, {
       agentId: a.id,
       kind: 'status',

@@ -24,6 +24,7 @@ import {
   failDeliveryJob,
   getAgentJob,
   getAgentProfile,
+  giveUpDeliveryJob,
   getMyOrder,
   listAdminJobs,
   listAgentJobs,
@@ -672,6 +673,175 @@ describe('switch to the shop, shop mode, ratings', () => {
     const mine = await getMyOrder(w.t(), w.customer, groupCode, { keyring, locale: 'en' });
     const sub = (mine as { orders: { delivery: { stage: string; canRate: boolean } | null }[] }).orders[0]!;
     expect(sub.delivery).toMatchObject({ stage: 'delivered', canRate: false });
+  });
+});
+
+describe('security review 2026-11-26: standing and documents', () => {
+  it('replacing a verified document unverifies it, takes the agent offline and withdraws open offers', async () => {
+    const A = await makeAgent(w);
+    const { code, orderId } = await packedOnlineOrder(w);
+    const job = await ready(code);
+    const { offerId } = await offerDeliveryJob(w.t(), {
+      scope: { all: true },
+      staffUserId: w.staff,
+      jobId: job.id,
+      agentId: A.agentId,
+      expectedVersion: job.version,
+    });
+    const mediaId = await mediaFor(w, 'agent_document', A.agentId, A.userId);
+    await submitAgentDocument(w.t(), {
+      userId: A.userId,
+      keyring,
+      kind: 'pan',
+      number: 'ZZZZZ9999Z',
+      mediaId,
+    });
+    const [a] = await w.db.select().from(s.deliveryAgents).where(eq(s.deliveryAgents.id, A.agentId));
+    expect(a!.online).toBe(false);
+    const [doc] = await w.db
+      .select()
+      .from(s.deliveryAgentDocuments)
+      .where(and(eq(s.deliveryAgentDocuments.agentId, A.agentId), eq(s.deliveryAgentDocuments.kind, 'pan')));
+    expect(doc!.status).toBe('submitted');
+    const [offer] = await w.db.select().from(s.deliveryJobOffers).where(eq(s.deliveryJobOffers.id, offerId));
+    expect(offer!.status).toBe('withdrawn');
+    expect((await jobOf(w, orderId)).status).toBe('needs_agent');
+    // Even forced back online, an agent with an unverified document is never suggested and cannot accept.
+    await w.db.update(s.deliveryAgents).set({ online: true }).where(eq(s.deliveryAgents.id, A.agentId));
+    const j = await jobOf(w, orderId);
+    expect((await suggestAgents(w.t(), j)).map((x) => x.agentId)).not.toContain(A.agentId);
+    await w.db
+      .insert(s.deliveryJobOffers)
+      .values({ jobId: j.id, agentId: A.agentId, expiresAt: new Date(Date.now() + 600_000) });
+    await w.db.update(s.deliveryJobs).set({ status: 'offered' }).where(eq(s.deliveryJobs.id, j.id));
+    const [forced] = await w.db
+      .select()
+      .from(s.deliveryJobOffers)
+      .where(and(eq(s.deliveryJobOffers.jobId, j.id), eq(s.deliveryJobOffers.status, 'offered')));
+    await expect(acceptDeliveryOffer(w.t(), { userId: A.userId, offerId: forced!.id })).rejects.toMatchObject(
+      { code: 'DOCUMENTS_NOT_VERIFIED' },
+    );
+  });
+
+  it('a suspended agent loses accepted jobs to the queue, picked-up ones are flagged, and every job action is refused', async () => {
+    const A = await makeAgent(w);
+    const first = await packedOnlineOrder(w);
+    await ready(first.code);
+    await offerAndAccept(first.code, A);
+    const second = await packedOnlineOrder(w);
+    await ready(second.code);
+    await offerAndAccept(second.code, A);
+    await pickUp(second.code, A);
+    const carried = await jobOf(w, second.orderId);
+    const [a] = await w.db.select().from(s.deliveryAgents).where(eq(s.deliveryAgents.id, A.agentId));
+    await setAgentStatus(w.t(), {
+      scope: { all: true },
+      staffUserId: w.staff,
+      agentId: A.agentId,
+      to: 'suspended',
+      reasonCode: 'safety_incident',
+      expectedVersion: a!.version,
+    });
+    const back = await jobOf(w, first.orderId);
+    expect(back).toMatchObject({ status: 'needs_agent', agentId: null });
+    const flags = await w.db
+      .select()
+      .from(s.deliveryJobEvents)
+      .where(
+        and(eq(s.deliveryJobEvents.jobId, carried.id), eq(s.deliveryJobEvents.kind, 'agent_unavailable')),
+      );
+    expect(flags).toHaveLength(1);
+    const deny = { code: 'AGENT_NOT_ACTIVE' };
+    await expect(getAgentJob(w.t(), { userId: A.userId, jobId: carried.id, keyring })).rejects.toMatchObject(
+      deny,
+    );
+    await expect(
+      deliverDeliveryJob(w.t(), {
+        userId: A.userId,
+        jobId: carried.id,
+        deliveryCode: '1234',
+        expectedVersion: carried.version,
+        keyring,
+      }),
+    ).rejects.toMatchObject(deny);
+    await expect(
+      failDeliveryJob(w.t(), {
+        userId: A.userId,
+        jobId: carried.id,
+        reasonCode: 'vehicle_issue',
+        expectedVersion: carried.version,
+      }),
+    ).rejects.toMatchObject(deny);
+    await expect(
+      pickupDeliveryJob(w.t(), {
+        userId: A.userId,
+        jobId: back.id,
+        pickupCode: '1234',
+        expectedVersion: back.version,
+        keyring,
+      }),
+    ).rejects.toMatchObject({ status: expect.any(Number) });
+    await expect(
+      giveUpDeliveryJob(w.t(), {
+        userId: A.userId,
+        jobId: back.id,
+        reasonCode: 'emergency',
+        expectedVersion: back.version,
+      }),
+    ).rejects.toMatchObject({ status: expect.any(Number) });
+  });
+
+  it('a paused agent may still show the return code of a parcel going back (stock safety), nothing else', async () => {
+    const A = await makeAgent(w);
+    const { code, orderId } = await packedOnlineOrder(w);
+    await ready(code);
+    await offerAndAccept(code, A);
+    await pickUp(code, A);
+    let j = await jobOf(w, orderId);
+    await failDeliveryJob(w.t(), {
+      userId: A.userId,
+      jobId: j.id,
+      reasonCode: 'wrong_address',
+      expectedVersion: j.version,
+    });
+    j = await jobOf(w, orderId);
+    await decideDeliveryFailure(w.t(), {
+      scope: { all: true },
+      staffUserId: w.staff,
+      jobId: j.id,
+      decision: 'return_to_shop',
+      expectedVersion: j.version,
+      keyring,
+    });
+    const [a] = await w.db.select().from(s.deliveryAgents).where(eq(s.deliveryAgents.id, A.agentId));
+    await setAgentStatus(w.t(), {
+      scope: { all: true },
+      staffUserId: w.staff,
+      agentId: A.agentId,
+      to: 'paused',
+      reasonCode: 'agent_request',
+      expectedVersion: a!.version,
+    });
+    const view = await getAgentJob(w.t(), { userId: A.userId, jobId: j.id, keyring });
+    expect(view.contact.customer).toBeNull();
+    expect(view.returnCode).toMatch(/^\d{4}$/);
+  });
+
+  it('offboarding removes the delivery_agent role', async () => {
+    const A = await makeAgent(w);
+    const [a] = await w.db.select().from(s.deliveryAgents).where(eq(s.deliveryAgents.id, A.agentId));
+    await setAgentStatus(w.t(), {
+      scope: { all: true },
+      staffUserId: w.staff,
+      agentId: A.agentId,
+      to: 'offboarded',
+      reasonCode: 'agent_request',
+      expectedVersion: a!.version,
+    });
+    const roles = await w.db.execute(
+      sql`select r.key from user_roles ur join roles r on r.id = ur.role_id where ur.user_id = ${A.userId}`,
+    );
+    expect(JSON.stringify(roles)).not.toContain('delivery_agent');
   });
 });
 

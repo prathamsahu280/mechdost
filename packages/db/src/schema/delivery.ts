@@ -449,7 +449,7 @@ export const deliveryJobEvents = pgTable(
   (t) => [
     check(
       'delivery_job_events_kind_valid',
-      sql`${t.kind} in ('created','status','offered','offer_declined','offer_expired','offer_withdrawn','offer_given_up','contact_revealed','photo','code_wrong','code_locked','override')`,
+      sql`${t.kind} in ('created','status','offered','offer_declined','offer_expired','offer_withdrawn','offer_given_up','contact_revealed','photo','code_wrong','code_locked','override','agent_unavailable')`,
     ),
     check(
       'delivery_job_events_actor_valid',

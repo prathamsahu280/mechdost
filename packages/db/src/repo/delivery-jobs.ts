@@ -35,7 +35,9 @@ import {
   users,
 } from '../schema';
 import {
+  activeAgentOfUser,
   agentOfUser,
+  allDocumentsVerified,
   auditDelivery,
   closeHandoverCode,
   deliverySettings,
@@ -294,6 +296,7 @@ export async function suggestAgents(tx: Tx, job: JobRow): Promise<AgentSuggestio
       from delivery_agents a
       join shops s on s.id = ${job.shopId}::uuid
       where a.city_id = ${job.cityId}::uuid and a.status = 'active' and a.online and a.verified_at is not null
+        and (select count(*) from delivery_agent_documents d where d.agent_id = a.id and d.status = 'verified') >= 3
       limit 200`),
   );
   const load = {
@@ -513,6 +516,8 @@ export async function acceptDeliveryOffer(
     );
     if (standing?.status !== 'active')
       throw new ForbiddenError('Your account is not active for deliveries', 'AGENT_NOT_ACTIVE');
+    if (!(await allDocumentsVerified(tx, agent.id)))
+      throw new ForbiddenError('Your documents must be verified again', 'DOCUMENTS_NOT_VERIFIED');
     const settings = await deliverySettings(tx, job.cityId);
     const held = await tx.$count(
       deliveryJobs,
@@ -557,7 +562,7 @@ export async function declineDeliveryOffer(
   input: { userId: string; offerId: string; reasonCode: DeliveryDeclineReason; note?: string | undefined },
 ): Promise<void> {
   await db.transaction(async (tx) => {
-    const agent = await agentOfUser(tx, input.userId);
+    const agent = await activeAgentOfUser(tx, input.userId);
     const { job, offer } = await lockOwnOffer(tx, agent.id, input.offerId);
     if (offer.status !== 'offered') throw new ConflictError('This offer is no longer open', 'OFFER_EXPIRED');
     deliveryOfferMachine.assert('offered', 'declined', 'delivery_agent');
@@ -756,7 +761,7 @@ export async function giveUpDeliveryJob(
   },
 ): Promise<void> {
   await db.transaction(async (tx) => {
-    const agent = await agentOfUser(tx, input.userId);
+    const agent = await activeAgentOfUser(tx, input.userId);
     const { job } = await lockOwnJob(tx, agent.id, input.jobId);
     if (job.status !== 'accepted') throw new ConflictError(`The job is ${job.status}`, 'JOB_CHANGED');
     deliveryOfferMachine.assert('accepted', 'given_up', 'delivery_agent');
@@ -927,7 +932,7 @@ export async function pickupDeliveryJob(
   if (!keyring)
     throw new ConflictError('Delivery codes are not configured on this server', 'DELIVERY_CODES_UNAVAILABLE');
   return db.transaction(async (tx) => {
-    const agent = await agentOfUser(tx, input.userId);
+    const agent = await activeAgentOfUser(tx, input.userId);
     const { job, order } = await lockOwnJob(tx, agent.id, input.jobId);
     if (job.status !== 'accepted' || order.status !== 'ready_for_pickup')
       throw new ConflictError(`The job is ${job.status}`, 'WRONG_STEP');
@@ -1001,7 +1006,7 @@ export async function deliverDeliveryJob(
   if (!keyring)
     throw new ConflictError('Delivery codes are not configured on this server', 'DELIVERY_CODES_UNAVAILABLE');
   return db.transaction(async (tx) => {
-    const agent = await agentOfUser(tx, input.userId);
+    const agent = await activeAgentOfUser(tx, input.userId);
     const { job, order } = await lockOwnJob(tx, agent.id, input.jobId);
     if (job.status !== 'picked_up' || order.status !== 'out_for_delivery')
       throw new ConflictError(`The job is ${job.status}`, 'WRONG_STEP');
@@ -1115,7 +1120,7 @@ export async function failDeliveryJob(
   if (input.reasonCode === 'other' && !input.note?.trim())
     throw new ValidationError('Add a note', 'NOTE_REQUIRED');
   return db.transaction(async (tx) => {
-    const agent = await agentOfUser(tx, input.userId);
+    const agent = await activeAgentOfUser(tx, input.userId);
     const { job } = await lockOwnJob(tx, agent.id, input.jobId);
     if (job.status !== 'picked_up') throw new ConflictError(`The job is ${job.status}`, 'WRONG_STEP');
     const settings = await deliverySettings(tx, job.cityId);
@@ -1634,6 +1639,10 @@ export async function getAgentJob(db: Tx, input: { userId: string; jobId: string
       .limit(1);
     const mine = j.agentId === agent.id;
     if (!mine && !openOffer) throw new NotFoundError('Delivery job not found');
+    // Only an active agent sees jobs; a paused or suspended agent may still show the return code of a parcel they are
+    // carrying back to the shop (stock safety, security review 2026-11-26), with the shop only.
+    if (agent.status !== 'active' && !(mine && j.status === 'returning'))
+      throw new ForbiddenError('Your account is not active for deliveries', 'AGENT_NOT_ACTIVE');
     const stage = mine ? contactStage(j.status as DeliveryJobStatus) : openOffer ? 'pickup' : 'none';
     const [o] = await tx.select().from(orders).where(eq(orders.id, j.orderId)).limit(1);
     const [s] = rowsOf<{
@@ -2069,3 +2078,118 @@ export async function deliveryKpis(db: Tx, input: { scope: CityScope; from: Date
 }
 
 export { AGENT_VEHICLE_TYPES };
+
+// ?? standing changes (security review 2026-11-26) ???????????????????????????????????????????????????????????????
+
+/**
+ * Locks (order row first, then the job; spec 14) everything an agent is offered or holds, before the caller locks the
+ * agent row. Returns the locked jobs.
+ */
+export async function lockAgentWork(tx: Tx, agentId: string): Promise<JobRow[]> {
+  const held = await tx
+    .select({ id: deliveryJobs.id, orderId: deliveryJobs.orderId })
+    .from(deliveryJobs)
+    .where(and(eq(deliveryJobs.agentId, agentId), inArray(deliveryJobs.status, [...ACTIVE_AGENT_JOBS])));
+  const offered = await tx
+    .select({ id: deliveryJobs.id, orderId: deliveryJobs.orderId })
+    .from(deliveryJobOffers)
+    .innerJoin(deliveryJobs, eq(deliveryJobs.id, deliveryJobOffers.jobId))
+    .where(and(eq(deliveryJobOffers.agentId, agentId), eq(deliveryJobOffers.status, 'offered')));
+  const all = [...new Map([...held, ...offered].map((r) => [r.id, r])).values()].sort((a, b) =>
+    a.orderId.localeCompare(b.orderId),
+  );
+  const out: JobRow[] = [];
+  for (const r of all) {
+    await lockOrder(tx, r.orderId);
+    out.push(await lockJob(tx, r.id));
+  }
+  return out;
+}
+
+/**
+ * Takes work away from an agent whose standing or documents changed: open offers are withdrawn (job back to the
+ * queue); with `all`, accepted jobs go back to the queue too and parcels already picked up are flagged for staff
+ * (a person must take over; nothing moves by itself). Call after `lockAgentWork`.
+ */
+export async function releaseAgentWork(
+  tx: Tx,
+  input: {
+    agentId: string;
+    jobs: readonly JobRow[];
+    all: boolean;
+    actor: 'admin' | 'system';
+    actorId: string | null;
+  },
+): Promise<void> {
+  for (const job of input.jobs) {
+    const o = await orderInfo(tx, job.orderId);
+    if (job.status === 'offered') {
+      const [offer] = await tx
+        .update(deliveryJobOffers)
+        .set({ status: 'withdrawn', respondedAt: sql`now()`, reasonCode: 'reassigning' })
+        .where(
+          and(
+            eq(deliveryJobOffers.jobId, job.id),
+            eq(deliveryJobOffers.agentId, input.agentId),
+            eq(deliveryJobOffers.status, 'offered'),
+          ),
+        )
+        .returning({ id: deliveryJobOffers.id });
+      if (offer) {
+        await transitionJob(tx, {
+          job,
+          to: 'needs_agent',
+          actor: input.actor,
+          actorId: input.actorId,
+          reasonCode: 'reassigning',
+          offerId: offer.id,
+        });
+        await queueStaffNotice(tx, {
+          kind: 'staff.delivery_needs_agent',
+          cityId: job.cityId,
+          entityId: job.id,
+          version: job.version + 1,
+          params: { orderCode: o.code },
+        });
+      }
+      continue;
+    }
+    if (!input.all || job.agentId !== input.agentId) continue;
+    if (job.status === 'accepted') {
+      await tx
+        .update(deliveryJobOffers)
+        .set({ status: 'withdrawn', respondedAt: sql`now()`, reasonCode: 'reassigning' })
+        .where(and(eq(deliveryJobOffers.jobId, job.id), eq(deliveryJobOffers.status, 'accepted')));
+      await transitionJob(tx, {
+        job,
+        to: 'needs_agent',
+        actor: 'admin',
+        actorId: input.actorId,
+        patch: { agentId: null, acceptedAt: null },
+        reasonCode: 'reassigning',
+      });
+      await queueStaffNotice(tx, {
+        kind: 'staff.delivery_needs_agent',
+        cityId: job.cityId,
+        entityId: job.id,
+        version: job.version + 1,
+        params: { orderCode: o.code },
+      });
+    } else {
+      await jobEvent(tx, {
+        job,
+        kind: 'agent_unavailable',
+        agentId: input.agentId,
+        actor: input.actor,
+        actorId: input.actorId,
+      });
+      await queueStaffNotice(tx, {
+        kind: 'staff.delivery_agent_unavailable',
+        cityId: job.cityId,
+        entityId: job.id,
+        version: `unavailable:${job.version}`,
+        params: { orderCode: o.code },
+      });
+    }
+  }
+}

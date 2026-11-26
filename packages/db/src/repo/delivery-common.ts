@@ -1,6 +1,7 @@
 import { randomInt } from 'node:crypto';
 import { and, eq, lt, sql } from 'drizzle-orm';
 import {
+  AGENT_DOCUMENT_KINDS,
   AGENT_VEHICLE_TYPES,
   HANDOVER_CODE_MAX_ATTEMPTS,
   subOrderDeliveryMode,
@@ -12,6 +13,7 @@ import { deliveryJobMachine, type Actor, type DeliveryJobStatus } from '@mechdos
 import { decryptField, encryptField, safeEqual, type Keyring } from '../crypto';
 import {
   auditLog,
+  deliveryAgentDocuments,
   deliveryAgents,
   deliveryHandoverCodes,
   deliveryJobEvents,
@@ -20,7 +22,7 @@ import {
   orders,
   shops,
 } from '../schema';
-import { ConflictError, NotFoundError, ValidationError } from './errors';
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from './errors';
 import type { Tx } from './orders';
 import { rowsOf } from './sql-rows';
 
@@ -358,4 +360,21 @@ export async function deliveryModeFor(
     paymentMethod: row.method === 'online' ? 'online' : 'cod',
     agentsEnabled: settings.agentsEnabled,
   });
+}
+
+/** The signed-in agent, only while `active` (security review 2026-11-26): every job action needs good standing. */
+export async function activeAgentOfUser(tx: Tx, userId: string): Promise<AgentRow> {
+  const a = await agentOfUser(tx, userId);
+  if (a.status !== 'active')
+    throw new ForbiddenError('Your account is not active for deliveries', 'AGENT_NOT_ACTIVE');
+  return a;
+}
+
+/** True when every document kind of the agent is verified (a replaced document needs staff again). */
+export async function allDocumentsVerified(tx: Tx, agentId: string): Promise<boolean> {
+  const n = await tx.$count(
+    deliveryAgentDocuments,
+    and(eq(deliveryAgentDocuments.agentId, agentId), eq(deliveryAgentDocuments.status, 'verified')),
+  );
+  return n >= AGENT_DOCUMENT_KINDS.length;
 }

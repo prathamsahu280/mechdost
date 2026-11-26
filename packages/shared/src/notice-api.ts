@@ -125,6 +125,7 @@ export const NOTICE_PRIORITY_OF_KIND = {
   'staff.delivery_switch_declined': 'urgent',
   'staff.shop_delivery_mode_request': 'action',
   'staff.delivery_low_rating': 'action',
+  'staff.delivery_agent_unavailable': 'urgent',
   // Staff
   'staff.usage_alert': 'urgent',
   'staff.rsa_cash': 'info',
