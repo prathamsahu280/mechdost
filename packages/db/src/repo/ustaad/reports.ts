@@ -212,8 +212,14 @@ export async function createUstaadReport(
       },
     );
 
-    // L3: an intimate-image or impersonation complaint hides the item at once, pending review.
-    if (body.reasonCode === 'ncii_impersonation' && target.status === 'visible' && target.type !== 'member') {
+    // L3: an intimate-image or impersonation complaint hides the item at once, pending review, but only from a
+    // qualified reporter (security review 2026-11-26 fix 5: the same guard as minor reports, so a fresh account
+    // cannot take content down with one tap); anyone else's complaint is queued on the 2 h clock.
+    if (
+      body.reasonCode === 'ncii_impersonation' &&
+      target.status === 'visible' &&
+      (await isQualifiedReporter(tx, me, now))
+    ) {
       if (['post', 'story', 'comment', 'answer'].includes(target.type)) {
         await moveUstaadTarget(tx, target, 'held');
         await recordUstaadEvent(tx, {
@@ -236,6 +242,20 @@ export async function createUstaadReport(
   });
 }
 
+/** A verified member, account ≥ 30 days, no active `false_report` strike (§ 13 false-report guard). */
+async function isQualifiedReporter(
+  tx: Tx,
+  reporter: typeof ustaadMembers.$inferSelect,
+  now: Date,
+): Promise<boolean> {
+  const ageDays = (now.getTime() - reporter.joinedAt.getTime()) / 86_400_000;
+  return (
+    reporter.verificationState === 'verified' &&
+    ageDays >= MINOR_REPORTER_MIN_ACCOUNT_DAYS &&
+    !(await hasFalseReportStrike(tx, reporter.id))
+  );
+}
+
 /** Restricted mode for the reported account, only from a qualified reporter (§ 13 false-report guard). */
 async function maybeRestrictForMinorReport(
   tx: Tx,
@@ -244,12 +264,7 @@ async function maybeRestrictForMinorReport(
   cityId: string | null,
   now: Date,
 ): Promise<void> {
-  const ageDays = (now.getTime() - reporter.joinedAt.getTime()) / 86_400_000;
-  const qualified =
-    reporter.verificationState === 'verified' &&
-    ageDays >= MINOR_REPORTER_MIN_ACCOUNT_DAYS &&
-    !(await hasFalseReportStrike(tx, reporter.id));
-  if (!qualified) return;
+  if (!(await isQualifiedReporter(tx, reporter, now))) return;
   const rows = await tx
     .update(ustaadMembers)
     .set({ restrictedMode: 'minor_report' })

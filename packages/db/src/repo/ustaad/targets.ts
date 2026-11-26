@@ -63,7 +63,7 @@ export async function loadUstaadTarget(
         cityId: p.cityId,
         status: p.status,
         version: p.version,
-        text: joinText(p.body, p.fixSymptom, p.fixCause, p.fixFix, p.linkUrl),
+        text: joinText(p.body, p.fixSymptom, p.fixCause, p.fixFix, p.linkUrl, p.bodyOriginal),
         mediaIds: media.map((m) => m.id),
       };
     }
@@ -82,7 +82,7 @@ export async function loadUstaadTarget(
         cityId: c.cityId,
         status: c.row.status,
         version: c.row.version,
-        text: c.row.body,
+        text: joinText(c.row.body, c.row.bodyOriginal),
         mediaIds: c.row.mediaId ? [c.row.mediaId] : [],
       };
     }
@@ -96,7 +96,7 @@ export async function loadUstaadTarget(
         cityId: q.cityId,
         status: q.status,
         version: q.version,
-        text: joinText(q.title, q.body),
+        text: joinText(q.title, q.body, q.bodyOriginal),
         mediaIds: q.voiceMediaId ? [q.voiceMediaId] : [],
       };
     }
@@ -115,7 +115,7 @@ export async function loadUstaadTarget(
         cityId: a.cityId,
         status: a.row.status,
         version: a.row.version,
-        text: a.row.body,
+        text: joinText(a.row.body, a.row.bodyOriginal),
         mediaIds: a.row.voiceMediaId ? [a.row.voiceMediaId] : [],
       };
     }

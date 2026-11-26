@@ -5,7 +5,7 @@
  * hold is set, and marks their archived media for the media purge. The evidence vault (CSAM, legal holds) is never
  * purged by this job.
  */
-import { and, eq, inArray, isNull, lte, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, lte, sql } from 'drizzle-orm';
 import { auditLog, ustaadMedia, ustaadRemovedArchive } from '../../schema';
 import { NotFoundError } from '../errors';
 import type { Tx } from '../orders';
@@ -81,10 +81,17 @@ export async function purgeUstaadRemovedArchive(tx: Tx, now = new Date(), limit 
       .limit(limit)
       .for('update', { skipLocked: true });
     if (due.length === 0) return 0;
-    const mediaIds = due.flatMap((r) => {
-      const ids = (r.snapshot as { mediaIds?: unknown }).mediaIds;
+    const idsOf = (snapshot: unknown): string[] => {
+      const ids = (snapshot as { mediaIds?: unknown }).mediaIds;
       return Array.isArray(ids) ? ids.filter((x): x is string => typeof x === 'string') : [];
-    });
+    };
+    // Security review fix 4: a file that any held archive row still references is never marked for the purge.
+    const held = await t
+      .select({ snapshot: ustaadRemovedArchive.snapshot })
+      .from(ustaadRemovedArchive)
+      .where(isNotNull(ustaadRemovedArchive.legalHold));
+    const heldIds = new Set(held.flatMap((r) => idsOf(r.snapshot)));
+    const mediaIds = due.flatMap((r) => idsOf(r.snapshot)).filter((id) => !heldIds.has(id));
     if (mediaIds.length > 0)
       await t
         .update(ustaadMedia)

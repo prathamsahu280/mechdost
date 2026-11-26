@@ -4,7 +4,7 @@
  * of that action and writes the `reversal` row. A `false_report` strike follows repeated dismissed "someone under
  * 18" reports from one member (§ 13 false-report guard).
  */
-import { and, count, desc, eq, gt } from 'drizzle-orm';
+import { and, count, desc, eq, gt, inArray } from 'drizzle-orm';
 import { ustaadReports, ustaadStrikes } from '../../schema';
 import type { Tx } from '../orders';
 import { recordIzzat } from './izzat';
@@ -121,7 +121,7 @@ export async function maybeFalseReportStrike(
     .where(
       and(
         eq(ustaadReports.reporterId, input.reporterId),
-        eq(ustaadReports.reasonCode, 'minor'),
+        inArray(ustaadReports.reasonCode, ['minor', 'ncii_impersonation']),
         eq(ustaadReports.status, 'dismissed'),
         gt(ustaadReports.decidedAt, since),
       ),

@@ -273,7 +273,7 @@ describe('member reports', () => {
     });
   });
 
-  it('ncii_impersonation runs on the 2 h clock and hides the item at once', async () => {
+  it('ncii_impersonation runs on the 2 h clock; it hides the item at once only from a qualified reporter', async () => {
     const p = await post(author);
     const r = await createUstaadReport(t(), viewer, {
       targetType: 'post',
@@ -283,8 +283,41 @@ describe('member reports', () => {
     const [row] = await db.select().from(s.ustaadReports).where(eq(s.ustaadReports.code, r.code));
     expect(row?.clock).toBe('intimate_2h');
     expect((row?.dueAt.getTime() ?? 0) - (row?.createdAt.getTime() ?? 0)).toBe(2 * 3_600_000);
-    const [p2] = await db.select().from(s.ustaadPosts).where(eq(s.ustaadPosts.id, p.id));
+    // An unverified reporter only queues it (security review fix 5): the post stays up until a manager decides.
+    let [p2] = await db.select().from(s.ustaadPosts).where(eq(s.ustaadPosts.id, p.id));
+    expect(p2?.status).toBe('visible');
+    await createUstaadReport(t(), reporter, {
+      targetType: 'post',
+      targetId: p.id,
+      reasonCode: 'ncii_impersonation',
+    });
+    [p2] = await db.select().from(s.ustaadPosts).where(eq(s.ustaadPosts.id, p.id));
     expect(p2?.status).toBe('held');
+  });
+
+  it('dismissed ncii reports count toward the false_report strike', async () => {
+    const liar = await member({ verified: true, ageDays: 90 });
+    for (let i = 0; i < 3; i += 1) {
+      const p = await post(await member(), false);
+      const r = await createUstaadReport(t(), liar, {
+        targetType: 'post',
+        targetId: p.id,
+        reasonCode: i === 0 ? 'minor' : 'ncii_impersonation',
+      });
+      const d = await ustaadReportDetail(t(), cmA, r.code);
+      await actOnUstaadReport(t(), cmA, r.code, {
+        action: 'keep',
+        reasonCode: 'no_violation',
+        version: d.version,
+      });
+    }
+    const strikes = await db
+      .select()
+      .from(s.ustaadStrikes)
+      .where(
+        and(eq(s.ustaadStrikes.memberId, liar.memberId), eq(s.ustaadStrikes.reasonCode, 'false_report')),
+      );
+    expect(strikes).toHaveLength(1);
   });
 
   it('a minor report from a verified ≥30-day reporter restricts the account; from anyone else it does not', async () => {
@@ -657,5 +690,156 @@ describe('jobs', () => {
 
   it('moderation actions are append-only', async () => {
     await expect(db.update(s.ustaadModerationActions).set({ note: 'x' })).rejects.toThrow();
+  });
+});
+
+describe('security review fixes (2026-11-26)', () => {
+  let tk = 0;
+  const ticketFor = async (userId: string) => {
+    tk += 1;
+    const [row] = await db
+      .insert(s.supportTickets)
+      .values({
+        code: `REQ-RPR-2026-SEC${String(tk).padStart(3, '0')}`,
+        userId,
+        kind: 'other',
+        slaAckDue: new Date(Date.now() + 86_400_000),
+        slaResolveDue: new Date(Date.now() + 7 * 86_400_000),
+      })
+      .returning();
+    return row?.code ?? '';
+  };
+  const reportOn = async (m: M) => {
+    const p = await post(m, false);
+    return createUstaadReport(t(), viewer, { targetType: 'post', targetId: p.id, reasonCode: 'abuse' });
+  };
+  const memberRow = async (m: M) =>
+    (await db.select().from(s.ustaadMembers).where(eq(s.ustaadMembers.id, m.memberId)))[0];
+
+  it('fix 1: a short ban never replaces a permanent or longer one; a restriction never dates a frozen account', async () => {
+    const perm = await member();
+    await db
+      .update(s.ustaadMembers)
+      .set({ status: 'banned', bannedUntil: null })
+      .where(eq(s.ustaadMembers.id, perm.memberId));
+    const r = await reportOn(perm);
+    await actOnUstaadReport(t(), cmA, r.code, { action: 'ban', reasonCode: 'abuse', days: 3, version: 1 });
+    expect(await memberRow(perm)).toMatchObject({ status: 'banned', bannedUntil: null });
+
+    const frozen = await member();
+    await db
+      .update(s.ustaadMembers)
+      .set({ status: 'restricted', restrictedUntil: null, restrictedMode: 'review' })
+      .where(eq(s.ustaadMembers.id, frozen.memberId));
+    const r2 = await reportOn(frozen);
+    await actOnUstaadReport(t(), cmA, r2.code, { action: 'restrict', reasonCode: 'abuse', version: 1 });
+    expect(await memberRow(frozen)).toMatchObject({
+      status: 'restricted',
+      restrictedUntil: null,
+      restrictedMode: 'review',
+    });
+
+    const longBan = await member();
+    const r3 = await reportOn(longBan);
+    await actOnUstaadReport(t(), cmA, r3.code, { action: 'ban', reasonCode: 'abuse', days: 5, version: 1 });
+    const until = (await memberRow(longBan))?.bannedUntil?.getTime() ?? 0;
+    const r4 = await reportOn(longBan);
+    await actOnUstaadReport(t(), cmA, r4.code, { action: 'ban', reasonCode: 'abuse', days: 2, version: 1 });
+    expect((await memberRow(longBan))?.bannedUntil?.getTime()).toBe(until);
+  });
+
+  it('fix 2: an overturned appeal lifts only its own sanction; POCSO review mode is never lifted', async () => {
+    const m = await member();
+    const r1 = await reportOn(m);
+    await actOnUstaadReport(t(), cmA, r1.code, { action: 'ban', reasonCode: 'abuse', days: 2, version: 1 });
+    const r2 = await reportOn(m);
+    await actOnUstaadReport(t(), cmA, r2.code, { action: 'ban', reasonCode: 'abuse', days: 5, version: 1 });
+    const longUntil = (await memberRow(m))?.bannedUntil?.getTime() ?? 0;
+    let d = await ustaadReportDetail(t(), cmA, r2.code);
+    await openUstaadAppeal(t(), cmA2, r2.code, { ticketCode: await ticketFor(m.userId), version: d.version });
+    d = await ustaadReportDetail(t(), cmA, r2.code);
+    await decideUstaadAppeal(t(), cmA2, r2.code, { outcome: 'overturned', version: d.version });
+    const after = await memberRow(m);
+    expect(after?.status).toBe('banned');
+    expect(after?.bannedUntil?.getTime() ?? 0).toBeLessThan(longUntil);
+
+    const frozen = await member();
+    const r3 = await reportOn(frozen);
+    await actOnUstaadReport(t(), cmA, r3.code, { action: 'restrict', reasonCode: 'abuse', version: 1 });
+    await db
+      .update(s.ustaadMembers)
+      .set({ status: 'restricted', restrictedUntil: null, restrictedMode: 'review' })
+      .where(eq(s.ustaadMembers.id, frozen.memberId));
+    d = await ustaadReportDetail(t(), cmA, r3.code);
+    await openUstaadAppeal(t(), cmA2, r3.code, {
+      ticketCode: await ticketFor(frozen.userId),
+      version: d.version,
+    });
+    d = await ustaadReportDetail(t(), cmA, r3.code);
+    await decideUstaadAppeal(t(), cmA2, r3.code, { outcome: 'overturned', version: d.version });
+    expect(await memberRow(frozen)).toMatchObject({
+      status: 'restricted',
+      restrictedMode: 'review',
+      restrictedUntil: null,
+    });
+  });
+
+  it('fix 3: a legal takedown is overturned only with ustaad:takedown, never while on legal hold', async () => {
+    const p = await post(author);
+    const out = await executeUstaadTakedown(t(), cmA, {
+      targetType: 'post',
+      targetId: p.id,
+      basis: 'gov_intimation',
+      reference: 'MeitY 1/2026',
+    });
+    let d = await ustaadReportDetail(t(), cmA, out.code);
+    await openUstaadAppeal(t(), cmA2, out.code, {
+      ticketCode: await ticketFor(author.userId),
+      version: d.version,
+    });
+    d = await ustaadReportDetail(t(), cmA, out.code);
+    await expect(
+      decideUstaadAppeal(t(), cmA2, out.code, { outcome: 'overturned', version: d.version }),
+    ).rejects.toMatchObject({ code: 'USTAAD_LEGAL_HOLD' });
+    await expect(
+      decideUstaadAppeal(t(), { ...cmA2, canTakedown: true }, out.code, {
+        outcome: 'overturned',
+        version: d.version,
+      }),
+    ).rejects.toMatchObject({ code: 'USTAAD_LEGAL_HOLD' });
+    const [p2] = await db.select().from(s.ustaadPosts).where(eq(s.ustaadPosts.id, p.id));
+    expect(p2?.status).toBe('removed');
+  });
+
+  it('fix 4: a later legal hold covers media already archived, and the purge skips media of held rows', async () => {
+    const p = await post(author);
+    const r = await createUstaadReport(t(), viewer, {
+      targetType: 'post',
+      targetId: p.id,
+      reasonCode: 'spam',
+    });
+    await actOnUstaadReport(t(), cmA, r.code, { action: 'remove', reasonCode: 'spam', version: 1 });
+    await executeUstaadTakedown(t(), cmA, {
+      targetType: 'post',
+      targetId: p.id,
+      basis: 'court_order',
+      reference: 'Cr. 9/2026',
+    });
+    let [m] = await db
+      .select()
+      .from(s.ustaadMedia)
+      .where(eq(s.ustaadMedia.id, p.mediaId ?? ''));
+    expect(m).toMatchObject({ status: 'removed_archived', legalHold: 'legal_order', purgeAfter: null });
+    // Even if the media row's own hold were cleared, the held archive row keeps the file from the purge.
+    await db
+      .update(s.ustaadMedia)
+      .set({ legalHold: null })
+      .where(eq(s.ustaadMedia.id, p.mediaId ?? ''));
+    await purgeUstaadRemovedArchive(t(), new Date(Date.now() + 181 * 86_400_000));
+    [m] = await db
+      .select()
+      .from(s.ustaadMedia)
+      .where(eq(s.ustaadMedia.id, p.mediaId ?? ''));
+    expect(m?.purgeAfter).toBeNull();
   });
 });

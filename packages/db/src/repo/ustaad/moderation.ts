@@ -53,7 +53,9 @@ import {
   ustaadModerationActions,
   ustaadPostMedia,
   ustaadPosts,
+  ustaadRemovedArchive,
   ustaadReports,
+  ustaadStrikes,
   ustaadWordLists,
 } from '../../schema';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../errors';
@@ -224,6 +226,8 @@ export interface UstaadStaff {
   userId: string;
   /** City scope of the caller's `ustaad:moderate` (or `ustaad:read` for reads) grants. */
   scope: CityScope;
+  /** Holds `ustaad:takedown` (may reverse a legal removal that is not on legal hold). */
+  canTakedown?: boolean;
 }
 
 export interface MediaRelocation {
@@ -608,6 +612,12 @@ async function archiveMedia(
   legalHold: string | null,
 ): Promise<MediaRelocation[]> {
   if (mediaIds.length === 0) return [];
+  // Security review fix 4: a legal hold also covers files an earlier removal already archived (no purge date).
+  if (legalHold)
+    await tx
+      .update(ustaadMedia)
+      .set({ legalHold, purgeAfter: null })
+      .where(and(inArray(ustaadMedia.id, [...mediaIds]), eq(ustaadMedia.status, 'removed_archived')));
   const rows = await tx
     .select()
     .from(ustaadMedia)
@@ -717,8 +727,17 @@ async function applySanction(
     kind === 'ban'
       ? { status: 'banned', bannedUntil: until, restrictedUntil: null }
       : { status: 'restricted', restrictedUntil: until, bannedUntil: null };
-  // A ban never shortens a longer ban; a restriction never replaces a ban.
-  if (m.status === 'banned' && kind === 'restrict') return;
+  // Security review 2026-11-26 fix 1: a sanction never shortens or dates a stronger one.
+  //  - a ban never replaces a permanent ban or one that ends later (changing a permanent ban is a new four-eyes ban);
+  //  - a restriction never replaces a ban, never puts an end date on a frozen (`review`, POCSO) or minor-report
+  //    account, and never shortens an open-ended or longer restriction.
+  const outlasts = (current: Date | null) =>
+    current === null || (until !== null && current.getTime() >= until.getTime());
+  if (kind === 'ban' && m.status === 'banned' && outlasts(m.bannedUntil)) return;
+  if (kind === 'restrict') {
+    if (m.status === 'banned' || m.restrictedMode !== 'none') return;
+    if (m.status === 'restricted' && outlasts(m.restrictedUntil)) return;
+  }
   const rows = await tx
     .update(ustaadMembers)
     .set(set)
@@ -868,8 +887,9 @@ async function afterDecision(
     kinds: ['staff.ustaad_report', 'staff.ustaad_report_overdue'],
     entityIds: [r.id],
   });
-  if (r.reasonCode === 'minor') {
-    await liftMinorRestriction(tx, t.authorMemberId, r.cityId);
+  if (r.reasonCode === 'minor' || r.reasonCode === 'ncii_impersonation') {
+    if (r.reasonCode === 'minor') await liftMinorRestriction(tx, t.authorMemberId, r.cityId);
+    // Dismissed minor and NCII reports both count toward the false-report strike (security review fix 5).
     if (to === 'dismissed' && r.reporterId)
       await maybeFalseReportStrike(tx, {
         reporterId: r.reporterId,
@@ -1047,15 +1067,32 @@ export async function decideUstaadAppeal(
     await assertNotSelf(tx, staff, t);
     let media: MediaRelocation[] = [];
     if (body.outcome === 'overturned') {
+      // Security review fix 3: a legal removal is reversed only by someone holding `ustaad:takedown`, and nothing is
+      // restored while any archive row of the item is on legal hold.
+      const legal = r.source === 'legal_order' || actions.some((a) => a.action === 'takedown');
+      const [held] = await tx
+        .select({ id: ustaadRemovedArchive.id })
+        .from(ustaadRemovedArchive)
+        .where(
+          and(
+            eq(ustaadRemovedArchive.targetType, t.type),
+            eq(ustaadRemovedArchive.targetId, t.id),
+            isNotNull(ustaadRemovedArchive.legalHold),
+          ),
+        )
+        .limit(1);
+      if ((legal && !staff.canTakedown) || held)
+        throw new ForbiddenError('This removal is under a legal order or hold', 'USTAAD_LEGAL_HOLD');
       if (actions.some((a) => a.action === 'remove' || a.action === 'takedown'))
         media = await restoreTarget(tx, t);
-      if (actions.some((a) => a.action === 'ban' || a.action === 'restrict'))
-        await liftSanction(tx, t.authorMemberId);
       await overturnUstaadStrikes(tx, {
         actionIds: actions.map((a) => a.id),
         staffUserId: staff.userId,
         appealTicketId: r.appealTicketId,
       });
+      // Fix 2: only this report's sanction is lifted; the status is recomputed from the sanctions that remain.
+      if (actions.some((a) => a.action === 'ban' || a.action === 'restrict'))
+        await recomputeUstaadSanction(tx, t.authorMemberId, now);
       await writeAction(tx, {
         report: r,
         target: t,
@@ -1128,11 +1165,65 @@ async function restoreTarget(tx: Tx, t: UstaadTarget): Promise<MediaRelocation[]
   return out;
 }
 
-async function liftSanction(tx: Tx, memberId: string): Promise<void> {
-  await tx
+/**
+ * The member's status from the ban and restrict actions that still stand (their strike is active), after an appeal
+ * overturned one of them: the longest remaining ban, else the longest remaining restriction, else active. A frozen
+ * account (`restricted_mode = review`, POCSO) is never touched here; a minor-report mode stays as it is.
+ */
+async function recomputeUstaadSanction(tx: Tx, memberId: string, now: Date): Promise<void> {
+  const [m] = await tx.select().from(ustaadMembers).where(eq(ustaadMembers.id, memberId)).limit(1);
+  if (!m || m.status === 'left' || m.restrictedMode === 'review') return;
+  const standing = await tx
+    .select({
+      action: ustaadModerationActions.action,
+      days: ustaadModerationActions.days,
+      at: ustaadModerationActions.createdAt,
+    })
+    .from(ustaadStrikes)
+    .innerJoin(ustaadModerationActions, eq(ustaadModerationActions.id, ustaadStrikes.actionId))
+    .where(
+      and(
+        eq(ustaadStrikes.memberId, memberId),
+        eq(ustaadStrikes.status, 'active'),
+        inArray(ustaadModerationActions.action, ['ban', 'restrict']),
+      ),
+    );
+  const longest = (kind: 'ban' | 'restrict'): { live: boolean; until: Date | null } => {
+    let live = false;
+    let until: Date | null = new Date(0);
+    for (const a of standing.filter((x) => x.action === kind)) {
+      const end = a.days === null ? null : new Date(a.at.getTime() + a.days * 86_400_000);
+      if (end !== null && end.getTime() <= now.getTime()) continue;
+      live = true;
+      if (end === null || until === null) until = null;
+      else if (end.getTime() > until.getTime()) until = end;
+    }
+    return { live, until };
+  };
+  const ban = longest('ban');
+  const restrict = longest('restrict');
+  const set = ban.live
+    ? { status: 'banned', bannedUntil: ban.until, restrictedUntil: null }
+    : restrict.live && m.restrictedMode === 'none'
+      ? { status: 'restricted', restrictedUntil: restrict.until, bannedUntil: null }
+      : { status: 'active', bannedUntil: null, restrictedUntil: null };
+  const rows = await tx
     .update(ustaadMembers)
-    .set({ status: 'active', bannedUntil: null, restrictedUntil: null })
-    .where(and(eq(ustaadMembers.id, memberId), inArray(ustaadMembers.status, ['banned', 'restricted'])));
+    .set(set)
+    .where(and(eq(ustaadMembers.id, m.id), eq(ustaadMembers.version, m.version)))
+    .returning({ id: ustaadMembers.id });
+  if (rows.length === 0) throw new ConflictError('This member changed meanwhile', 'STALE_REPORT');
+  if (set.status !== m.status)
+    await recordUstaadEvent(tx, {
+      entityType: 'member',
+      entityId: m.id,
+      kind: 'sanction_recomputed',
+      fromStatus: m.status,
+      toStatus: set.status,
+      actorId: null,
+      actorRole: 'staff',
+      cityId: m.cityId,
+    });
 }
 
 // ── Legal takedown fast path ──────────────────────────────────────────────────────────────────────────────────
