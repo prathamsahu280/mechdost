@@ -128,7 +128,9 @@ describe('Jobs: pay is a monthly range in paise', () => {
   });
 });
 
-type Tree = { [k: string]: string | Tree };
+interface Tree {
+  [k: string]: string | Tree;
+}
 function keys(t: Tree, prefix = ''): string[] {
   return Object.entries(t).flatMap(([k, v]) =>
     typeof v === 'string' ? [`${prefix}${k}`] : keys(v, `${prefix}${k}.`),

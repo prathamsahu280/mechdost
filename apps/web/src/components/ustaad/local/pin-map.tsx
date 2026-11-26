@@ -139,9 +139,9 @@ export default function PinMap({
   }, []);
 
   function drawAccuracy() {
-    const src = map.current?.getSource('acc') as GeoJSONSource | undefined;
+    const src = map.current?.getSource<GeoJSONSource>('acc');
     const a = latest.current.accuracy;
-    src?.setData(a ? circle(a, a.accuracyM) : { type: 'FeatureCollection', features: [] });
+    void src?.setData(a ? circle(a, a.accuracyM) : { type: 'FeatureCollection', features: [] });
   }
 
   useEffect(() => {
