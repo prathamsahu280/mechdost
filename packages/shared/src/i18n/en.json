@@ -482,8 +482,6 @@
     "loadFailed": "Unable to load the product catalogue right now. Try again, or contact MechDost on 7978776551.",
     "tryAgain": "Try again",
     "fitsLabel": "Vehicle type:",
-    "vehicleLabel": "Vehicle type",
-    "vehicleAll": "All vehicles",
     "twoWheeler": "Bikes & scooters (2W)",
     "threeWheeler": "Autos & e-rickshaws (3W)",
     "fourWheeler": "Cars & SUVs (4W)",

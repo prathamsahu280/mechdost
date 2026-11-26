@@ -23,7 +23,6 @@ const base: ShopState = {
   category: undefined,
   sub: undefined,
   sort: 'popular',
-  vehicle: undefined,
   segments: [],
 };
 

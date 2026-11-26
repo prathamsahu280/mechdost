@@ -818,7 +818,8 @@ export const COMPONENTS: readonly ComponentDef[] = [
   {
     code: 'SHOP-FILTERS',
     page: 'Shop (/shop)',
-    component: 'Search, category chips, vehicle chips, sort, results count, empty result',
+    component:
+      'Search, category chips, Kind of vehicle chips (no vehicle-type select since 2026-11-26), sort, results count, empty result',
     path: (r) => String(r.route),
     scope: 'main',
     strategy: 'pairwise',
@@ -830,8 +831,8 @@ export const COMPONENTS: readonly ComponentDef[] = [
           '/shop',
           '/shop?category=lubricants',
           '/shop?category=ev-essentials&sort=price_desc',
-          '/shop?vehicle=2W&sort=price_asc',
-          '/shop?q=battery&vehicle=4W',
+          '/shop?segment=two_wheeler&sort=price_asc',
+          '/shop?q=battery&segment=car_suv',
           '/shop?segment=truck_bus',
           '/shop?segment=truck_bus,tractor_farm&category=tyres',
           '/shop?q=zzzz-no-match',
