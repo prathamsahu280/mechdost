@@ -66,9 +66,14 @@ export function loadQaTurnstileBypass(
   now: number,
 ): QaTurnstileBypass | null {
   const ids = env.QA_TURNSTILE_BYPASS_IDS?.trim() ?? '';
-  const key = env.QA_TURNSTILE_BYPASS_KEY ?? '';
+  // Trimmed like the others: a stray `\r` from an edited env file must not silently break every hash (review).
+  const key = env.QA_TURNSTILE_BYPASS_KEY?.trim() ?? '';
   const untilRaw = env.QA_TURNSTILE_BYPASS_UNTIL?.trim() ?? '';
-  if (!ids || !key || !untilRaw) return null;
+  if (!ids || !key || !untilRaw) {
+    if (ids || key || untilRaw)
+      log('warn', 'qa_turnstile_bypass_incomplete', { note: 'set all three or none' });
+    return null;
+  }
   if (!ISO_UTC.test(untilRaw) || Number.isNaN(Date.parse(untilRaw)))
     throw new Error('QA_TURNSTILE_BYPASS_UNTIL must be an ISO-8601 UTC instant ending in Z');
   const until = Date.parse(untilRaw);
@@ -82,7 +87,11 @@ export function loadQaTurnstileBypass(
   if (hashes.length > MAX_ENTRIES) throw new Error('QA_TURNSTILE_BYPASS_IDS holds at most 30 entries');
   if (!hashes.every((h) => HASH.test(h)))
     throw new Error('QA_TURNSTILE_BYPASS_IDS must hold only 64-character hex hashes (never raw values)');
-  if (until <= now) return null;
+  if (until <= now) {
+    // Distinct from "unset": the variables are still on the server and should be cleared (runbook § 7.1).
+    log('warn', 'qa_turnstile_bypass_expired', { until: new Date(until).toISOString() });
+    return null;
+  }
   return { key, until, hashes: new Set(hashes) };
 }
 

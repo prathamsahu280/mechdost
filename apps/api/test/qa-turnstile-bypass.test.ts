@@ -291,6 +291,117 @@ describe('over HTTP: password sign-in and Ustaad join', () => {
   });
 });
 
+describe('over HTTP: Ustaad join by preview testers (user-id hashes)', () => {
+  let app: Awaited<ReturnType<typeof buildApp>>;
+  const JOIN_NO_TOKEN = {
+    track: 'apprentice',
+    specialities: ['two_wheeler'],
+    displayName: 'Raju Verma',
+    garageName: 'Verma Motors',
+    showGarage: false,
+    pincode: '492001',
+    areaLabel: 'Pandri',
+    yearsClaimed: 1,
+    workPlace: 'shop',
+    verifyMethods: ['owner'],
+    consents: { ustaad_profile: true, ustaad_directory: false, ustaad_training: false, ustaad_offers: false },
+  };
+  const people: { id: string; token: string }[] = [];
+
+  beforeAll(async () => {
+    const db = await testDb();
+    const [state] = await db
+      .insert(s.states)
+      .values({ code: 'CG', name: 'Chhattisgarh', gstStateCode: '22' })
+      .returning();
+    if (!state) throw new Error('state');
+    const [raipur] = await db
+      .insert(s.cities)
+      .values({ stateId: state.id, code: 'RPR', slug: 'raipur', name: 'Raipur', status: 'live' })
+      .returning();
+    if (!raipur) throw new Error('city');
+    await db.insert(s.pincodes).values({ pincode: '492001', stateId: state.id, cityId: raipur.id });
+    await db.insert(s.ustaadReachCities).values({ cityId: raipur.id });
+    const identities = [1, 2].map((n) => ({
+      firebaseUid: `qa-join-${String(n)}`,
+      phone: `+91985550010${String(n)}`,
+      email: `qa-join-${String(n)}@example.com`,
+      emailVerified: true,
+    }));
+    const users: { id: string }[] = [];
+    for (const identity of identities) {
+      const u = await ensureUser(db, identity);
+      users.push(u);
+      // Both are preview testers (they pass the gate); only the first is on the bypass allowlist.
+      await db.insert(s.ustaadPreviewTesters).values({ userId: u.id, reasonCode: 'qa_run' });
+    }
+    const [first] = users;
+    if (!first) throw new Error('user');
+    const bypass: QaTurnstileBypass = {
+      key: KEY,
+      until: Date.now() + 3600_000,
+      hashes: new Set([qaBypassHash(KEY, { kind: 'user', userId: first.id })]),
+    };
+    const turnstile = withQaTurnstileBypass(new FakeTurnstile(['human-token-123']), bypass, (row) =>
+      recordSecurityAudit(db, {
+        action: 'security.turnstile_bypassed',
+        userId: row.userId,
+        entity: 'turnstile',
+        entityId: row.route,
+        after: { route: row.route, subject_kind: row.subjectKind, request_id: row.requestId },
+      }),
+    );
+    app = await buildApp({ turnstile });
+    identities.forEach((identity, i) => {
+      const u = users[i];
+      if (!u) return;
+      people.push({ id: u.id, token: app.verifier.add(`token-qa-join-00000000000${String(i)}`, identity) });
+    });
+  });
+
+  const join = (token: string) =>
+    app.app.request('/v1/ustaad/join', {
+      method: 'POST',
+      headers: { ...bearer(token), 'content-type': 'application/json' },
+      body: JSON.stringify(JOIN_NO_TOKEN),
+    });
+
+  it('an allowlisted tester joins without a token: 201 and exactly one audit row with that user', async () => {
+    const [a] = people;
+    if (!a) throw new Error('person');
+    const r = await join(a.token);
+    expect(r.status).toBe(201);
+    const rows = (await app.db.select().from(s.auditLog)).filter(
+      (x) => x.action === 'security.turnstile_bypassed' && x.entityId === 'ustaad.join',
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.actorUserId).toBe(a.id);
+  });
+
+  it('a tester not on the allowlist without a token → 400 TURNSTILE_FAILED', async () => {
+    const b = people[1];
+    if (!b) throw new Error('person');
+    const r = await join(b.token);
+    expect(r.status).toBe(400);
+    expect(((await r.json()) as ErrorJson).error.code).toBe('TURNSTILE_FAILED');
+  });
+});
+
+describe('key whitespace', () => {
+  it('a trailing CR on the key (edited env file) does not break the hashes', () => {
+    const userId = '0190a000-0000-7000-8000-0000000000cc';
+    const cfg = loadQaTurnstileBypass(
+      {
+        QA_TURNSTILE_BYPASS_IDS: qaBypassHash(KEY, { kind: 'user', userId }),
+        QA_TURNSTILE_BYPASS_KEY: `${KEY}\r`,
+        QA_TURNSTILE_BYPASS_UNTIL: in6h,
+      },
+      NOW,
+    );
+    expect(cfg?.key).toBe(KEY);
+  });
+});
+
 describe('shipped config (production)', () => {
   const parse = (text: string): Record<string, string> =>
     Object.fromEntries(

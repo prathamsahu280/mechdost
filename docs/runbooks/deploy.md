@@ -293,7 +293,8 @@ rate limits, lockouts, passwords, the staff phone code and permissions are uncha
 
 **Build the allowlist (lead, on the repo machine; never paste raw values into a log, issue or chat):** pick a fresh key
 of at least 32 characters. Put the subjects in a local file outside the repo, one per line, in the canonical form the
-API hashes: `phone:+91XXXXXXXXXX` (E.164), `email:<lower-case address>` or `user:<users.id uuid>`. Then:
+API hashes: `phone:+91XXXXXXXXXX` (E.164), `email:<lower-case address>` or `user:<users.id uuid>`. Then, in **Git
+Bash** (bash syntax; checked 2026-11-27 against `qaBypassHash`):
 
 ```
 QA_KEY='<key>' node -e "const c=require('node:crypto');const f=require('node:fs');console.log(f.readFileSync(process.argv[1],'utf8').split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>c.createHmac('sha256',process.env.QA_KEY).update(l).digest('hex')).join(','))" <path-to-local-file>
@@ -304,15 +305,19 @@ phone line (sign-in) and its `user:` line (join).
 
 **Turn on:** in `/opt/mechdost/.env` set `QA_TURNSTILE_BYPASS_IDS=<hashes>`, `QA_TURNSTILE_BYPASS_KEY=<key>`,
 `QA_TURNSTILE_BYPASS_UNTIL=<start + 6 h, ISO-8601 UTC ending in Z>` (more than 12 h ahead, or a malformed value, and the
-API refuses to start: the old container keeps serving until you fix it). Restart the API
+API refuses to start: the new container exits and restarts in a loop, so the API is down until you fix the value and
+restart — check the window before restarting). Restart the API
 (`docker compose --profile api up -d api` in `/opt/mechdost`, or the normal deploy) and confirm the log line
 `qa_turnstile_bypass_on {until, entries}`. Each use logs `qa_turnstile_bypass_used` and writes one `audit_log` row
 `security.turnstile_bypassed` (route, subject kind, user id or the first 8 hex of the identifier hash, request id).
 
 **Turn off:** delete the three lines, restart the API, confirm `qa_turnstile_bypass_off`. After `UNTIL` it is off by
-itself (a restart then also logs `off`). Record both times in the run's settings ledger. Revert the code within 48 h
-unless the founder keeps it dormant (Q-SIM-3): delete the file, unwrap the verifier in `server.ts`, drop the three
-names from `.env.example`, `deploy/env.server.example` and this section (the `verifyFor` interface can stay).
+itself (a restart then logs `qa_turnstile_bypass_expired`: clear the lines; only some of the three set logs
+`qa_turnstile_bypass_incomplete` and stays off). Record both times in the run's settings ledger. Revert the code within 48 h
+unless the founder keeps it dormant (Q-SIM-3): `git revert` the bypass commit, or by hand: delete
+`apps/api/src/auth/qa-turnstile-bypass.ts` **and** `apps/api/test/qa-turnstile-bypass.test.ts`, unwrap the verifier in
+`server.ts`, drop the three names from `.env.example`, `deploy/env.server.example` and this section (the `verifyFor`
+interface can stay).
 
 ## 8. Troubleshooting
 
