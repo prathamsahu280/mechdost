@@ -15,7 +15,7 @@
  * - Blocked either way: the thread is 404 for both (SR-35). Staff read a thread only through an open report on one of
  *   its messages, city scoped, with a reason code, and every read writes `audit_log` (`ustaad.dm_read`).
  */
-import { and, asc, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, lt, or, sql, type SQL } from 'drizzle-orm';
 import { ustaadThreadMachine, type UstaadThreadStatus } from '@mechdost/shared/state';
 import type {
   MessageView,
@@ -42,6 +42,7 @@ import {
 } from '../../schema';
 import { ConflictError, DailyCapError, ForbiddenError, NotFoundError, ValidationError } from '../errors';
 import type { Tx } from '../orders';
+import { rowsOf } from '../sql-rows';
 import { recordUstaadEvent } from './events';
 import {
   bumpUstaadDailyCounter,
@@ -72,6 +73,19 @@ async function scamPhrases(tx: Tx): Promise<string[]> {
 
 const otherOf = (t: ThreadRow, me: string) => (t.lowId === me ? t.highId : t.lowId);
 
+/**
+ * The receiver (the member who did not start the request) may see the thread only on content, never on a proxy
+ * column (security review 2026-11-26): while `requested`, the requester's latest message (the request; only one is
+ * allowed per request) must be unheld and not deleted; in any other state at least one unheld, undeleted message
+ * must exist. A held request therefore never shows up, after a decline and a re-request either.
+ */
+const receiverCanSee = (threadId: SQL) =>
+  sql`exists (select 1 from ustaad_threads t2 where t2.id = ${threadId} and (case when t2.status = 'requested' then
+    coalesce((select m.held_reason_code is null and m.deleted_at is null from ustaad_messages m
+      where m.thread_id = t2.id and m.sender_id = t2.requested_by order by m.created_at desc, m.id desc limit 1), false)
+  else exists (select 1 from ustaad_messages m where m.thread_id = t2.id and m.held_reason_code is null
+      and m.deleted_at is null) end))`;
+
 /** A thread the caller is part of and that is not blocked (404 otherwise). */
 async function myThread(tx: Tx, me: string, threadId: string, lock = false): Promise<ThreadRow> {
   const q = tx
@@ -83,8 +97,12 @@ async function myThread(tx: Tx, me: string, threadId: string, lock = false): Pro
   if (!row || row.status === 'blocked') throw new NotFoundError('Conversation not found');
   if (await ustaadBlockedEitherWay(tx, row.lowId, row.highId))
     throw new NotFoundError('Conversation not found');
-  // A thread whose only message is held does not exist for the receiver (no card, no accept, no notice).
-  if (row.requestedBy !== me && row.lastMessageAt === null) throw new NotFoundError('Conversation not found');
+  // A thread whose request is held does not exist for the receiver (no card, no accept, no notice).
+  if (row.requestedBy !== me) {
+    const res = await tx.execute(sql`select ${receiverCanSee(sql`${row.id}::uuid`)} as ok`);
+    const ok = rowsOf<{ ok: unknown }>(res)[0]?.ok;
+    if (!(ok === true || ok === 't')) throw new NotFoundError('Conversation not found');
+  }
   return row;
 }
 
@@ -328,7 +346,7 @@ export async function startUstaadThread(
       ustaadThreadMachine.assert('declined', 'requested', 'member');
       const [moved] = await tx
         .update(ustaadThreads)
-        .set({ status: 'requested', requestedBy: me.id })
+        .set({ status: 'requested', requestedBy: me.id, lastMessageAt: null })
         .where(and(eq(ustaadThreads.id, existing.id), eq(ustaadThreads.version, existing.version)))
         .returning();
       if (!moved) throw new ConflictError('Try again', 'STALE');
@@ -524,7 +542,7 @@ export async function listUstaadThreads(
       and(
         or(eq(ustaadThreads.lowId, me.id), eq(ustaadThreads.highId, me.id)),
         box,
-        or(eq(ustaadThreads.requestedBy, me.id), isNotNull(ustaadThreads.lastMessageAt)),
+        or(eq(ustaadThreads.requestedBy, me.id), receiverCanSee(sql`${ustaadThreads.id}`)),
         sql`not exists (select 1 from ustaad_blocks bl where (bl.member_id = ${ustaadThreads.lowId} and bl.target_id = ${ustaadThreads.highId}) or (bl.member_id = ${ustaadThreads.highId} and bl.target_id = ${ustaadThreads.lowId}))`,
         cur ? sql`(${at}, ${ustaadThreads.id}) < (${cur.at}, ${cur.id})` : undefined,
       ),

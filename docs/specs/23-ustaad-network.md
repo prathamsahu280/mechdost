@@ -1312,7 +1312,9 @@ new_threads | connect_requests`; one conditional upsert `n + k where n < cap`, n
   and UPI ids masked to "#" (`dmTextCheck`, `shared/ustaad/social-rules.ts`), no media. Every message passes
   `screenUstaadContent` (`block` → 422 `USTAAD_CONTENT_BLOCKED`, `hold` → held) and the scam signals (fee phrase, UPI,
   pay-app ask, admin `scam_phrase` list) → held: invisible to the receiver, no notice, `last_message_at` unchanged,
-  shown to the sender as pending (a thread whose only message is held does not exist for the receiver: not
+  shown to the sender as pending (a thread whose request message is held does not exist for the receiver, gated on content: the requester's latest
+  message must be unheld while `requested`, an unheld message must exist otherwise; a re-request after a decline resets
+  `last_message_at`; not
   listed, 404 to open or accept); its media is not readable by the receiver (`readableUstaadMedia` now requires an
   `open` thread and an unheld message). Voice/photo only the sender's own verified audio/image in `media`; a shared
   post must be visible to both. Read receipts, per-thread mute (no notice), one `ustaad.message` bell entry per thread

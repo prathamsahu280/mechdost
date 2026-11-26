@@ -507,6 +507,32 @@ describe('request-only messages (SR-33, SR-34, AT-DM-1)', () => {
     expect((await listUstaadThreads(t(), a, { box: 'sent' })).items.map((x) => x.id)).toContain(th.threadId);
   });
 
+  it('an unheld request is visible; decline → re-request with a held message stays invisible (content gate)', async () => {
+    const a = await member();
+    const b = await member();
+    const th = await startUstaadThread(t(), a, { memberId: b.memberId, text: 'namaste' });
+    expect((await listUstaadThreads(t(), b, { box: 'requests' })).items.map((x) => x.id)).toContain(
+      th.threadId,
+    );
+    await moveUstaadThread(t(), b, th.threadId, 'decline');
+    // The member who declined now writes first, but the message is held.
+    const notesBefore = (await db.select().from(s.notifications).where(eq(s.notifications.userId, a.userId)))
+      .length;
+    const again = await startUstaadThread(t(), b, { memberId: a.memberId, text: 'joining fee 300 bhejo' });
+    expect(again.threadId).toBe(th.threadId);
+    expect(again.pending).toBe(true);
+    expect((await listUstaadThreads(t(), a, { box: 'requests' })).items.map((x) => x.id)).not.toContain(
+      th.threadId,
+    );
+    expect((await err(ustaadThreadMessages(t(), a, th.threadId, {}))).status).toBe(404);
+    expect((await err(moveUstaadThread(t(), a, th.threadId, 'accept'))).status).toBe(404);
+    const notesAfter = (await db.select().from(s.notifications).where(eq(s.notifications.userId, a.userId)))
+      .length;
+    expect(notesAfter).toBe(notesBefore);
+    const [row] = await db.select().from(s.ustaadThreads).where(eq(s.ustaadThreads.id, th.threadId));
+    expect(row?.lastMessageAt).toBeNull();
+  });
+
   it('a restricted member’s thread and connection moves emit no analytics (SR-42)', async () => {
     const a = await member();
     const b = await member();
