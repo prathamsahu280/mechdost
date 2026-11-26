@@ -13,7 +13,13 @@ This file is the single source of truth for **where the build is right now**. It
   CONSOLE-003 "REQ" and the LaterCard contrast rows).
 - **qa-regressions (5 failures):** B1 + QA 13 were tests left behind by copy rulings (2026-11-22, Q196) → re-pointed;
   theme with full storage was a real regression from "light by default" (3b54a77c) → pre-paint observer fixed.
-- **Next:** lead merge; open minor a11y items in decisions 2026-11-26 "Admin Ustaad lists".
+- **Verified:** vitest web 1641/1641 (one file re-run after a port clash with the audit), shared 949/949; tsc web 0;
+  eslint on changed files 0; prettier on changed files 0; state audit `API-ADM-USTAAD*` 144/144 (API build); demo
+  build e2e qa-regressions + demo-flows + segments on :3105 (another agent held :3100): the five targets pass; the
+  assistant + phone compare-tray tests fail only because the consent fixture is bound to :3100 (proved by re-running
+  with a :3105 fixture; F8 / lifecycle 6 still need a :3100 run); Hindi crawl public + admin 2/2; `/shop` 178.5 KB.
+- **Next:** lead merge (re-run qa-regressions F8 + lifecycle 6 mobile on :3100); open minor a11y items in decisions
+  2026-11-26 "Admin Ustaad lists".
 
 ## 2026-11-26 ~17:20 — end of afternoon session (handover)
 
