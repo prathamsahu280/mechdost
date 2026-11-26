@@ -103,16 +103,17 @@ export const customerSavingsLines = pgTable(
 /**
  * Daily price history per pack and city (design 2026-11-25 "from 1 Jan 2027 … start recording daily price history
  * now"): the printed MRP and the lowest customer price on offer that IST day, written once a day by the worker
- * (`ON CONFLICT DO NOTHING`, append-only). The basis for any future "lowest price in the last N days" claim.
+ * (`ON CONFLICT DO NOTHING`; rows are never updated). The basis for any future "lowest price in the last N days" claim.
  */
 export const variantPriceDaily = pgTable(
   'variant_price_daily',
   {
     /** IST calendar day. */
     day: date({ mode: 'string' }).notNull(),
+    /** Cascade: removing a pack (only demo data is ever deleted; live packs are archived) takes its history along. */
     variantId: uuid()
       .notNull()
-      .references(() => productVariants.id, { onDelete: 'restrict' }),
+      .references(() => productVariants.id, { onDelete: 'cascade' }),
     cityId: uuid()
       .notNull()
       .references(() => cities.id, { onDelete: 'restrict' }),

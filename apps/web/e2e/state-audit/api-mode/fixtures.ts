@@ -18,6 +18,7 @@ import { AdminCoinActivityDto } from '@mechdost/shared/coins-api';
 import { QuoteDetailDto, QuotePageDto, QuoteReadDto } from '@mechdost/shared/quote-api';
 import { AdminReviewsDto } from '@mechdost/shared/reviews-api';
 import { MyOrderDto } from '@mechdost/shared/checkout-api';
+import { OrderSavingsDto } from '@mechdost/shared/savings-api';
 import {
   OrderChanged,
   RoutingOrder,
@@ -261,6 +262,28 @@ function refundMocks(): Mock[] {
       }),
     },
   ];
+}
+
+/** "Your savings" on the order page (decision 2026-11-26): a delivered part whose saving a refund reduced. */
+function orderSavingsMock(): Mock {
+  return {
+    method: 'GET',
+    path: /^\/me\/orders\/[^/]+\/savings$/,
+    schema: OrderSavingsDto,
+    reply: () => ({
+      body: {
+        enabled: true,
+        status: 'final',
+        mrpPaise: 12_000,
+        couponPaise: 0,
+        coinsPaise: 0,
+        deliveryPaise: 4_000,
+        totalPaise: 16_000,
+        excludedLines: 0,
+        refunded: true,
+      },
+    }),
+  };
 }
 
 /** The customer's order with one or two refunds on its part (`ORD-REFUNDLINE`). */
@@ -1741,7 +1764,7 @@ export function mocksFor(c: AuditCase): Mock[] {
     case 'API-ADM-REFUNDQ':
       return [meMock(), ...refundMocks()];
     case 'API-ORD-REFUNDLINE':
-      return [meMock(), orderRefundMock()];
+      return [meMock(), orderRefundMock(), orderSavingsMock()];
     case 'API-SHOP-PORTAL':
     case 'API-SHOP-TIER1':
     case 'API-SHOP-OFFERS':

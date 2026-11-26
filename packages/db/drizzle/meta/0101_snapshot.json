@@ -1,5 +1,5 @@
 {
-  "id": "ac099181-f985-46a6-977a-f89924fcfa13",
+  "id": "161bdde0-f663-4cfa-bd7e-87f3d7d26c4a",
   "prevId": "620e8642-31dc-420d-8fd3-70b13b58fc45",
   "version": "7",
   "dialect": "postgresql",
@@ -34761,7 +34761,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "restrict",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "variant_price_daily_city_id_cities_id_fk": {

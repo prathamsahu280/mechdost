@@ -2410,7 +2410,9 @@ Spec 23 § 21f. Rulings made while building (lead brief + security review of the
   `audit_log`). Details: spec 14 "Savings ledger".
 - **Consent:** showing a customer the savings on their own orders is part of the service (like order history), so it
   needs no personalisation consent; the monthly recap message is promotional and needs the marketing consent per
-  channel (QSV1). Analytics carry a rupee band only, never the amount.
+  channel (QSV1). The founder line above says "personal data only with the personalisation consent", so this
+  reading is queued as QSV3 (default meanwhile: shown without consent). Analytics carry a rupee band only, never the
+  amount.
 - **Admin control:** `customers.savings_enabled` (default on; off hides every surface, the ledger keeps being
   written so turning it back on shows no gaps) and content keys `savings.order`, `savings.account` (must keep
   `{amount}`, else the default shows) and `savings.cart`, en + hi.

@@ -52,7 +52,7 @@ ALTER TABLE "customer_savings_entries" ADD CONSTRAINT "customer_savings_entries_
 ALTER TABLE "customer_savings_entries" ADD CONSTRAINT "customer_savings_entries_city_id_cities_id_fk" FOREIGN KEY ("city_id") REFERENCES "public"."cities"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "customer_savings_lines" ADD CONSTRAINT "customer_savings_lines_entry_id_customer_savings_entries_id_fk" FOREIGN KEY ("entry_id") REFERENCES "public"."customer_savings_entries"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "customer_savings_lines" ADD CONSTRAINT "customer_savings_lines_order_item_id_order_items_id_fk" FOREIGN KEY ("order_item_id") REFERENCES "public"."order_items"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "variant_price_daily" ADD CONSTRAINT "variant_price_daily_variant_id_product_variants_id_fk" FOREIGN KEY ("variant_id") REFERENCES "public"."product_variants"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "variant_price_daily" ADD CONSTRAINT "variant_price_daily_variant_id_product_variants_id_fk" FOREIGN KEY ("variant_id") REFERENCES "public"."product_variants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "variant_price_daily" ADD CONSTRAINT "variant_price_daily_city_id_cities_id_fk" FOREIGN KEY ("city_id") REFERENCES "public"."cities"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 CREATE UNIQUE INDEX "customer_savings_entries_delivered_once" ON "customer_savings_entries" USING btree ("order_id") WHERE "customer_savings_entries"."kind" = 'delivered';--> statement-breakpoint
 CREATE UNIQUE INDEX "customer_savings_entries_refund_once" ON "customer_savings_entries" USING btree ("refund_id");--> statement-breakpoint
@@ -65,7 +65,8 @@ CREATE INDEX "variant_price_daily_city_id_index" ON "variant_price_daily" USING 
 ALTER TABLE "order_items" ADD CONSTRAINT "order_items_mrp_nonneg" CHECK ("order_items"."mrp_paise" is null or "order_items"."mrp_paise" >= 0);--> statement-breakpoint
 ALTER TABLE "orders" ADD CONSTRAINT "orders_delivery_waived_nonneg" CHECK ("orders"."delivery_waived_paise" >= 0);--> statement-breakpoint
 -- Hand-written (decision 2026-11-26 "Your savings"): deny-all RLS (the API is the only reader and writer) and
--- append-only ledgers; a correction is a new row, never an edit.
+-- append-only ledgers; a correction is a new row, never an edit. Price history rows are never updated; they are only
+-- deleted with their pack (FK cascade, demo removal), so that table blocks UPDATE only.
 ALTER TABLE public.customer_savings_entries ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE public.customer_savings_lines ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE public.variant_price_daily ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
@@ -74,5 +75,5 @@ CREATE TRIGGER customer_savings_entries_append_only BEFORE UPDATE OR DELETE ON p
   FOR EACH ROW EXECUTE FUNCTION public.forbid_update_delete();--> statement-breakpoint
 CREATE TRIGGER customer_savings_lines_append_only BEFORE UPDATE OR DELETE ON public.customer_savings_lines
   FOR EACH ROW EXECUTE FUNCTION public.forbid_update_delete();--> statement-breakpoint
-CREATE TRIGGER variant_price_daily_append_only BEFORE UPDATE OR DELETE ON public.variant_price_daily
+CREATE TRIGGER variant_price_daily_no_update BEFORE UPDATE ON public.variant_price_daily
   FOR EACH ROW EXECUTE FUNCTION public.forbid_update_delete();

@@ -8692,7 +8692,7 @@
     "cartNote": "Estimate, final after delivery.",
     "refunded": "A refund on this order reduced the saving.",
     "orders": "{count, plural, one {# delivered order} other {# delivered orders}}",
-    "empty": "Your savings show here after your first delivered order.",
+    "empty": "Savings show here when an order is delivered.",
     "emptyAction": "Shop parts",
     "error": "Your savings could not be loaded.",
     "retry": "Try again",

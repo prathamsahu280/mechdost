@@ -258,7 +258,7 @@ export async function orderSavingsForCustomer(
   if (subs.length === 0) throw new NotFoundError('Order not found');
   const live = subs.filter((o) => o.status !== 'cancelled' && o.status !== 'rejected');
   const out: OrderSavingsView = {
-    status: live.length === 0 ? 'none' : 'final',
+    status: 'none',
     mrpPaise: 0,
     couponPaise: 0,
     coinsPaise: 0,
@@ -282,22 +282,29 @@ export async function orderSavingsForCustomer(
           .select()
           .from(customerSavingsEntries)
           .where(inArray(customerSavingsEntries.orderId, delivered));
+  let anyFinal = false;
+  let anyOnTheWay = false;
   for (const o of live) {
     const mine = rows.filter((r) => r.orderId === o.id);
-    if (o.status === 'delivered' && mine.some((r) => r.kind === 'delivered')) {
+    if (o.status === 'delivered') {
+      // Delivered: only the ledger counts. A part delivered before the ledger existed (migration 0101) has no row
+      // and shows nothing, never an "estimate" on a delivered order.
+      if (!mine.some((r) => r.kind === 'delivered')) continue;
+      anyFinal = true;
       for (const r of mine) {
         add(r);
         if (r.kind === 'delivered') out.excludedLines += r.excludedLines;
         else out.refunded = true;
       }
     } else {
-      // On its way (or delivered but not yet written): the honest estimate from this part's own snapshot.
-      out.status = 'estimate';
+      // On its way: the honest estimate from this part's own snapshot.
+      anyOnTheWay = true;
       const b = await breakdownOf(db, o);
       add(b);
       out.excludedLines += b.excludedLines;
     }
   }
+  out.status = anyOnTheWay ? 'estimate' : anyFinal ? 'final' : 'none';
   return out;
 }
 

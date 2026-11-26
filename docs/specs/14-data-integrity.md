@@ -232,12 +232,14 @@ State: `rsa_requests` moves only through `rsaMachine` as a conditional UPDATE on
   CONFLICT DO NOTHING. Called by `transitionOrder` after `settleGroupPayment` when a part becomes `delivered`, and at
   the end of the refund `afterProcessed` hook (both refund modes, webhook replays, settle-by-hand), each inside a
   savepoint (`syncOrderSavingsSafely`): a savings failure writes an `audit_log` alert (`savings.alert.not_written`)
-  and never undoes a delivery or a settled refund; the next sync repairs it.
+  and never undoes a delivery or a settled refund; the next sync repairs it. A part delivered before 0101 has no row
+  and shows nothing (never an "estimate" on a delivered order) until QSV2 is decided.
 - **Refund maths:** a refund reverses every component and line in proportion to refund / order total, telescoping:
   after refunds R1..Rn the reversal is floor(x · ΣR / T) per component and per line, so any split of partial refunds
   reverses at most what was saved, and refunds adding up to the total reverse exactly all of it (property tests in
   `packages/shared/test/savings.test.ts`).
-- **`variant_price_daily`** (append-only, PK `(day, variant_id, city_id)`): per live pack and live city, the printed
+- **`variant_price_daily`** (never updated: an UPDATE trigger refuses it; PK `(day, variant_id, city_id)`; rows go
+  with their pack by FK cascade, so removing demo packs still works): per live pack and live city, the printed
   MRP and the lowest customer price among live listings (admin city price, else the shop's), written by the worker
   once per IST day (hourly check, ON CONFLICT DO NOTHING). The record for any future "lowest price in N days" claim.
 - RLS on, grants revoked, deny-all for all three tables (`rls-inventory.ts`); the privacy export includes the

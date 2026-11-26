@@ -356,6 +356,23 @@ describe('reads', () => {
     expect(view.status).toBe('estimate');
     expect(view.mrpPaise).toBeGreaterThan(0);
   });
+
+  it('a part delivered before the ledger existed (no row) is never shown as an estimate', async () => {
+    // Another pack: the battery's demo stock is spent by the earlier cases.
+    const { order } = await paidOrder(ravi, [{ sku: skuOf('castrol-activ-4t-20w40-900ml'), qty: 1 }]);
+    await db
+      .update(s.orders)
+      .set({
+        status: 'delivered',
+        deliveredAt: new Date(),
+        shopId: (await db.select().from(s.shops).limit(1))[0]!.id,
+      })
+      .where(eq(s.orders.id, order.id));
+    expect(await entriesOf(order.id)).toHaveLength(0);
+    const view = await orderSavingsForCustomer(t(), ravi, order.code);
+    expect(view.status).toBe('none');
+    expect(view.totalPaise).toBe(0);
+  });
 });
 
 describe('daily price history', () => {
@@ -371,5 +388,29 @@ describe('daily price history', () => {
     expect(row).toMatchObject({ mrpPaise: variant!.mrpPaise });
     expect(row!.offers).toBeGreaterThan(0);
     expect(row!.minPricePaise).toBeGreaterThan(0);
+  });
+
+  it('history never blocks removing a pack (demo --remove): rows go with the variant, but are never edited', async () => {
+    await recordDailyPrices(t(), '2026-11-27');
+    const [product] = await db
+      .select()
+      .from(s.products)
+      .where(eq(s.products.slug, 'scooter-tubeless-tyre-90-90-12'));
+    const variants = await db
+      .select({ id: s.productVariants.id })
+      .from(s.productVariants)
+      .where(eq(s.productVariants.productId, product!.id));
+    const ids = variants.map((v) => v.id);
+    expect(
+      (await db.select().from(s.variantPriceDaily).where(eq(s.variantPriceDaily.variantId, ids[0]!))).length,
+    ).toBeGreaterThan(0);
+    await expect(
+      db.execute(sql`update variant_price_daily set offers = 0 where variant_id = ${ids[0]!}`),
+    ).rejects.toThrow();
+    for (const id of ids) await db.delete(s.shopInventory).where(eq(s.shopInventory.variantId, id));
+    await db.delete(s.products).where(eq(s.products.id, product!.id));
+    expect(
+      (await db.select().from(s.variantPriceDaily).where(eq(s.variantPriceDaily.variantId, ids[0]!))).length,
+    ).toBe(0);
   });
 });
