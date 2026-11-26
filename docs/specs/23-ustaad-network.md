@@ -1771,12 +1771,16 @@ new_threads | connect_requests`; one conditional upsert `n + k where n < cap`, n
   decision, one status line per panel that survives the form swaps, result counts announced, owner link focused when
   it appears and Close returns to the section, per-field hints, `aria-invalid` and focus for the appeal, takedown,
   verify-note and unban-note fields, busy guards on the audited reads and the owner link.
-- **Tests:** db `ustaad-console.test.ts` (22), api `ustaad-console-api.test.ts` (7), web `admin-ustaad-console.test.ts`.
+- **Tests:** db `ustaad-console.test.ts` (22), api `ustaad-console-api.test.ts` (7), web `admin-ustaad-console.test.ts`;
+  e2e `e2e/state-audit/ustaad-console.shots.ts` (`playwright.ustaad-console.config.ts`, the API-mode build, a Raipur
+  community manager: every section's heading, focus on open, holds offer only Release/Remove, no phone or email,
+  no unmocked call; screenshots with `USTAAD_CONSOLE_SHOTS=<dir>`); state-audit row `API-ADM-USTAAD-CONSOLE` (the
+  settings row now opens `?section=settings&sec=…`).
 - **Not done (G2):** zone counts and the exact-pin view (`ustaad:location_exact`) in the console; a staff read of
   evidence-vault files (two-person ops step); setting or clearing a legal hold by hand (holds come from takedowns and
   the classifier); the `ustaad_grievance` ticket kind; the shared `LoadState` live-region pattern (admin-wide);
-  "Show more" keeps focus on the last row; e2e and the state-audit rows `ADM-USTAAD-CONSOLE-*` (one production build,
-  see the report).
+  "Show more" keeps focus on the last row; queue filters are not in the URL; the full `API-ADM-USTAAD-CONSOLE` audit
+  sweep and 768 px / dark screenshots (lead's speed-up: 1440 light + Hindi only).
 
 ## 22. Not built / later
 
