@@ -53,3 +53,5 @@ export * from './removed-archive';
 // publish side effects a keep runs.
 export * from './console';
 export * from './publish';
+// Preview testers (founder 2026-11-27): named non-staff accounts let in during staff_preview.
+export * from './testers';

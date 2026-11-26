@@ -17,6 +17,8 @@ import {
   USTAAD_BADGE_RULE_KINDS,
   USTAAD_LEVELS,
   USTAAD_SEGMENT_CODES,
+  USTAAD_TESTER_ADD_REASONS,
+  USTAAD_TESTER_REMOVE_REASONS,
   WORD_LISTS,
 } from '../codes';
 import { InternalPathDto } from '../paths';
@@ -353,3 +355,29 @@ export type ReachCityRow = z.infer<typeof ReachCityRowDto>;
 export type PromotionRow = z.infer<typeof PromotionRowDto>;
 export type TutorialCardRow = z.infer<typeof TutorialCardRowDto>;
 export type CoachmarkRow = z.infer<typeof CoachmarkRowDto>;
+
+// ── Preview testers (founder 2026-11-27; spec 23 § 3) ─────────────────────────────────────────────────────────────
+/** Add by the account's phone or email (looked up on the server; the answer shows only the masked phone). */
+export const PreviewTesterAddDto = z
+  .object({
+    identifier: z.string().trim().min(3).max(254),
+    reasonCode: z.enum(USTAAD_TESTER_ADD_REASONS),
+    note: z.string().trim().max(200).optional(),
+  })
+  .strict();
+export const PreviewTesterRemoveDto = z
+  .object({
+    reasonCode: z.enum(USTAAD_TESTER_REMOVE_REASONS),
+    note: z.string().trim().max(200).optional(),
+    version: Version,
+  })
+  .strict();
+export const PreviewTesterRowDto = z.object({
+  id: z.string(),
+  maskedPhone: z.string().nullable(),
+  reasonCode: z.enum(USTAAD_TESTER_ADD_REASONS),
+  note: z.string().nullable(),
+  addedAt: z.string(),
+  version: z.number().int(),
+});
+export type PreviewTesterRow = z.infer<typeof PreviewTesterRowDto>;
