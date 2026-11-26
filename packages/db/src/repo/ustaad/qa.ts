@@ -39,6 +39,7 @@ import { recordUstaadEvent } from './events';
 import { recordIzzat } from './izzat';
 import { recomputeUstaadLevel } from './levels';
 import { openUstaadAutoHoldReport, screenUstaadContent } from './moderation';
+import { ustaadScreenText, ustaadStoredOriginal } from './screen-text';
 import { notifyUstaad } from './notify';
 import { readUstaadSettingValues } from './settings';
 
@@ -171,7 +172,11 @@ export async function askUstaadQuestion(
     if (!city) throw new NotFoundError('City not found');
     const screen = await screenUstaadContent(tx, {
       kind: 'question',
-      text: [input.title, input.body].filter(Boolean).join('\n') || null,
+      text: ustaadScreenText({
+        parts: [input.title, input.body],
+        original: input.bodyOriginal,
+        correction: input.correction,
+      }),
       mediaIds: input.voiceMediaId ? [input.voiceMediaId] : [],
       authorId: me.id,
     });
@@ -193,7 +198,7 @@ export async function askUstaadQuestion(
             vehicleModelId: input.vehicleModelId ?? null,
             title: input.title ?? VOICE_ONLY_TITLE,
             body: input.body ?? null,
-            bodyOriginal: input.bodyOriginal ?? null,
+            bodyOriginal: ustaadStoredOriginal(input.bodyOriginal, input.correction),
             correction: input.correction,
             voiceMediaId: input.voiceMediaId ?? null,
             safetyTag: input.safetyTag ?? (input.segmentCode === 'ev' ? 'ev_hv' : null),
@@ -313,7 +318,11 @@ export async function answerUstaadQuestion(
       await assertOwnVoice(tx, me.id, input.voiceMediaId, Number(s['ustaad.qa.voice_max_s']));
     const screen = await screenUstaadContent(tx, {
       kind: 'answer',
-      text: input.body ?? null,
+      text: ustaadScreenText({
+        parts: [input.body],
+        original: input.bodyOriginal,
+        correction: input.correction,
+      }),
       mediaIds: input.voiceMediaId ? [input.voiceMediaId] : [],
       authorId: me.id,
     });
@@ -327,7 +336,7 @@ export async function answerUstaadQuestion(
         questionId: q.id,
         authorId: me.id,
         body: input.body ?? null,
-        bodyOriginal: input.bodyOriginal ?? null,
+        bodyOriginal: ustaadStoredOriginal(input.bodyOriginal, input.correction),
         correction: input.correction,
         voiceMediaId: input.voiceMediaId ?? null,
         status,

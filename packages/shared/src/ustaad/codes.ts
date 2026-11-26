@@ -279,6 +279,7 @@ export const JOB_ROLES = [
 
 export const LOCATION_SOURCES = ['gps', 'manual'] as const;
 export const COACHMARK_TARGETS = ['mic', 'create', 'like_reply', 'discover', 'pin', 'jobs'] as const;
+export type CoachmarkTarget = (typeof COACHMARK_TARGETS)[number];
 export const APPLICATION_LINK_STATES = ['invited', 'joined', 'closed'] as const;
 export const LINK_PREVIEW_STATES = ['ok', 'blocked', 'failed'] as const;
 

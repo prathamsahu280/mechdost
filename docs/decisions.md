@@ -2159,6 +2159,26 @@ Spec `docs/specs/23-ustaad-network.md`, design `docs/superpowers/specs/2026-11-2
 - **No new colours, fonts, radii or dependencies;** the screen reuses the admin header, card, badge, table, the
   settings save bar pattern and `ConfirmDialog`.
 
+## 2026-11-26 - Ustaad Network workstream B (identity): storage choices and review fixes
+
+- **Level reviews** for Bada and Master use `ustaad_verifications` (`requested_level` bada/master, status `in_review`):
+  one open row per member already enforced, staff decide through the same queue and audit. No new table.
+- **Ring flags** are `ustaad_follows.counted = false` plus a `ring_flagged` `ustaad_events` row (reversible by staff).
+- **Same garage** = the same confirmed `workshop_id` (set when a MechDost workshop owner confirms); no fuzzy match on
+  garage names.
+- **Revoked vouches** keep counting for the monthly cap and the reciprocity check (security review); a revoke that
+  breaks the evidence of a request in review is flagged for staff (`evidence_withdrawn`), not moved back.
+- **Attestations** only from `approved` workshops; never by the member for themselves (`SELF_ATTESTATION`).
+- **Old mechanic applications:** mapped to `ustaad_application_links` only; `partner_applications` rows are not
+  changed (their status list has no `closed`); the join accepts `fromApplication` only when the phone hash matches.
+- **Badge rules** use G1's admin DTO shape (`count`), one shape for the admin and the engine.
+- **Coin guard (done 2026-11-26):** level-rule create/edit refuses `coin_multiplier_bp` above 10000 with 422
+  `COIN_GUARD_REQUIRED` while PENDING #19 is open (spec 23 § 9.2, spec 20).
+- **Apply as a mechanic follows `ustaad.access` (lead 2026-11-26):** only when it is `open` does
+  `/partners/apply/mechanic` render the Ustaad join and `POST /partner-applications` answer 410 `MOVED_TO_USTAAD` for a
+  mechanic body; during `off` and `staff_preview` the old mechanic application is unchanged and never mentions the
+  network.
+
 ## 2026-11-26 - Ustaad Q&A and Learn as built (task C, API part)
 
 - Ustaad public codes use RFC 4648 base32 (`ustaadPublicCode`), matching the A schema CHECKs; marketplace codes stay

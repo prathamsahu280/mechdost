@@ -40,6 +40,10 @@ import {
   queueQuoteExpiringEmails,
   readForwardableEvents,
   resumeEndedPauses,
+  expireUstaadAttestations,
+  recomputeUstaadLevel,
+  runUstaadRingDetect,
+  ustaadMembersForLevelJob,
   withStatementTimeout,
   type Tx,
 } from '@mechdost/db/repo';
@@ -370,6 +374,41 @@ const coinTimer = setInterval(() => {
 }, 600_000);
 coinTimer.unref();
 
+// Ustaad Network identity jobs (spec 23 § 8 worker jobs; plan task B5): hourly attestation expiry; nightly ring check
+// (§ 14, SR-10) first, then the level recompute (qualified followers no longer count ring follows). Each step is
+// idempotent (conditional UPDATEs, unique keys), so several workers may run it; one member failing never stops the rest.
+let ustaadWork = false;
+let ustaadLastNightly = 0;
+const ustaadTimer = setInterval(() => {
+  if (ustaadWork) return;
+  ustaadWork = true;
+  void (async () => {
+    const expired = await expireUstaadAttestations(db);
+    if (expired > 0) log('info', 'ustaad_attestations_expired', { count: expired });
+    if (Date.now() - ustaadLastNightly < 24 * 3_600_000) return;
+    ustaadLastNightly = Date.now();
+    const rings = await runUstaadRingDetect(db);
+    if (rings.flagged > 0)
+      log('info', 'ustaad_rings_flagged', { members: rings.flagged, follows: rings.uncounted });
+    let failed = 0;
+    for (const id of await ustaadMembersForLevelJob(db)) {
+      try {
+        await db.transaction((tx) => recomputeUstaadLevel(tx, id));
+      } catch {
+        failed += 1;
+      }
+    }
+    if (failed > 0) log('error', 'ustaad_levels_failed', { members: failed });
+  })()
+    .catch((err: unknown) => {
+      log('error', 'ustaad_jobs_failed', safeError(err));
+    })
+    .finally(() => {
+      ustaadWork = false;
+    });
+}, 3_600_000);
+ustaadTimer.unref();
+
 // Bulk quotes (spec 19): offers past `valid_until` and quotes nobody wrote on close as `expired`. Every 5 min; one
 // transaction per quote (quote row locked first), so several workers may run this safely.
 // A quote that keeps failing is skipped for a growing delay (1 min doubling to 6 h) and logged with its id and
@@ -626,6 +665,7 @@ function shutdown(signal: string) {
   clearInterval(paymentTimer);
   if (refundTimer) clearInterval(refundTimer);
   clearInterval(coinTimer);
+  clearInterval(ustaadTimer);
   clearInterval(quoteTimer);
   clearInterval(partitionTimer);
   clearInterval(reminderTimer);

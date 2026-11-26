@@ -74,6 +74,8 @@ const LISTS = [
 
 beforeAll(async () => {
   ctx = await buildApp();
+  // Migration `ustaad_identity_seed` (workstream B) seeds the six coach-marks; this CRUD test creates one itself.
+  await ctx.db.delete(s.ustaadCoachmarks);
   const [state] = await ctx.db
     .insert(s.states)
     .values({ code: 'CG', name: 'Chhattisgarh', gstStateCode: '22' })
@@ -235,6 +237,28 @@ describe('settings', () => {
     });
     expect(bada.status).toBe(422);
     expect(await code(bada)).toBe('SETTING_INVARIANT');
+  });
+
+  it('spec 20 guard: a Coins multiplier above 1× is 422 COIN_GUARD_REQUIRED', async () => {
+    const r = await req('levels', who.admin ?? {}, 'POST', {
+      level: 'pakka',
+      ruleGroup: 'Z',
+      minFollowers: 1,
+      minBestAnswers: 1,
+      minHelpfulPct: 0,
+      minVerifiedYears: 0,
+      minVideos: 0,
+      minRecommendations: 0,
+      needsStaffReview: false,
+      perkEn: '',
+      perkHi: '',
+      coinMultiplierBp: 15_000,
+      nameEn: 'Pakka Ustaad',
+      nameHi: 'पक्का उस्ताद',
+      position: 3,
+    });
+    expect(r.status).toBe(422);
+    expect(await code(r)).toBe('COIN_GUARD_REQUIRED');
   });
 
   it('video above 180 s needs a reason code; with one the super admin saves (audited)', async () => {

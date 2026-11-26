@@ -180,7 +180,13 @@ const CUSTOMER_PAGES = [
 ];
 
 // The Ustaad Network shell is shown to staff during the preview (spec 23, 2026-11-26).
-const ADMIN_PAGES = [...ADMIN_SECTIONS.map((s) => (s === 'overview' ? '/admin' : `/admin/${s}`)), '/ustaad'];
+const ADMIN_PAGES = [
+  ...ADMIN_SECTIONS.map((s) => (s === 'overview' ? '/admin' : `/admin/${s}`)),
+  '/ustaad',
+  '/ustaad/me',
+  '/ustaad/welcome',
+  '/ustaad/join',
+];
 
 const report = (failures: string[]) =>
   `English text on Hindi pages — translate it (or mark user-typed text with data-user-content):\n${failures.join('\n')}`;
