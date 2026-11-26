@@ -308,6 +308,8 @@ export const ACCOUNT_SECTIONS = [
   'quotes',
   'support',
   'coins',
+  // Payment options and cash on delivery on request (founder ruling 2026-11-26).
+  'payments',
   'vehicles',
   'addresses',
   'profile',
