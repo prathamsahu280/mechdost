@@ -2,6 +2,33 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-27 afternoon (lead) — handover at the 17:30 stop
+
+- **Live:** delivery agents + COD by approval + preview testers (deploys 5c984283 → deca80e7 → 30d3220f), JS budget
+  fix (every page −4.4 KB), raw-Date SQL fix (+ test-DB guard), admin/footer layout fixes. Pushed 4a44de12 at ~16:58:
+  4 Ustaad fixes (Hindi current tab, 1930 scam line, post action words, dark contrast + token `whatsapp-text`) and
+  the **real Cloudflare site key** (GitHub variable restored).
+- **Cloudflare / bypass:** during the runs production used Cloudflare always-pass TEST keys (founder approved). Restore:
+  site key variable is back to the real one (rebuild 4a44de12); the server secret must be put back from
+  `/opt/mechdost/.turnstile-secret.backup` ONLY after that deploy is live, then delete the backup and remove the three
+  `QA_TURNSTILE_BYPASS_*` lines (expired 16:57) and restart the API. **If this entry still says "pending" below, do it
+  first.** Status: PENDING at 16:58.
+- **Ustaad QA simulation:** done. 251 steps (194 pass / 29 fail); follow-up F (C22 email/WhatsApp, real video, banned,
+  slow 3G, keyboard, stale feed). Walkthrough `D:\mechdost-qa\ustaad-sim-2026-11-27\walkthrough.html`; bugs/audit in
+  its `logs\`. Fix plan `docs/qa/ustaad-sim-fix-plan-2026-11-27.md`. Founder: keep test content; third staff = account
+  08 (community_manager RPR). **Open:** 08's email not verified → 02's appeal UR-RPR-2026-L53CLH undecided (decide
+  UPHOLD as 08 after the founder clicks the md-qa08 verify mail).
+- **Builder batch A** (Ustaad trust & safety: job applicants + employer notice, appeal path, banned/restricted screens,
+  suggest-mode correction, voice consent, held-DM strike, vouch bell, ban closes threads; + 3 security-review fixes)
+  runs in worktree `.claude/worktrees/agent-aeee83593b84bb5ee` — verify its report, merge, gates, deploy, re-check live.
+- **Delivery + COD simulation:** done (personas); conductor wrapping up the walkthrough at
+  `D:\mechdost-qa\delivery-cod-sim-2026-11-27\walkthrough.html`. All settings restored (R9 16:43: agents OFF in Raipur,
+  timer 15, order WhatsApp templates back ON). **Do NOT switch rider delivery on for real until DC-P11 (P0: every job
+  photo upload fails) and DC-P9 (P1: no "Mark ready for pickup" for packed agent orders) are fixed.** Other bugs
+  DC-P1…P19 + DC-B* in that run's `logs\bugs.md`.
+- **Founder decisions queued:** network emails for bans/appeal results (SIM-F1); real phone video (fix the location
+  check, accept .mov/.3gp, in-app recorder?); dock tabs; voice text alternative.
+
 ## 2026-11-27 afternoon — Ustaad live QA simulation run (agents L + P; founder approved)
 
 - Ran on mechdost.com (5c984283, then deca80e7 from 13:10) 12:33–14:50 IST. Lead L: Gate 0, account 10 created +
