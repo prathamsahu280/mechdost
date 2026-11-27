@@ -1,12 +1,20 @@
 'use client';
 
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 import { track } from '@/lib/analytics';
 import { useHydrated } from '@/demo/store';
 import { useSession } from '@/demo/session-state';
 import { emptyActionFor } from '@/lib/notices-view';
+import {
+  groupByDay,
+  NOTICE_FILTERS,
+  noticeFilterOf,
+  passesFilter,
+  type NoticeFilter,
+} from '@/lib/notices-filter';
 import { FeedToast } from './feed-toast';
 import { NoticeItem, type NoticeItemCopy } from './notice-item';
 import { NoticeSettings } from './notice-prefs';
@@ -14,6 +22,12 @@ import { PushPrompt } from './push-card';
 import { useNoticeFeed } from './use-notice-feed';
 
 const card = 'rounded-card border border-line-card bg-surface shadow-card';
+const FILTER_KEY = {
+  all: 'filterAll',
+  ustaad: 'filterUstaad',
+  orders: 'filterOrders',
+  service: 'filterService',
+} as const satisfies Record<NoticeFilter, string>;
 const primary =
   'press inline-flex min-h-11 items-center justify-center rounded-button bg-accent-button px-4 text-sm font-bold text-white hover:bg-accent-button-hover disabled:opacity-60';
 const quiet =
@@ -29,6 +43,7 @@ export function NoticeCentre() {
   const t = useTranslations('bell');
   const account = useTranslations('account');
   const locale = useLocale();
+  const filter = noticeFilterOf(useSearchParams().get('filter'));
   const prefix = locale === 'hi' ? '/hi' : '';
   const role = session?.role ?? 'customer';
   const feed = useNoticeFeed({ locale, role, limit: 20, enabled: hydrated && session !== null });
@@ -69,6 +84,11 @@ export function NoticeCentre() {
     removeNamed: t('removeNamed', { title: '{title}' }),
   };
   const hasRead = feed.notices.some((n) => n.read);
+  // U4 (design § 3.9): the chip lives in the URL so Back works; rows grouped by IST day.
+  const groups = groupByDay(
+    feed.notices.filter((n) => passesFilter(n.kind, filter)),
+    new Date(),
+  );
   const focusHeading = () => {
     document.getElementById('notice-list-title')?.focus();
   };
@@ -134,29 +154,69 @@ export function NoticeCentre() {
             </Link>
           </div>
         ) : (
-          <ul aria-labelledby="notice-list-title" className="divide-y divide-line">
-            {feed.notices.map((n) => (
-              <li key={n.id}>
-                <NoticeItem
-                  notice={n}
-                  locale={locale}
-                  copy={itemCopy}
-                  onOpen={(x) => {
-                    track('notification_opened', { kind: x.kind, channel: 'centre' });
-                    feed.markRead(x);
-                  }}
-                  onRemove={(x) => {
-                    track('notification_dismissed', {
-                      kind: x.kind,
-                      priority: x.priority,
-                      channel: 'centre',
-                    });
-                    feed.remove(x);
-                  }}
-                />
-              </li>
-            ))}
-          </ul>
+          <>
+            <nav aria-label={t('filterLabel')} className="overflow-x-auto border-b border-line px-5 py-3">
+              <ul className="flex w-max gap-2">
+                {NOTICE_FILTERS.map((f) => (
+                  <li key={f}>
+                    <Link
+                      href={`${prefix}/notifications${f === 'all' ? '' : `?filter=${f}`}`}
+                      scroll={false}
+                      aria-current={f === filter ? 'page' : undefined}
+                      onClick={() => {
+                        track('notifications_filter', { filter: f });
+                      }}
+                      className={`inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 text-sm font-bold whitespace-nowrap focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+                        f === filter
+                          ? 'border border-accent bg-accent-soft text-accent-soft-text'
+                          : 'border border-line-card bg-surface text-ink hover:border-accent'
+                      }`}
+                    >
+                      {f === filter ? <span aria-hidden="true">✓</span> : null}
+                      {t(FILTER_KEY[f])}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+            {groups.length === 0 ? (
+              <p className="px-5 py-6 text-sm text-muted">{t('filterEmpty')}</p>
+            ) : (
+              groups.map((g) => (
+                <section key={g.group} aria-labelledby={`notice-day-${g.group}`}>
+                  <h3
+                    id={`notice-day-${g.group}`}
+                    className="bg-pill px-5 py-1.5 text-xs font-bold text-muted"
+                  >
+                    {t(g.group)}
+                  </h3>
+                  <ul className="divide-y divide-line">
+                    {g.items.map((n) => (
+                      <li key={n.id}>
+                        <NoticeItem
+                          notice={n}
+                          locale={locale}
+                          copy={itemCopy}
+                          onOpen={(x) => {
+                            track('notification_opened', { kind: x.kind, channel: 'centre' });
+                            feed.markRead(x);
+                          }}
+                          onRemove={(x) => {
+                            track('notification_dismissed', {
+                              kind: x.kind,
+                              priority: x.priority,
+                              channel: 'centre',
+                            });
+                            feed.remove(x);
+                          }}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))
+            )}
+          </>
         )}
         {feed.hasMore ? (
           <div className="border-t border-line px-5 py-3">

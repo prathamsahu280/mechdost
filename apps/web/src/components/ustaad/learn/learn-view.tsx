@@ -8,7 +8,9 @@ import type { LearnResourceView } from '@mechdost/shared/ustaad/dto/qa';
 import { track } from '@/lib/analytics';
 import { localePath } from '@/lib/locale-path';
 import { ustaadClient } from '@/lib/ustaad/client';
+import { learnTowardsNaya } from '@/lib/ustaad/card';
 import { createWatchMeter, HEARTBEAT_MS } from '@/lib/ustaad/learn-meter';
+import { progressBar } from '../card/styles';
 import { Switch } from '../../ui/switch';
 import {
   btnPrimary,
@@ -23,6 +25,39 @@ import {
 } from '../common';
 
 const SAVER_KEY = 'mechdost-ustaad-data-saver';
+
+/**
+ * E15 (UI upgrade § 3.5): for Chhotu, "To become Naya Ustaad: 7/10 videos watched" — the reason to watch. Reads the
+ * existing `GET /ustaad/me/card` (videos + the ladder's `minVideos`); nothing for Ustaads or when the card fails.
+ */
+function LearnProgress() {
+  const t = useTranslations('ustaad.learn');
+  const locale = useLocale();
+  const labelId = useId();
+  const [p, setP] = useState<{ done: number; need: number } | null>(null);
+  useEffect(() => {
+    let live = true;
+    void import('@/lib/ustaad/identity-api')
+      .then((api) => api.fetchMyCard(locale))
+      .then((res) => {
+        if (live && res.ok) setP(learnTowardsNaya(res.data));
+      });
+    return () => {
+      live = false;
+    };
+  }, [locale]);
+  if (!p) return null;
+  return (
+    <section aria-labelledby={labelId} className={`${card} grid gap-2`}>
+      <p id={labelId} className="font-heading text-base font-extrabold text-ink">
+        {t('towardsNaya', p)}
+      </p>
+      <progress aria-labelledby={labelId} value={p.done} max={p.need} className={progressBar}>
+        {p.done}/{p.need}
+      </progress>
+    </section>
+  );
+}
 
 function readSaver(): boolean {
   try {
@@ -77,6 +112,8 @@ export function LearnView() {
         </h1>
         <p className="mt-1 text-[15px] leading-relaxed text-muted">{t('intro')}</p>
       </header>
+
+      <LearnProgress />
 
       <div className={`${card} flex flex-wrap items-center justify-between gap-3`}>
         <div className="min-w-0">

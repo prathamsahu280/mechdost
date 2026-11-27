@@ -2893,3 +2893,22 @@ Implements the founder's night entry above; no founder decision changed.
   load, so anything newer than that moment is genuinely new to the member; own posts never count.
 - **Story tap zones leave the tab order**; the visible word buttons (Previous, Pause/Play, Next, Close) are the
   keyboard and screen-reader path.
+
+## 2026-11-27 (night) — Ustaad UI upgrade U4: builder's rulings (spec 23 § 21i-U4)
+
+No founder decision changed. Within Q-UI-1/Q-UI-2 and the design doc § 3.5–3.9:
+
+- **"You helped N mechanics this week" counts a rolling 7 days**, not the IST calendar week, so the note never drops
+  to zero on a Monday and never invites a streak. N = distinct other members whose questions got my `visible` answer;
+  hidden at zero; analytics carry a band (`1`, `2-5`, `6+`), never ids or names.
+- **Next-level rows show only numbers the card has** (qualified followers, best answers, videos, recommendations);
+  helpful % and verified years show the rule text only until the card carries them. The group shown is the one
+  closest to complete. Level names in the next-level header come from the page locale (SIM-P4 safe).
+- **The card's share event is `ustaad_card_shared`**; the old `ustaad_post_shared {channel}` fired from the card was a
+  mislabel and is no longer sent from Me.
+- **The level ladder moves into the level and Izzat sheet** (native `<dialog>`), reached from the level chip on the
+  card and "How are these counted?". The other pages' `PehchaanTag` wiring waits for U2's tag.
+- **No new colours, radii or fonts.** The card area's classes are constants in `card/styles.ts` (lead, 2026-11-27: the
+  visual-language pass swaps them in one place); the ID card uses the `card` radius token instead of a one-off 26 px.
+- **Notifications filter families:** Ustaad = `ustaad.*`; Orders = `order`, `payment`, `refund`, `delivery`, `cod`;
+  Service = `service`, `quote`, `rsa`; other kinds show under All only.

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
 import { NoticeCentre } from '@/components/notices/notice-centre';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { Container, PageIntro } from '@/components/ui/page-intro';
@@ -34,7 +35,10 @@ export default async function NotificationsPage() {
       <PageIntro eyebrow="MechDost" line1={t('centreTitle')} lead={t('centreIntro')} />
       <div className="mt-8">
         <ClientMessages namespaces={['bell', 'account']}>
-          <NoticeCentre />
+          {/* The filter chip is read from the URL (`?filter=`), so the centre waits for the search params. */}
+          <Suspense fallback={<div className="skeleton h-96 rounded-card" aria-hidden="true" />}>
+            <NoticeCentre />
+          </Suspense>
         </ClientMessages>
       </div>
     </Container>

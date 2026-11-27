@@ -1141,6 +1141,10 @@ Client: `ustaad_feed_viewed {tab}`, `ustaad_post_liked`, `ustaad_post_saved`, `u
 2026-11-27):** `ustaad_shell_home_logo`, `ustaad_feed_new_pill_shown`, `ustaad_feed_new_pill_tapped`,
 `ustaad_home_more_opened`, `ustaad_home_question_tapped {position}` (catalogued; fires when the questions strip ships),
 `ustaad_story_paused`; `ustaad_tab_opened {tab}` gains `ask` and `jobs`. Metrics from day one: weeks-active members, answered within 24 h, time to
+`ustaad_coachmark_seen {target}`, `ustaad_coachmark_dismissed {target}`, `ustaad_help_replayed`. U4 (UI upgrade):
+`ustaad_level_sheet_opened {level, own}`, `ustaad_card_shared {channel}` (replaces `ustaad_post_shared` on the card),
+`ustaad_helped_note_seen {band: 1|2-5|6+}`, `ustaad_me_shortcut {to: learn|discover}`, `ustaad_job_scam_line_opened`,
+`ustaad_learn_continue_tapped` (catalogued, not fired yet), `notifications_filter {filter}`. Metrics from day one: weeks-active members, answered within 24 h, time to
 first answer, best-answer rate, verified share, report rate per 1,000 posts, takedowns on time, bytes per session,
 mutual-follow share.
 
@@ -2209,6 +2213,37 @@ helpful, bestStamp, shield, progress, prev, next, tag`; `ShapeSkeleton`; class c
   list client), back arrow on sub-pages, live unread counts in the header, voice/video story auto-advance on end
   (needs a callback from U2/voice-builder players), coach-mark no-stacking rule, Lighthouse/measure-js/axe/visual
   acceptance runs (lead verifies live; no build or browser allowed in this batch).
+
+## 21i-U4. UI upgrade batch U4 as built (2026-11-27 night; design `docs/superpowers/specs/2026-11-27-ustaad-ui-upgrade-design.md` § 3.5, 3.6, 3.8, 3.9, 8.4)
+
+- **API:** `GET /ustaad/me/card` gains `helpedThisWeek` (founder Q-UI-2): distinct other members whose questions I
+  answered with a `visible` answer in a **rolling 7 days** (not a calendar week, so it never drops to zero on a
+  Monday). One indexed query on `ustaad_answers (author_id, created_at)` joined to the question. A count only.
+- **Me (`card/my-card.tsx`, new `card/next-level.tsx`, `card/level-sheet.tsx`, `card/styles.ts`):** ID card first
+  (card radius token instead of a one-off 26 px; the level chip is a button that opens the level sheet; one primary
+  "Send my card on WhatsApp"); verification link; the weekly **"You helped N mechanics this week"** note (hidden at
+  zero; no streaks, no leagues); **next level in plain numbers** (E7): the next step's closest rule group as `<progress>`
+  rows "17/25 · 8 more"; rules the card has no number for (helpful %, verified years) show their text only; Bada/Master
+  say "The MechDost team will check"; Master and "Ustaad · to verify" get one line instead; **level and Izzat sheet**
+  (native `<dialog>`: Close, Escape, backdrop; focus returns to the opener) holding "Where you are", the Izzat note
+  and the full ladder; one compact stat row (Izzat · followers · answers · best answers); badge shelf (not-yet
+  badges outlined, never greyed out); **Learn and Discover shortcuts** (founder Q-UI-1, the dock loses them).
+  Pure helpers `nextLevelProgress`, `learnTowardsNaya`, `helpedBand` in `lib/ustaad/card.ts`.
+- **Learn:** Chhotu sees "To become Naya Ustaad: 7/10 videos watched" with a `<progress>` (E15; reads the card's
+  `videos` and the ladder's `minVideos`); nothing for Ustaads.
+- **Jobs:** the page-top warning is one line "If anyone asks for money, don't pay" + "Learn more" that expands inline
+  to the full text (1930 + cybercrime.gov.in kept; `role="note"`); the same line on every job card (RS5); the selected
+  role chip is `accent-soft` with a check (dark contrast). The detail keeps the full banner.
+- **Notifications centre:** chips All · Ustaad · Orders · Service in `?filter=` (Back works; page wrapped in
+  `Suspense`), rows grouped Today / Yesterday / This week / Earlier by IST day (`lib/notices-filter.ts`). Text
+  rendering untouched (Batch D).
+- **Styling:** tokens only; class constants for the card area live in `card/styles.ts` so the Ustaad visual-language
+  pass can swap colours/motion in one place; motion only `motion-safe:` opacity.
+- **Not done (U4 scope left):** Learn file sizes, watched/half-watched states and the "Continue" row (`LearnResourceView`
+  has no size; needs API); job card employer name + "Verified garage" (not in `JobDto`; needs API); `PehchaanTag`
+  wiring of the level sheet on other pages (U2 owns the tag; a provider is still needed); profile `/u/[handle]`
+  restyle and "Best answers" tab; badge "how far" numbers and `ustaad_badge_opened`; network and Discover polish;
+  notification type icons + inline actions.
 
 ## 22. Not built / later
 

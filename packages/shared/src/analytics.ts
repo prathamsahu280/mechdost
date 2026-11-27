@@ -945,6 +945,8 @@ export const CLIENT_EVENT_SCHEMAS = {
     .object({ count: z.number().int().min(0).max(100000), channel: z.enum(['bell', 'centre']) })
     .strict(),
   notifications_restored: z.object({ count: z.number().int().min(0).max(100000) }).strict(),
+  // Ustaad UI upgrade U4 (design § 3.9): a filter chip on the notification centre.
+  notifications_filter: z.object({ filter: z.enum(['all', 'ustaad', 'orders', 'service']) }).strict(),
   // The customer's refund page (spec 05, 2026-11-23): how many refunds were shown and how many are still on their way.
   my_refunds_viewed: z
     .object({ count: z.number().int().min(0).max(50), inProgress: z.number().int().min(0).max(50) })

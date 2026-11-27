@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   BadgeCheck,
   Briefcase,
+  Check,
   Clock,
   IndianRupee,
   MapPin,
@@ -16,6 +17,7 @@ import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { JOB_ROLES } from '@mechdost/shared/ustaad/codes';
+import { track } from '@/lib/analytics';
 import { formatDate } from '@/lib/format';
 import { localePath } from '@/lib/locale-path';
 import { ustaadClient, type Job, type JobRole } from '@/lib/ustaad/client';
@@ -56,6 +58,45 @@ export function ScamBanner() {
       <ShieldAlert aria-hidden="true" className="mt-0.5 size-6 shrink-0" />
       {t('scam')}
     </p>
+  );
+}
+
+/**
+ * The list's one-line warning (UI upgrade § 3.6): "If anyone asks for money, don't pay" with "Learn more", which
+ * expands inline to the full text (1930 + cybercrime.gov.in kept). Opacity-only reveal, off under reduced motion.
+ */
+export function ScamLine() {
+  const t = useTranslations('ustaad.jobs');
+  const [open, setOpen] = useState(false);
+  const fullId = 'ustaad-jobs-scam-full';
+  return (
+    <div role="note" className="rounded-2xl border border-warning-line bg-warning-bg px-4 py-3 text-warning">
+      <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px] font-bold">
+        <span className="inline-flex items-center gap-2">
+          <ShieldAlert aria-hidden="true" className="size-5 shrink-0" />
+          {t('scamLine')}
+        </span>
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={fullId}
+          onClick={() => {
+            if (!open) track('ustaad_job_scam_line_opened', {});
+            setOpen(!open);
+          }}
+          className="min-h-11 underline underline-offset-2 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+        >
+          {open ? t('showLess') : t('learnMore')}
+        </button>
+      </p>
+      <p
+        id={fullId}
+        hidden={!open}
+        className="mt-1 text-[15px] leading-relaxed motion-safe:transition-opacity motion-safe:duration-150"
+      >
+        {t('scam')}
+      </p>
+    </div>
   );
 }
 
@@ -101,7 +142,7 @@ export function JobsList({ role }: { role: JobRole | null }) {
           {t('postCta')}
         </Link>
       </header>
-      <ScamBanner />
+      <ScamLine />
       <RulesLink place="jobs" className="-mt-2" />
 
       <nav aria-label={t('filterLabel')} className="-mx-4 overflow-x-auto px-4 tab:mx-0 tab:px-0">
@@ -113,12 +154,13 @@ export function JobsList({ role }: { role: JobRole | null }) {
                 aria-current={r === role ? 'page' : undefined}
                 scroll={false}
                 data-track="ustaad_jobs_filter"
-                className={`inline-flex min-h-12 items-center rounded-full px-5 text-[15px] font-bold whitespace-nowrap ${
+                className={`inline-flex min-h-12 items-center gap-1.5 rounded-full px-5 text-[15px] font-bold whitespace-nowrap ${
                   r === role
-                    ? 'bg-navy text-white'
+                    ? 'border border-accent bg-accent-soft text-accent-soft-text'
                     : 'border border-line-card bg-surface text-ink hover:border-accent'
                 }`}
               >
+                {r === role ? <Check aria-hidden="true" className="size-4" /> : null}
                 {r ? l(`role_${r}`) : t('allRoles')}
               </Link>
             </li>
@@ -171,6 +213,11 @@ export function JobsList({ role }: { role: JobRole | null }) {
                   <span>{t('expYears', { n: j.experienceMinYears })}</span>
                   <time dateTime={j.createdAt}>{ago(j.createdAt)}</time>
                 </div>
+                {/* RS5: the warning sits on the card too, one line. */}
+                <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-bold text-warning">
+                  <ShieldAlert aria-hidden="true" className="size-4 shrink-0" />
+                  {t('scamLine')}
+                </p>
               </Link>
             </li>
           ))}
