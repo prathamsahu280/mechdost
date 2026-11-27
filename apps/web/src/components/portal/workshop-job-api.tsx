@@ -473,30 +473,39 @@ export function JobStepsApi({
   if (action === 'paid')
     return (
       <div className="mt-3 space-y-2">
-        <p className="font-heading font-extrabold text-ink">
+        {/* Bill total in Manrope 28 px; the payment way as three 48 px choices with words (design 2026-11-27 § 6.5b). */}
+        <p className="font-heading text-[28px] leading-tight font-extrabold tabular-nums text-ink">
           {t('billTotal', { total: formatPrice(detail.bill?.totalPaise ?? 0) })}
         </p>
-        <label htmlFor={methodId} className="text-xs font-bold text-muted">
-          {t('ws_api_payMethod')}
-        </label>
-        <select
+        <fieldset
           id={methodId}
-          value={method}
+          tabIndex={-1}
           aria-invalid={missing ? true : undefined}
           aria-describedby={missing ? `${methodId}-error` : undefined}
-          onChange={(e) => {
-            setMethod(PAY_METHODS.find((m) => m === e.target.value) ?? '');
-            setMissing(false);
-          }}
-          className={portalField}
         >
-          <option value="">{t('ws_api_payMethodChoose')}</option>
-          {PAY_METHODS.map((m) => (
-            <option key={m} value={m}>
-              {t(`ws_api_payMethod_${m}`)}
-            </option>
-          ))}
-        </select>
+          <legend className="text-xs font-bold text-muted">{t('ws_api_payMethod')}</legend>
+          <div className="mt-1 grid grid-cols-3 gap-2">
+            {PAY_METHODS.map((m) => (
+              <label
+                key={m}
+                className="flex min-h-12 cursor-pointer items-center justify-center rounded-button border border-line-card bg-surface px-2 text-center text-sm font-bold text-ink has-[:checked]:border-accent-button has-[:checked]:bg-accent-soft has-[:checked]:text-accent-soft-text has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus"
+              >
+                <input
+                  type="radio"
+                  name={methodId}
+                  value={m}
+                  checked={method === m}
+                  onChange={() => {
+                    setMethod(m);
+                    setMissing(false);
+                  }}
+                  className="sr-only"
+                />
+                {t(`ws_api_payMethod_${m}`)}
+              </label>
+            ))}
+          </div>
+        </fieldset>
         {missing ? (
           <p id={`${methodId}-error`} className="text-xs font-bold text-error">
             {t('ws_api_payMethodRequired')}
