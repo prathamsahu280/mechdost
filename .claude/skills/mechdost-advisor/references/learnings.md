@@ -634,3 +634,5 @@ L-DCSIM2 · 2026-11-27 · live QA conducting · (1) The harness may refuse produ
   new snapshot to that number, `git checkout` the overwritten one, fix the journal tag, and check `prevId` chains to
   the latest snapshot. Shell-quoted node one-liners with backticks broke file text three times → write edit scripts
   to the scratchpad and run them with node.
+  L-RT1 · 2026-11-27 · ustaad/gating · The batch A "banned screen on every network page" passed on 9 routes but failed on Home: Home gates only the feed block, and that block's ClientMessages lacked `ustaad.standing`, so raw keys showed. → When a fix says "every page", list the page files and check each wrapper's namespaces. Home pages put several gated sections side by side.
+  L-RT2 · 2026-11-27 · notifications · Changing a link in notice-catalogue.ts does not fix rows already stored (the link is written at insert time). → A catalogue link change needs a data backfill or a redirect in the same change.

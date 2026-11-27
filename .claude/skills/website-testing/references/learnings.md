@@ -438,3 +438,5 @@ review) · a new owner-side list must reuse the sibling's gate and the shared ca
 level no tick).
 T-QA-A3 · 2026-11-27 · ustaad/api tests · a new test in a shared-state API file failed only in the full run: an earlier
 test spent the reporter's 20 reports a day · use a fresh member for writes that are rate-limited per user.
+T-RT1 · 2026-11-27 · ustaad/banned Home · a banned member on /ustaad saw the member Home plus raw `ustaad.standing.*` keys · MemberGate only around HomeFeed and a missing namespace in its ClientMessages · needed: an e2e for a banned member on Home that asserts the banned title, no raw `ustaad.` keys and no Ask link. Rule: retest gating on every route, Home included.
+T-RT2 · 2026-11-27 · notifications · old bell rows kept the 404 link after the catalogue fix · stored link, no backfill · needed: a migration or data test that no notice row has a link outside the route tree (extend notice-links.test.ts to stored rows).
