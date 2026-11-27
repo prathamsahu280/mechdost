@@ -2,6 +2,15 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-27 night — Ustaad UI upgrade U2 + U3 (minus voice) (builder branch `worktree-agent-a2b58e19b5878ce08`, not pushed)
+
+- Built: "Useful" reaction (migration `0122_ustaad_useful_reaction`, repo, API, view, UI), Pehchaan tag + MemberName,
+  fix-log rows / Tip panel / Before-After toggle, double-tap like, optimistic like/useful/save with rollback, composer
+  big tiles + Camera/Gallery, best-answer stamp + "Choose as best" confirm. Spec 23 § 21i-U2/U3; decisions entry same
+  night.
+- Not done: Ask list restyle, Messages restyle + closed flag, optimistic Follow (U4 file), Before/After labelled
+  slots in the composer. Gates run only where memory allowed (see the builder report).
+
 ## 2026-11-27 night — skills self-improvement step (docs only, uncommitted for the lead)
 
 - Promoted every lesson seen twice from the 2026-11-26/27 learnings: advisor `checklist.md` (UI focus-on-swap,

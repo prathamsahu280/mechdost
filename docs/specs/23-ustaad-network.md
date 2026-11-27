@@ -1090,7 +1090,7 @@ target}`, `ustaad_moderation_action {action, reason, clock, on_time}`, `ustaad_m
 `ustaad_security_freeze {reason}`, `ustaad_attest_link_issued`, `ustaad_counter_drift {members}` (B round 3). Client
 (owner page, B round 3): `ustaad_attest_opened {valid}`, `ustaad_attest_location {outcome}`, `ustaad_attest_sent
 {decision, ok}`. Client (admin, G1): `admin_ustaad_change {area, action, fields}`.
-Client: `ustaad_feed_viewed {tab}`, `ustaad_post_liked`, `ustaad_post_saved`, `ustaad_post_shared {channel}`,
+Client: `ustaad_feed_viewed {tab}`, `ustaad_post_liked {via: button|double_tap}` (U2), `ustaad_post_saved`, U2: `ustaad_post_useful`, `ustaad_before_after_toggled {to}`, `ustaad_composer_more_opened`, `ustaad_camera_opened {source}`, `ustaad_post_shared {channel}`,
 `ustaad_story_viewed`, `ustaad_video_played {seconds_band}`, `ustaad_voice_played`, `ustaad_discover_searched
 {results}`, `ustaad_tag_opened`, `ustaad_promo_impression {promo, slot}`, `ustaad_promo_click`, `ustaad_promo_hidden
 {reason}`, `ustaad_correction_shown {engine, mode, changes}`, `ustaad_correction_choice {choice}`, `ustaad_data_saver
@@ -2052,6 +2052,45 @@ Each fix has a regression test named after the QA id.
   list; nothing → 403 `USTAAD_EMPLOYER_REQUIRED`. Resuming a job re-checks through the same list. Not done: a member
   who is both a workshop owner and a trade account cannot pick the trade account in the form (the API still accepts
   `{kind:'trade'}`); the form does not yet say which account it posts as.
+
+## 21i-U2/U3. UI upgrade batches U2 + U3 (minus voice) as built (2026-11-27 night; design doc `docs/superpowers/specs/2026-11-27-ustaad-ui-upgrade-design.md` § 3.2, 3.4, 3.7, 3.10, § 8.2/8.3)
+
+- **"Kaam ki baat / Useful" reaction (founder Q-UI-3).** A second reaction beside Like on every post. Same table
+  (`ustaad_reactions.kind` now `like | useful`, primary key `(post_id, member_id, kind)`), new counter
+  `ustaad_post_counters.useful` (CHECK ≥ 0), migration `0122_ustaad_useful_reaction` (number for the lead to
+  renumber on merge). Repository `markUstaadPostUseful` / `unmarkUstaadPostUseful`: insert `ON CONFLICT DO NOTHING
+RETURNING`, only an inserted/deleted row moves the counter by a conditional ± 1 (`> 0` guard), `ustaad_events`
+  `marked_useful` / `unmarked_useful`; a restricted member is refused (`USTAAD_RESTRICTED`), blocks are 404 like
+  likes. The count is **always shown** (a quality signal; `feed.show_like_counts` governs likes only), it **never
+  touches Izzat or levels** and sends **no notice**. API `POST|DELETE /v1/ustaad/posts/{id}/useful` → `{ useful,
+usefulCount }`, rate rule `likes`, member gate. `PostView` gains `counts.useful` and `usefulByMe`; `likedByMe` now
+  reads `kind = 'like'` rows only. Tests: `packages/db/test/ustaad-feed.test.ts` ("Useful" case),
+  `apps/api/test/ustaad-feed-api.test.ts` (route + role leak rows).
+- **Pehchaan tag (E6).** `components/ustaad/common/pehchaan-tag.tsx` (`PehchaanTag {level, size, onOpen?, tone}`,
+  `MemberName`) — key-tag shape, colours from `pehchaan-tones.ts` (existing token pairs; contrast in
+  `apps/web/test/tokens.test.ts`). Opens `onOpen` (U4's level sheet) or links to `/ustaad/me#levels`. Used in
+  `AuthorLine` (Ask list/thread), the post card header and the Messages member line. Profile and Discover chips are
+  U4's files (not changed here).
+- **Post card (E8, E12).** Fix log = `<dl>` rows with a 3 px accent rule (`feed/fix-log-body.tsx`); a tip sits in a
+  `surface-alt` panel with the "Tip / टिप" tag; `before_after` posts with a before and an after photo show
+  `feed/before-after.tsx` (radio group under 600 px, side by side from 600 px; `ustaad_before_after_toggled {to}`).
+  Double tap on a photo likes (touch: two pointer-ups within 250 ms; mouse: dblclick), only ever likes, the Like
+  button stays the equivalent. Like / Useful / Save are optimistic through `lib/ustaad/reactions.ts`
+  (`toggleReaction`) with rollback; a failed like says "पसंद नहीं हो पाया, फिर कोशिश करो". Saved state says "सेव
+  किया / Saved". Events `ustaad_post_liked {via: button|double_tap}`, `ustaad_post_useful`.
+- **Composer (E14).** Three big tiles first (बोलो / फ़ोटो खींचो / वीडियो), "काम दिखाने के तरीके" (Fix log, Tip,
+  Before/After), then "और: लिखो, पोल, लिंक, PDF" in a `<details>` (opens by itself when one of those is chosen;
+  `ustaad_composer_more_opened`). Photos: Camera (`capture="environment"`) and Gallery buttons
+  (`ustaad_camera_opened {source}`). Draft + leave confirm belong to the wording builder; the two labelled
+  Before/After slots are **not built** (the per-photo role select stays).
+- **Ask (E9).** Best answer carries the stamp "पूछने वाले ने चुना / Chosen by the asker" (the article is named by
+  it); "सबसे अच्छा चुनो / Choose as best" is a quiet outlined button for the asker with an inline confirm
+  ("इसे सबसे अच्छा जवाब चुनें? [हाँ, चुनो] [रहने दो]"), focus to the confirm and back on "Not now".
+- **Not done in this batch:** Ask list card restyle (state chip with icon + word, vehicle title for voice-only),
+  Messages inbox/thread restyle and the `closed` flag (copy keys `ustaad.messages.{previewVoice, previewPhoto, closed,
+requestsTab}` and `ustaad.qa.{stateSolved, stateOpen}` are in the locale files, unused yet), optimistic Follow
+  (profile is U4's), the level explainer sheet (U4), similar questions (needs a spec addition), the `helpful` /
+  `before` icons (U1 owns `icons.tsx`; Useful uses `check` for now).
 
 ## 22. Not built / later
 
