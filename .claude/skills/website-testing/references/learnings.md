@@ -410,3 +410,12 @@ minute in production (`ERR_INVALID_ARG_TYPE`): raw JS `Date` inside `sql` templa
 every media read, tutorial skip/complete, message-thread cursor). PGlite accepted them, postgres-js does not · guard:
 `packages/db/src/testing.ts` `rejectDateParams` makes the test DB throw on any Date parameter, so every db/API test now
 fails the way production would (it found 18 tests over 5 sites) · fix: `${d.toISOString()}::timestamptz`.
+T-QA-A1 · 2026-11-27 · ustaad/notices · bell links 404 (SIM-P19) · catalogue links written before the pages existed,
+no check · guard: `apps/web/test/notice-links.test.ts` (every catalogued link matches a page).
+T-QA-A2 · 2026-11-27 · ustaad/jobs · employer never told about applications and could not see them (SIM-P18); the
+first cut of the list ignored blocks, bans, withdrawals, the member gate and the card's verified rule (lead's security
+review) · a new owner-side list must reuse the sibling's gate and the shared card rule · guard: `ustaad-local.test.ts`
+"security: …" cases (blocked applicant hidden + no notice, restricted employer refused, removed job 404, pre-verified
+level no tick).
+T-QA-A3 · 2026-11-27 · ustaad/api tests · a new test in a shared-state API file failed only in the full run: an earlier
+test spent the reporter's 20 reports a day · use a fresh member for writes that are rate-limited per user.

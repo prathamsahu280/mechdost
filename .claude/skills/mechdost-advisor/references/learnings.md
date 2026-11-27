@@ -599,3 +599,19 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
   every web type with `Out<typeof Schema>` (type-only import), delete the local guesses, and add a test that parses the
   demo store's answers with the shared schemas (`delivery-contract.test.ts`): that keeps demo and API in sync. Check
   key/format rules against `Schema.safeParse`, never a copied regex. · active
+- L-QA-A1 · 2026-11-27 · ustaad/notices · Five catalogued bell links pointed at pages that were never built
+  (`/ustaad/notifications`, `/ustaad/me/verify`, `/ustaad/jobs/mine`) and nothing checked them → every notice link
+  must match a page in the route tree; `apps/web/test/notice-links.test.ts` walks `app/[locale]` (ignoring the root
+  `[...rest]` not-found catch-all) and fails a link with no page. Add a page or repoint the link in the same change.
+- L-QA-A2 · 2026-11-27 · ustaad/api · A request field that picks a mode (`mode: 'auto'`) or an entity kind
+  (`employer.kind`) let the client choose what the server should decide (SIM-P20, SIM-P17) → the server derives modes
+  and entitlements; request fields may only narrow (step down to `suggest`, pick from the server's own list).
+- L-QA-A3 · 2026-11-27 · ustaad/moderation · A refusal code the web did not know (`USTAAD_BANNED`) fell through to
+  "check your internet" on every page → refusal states of the member gate are decided once (`memberGateView` in
+  `MemberGate`), and the routes a sanctioned member still needs (standing, appeal) get their own guard
+  (`requireUstaadMemberAnyStanding`) bound to exact paths.
+- L-QA-A4 · 2026-11-27 · tooling · `drizzle-kit generate` numbered the new migration 0106 (journal count) and
+  overwrote the existing `0106_snapshot.json` → after generating, rename the SQL to the next free number, move the
+  new snapshot to that number, `git checkout` the overwritten one, fix the journal tag, and check `prevId` chains to
+  the latest snapshot. Shell-quoted node one-liners with backticks broke file text three times → write edit scripts
+  to the scratchpad and run them with node.

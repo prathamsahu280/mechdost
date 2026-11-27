@@ -516,6 +516,11 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
   Default: the 9 test accounts stay listed until the founder decides; the QA sign-in bypass is removed regardless.
 - **Q-SIM-4:** build the four P0 member screens the plan found missing (give vouches, workshop owner's "Confirm your
   mechanics", `/ustaad/me/verify`, employer's applicants list) before opening the network? Default: yes, next build.
+  _Update 2026-11-27 (QA batch A):_ the employer's applicants list is built (job page); the vouch and verification
+  notices now open Me. Still open: give/decline a vouch screen, "Confirm your mechanics", a verification detail page.
+- **Q-SIM-5 (2026-11-27, Content, P1):** the slur / banned-words, personal-details and blocked-sites lists are empty on
+  live (SIM-G18). Who supplies and reviews the en / hi / Hinglish list before launch? Default: staff fill them per
+  `docs/runbooks/ustaad.md` § "Word lists before launch" after the founder and counsel approve the slur list.
 
 #### Q-COD-1 … 5: cash on delivery only on request (founder ruling 2026-11-26)
 

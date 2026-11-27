@@ -9026,7 +9026,8 @@
       "back": "Back to Me",
       "loadFailed": "Your standing did not load. Try again.",
       "retry": "Try again",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "appealSending": "Sending…"
     }
   },
   "savings": {

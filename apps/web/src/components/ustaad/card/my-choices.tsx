@@ -43,6 +43,7 @@ export function MyChoices() {
     <label className="flex min-h-12 items-start gap-3 text-[15px] text-ink">
       <input
         type="checkbox"
+        name={purpose}
         className="mt-1 size-5 shrink-0 accent-accent-button"
         checked={v.consents[purpose]}
         onChange={(e) => void save({ consents: { [purpose]: e.target.checked } }, v)}

@@ -162,3 +162,29 @@ member count with an alert at 40 lakh (spec 23 § 13; the overview tile is G2's)
   someone who took no part approves it. A child-safety freeze is never lifted from Members (Grievance Officer, § 6).
 - Restricting or banning from Members opens a staff report (source `staff`) so the decision is on record like any
   other.
+
+## Word lists before launch (QA 2026-11-27, SIM-P16 / SIM-G18 / SIM-G17)
+
+The live simulation found **Banned words**, **Personal details to hide** and **Blocked link sites** empty, so only the
+built-in checks ran (scam phrases, phone and UPI masks) and a common Hindi slur posted straight through. The lists are
+content, not code: staff fill them in the console (founder + counsel review the slur list first).
+
+1. Sign in as a staff member with `ustaad:settings` (two-step) → **Admin → Ustaad → Moderation**.
+2. **Banned words:** add each word in every spelling members use — Devanagari, Hinglish (Latin) and common
+   misspellings (for example one row per spelling; the screen normalises case and spacing). Save, then post a test
+   comment with each spelling from a test member: it must be **held** (Holds queue), not published.
+3. **Personal details to hide:** add the patterns staff want masked beyond the built-in phone and UPI masks.
+4. **Blocked link sites:** add the domains of known job-scam and loan apps.
+5. **Protected words** (smart correction): add brand and model words the corrector must never change (Splendor,
+   Activa, Exide, Amaron, DOT 3, 175/65 R14 …). At least one is required before the admin default can be set to
+   "Fix by itself"; members can choose "Fix by itself" for themselves in Me → My choices (spec 23 § 21h, G17).
+6. Every save is audited (`admin_ustaad_table_saved`); re-check the Holds queue the next morning for false holds.
+
+## Member standing and appeals (QA 2026-11-27, spec 23 § 21h)
+
+Members see every decision on them at **`/ustaad/me/standing`** (strike, removal, ban and appeal notices open it) with
+the reason in plain words, the end date and one **Appeal** action. An appeal is a support ticket of kind
+`ustaad_appeal` (`REQ-…`, Admin → Support inbox, first-reply clock as usual) and moves the report to `appealed`.
+Answer the member in the ticket; **decide the appeal itself in Admin → Ustaad → Appeals** (someone who took no part in
+the decision; four-eyes). A banned member can still read the standing page and appeal; nothing else of the network
+opens for them.

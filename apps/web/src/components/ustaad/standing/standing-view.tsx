@@ -38,6 +38,7 @@ function Decision({ item, onFiled }: { item: Item; onFiled: (code: string, ticke
   const field = useRef<HTMLTextAreaElement>(null);
 
   async function send() {
+    if (busy) return;
     if (note.trim().length < 10) {
       setError(t('appealNeed'));
       field.current?.focus();
@@ -124,6 +125,8 @@ function Decision({ item, onFiled }: { item: Item; onFiled: (code: string, ticke
           <textarea
             ref={field}
             id={`${ids}-note`}
+            name="appealNote"
+            autoComplete="off"
             value={note}
             maxLength={1000}
             rows={4}
@@ -144,7 +147,7 @@ function Decision({ item, onFiled }: { item: Item; onFiled: (code: string, ticke
               aria-disabled={busy ? true : undefined}
               data-track="ustaad_appeal_send"
             >
-              {t('appealSend')}
+              {busy ? t('appealSending') : t('appealSend')}
             </button>
             <button
               type="button"

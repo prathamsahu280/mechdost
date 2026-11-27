@@ -2738,3 +2738,24 @@ correction returns the first one and any client key is ignored. Client payout ke
 - **State audit:** world `delivery` and auth `agent` / `agentshop` in the harness; rows `DLV-*` in chunk E; the core
   subset limit is 108 (one delivery case).
 - Contract gaps G1–G8 for the backend stream are listed in spec 24 § Web screens.
+
+## 2026-11-27 — Ustaad QA batch A: builder's rulings (spec 23 § 21h)
+
+Within the QA fix plan (`docs/qa/ustaad-sim-fix-plan-2026-11-27.md`, Batch A); no founder decision changed.
+
+- **Employer account is the server's choice (SIM-P17).** The job form sends no employer kind; the server posts as the
+  member's own linked workshop, another workshop they hold a grant on, then their verified trade account. A named
+  employer is honoured only when it is in that list.
+- **Applicants list (SIM-P18):** owner-only; withdrawn applications, banned or departed applicants and anyone blocked
+  either way with the employer are hidden; the verified tick follows the member-card rule (pre-verified levels never).
+- **Smart correction (SIM-P20):** a request may step down to `suggest`, never up to `auto`; auto needs the admin default
+  or the member's own "Fix by itself" (G17: offered in Me → My choices while `correction.member_can_change` is on).
+- **Member appeals (SIM-P24):** a new support ticket kind `ustaad_appeal` (migration 0111), opened only by the server
+  from `/ustaad/me/standing`; staff still decide the appeal in the Ustaad console with four-eyes. Banned members may
+  read their standing and appeal (two routes only).
+- **Appeal outcomes (SIM-P26):** two notice kinds, `ustaad.appeal_upheld` / `ustaad.appeal_overturned`.
+- **Warn on holds (SIM-B8):** on a held item, warn = remove + strike, one notice (the strike).
+- **Voice consent (SIM-P10):** `ustaad_voice` is asked before the first recording and enforced by the API
+  (403 `USTAAD_VOICE_CONSENT`); `ustaad_voice` and `ustaad_correction` join the member's choices.
+- **Ban and conversations (SIM-P34):** derived, not stored: while a member is banned or has left, nothing is sent to
+  or from them and their requests cannot be accepted; nothing to restore when the ban ends.
