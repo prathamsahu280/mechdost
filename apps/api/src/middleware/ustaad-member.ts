@@ -109,6 +109,21 @@ export function ustaadGate(
   });
 }
 
+/**
+ * The member's own standing and appeal routes only (SIM-P27): like `requireUstaadMember`, but a banned member is let
+ * through, so the banned screen can say why and offer the appeal. Members who left and non-members still get 404.
+ */
+export function requireUstaadMemberAnyStanding(deps: Pick<AppDeps, 'db'>): MiddlewareHandler<AppEnv> {
+  return createMiddleware<AppEnv>(async (c, next) => {
+    const member = await ustaadMemberOfUser(deps.db, c.get('auth').user.id);
+    if (!member || member.status === 'left') return handleNotFound(c);
+    const s = await readUstaadSettingValues(deps.db, ['ustaad.general.enabled']);
+    if (!s['ustaad.general.enabled'] && !isUstaadStaff(c)) return handleNotFound(c);
+    c.set('ustaadMember', member);
+    await next();
+  });
+}
+
 /** Member routes: an active member (or restricted: the repositories decide what restricted members may do). */
 export function requireUstaadMember(deps: Pick<AppDeps, 'db'>): MiddlewareHandler<AppEnv> {
   return createMiddleware<AppEnv>(async (c, next) => {

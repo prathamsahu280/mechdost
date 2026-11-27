@@ -169,3 +169,12 @@ The worker (`apps/api/src/worker.ts`, every 10 minutes) calls `autoCloseResolved
 ## Customer support list stays current (2026-11-16, QA pass 3 bug 10)
 
 Account → Support re-reads the tickets every 20 seconds while the tab is visible and at once when a hidden tab becomes visible, so an admin reply appears without a reload. Test: `apps/web/test/bugfix-qa-pass3b.test.ts`.
+
+## Ustaad Network appeal ticket kind (2026-11-27, QA SIM-P24)
+
+New kind `ustaad_appeal` ("Ustaad Network appeal" / "उस्ताद नेटवर्क अपील"), migration `0111_ustaad_appeal_ticket_kind`
+(the `support_tickets_kind_valid` CHECK). Only the server opens it: `POST /v1/ustaad/me/appeals` (spec 23 § 21h)
+creates the ticket through `createSupportTicket` (same daily limit, first-reply clock, staff bell and email) and links
+it to the Ustaad report; the support form never offers it (`INTERNAL_TICKET_KINDS` in `packages/db`, filtered out of
+the Account → Support picker). Staff answer it in the inbox like any ticket and decide the appeal itself in Admin →
+Ustaad → Appeals.

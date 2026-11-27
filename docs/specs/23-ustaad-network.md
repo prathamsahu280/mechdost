@@ -1982,6 +1982,28 @@ Each fix has a regression test named after the QA id.
   call therefore answers `suggest` and the composer keeps the member's words. "Fix by itself" applies only when the
   admin default is `auto` or the member chose it (G17: the member control is in "My choices", see SIM-P10 below).
   Test: `ustaad-correct-route.test.ts` "SIM-P20 …".
+- **SIM-P19 / audit #2 / SIM-P24 — every notice link is a page; the member's standing and appeal.** Links fixed in
+  `notice-catalogue.ts`: `ustaad.content_removed`, `ustaad.strike`, `ustaad.appeal_*` → `/ustaad/me/standing`;
+  `ustaad.report_outcome` and the reply fallback → `/notifications` (the existing notification centre);
+  `ustaad.verification_decided` and `ustaad.vouch_requested` → `/ustaad/me`; `ustaad.job_application` → the job.
+  Guard test `apps/web/test/notice-links.test.ts`: every catalogued link must match a page in the route tree (the
+  root `[...rest]` not-found catch-all does not count). New **`/ustaad/me/standing`** ("Your account standing"):
+  one summary line (blocked until a date / with no end date; limited until a date — you can read but cannot post,
+  comment, answer, message or use jobs; limited while the team checks; or all clear with a link to the community
+  rules), then each decision on the member or their content (removed, taken down on a legal order, warning,
+  limited, blocked) with the **reason as a plain label** (`ustaad.standing.reason_*`, never the code), the decision
+  date, the end date, the appeal state and **one Appeal action** (inline form, reason 10–1,000 characters, Escape and
+  Cancel close it). API: `GET /v1/ustaad/me/standing` and `POST /v1/ustaad/me/appeals {reportCode, note}` behind
+  `requireUstaadMemberAnyStanding` (banned members pass; members who left and non-members get the generic 404; rate
+  limits `memberReads` / `membershipWrites`). `ustaadMyStanding` lists the last 50 decisions (`remove`, `takedown`,
+  `warn`, `restrict`, `ban` actions on reports whose target is the member or something they wrote; one line per
+  report; never the reporter, the staff member or a staff note). `fileUstaadAppeal` (one transaction): someone else's
+  report or an unknown code → 404; a report not `actioned` → 409 `USTAAD_APPEAL_CLOSED`; otherwise a support ticket
+  of the new kind **`ustaad_appeal`** (migration `0111`, spec 09) through `createSupportTicket`, the report moves
+  `actioned → appealed` (conditional on status and version, `ustaad_events` `appealed` by the member, server event
+  `ustaad_appeal_filed { reportId }`). Staff still decide it in Admin → Ustaad → Appeals (four-eyes). The GAC line
+  (gac.gov.in) closes the decisions list. Tests: `ustaad-moderation.test.ts` "member standing and appeal …",
+  `ustaad-moderation-api.test.ts` "member standing and appeal …", `apps/web/test/ustaad-standing-view.test.ts`.
 - **SIM-P26 — the appellant hears the appeal's outcome.** `decideUstaadAppeal` sent the reporter's
   `ustaad.report_outcome` ("Your report was checked – thank you") to the appellant. New kinds `ustaad.appeal_upheld`
   ("The decision stays") and `ustaad.appeal_overturned` ("We took the decision back"), en + hi in `notify.*`,

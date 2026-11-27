@@ -1,5 +1,6 @@
 import type { JOB_ROLES } from '@mechdost/shared/ustaad/codes';
 import type { MemberView } from '@mechdost/shared/ustaad/dto/members';
+import type { StandingView } from '@mechdost/shared/ustaad/dto/moderation';
 import type {
   AnswerInput,
   AskQuestion,
@@ -20,7 +21,7 @@ import type { Banded } from './local-view';
  * labelled sample data (`demo/ustaad.ts`). Both are loaded on demand, so storefront bundles never carry either.
  */
 
-export type { ApplicantView };
+export type { ApplicantView, StandingView };
 export type JobRole = (typeof JOB_ROLES)[number];
 
 export interface MyLocation {
@@ -122,6 +123,13 @@ export interface UstaadClient {
     code: string,
     action: 'pause' | 'resume' | 'close' | 'fill',
   ): Promise<ApiResult<{ status: string }>>;
+  /** My standing (SIM-P19/P27): readable while banned or restricted. */
+  standing(): Promise<ApiResult<StandingView>>;
+  /** Appeal one decision (a support ticket of kind ustaad_appeal). */
+  fileAppeal(
+    reportCode: string,
+    note: string,
+  ): Promise<ApiResult<{ ticketCode: string; reportCode: string }>>;
   /** The employer's applicants of one job (SIM-P18); 404 for anyone else. */
   applicants(
     code: string,

@@ -1,5 +1,6 @@
 import { MeResponseDto } from '@mechdost/shared/ustaad/dto/members';
 import { ApplicantsResponseDto, JobDto } from '@mechdost/shared/ustaad/dto/local';
+import { AppealFiledDto, StandingDto } from '@mechdost/shared/ustaad/dto/moderation';
 import { LearnViewDto, QuestionDetailDto } from '@mechdost/shared/ustaad/dto/qa';
 import {
   AnsweredResponse as Answered,
@@ -102,6 +103,8 @@ export function apiUstaadClient(locale: string): UstaadClient {
     postJob: (input) => send('/ustaad/jobs', JobDto, input),
     apply: (code, body) => send(`/ustaad/jobs/${encodeURIComponent(code)}/apply`, Applied, body),
     moveJob: (code, action) => send(`/ustaad/jobs/${encodeURIComponent(code)}/${action}`, Moved, {}),
+    standing: () => get('/ustaad/me/standing', StandingDto),
+    fileAppeal: (reportCode, note) => send('/ustaad/me/appeals', AppealFiledDto, { reportCode, note }),
     applicants: (code, cursor) =>
       get(
         `/ustaad/jobs/${encodeURIComponent(code)}/applications${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`,

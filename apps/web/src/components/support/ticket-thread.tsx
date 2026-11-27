@@ -22,6 +22,7 @@ const KIND_LABEL = {
   account: 'kind_account',
   labour_redo: 'kind_labour_redo',
   rsa_bill_dispute: 'kind_rsa_bill_dispute',
+  ustaad_appeal: 'kind_ustaad_appeal',
   deletion_request: 'kind_deletion_request',
   other: 'kind_other',
 } as const;

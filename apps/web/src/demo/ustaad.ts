@@ -731,6 +731,16 @@ export function demoUstaadClient(): UstaadClient {
       j.status = { pause: 'paused', resume: 'open', close: 'closed', fill: 'filled' }[action];
       return ok({ status: j.status });
     },
+    // The demo member is in good standing (sample data); the banned and restricted screens are real-sign-in only.
+    standing: () =>
+      ok({
+        status: 'active' as const,
+        restrictedUntil: null,
+        bannedUntil: null,
+        restrictedMode: 'none',
+        items: [],
+      }),
+    fileAppeal: () => fail(404, 'NOT_FOUND'),
     applicants: (code) => {
       const j = jobs.find((x) => x.code === code && x.mine);
       if (!j) return fail(404, 'NOT_FOUND');

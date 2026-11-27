@@ -1,0 +1,2 @@
+ALTER TABLE "support_tickets" DROP CONSTRAINT "support_tickets_kind_valid";--> statement-breakpoint
+ALTER TABLE "support_tickets" ADD CONSTRAINT "support_tickets_kind_valid" CHECK ("support_tickets"."kind" in ('order_issue','service_issue','refund','fitment','product_sourcing','workshop_request','account','deletion_request','labour_redo','rsa_bill_dispute','ustaad_appeal','other'));

@@ -89,6 +89,8 @@ export interface UstaadServerEventProps {
   ustaad_job_posted: { jobCode: string; role: Of<typeof JOB_ROLES> };
   ustaad_job_applied: { jobCode: string; applicationId: string };
   ustaad_application_moved: { applicationId: string; to: string };
+  /** SIM-P24: a member filed an appeal against a decision on them or their content (a support ticket). */
+  ustaad_appeal_filed: { reportId: string };
   ustaad_report_created: {
     reportCode: string;
     reason: Of<typeof REPORT_REASONS>;
@@ -182,6 +184,7 @@ export const USTAAD_SERVER_EVENTS = [
   'ustaad_job_posted',
   'ustaad_job_applied',
   'ustaad_application_moved',
+  'ustaad_appeal_filed',
   'ustaad_report_created',
   'ustaad_moderation_action',
   'ustaad_media_rejected',

@@ -45,6 +45,7 @@ export * from './profile-view';
 export * from './location';
 export * from './zones';
 export * from './jobs';
+export * from './standing';
 // F2: reports, moderation (above), strikes, the removed-content archive.
 export * from './reports';
 export * from './strikes';
