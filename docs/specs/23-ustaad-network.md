@@ -719,7 +719,7 @@ needs a key (Q-U6); until then an admin domain deny list in `ustaad_word_lists` 
 - **Analytics.** Client event `ustaad_media_text_added { kind: audio|video, summary: bool, captions: bool }` when a
   declared upload carries text (flags only, never the text).
 - **Not built yet:** search over summaries (Discover searches people and tags only; there is no content search to add
-  them to — queued Q-STT-2); story and comment players still use the plain voice note without the labelled line;
+  them to — queued Q-STT-2); comment and story players do not show the stored summary yet (voice note without duration, size or summary line; story videos have no captions track or "No captions" note); in a request DM the link-before-accept and fee-phrase check (`dmTextCheck`) reads the typed body only, not a voice message's summary (the general screen still reads it; a link in a voice summary on an unaccepted request is not refused — follow-up); staff report detail, reported thread and removed archive show the media but not its summary;
   automatic captions/summaries (Q-STT-1).
 - Tests: `packages/shared/test/ustaad-media-text.test.ts`, `packages/db/test/ustaad-media-text.test.ts`,
   `apps/api/test/ustaad-media-api.test.ts` ("typed summary and captions"), `apps/web/test/ustaad-voice-ui.test.ts`.
@@ -1747,7 +1747,7 @@ new_threads | connect_requests`; one conditional upsert `n + k where n < cap`, n
   errors) and the
   Hindi crawl (`hindi-coverage.spec.ts`, ten `/hi/ustaad/*` pages).
 - **Accessibility review (2026-11-26, aria / keyboard + modal / forms + media specialists):** recorder has one name
-  ("Record voice note") with `aria-pressed`, one always-mounted live region for every outcome, focus kept across the
+  ("Record voice note"; since 2026-11-27 night its name is the visible word "Stop" while recording, no `aria-pressed`, § 10b), one always-mounted live region for every outcome, focus kept across the
   mic ↔ recorded swap, pointer cancel handled and a hold released during the permission prompt cancels the start;
   vehicle and work choices are radio groups with "Not sure"; field errors sit beside their fields (`aria-invalid` +
   `aria-describedby`); busy buttons use `aria-disabled` (focus stays); writes refresh the thread without blanking it;

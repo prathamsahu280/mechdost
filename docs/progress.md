@@ -9,7 +9,7 @@ This file is the single source of truth for **where the build is right now**. It
   summary field; voice notes with duration, size, progress, labelled "Voice note from <name> · 0:42", one player at
   a time (also stops Listen). Migration **0112_ustaad_media_text** (unapplied). Q-STT-1 (auto captions research) and
   Q-STT-2 (search over summaries) queued. Gates in the agent report; full suites for the lead after 00:30.
-- **Open follow-ups:** search over summaries (Q-STT-2); labelled line in comments/stories players; a11y review items
+- **Open follow-ups:** search over summaries (Q-STT-2); comments/stories do not show the stored summary (story videos no track / "No captions"); `dmTextCheck` does not read a voice message's summary (link in a voice summary on an unaccepted DM request passes); staff report views do not show summaries; e2e `ustaad-ce-mic.spec.ts` updated for "Stop"/Cancel but NOT run; a11y review items
   not fixed (video `aria-describedby` to its summary, fieldset/legend + captions counter on the video form, lang on
   summaries in the video note, `aria-valuetext` on the progress bar, "Record again" restarts nothing — same as remove).
 

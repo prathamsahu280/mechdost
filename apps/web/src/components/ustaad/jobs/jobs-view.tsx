@@ -460,7 +460,7 @@ function ApplySheet({ code, onClose }: { code: string; onClose: (applied: boolea
       setPct(0);
       const up = await client.upload(
         intro.blob,
-        { kind: 'audio', mime: intro.mime, durationMs: intro.durationMs },
+        { kind: 'audio', mime: intro.mime, durationMs: intro.durationMs, summary: intro.summary },
         setPct,
       );
       setPct(null);

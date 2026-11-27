@@ -597,3 +597,7 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
 - **Q-STT-2 (Decision, P3) — search over summaries.** Discover searches people and tags only; there is no post or
   question text search to add the summaries to. Build a content search (posts, questions, summaries; Postgres FTS
   en + hi) as its own item? **Default meanwhile:** summaries are stored and screened, not searched.
+- **Q-STT-3 (Decision, P3) — a blocked summary costs a video upload.** The summary/captions are fixed when the upload
+  is declared but screened when the post is created, so a refused summary (e.g. a phone number) means uploading the
+  video again, which counts against `media.videos_per_day` (3). Options: screen the text at declaration too (refuse
+  before upload), or add an owner-only edit route that re-screens. **Default meanwhile:** as built (screened at create).
