@@ -2,6 +2,16 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-27 night — Ustaad UI upgrade U4 (builder, branch `worktree-agent-aae554c6ac68a2c9f`, NOT merged)
+
+- Built: `helpedThisWeek` on `GET /ustaad/me/card`; Me restyle (next level in numbers E7, level and Izzat sheet,
+  weekly helped note, stat row, badges, Learn/Discover shortcuts); Learn "7/10 videos to Naya" (E15); Jobs scam line +
+  chip; notifications filter chips + IST day groups. Spec 23 § 21i-U4, decisions entry, events in § 16.
+- Not done: Learn sizes/watched states/Continue (API has no size), job employer + verified (not in `JobDto`), profile
+  `/u/[handle]` and Best answers tab, PehchaanTag sheet provider, network/Discover polish, notification icons.
+- Gates run under the memory limit only (see the builder report): db card tests, web `ustaad-card` tests, eslint on the
+  Me files; tsc and the notifications/learn/jobs lint left for the lead.
+
 ## 2026-11-27 night — skills self-improvement step (docs only, uncommitted for the lead)
 
 - Promoted every lesson seen twice from the 2026-11-26/27 learnings: advisor `checklist.md` (UI focus-on-swap,
