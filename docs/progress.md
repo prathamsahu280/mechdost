@@ -12,7 +12,9 @@ This file is the single source of truth for **where the build is right now**. It
   site key variable is back to the real one (rebuild 4a44de12); the server secret must be put back from
   `/opt/mechdost/.turnstile-secret.backup` ONLY after that deploy is live, then delete the backup and remove the three
   `QA_TURNSTILE_BYPASS_*` lines (expired 16:57) and restart the API. **If this entry still says "pending" below, do it
-  first.** Status: PENDING at 16:58.
+  first.** Status: **DONE 17:27** — deploy 4a44de12 live with the real site key (verified on /login: widget key
+  0x4AAAAAAF_vKHWLzkKyj9H5), server secret restored from the backup, backup deleted, the three bypass lines removed,
+  API restarted (`qa_turnstile_bypass_off`).
 - **Ustaad QA simulation:** done. 251 steps (194 pass / 29 fail); follow-up F (C22 email/WhatsApp, real video, banned,
   slow 3G, keyboard, stale feed). Walkthrough `D:\mechdost-qa\ustaad-sim-2026-11-27\walkthrough.html`; bugs/audit in
   its `logs\`. Fix plan `docs/qa/ustaad-sim-fix-plan-2026-11-27.md`. Founder: keep test content; third staff = account
