@@ -8,7 +8,7 @@
  */
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import {
   actOnUstaadReport,
   answerUstaadQuestion,
@@ -530,6 +530,43 @@ describe('decisions', () => {
       );
     expect(rows).toHaveLength(1);
     expect(rows[0]?.body).not.toMatch(/thank you/i);
+  });
+
+  it('appeal upheld: the decider is in audit_log (QA 2026-11-27 — an upheld appeal left no audit row)', async () => {
+    const p = await post(author);
+    const r = await createUstaadReport(t(), viewer, {
+      targetType: 'post',
+      targetId: p.id,
+      reasonCode: 'abuse',
+    });
+    await actOnUstaadReport(t(), cmA, r.code, { action: 'remove', reasonCode: 'abuse', version: 1 });
+    const [ticket] = await db
+      .insert(s.supportTickets)
+      .values({
+        code: 'REQ-RPR-2026-7K3QUP',
+        userId: author.userId,
+        kind: 'other',
+        slaAckDue: new Date(Date.now() + 86_400_000),
+        slaResolveDue: new Date(Date.now() + 7 * 86_400_000),
+      })
+      .returning();
+    let d = await ustaadReportDetail(t(), cmA, r.code);
+    await openUstaadAppeal(t(), cmA2, r.code, { ticketCode: ticket?.code ?? '', version: d.version });
+    d = await ustaadReportDetail(t(), cmA, r.code);
+    const out = await decideUstaadAppeal(t(), cmA2, r.code, { outcome: 'upheld', version: d.version });
+    expect(out.status).toBe('upheld');
+    const rows = await db
+      .select()
+      .from(s.auditLog)
+      .where(
+        and(
+          eq(s.auditLog.action, 'ustaad.appeal_upheld'),
+          eq(s.auditLog.actorUserId, cmA2.userId),
+          sql`${s.auditLog.after}->>'report' = ${r.code}`,
+        ),
+      );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ actorRole: 'staff', entity: 'ustaad_report', reason: 'upheld' });
   });
 
   it('repeated dismissed minor reports earn a false_report strike', async () => {

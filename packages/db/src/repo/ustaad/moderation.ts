@@ -1229,6 +1229,17 @@ export async function decideUstaadAppeal(
       actorRole: 'staff',
       cityId: r.cityId,
     });
+    // Hard rule 3: every appeal decision is in audit_log with its decider (an upheld appeal wrote none; QA 2026-11-27).
+    await tx.insert(auditLog).values({
+      actorUserId: staff.userId,
+      actorRole: 'staff',
+      action: `ustaad.appeal_${body.outcome}`,
+      entity: 'ustaad_report',
+      entityId: r.id,
+      before: { status: 'appealed' },
+      after: { status: body.outcome, report: r.code },
+      reason: body.outcome,
+    });
     // SIM-P26: the appellant hears the outcome of their appeal (the reporter template was sent here before).
     await notifyAuthor(
       tx,
