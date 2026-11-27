@@ -17,6 +17,7 @@
     "./state/reasons": "./src/state/reasons.ts",
     "./delivery/codes": "./src/delivery/codes.ts",
     "./delivery/api": "./src/delivery/api.ts",
+    "./delivery/agent-stats": "./src/delivery/agent-stats.ts",
     "./rbac": "./src/rbac.ts",
     "./live": "./src/live.ts",
     "./whatsapp": "./src/whatsapp.ts",
