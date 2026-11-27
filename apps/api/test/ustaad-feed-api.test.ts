@@ -72,6 +72,7 @@ let ramesh: Person;
 let suresh: Person;
 const k = () => `idem-${randomUUID().replace(/-/g, '').slice(0, 16)}`;
 const previews: string[] = [];
+const oembedCalls: string[] = [];
 
 async function setSetting(key: string, value: unknown) {
   const list = await call(superAdmin, 'GET', '/admin/ustaad/settings');
@@ -112,6 +113,16 @@ beforeAll(async () => {
     turnstile: new FakeTurnstile(['human-token-123']),
     env: { USTAAD_SHARE_SECRET: 'x'.repeat(40) },
     linkPreview: fakePreview,
+    videoOEmbed: {
+      fetch: (url) => {
+        oembedCalls.push(url);
+        return Promise.resolve(
+          new Response(JSON.stringify({ title: 'Clutch plate change', author_name: 'Raipur Garage' }), {
+            headers: { 'content-type': 'application/json' },
+          }),
+        );
+      },
+    },
   });
   const [state] = await ctx.db
     .insert(s.states)
@@ -272,6 +283,39 @@ describe('posts, feed, reactions, comments', () => {
     }
     expect(preview).toEqual({ title: 'Clutch guide', description: null });
     expect(previews).toEqual(['https://example.com/clutch']);
+  });
+
+  it('a YouTube link: oEmbed title + author on the post, cached, no HTML preview fetch (spec 23 § 10b)', async () => {
+    const before = previews.length;
+    const r = await call(ramesh, 'POST', '/ustaad/posts', {
+      kind: 'link',
+      linkUrl: 'https://youtu.be/dQw4w9WgXcQ?t=42',
+      body: 'Clutch video',
+      idemKey: k(),
+    });
+    expect(r.status, r.text).toBe(201);
+    const d = await call(suresh, 'GET', `/ustaad/posts/${r.body.id as string}`);
+    expect(d.body.link).toMatchObject({
+      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      host: 'youtube.com',
+      preview: null,
+      video: {
+        provider: 'youtube',
+        videoId: 'dQw4w9WgXcQ',
+        startS: 42,
+        title: 'Clutch plate change',
+        author: 'Raipur Garage',
+      },
+    });
+    const again = await call(ramesh, 'POST', '/ustaad/posts', {
+      kind: 'link',
+      linkUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      idemKey: k(),
+    });
+    expect(again.status, again.text).toBe(201);
+    expect(oembedCalls).toHaveLength(1);
+    await new Promise((res) => setTimeout(res, 50));
+    expect(previews.length).toBe(before);
   });
 
   it('stories are locked for accounts younger than stories.min_account_days', async () => {

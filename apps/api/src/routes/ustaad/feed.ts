@@ -30,6 +30,7 @@ import {
   unlikeUstaadPost,
   unsaveUstaadPost,
   ustaadLinkPreviewNeeded,
+  ustaadVideoMetaCached,
   ustaadPostDetail,
   ustaadTagPage,
   ustaadTeaserVisible,
@@ -63,6 +64,8 @@ import { USTAAD_RATE_RULES } from '../../rate-limit/ustaad-rules';
 import type { AppDeps, AppEnv } from '../../types';
 import { forYouPage, memoryFeedSnapshots } from '../../ustaad/feed/snapshot';
 import { fetchLinkPreview } from '../../ustaad/link-preview';
+import { fetchYouTubeOEmbed } from '../../ustaad/video-oembed';
+import { parseVideoLink, youtubeWatchUrl } from '@mechdost/shared/ustaad/video-links';
 import { SHARE_TOKEN_RE, signShareToken, verifyShareToken } from '../../ustaad/share-token';
 import { validationHook } from '../../validation';
 import { errorResponses } from '../schemas';
@@ -377,6 +380,29 @@ export function ustaadFeedRoutes(deps: AppDeps) {
     });
   };
 
+  /**
+   * A recognised video link (spec 23 § 10b): the cached oEmbed title/author, else one fixed-host oEmbed request before
+   * the post's transaction so the words are screened with the post text. Failure → null (the post still goes up).
+   */
+  const videoMeta = async (raw: string) => {
+    const v = parseVideoLink(raw);
+    if (!v) return null;
+    const watch = youtubeWatchUrl(v.videoId);
+    const cached = await ustaadVideoMetaCached(deps.db, watch);
+    if (cached || !deps.videoOEmbed) return cached;
+    const meta = await fetchYouTubeOEmbed(v.videoId, deps.videoOEmbed);
+    await saveUstaadLinkPreview(deps.db, watch, {
+      status: meta ? 'ok' : 'failed',
+      finalHost: 'youtube.com',
+      title: meta?.title ?? null,
+      description: null,
+      author: meta?.author ?? null,
+    }).catch((err: unknown) => {
+      log('warn', 'ustaad_video_meta_save_failed', safeError(err));
+    });
+    return meta;
+  };
+
   return app
     .openapi(feed, async (c) => {
       const q = c.req.valid('query');
@@ -387,8 +413,11 @@ export function ustaadFeedRoutes(deps: AppDeps) {
       return c.json(page, 200);
     })
     .openapi(createPost, async (c) => {
-      const p = await createUstaadPost(deps.db, actor(c), c.req.valid('json')).catch(asRateLimited);
-      if (p.created && p.linkUrl) preview(p.linkUrl);
+      const body = c.req.valid('json');
+      const video = body.kind === 'link' && body.linkUrl ? await videoMeta(body.linkUrl) : null;
+      const p = await createUstaadPost(deps.db, actor(c), body, { video }).catch(asRateLimited);
+      // A video's card is built from the screened oEmbed fields; the generic HTML preview is never fetched for it.
+      if (p.created && p.linkUrl && !p.video) preview(p.linkUrl);
       return c.json({ id: p.id, status: p.status }, 201);
     })
     .openapi(getPost, async (c) =>

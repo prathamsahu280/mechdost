@@ -8,6 +8,7 @@ import type { PasswordAuthority } from '../src/auth/password-authority';
 import type { TurnstileVerifier } from '../src/auth/turnstile';
 import { TokenError, type TokenVerifier, type VerifiedToken } from '../src/auth/token-verifier';
 import { loadConfig } from '../src/config';
+import type { OEmbedDeps } from '../src/ustaad/video-oembed';
 import type { PreviewDeps } from '../src/ustaad/link-preview';
 import type { UsageSources } from '../src/usage/check';
 import type { PhotoByteCache } from '../src/photos/byte-cache';
@@ -173,6 +174,7 @@ export async function buildApp(
     mediaHost?: MediaHost | null;
     safetyClassifier?: ImageSafetyClassifier | null;
     linkPreview?: PreviewDeps | null;
+    videoOEmbed?: OEmbedDeps | null;
     usageSources?: UsageSources;
   } = {},
 ) {
@@ -204,6 +206,7 @@ export async function buildApp(
     mediaHost: opts.mediaHost ?? null,
     safetyClassifier: opts.safetyClassifier ?? null,
     linkPreview: opts.linkPreview ?? null,
+    videoOEmbed: opts.videoOEmbed ?? null,
     ...(opts.usageSources ? { usageSources: opts.usageSources } : {}),
   });
   return { app, db, verifier };
