@@ -9028,6 +9028,25 @@
       "retry": "फिर कोशिश करें",
       "cancel": "रद्द करें",
       "appealSending": "भेज रहे हैं…"
+    },
+    "saveControl": {
+      "save": "सेव करो",
+      "saved": "सेव किया",
+      "saveAria": "बाद के लिए सेव करो",
+      "savedAria": "सेव किया हुआ। हटाने के लिए दबाओ",
+      "failed": "सेव नहीं हुआ। फिर से कोशिश करो",
+      "kinds": {
+        "post": "पोस्ट",
+        "question": "सवाल",
+        "answer": "जवाब",
+        "job": "नौकरी",
+        "lesson": "सबक"
+      },
+      "suggest": {
+        "wiring": "वायरिंग",
+        "part_prices": "पार्ट के दाम",
+        "tips": "टिप्स"
+      }
     }
   },
   "savings": {

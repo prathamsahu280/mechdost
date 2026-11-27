@@ -5,6 +5,7 @@
  * A member in restricted mode emits no events at all (SR-42; enforced in `recordUstaadEvent`).
  */
 import { z } from 'zod';
+import { USTAAD_SAVE_KINDS } from './saved';
 import {
   type CORRECTION_APPLIED,
   type JOB_ROLES,
@@ -213,6 +214,8 @@ export const USTAAD_CLIENT_EVENT_SCHEMAS = {
   ustaad_feed_viewed: z.object({ tab: z.enum(['for_you', 'following']) }).strict(),
   ustaad_post_liked: z.object({}).strict(),
   ustaad_post_saved: z.object({}).strict(),
+  /** The shared Save control (2026-11-28): any kind saved or unsaved; ids never leave the browser. */
+  ustaad_item_save_toggled: z.object({ kind: z.enum(USTAAD_SAVE_KINDS), saved: z.boolean() }).strict(),
   ustaad_post_shared: z.object({ channel: z.enum(['whatsapp', 'copy_link', 'member']) }).strict(),
   ustaad_story_viewed: z.object({}).strict(),
   ustaad_video_played: z.object({ secondsBand: z.enum(['lt15', '15to60', '60to180', 'gt180']) }).strict(),
