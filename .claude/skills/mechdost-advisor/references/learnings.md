@@ -634,3 +634,7 @@ L-DCSIM2 · 2026-11-27 · live QA conducting · (1) The harness may refuse produ
   new snapshot to that number, `git checkout` the overwritten one, fix the journal tag, and check `prevId` chains to
   the latest snapshot. Shell-quoted node one-liners with backticks broke file text three times → write edit scripts
   to the scratchpad and run them with node.
+  L315 · 2026-11-27 · delivery/i18n · next-intl does NOT throw for a missing message (it prints the key path), so a `try { e(code) } catch` fallback never fires and staff saw `delivery.errors.STALE` → map codes through a typed list first, and guard it with a test that scans the route + repository throws for every code (DC-B3).
+  L316 · 2026-11-27 · delivery/web · signed media URLs answered as a bare path (`/delivery-photos/…`) resolve on the website origin → API answers include `/v1`, and the web prefixes `NEXT_PUBLIC_API_URL` with one helper (DC-B7). Same check for any API-served link the web renders.
+  L317 · 2026-11-27 · delivery/web · a web role computed once at sign-in (`demoRoleFor`) goes stale after any action that grants a role (invite acceptance) → refresh `/v1/me` with a fresh token and re-adopt the account in the same handler (DC-P4).
+  L318 · 2026-11-27 · worktree · a fresh worktree has no node_modules and no `apps/web/next-env.d.ts` (ignored) → `pnpm install --frozen-lockfile --offline`, copy next-env.d.ts from the main checkout before web tsc; worktree-isolated Bash refuses `cd … && heredoc` chains → use Write/Edit or PowerShell from the worktree root.

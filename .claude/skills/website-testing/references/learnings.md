@@ -438,3 +438,6 @@ review) · a new owner-side list must reuse the sibling's gate and the shared ca
 level no tick).
 T-QA-A3 · 2026-11-27 · ustaad/api tests · a new test in a shared-state API file failed only in the full run: an earlier
 test spent the reporter's 20 reports a day · use a fresh member for writes that are rate-limited per user.
+T-DLV-1 · 2026-11-27 · delivery · the demo store accepted photo uploads without a job id, so unit + e2e on the demo never saw the API's 422 JOB_REQUIRED (DC-P11, P0 live) → client tests must call the API client with a stubbed fetch and assert the request body, not only the demo store.
+T-DLV-2 · 2026-11-27 · delivery · a screen keyed on an optional sub-object (`delivery !== null`) silently fell back to the wrong action when the API sent null before the job existed (DC-P9) → test each card with the API's real "not yet created" shape (null), keyed on the stable field (delivery mode).
+T-DLV-3 · 2026-11-27 · worker sweeps · a sweep that finds nothing logs nothing, so "0 due" and "stuck/never ran" look the same in prod (DC-B11) → sweeps return the due count and the worker warns when due > expired + failed; regression tests run the sweep twice through the real offer path.

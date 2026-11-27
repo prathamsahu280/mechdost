@@ -2,6 +2,21 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-27 evening — delivery go-live blockers fixed (builder, branch `worktree-agent-adc124fa15469db75`, NOT merged)
+
+- Seven commits, test first (spec 24 § 17): DC-P11 job photos carry the job id; DC-B11 sweep audited + warns on
+  due-but-not-expired offers (prod cause NOT reproduced — the selection works in tests; lead to check the worker log
+  and open offers vs `now()` on the server); DC-P9 shop card keyed on delivery mode; DC-P10 rider strip on
+  `bg-surface`; DC-B3/P5/P8 every delivery API error code has en+hi words (guard test) + Aadhaar checked client-side;
+  DC-B7 staff photo links on the API `/v1/delivery-photos` route; DC-P4 session refreshed after invite acceptance.
+- Gates: tsc shared/db/api/web 0, eslint changed files 0, vitest web 211 files green, db delivery tests green, api
+  (see report). No e2e, no build, no push. **Next:** merge, production build + JS budget, deploy API + worker + web
+  together (the photo URL now carries `/v1`; an old web against a new API still works, `deliveryPhotoHref` accepts
+  both), then re-run D1 (photos, ready for pickup, offer expiry on the staff side) live before switching agents on.
+- Still open from the run (not in this batch): DC-P13 shop return wrong-code tries left + "Returned"/"Ready for
+  pickup" status labels, DC-B10 declined agents still suggested, DC-F2 verify-after-view, per-open audit of job
+  photos, G0-7 one landing role for owners who are also agents.
+
 ## 2026-11-27 afternoon (lead) — handover at the 17:30 stop
 
 - **Live:** delivery agents + COD by approval + preview testers (deploys 5c984283 → deca80e7 → 30d3220f), JS budget

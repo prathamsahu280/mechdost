@@ -199,7 +199,10 @@ and `delivery_job_events`.
 ## 12. Worker
 
 Offers expire every 30 s (one transaction each; a failure is logged and skipped). Paused agents with an end date
-resume.
+resume. Each expiry writes the offer `expired`, the job back to `needs_agent` (when still `offered`), a job event,
+an `audit_log` row `delivery_job.offer_expired` (actor `system`; added 2026-11-27, DC-B11), the staff notice
+`staff.delivery_offer_expired` and the server event. The sweep returns how many offers were due; the worker logs
+`delivery_offers_not_expired` (warn) when due offers neither expired nor failed, so a stuck sweep is never silent.
 
 ## 13. Refund on return
 
@@ -214,6 +217,8 @@ Source and reason code `delivery_returned`. Customer's fault (refused, or unreac
   switch, shop mode, ratings, "security review 2026-11-26" block (standing, documents, pause, offboard), database
   rules (append-only, CHECKs).
 - `packages/db/test/delivery-payouts.test.ts`: once per key, reversal only, city scope and agent view, delivered count.
+- `packages/db/test/delivery-offer-expiry.test.ts` (DC-B11): an offer through the real path, past `expires_at`, is
+  expired by the sweep twice in a row (no failure, job `needs_agent`, audit row, job event, staff notice).
 - `apps/api/test/delivery.test.ts`: public apply (human check, per-phone limit), role-leak matrix (anonymous, customer,
   agent A vs B, staff by city, finance vs ops, shop), rate-limit decrement by exactly 1.
 
@@ -400,7 +405,9 @@ invite revoked, vehicle edit, application rejected, shop-mode request withdrawn.
 Unit: `apps/web/test/demo-delivery.test.ts` (machines, CAS, 404, stage reveal, codes, photo, failed/return,
 switch, shop mode, invite), `demo-delivery-payouts.test.ts`, `delivery-view.test.ts`, `delivery-contract.test.ts`
 (the demo store's answers parse with the shared schemas; API client paths and bodies; payout key kept on retry),
-`delivery-invite-redaction.test.ts`, `caddy-secret-paths.test.ts`. E2E `apps/web/e2e/delivery-agents.spec.ts`
+`delivery-invite-redaction.test.ts`, `caddy-secret-paths.test.ts`; go-live fixes 2026-11-27 (below):
+`delivery-golive-photos`, `delivery-golive-shop-handover`, `delivery-golive-portal-theme`, `delivery-error-codes`,
+`delivery-golive-photo-links`, `delivery-golive-invite-session`. E2E `apps/web/e2e/delivery-agents.spec.ts`
 (happy path desktop + mobile, role leak, failed + return, offer expiry at 15 min, shop ready + self-delivery request,
 customer view) on `fixtures/delivery-world.ts`. Hindi gate: apply, invite, agent portal, agent-mode shop, customer and
 admin pages. State audit: rows `DLV-*` (chunk E).
@@ -425,3 +432,27 @@ the historical request.
   `AdminJobDetail`; the web hides the override/retry choices it cannot judge.
 - G8 SOS / help number: the web calls the company support number (`lib/site.ts`); a per-city admin-editable number
   (like roadside's `sosPhone`) would satisfy rule 8.
+
+## 17. Go-live fixes from the live QA run (2026-11-27)
+
+From `D:\mechdost-qa\delivery-cod-sim-2026-11-27\logs\bugs.md`; one commit each, test first.
+
+- **DC-P11 (P0):** job photos (pickup, delivery, failure) upload with the job id (`uploadPhoto(file, purpose, jobId)`;
+  the API answers 422 `JOB_REQUIRED` without it). Document photos carry none.
+- **DC-B11 (P1):** the sweep's selection was correct in tests (offer past `expires_at` expires, twice in a row); the
+  sweep now audits each expiry, orders by `expires_at`, and the worker warns when due offers were not expired (§ 12).
+  The production cause was not reproduced: check the worker log for `delivery_offer_expiry_failed` /
+  `delivery_offers_not_expired` and compare open offers with `now()` on the server.
+- **DC-B7 (P1):** the API answers the signed image route as `/v1/delivery-photos/{id}/large?e=…&s=…`; staff screens
+  open it on the API origin (`deliveryPhotoHref`, `NEXT_PUBLIC_API_URL`). Document views stay audited
+  (`viewAgentDocument`); job photo links come with the audited-read job detail.
+- **DC-B3 / DC-P5 / DC-P8 (P1/P2):** every error code the delivery routes and repositories return has en + hi words
+  in `delivery.errors` and is in `DELIVERY_ERROR_CODES` (guard `apps/web/test/delivery-error-codes.test.ts` scans the
+  route and the `delivery-*.ts` repositories); a plain `WRONG_CODE` maps to `WRONG_CODE_RETRY`; staff screens map
+  before translating (next-intl prints the key path for a missing message, it does not throw). The rider document
+  form checks the number (`documentNumberProblem`) before sending, so Aadhaar gets its own words.
+- **DC-P4 (P1):** after a real invite acceptance the web reloads `/v1/me` with a fresh ID token and re-adopts the
+  account, so the agent portal opens without signing out and in.
+- **DC-P9 (P1):** the shop card picks the agent hand-over by the order's delivery mode (`shopAgentHandover`); a
+  packed agent order without a job yet shows "Mark ready for pickup".
+- **DC-P10 (P2):** the rider status strip uses `bg-surface` under `text-ink` (dark theme contrast).
