@@ -21,7 +21,9 @@ const PostMenu = dynamic(() => import('./post-menu').then((m) => m.PostMenu));
 export type PostGone = 'hidden' | 'deleted' | 'muted' | 'blocked';
 
 const actionBtn =
-  'press inline-flex min-h-12 flex-1 items-center justify-center gap-1.5 rounded-xl px-2 text-[14px] font-bold transition-colors duration-200 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus';
+  // Under 420 px the icon sits above its words (the words never hide: founder rule "a word on every action",
+  // QA simulation 2026-11-27 audit #3); wider screens keep one row.
+  'press inline-flex min-h-12 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 text-[12px] leading-tight font-bold transition-colors duration-200 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus min-[420px]:flex-row min-[420px]:gap-1.5 min-[420px]:px-2 min-[420px]:text-[14px]';
 
 /**
  * One post in the feed (spec 23 § 4 flows 4–5; founder: "something an Indian mechanic would actually use"): who and
@@ -263,9 +265,9 @@ export function PostCard({
           className={`${actionBtn} ${post.likedByMe ? 'text-accent-soft-text' : 'text-ink hover:bg-pill'}`}
         >
           <UstaadIcon name="heart" filled={post.likedByMe} />
-          {post.counts.likes !== null ? <span className="tabular-nums">{post.counts.likes}</span> : null}
-          <span className={post.counts.likes !== null ? 'sr-only min-[420px]:not-sr-only' : ''}>
-            {t('like')}
+          <span className="inline-flex items-center gap-1 whitespace-nowrap">
+            {post.counts.likes !== null ? <span className="tabular-nums">{post.counts.likes}</span> : null}
+            <span>{t('like')}</span>
           </span>
         </button>
         <button
@@ -279,8 +281,10 @@ export function PostCard({
           className={`${actionBtn} text-ink hover:bg-pill`}
         >
           <UstaadIcon name="comment" />
-          <span className="tabular-nums">{post.counts.comments}</span>
-          <span className="sr-only min-[420px]:not-sr-only">{t('comment')}</span>
+          <span className="inline-flex items-center gap-1 whitespace-nowrap">
+            <span className="tabular-nums">{post.counts.comments}</span>
+            <span>{t('comment')}</span>
+          </span>
         </button>
         <button
           type="button"
