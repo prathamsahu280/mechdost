@@ -48,7 +48,7 @@ import type {
   DeliveryAdminAction,
   Result,
 } from '@/lib/delivery/types';
-import { countdown, kmText, ratingFromX10 } from '@/lib/delivery/view';
+import { countdown, deliveryErrorKey, kmText, ratingFromX10 } from '@/lib/delivery/view';
 import { PayoutsTab } from './admin-delivery-payouts';
 import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
 import { useStatusLine } from './status-line';
@@ -133,12 +133,10 @@ function ListState({ failed, loading, onRetry }: { failed: boolean; loading: boo
 function useErr() {
   const t = useTranslations('deliveryAdmin');
   const e = useTranslations('delivery.errors');
+  // next-intl prints the key path for a missing message instead of throwing, so map first (DC-B3).
   return (code: string) => {
-    try {
-      return e(code as 'JOB_CHANGED', { attemptsLeft: 0 });
-    } catch {
-      return t('genericError', { code });
-    }
+    const key = deliveryErrorKey(code);
+    return key ? e(key, { attemptsLeft: 0 }) : t('genericError', { code });
   };
 }
 

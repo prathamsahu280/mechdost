@@ -29,7 +29,11 @@ export function agentStep(status: DeliveryJobStatus, arrived: boolean): 1 | 2 | 
   return null;
 }
 
-/** Error codes the contract has copy for (`delivery.errors.<code>`). */
+/**
+ * Error codes the contract has copy for (`delivery.errors.<code>`, en + hi). Every code the delivery routes and
+ * repositories return is here (guard: `test/delivery-error-codes.test.ts`, DC-B3), so no screen prints a raw key or a
+ * bare "Something went wrong" for a refusal the API answers on purpose.
+ */
 export const DELIVERY_ERROR_CODES = [
   'AGENTS_DISABLED',
   'JOB_CHANGED',
@@ -45,10 +49,53 @@ export const DELIVERY_ERROR_CODES = [
   'INVITE_EXPIRED',
   'DOCUMENT_AADHAAR',
   'DOCUMENT_FORMAT',
+  'RATING_CLOSED',
+  'NOT_RATEABLE',
+  'WRONG_CODE_RETRY',
+  'AGENT_NOT_ELIGIBLE',
+  'AGENT_REQUIRED',
+  'ALREADY_AGENT',
+  'APPLICATION_DECIDED',
+  'CITY_UNKNOWN',
+  'CODE_FORMAT',
+  'DELIVERY_CODES_UNAVAILABLE',
+  'DOCUMENTS_NOT_VERIFIED',
+  'DOCUMENT_IN_USE',
+  'DOCUMENT_NOT_PENDING',
+  'IDEMPOTENCY_MISMATCH',
+  'INVITE_NOT_OPEN',
+  'INVITE_OPEN',
+  'INVITE_REVOKED',
+  'INVITE_USED',
+  'JOB_PICKED_UP',
+  'JOB_REQUIRED',
+  'NOTE_REQUIRED',
+  'NOT_A_PAYMENT',
+  'NOT_SWITCHABLE',
+  'NO_CODE',
+  'NO_DELIVERY_CODE',
+  'NO_SHIPMENT',
+  'NO_SHOP',
+  'PAYOUT_NOT_STORED',
+  'PHOTOS_UNAVAILABLE',
+  'PHOTO_TOO_LARGE',
+  'PHOTO_TYPE',
+  'RATING_STARS',
+  'REASON_REQUIRED',
+  'REQUEST_DECIDED',
+  'REQUEST_PENDING',
+  'RESERVED_KEY',
+  'SAME_MODE',
+  'STALE',
+  'SWITCH_PENDING',
+  'VERIFICATION_REQUIRED',
+  'WRONG_STEP',
 ] as const;
 export type DeliveryErrorCode = (typeof DELIVERY_ERROR_CODES)[number];
 
 export function deliveryErrorKey(code: string): DeliveryErrorCode | null {
+  // A plain `WRONG_CODE` (API refusal without the count in the code) gets the words without a number.
+  if (code === 'WRONG_CODE') return 'WRONG_CODE_RETRY';
   return DELIVERY_ERROR_CODES.find((c) => c === code) ?? null;
 }
 

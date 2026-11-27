@@ -1,6 +1,10 @@
 'use client';
 
-import { AGENT_DOCUMENT_KINDS, type AgentDocumentKind } from '@mechdost/shared/delivery/codes';
+import {
+  AGENT_DOCUMENT_KINDS,
+  documentNumberProblem,
+  type AgentDocumentKind,
+} from '@mechdost/shared/delivery/codes';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState, type SyntheticEvent } from 'react';
 import { portalField } from '@/components/portal/portal-styles';
@@ -161,8 +165,10 @@ function DocumentRow({ kind }: { kind: AgentDocumentKind }) {
   async function save(e: SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     if (busy) return;
-    if (number.trim().length < 5) {
-      setError(errorText('DOCUMENT_FORMAT'));
+    // Same check as the API's body schema, so an Aadhaar number gets its own words, not "Something went wrong" (DC-P5).
+    const problem = number.trim().length < 5 ? 'format' : documentNumberProblem(kind, number.trim());
+    if (problem) {
+      setError(errorText(problem === 'aadhaar' ? 'DOCUMENT_AADHAAR' : 'DOCUMENT_FORMAT'));
       setErrorField('number');
       document.getElementById(`${id}-number`)?.focus();
       return;
