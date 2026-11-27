@@ -18,9 +18,15 @@ This file is the single source of truth for **where the build is right now**. It
   its `logs\`. Fix plan `docs/qa/ustaad-sim-fix-plan-2026-11-27.md`. Founder: keep test content; third staff = account
   08 (community_manager RPR). **Open:** 08's email not verified → 02's appeal UR-RPR-2026-L53CLH undecided (decide
   UPHOLD as 08 after the founder clicks the md-qa08 verify mail).
-- **Builder batch A** (Ustaad trust & safety: job applicants + employer notice, appeal path, banned/restricted screens,
-  suggest-mode correction, voice consent, held-DM strike, vouch bell, ban closes threads; + 3 security-review fixes)
-  runs in worktree `.claude/worktrees/agent-aeee83593b84bb5ee` — verify its report, merge, gates, deploy, re-check live.
+- **Builder batch A — DONE, NOT MERGED** (branch `worktree-agent-aeee83593b84bb5ee`, 12 commits, tree clean): all 10
+  items + the 3 security-review fixes, test-first; vitest shared 1067 / db 1808 / api 974 / web 1831 all green; eslint
+  0; tsc 0 except web 2 (worktree lacks next-env.d.ts — re-check after merge). **Next session:** merge → reconcile
+  migration `0111_ustaad_appeal_ticket_kind` (journal `when` strictly increasing, snapshot chain, drizzle-kit check) →
+  `pnpm db:migrate` BEFORE the deploy → full gates + production build + JS budget → push → re-check every item live in
+  a real browser (lead) incl. the Hindi crawl of `/ustaad/me/standing`. Review flags from the builder: (a) SIM-P17 now
+  lets ANY workshop grant (incl. staff grants) post as that workshop — confirm that is intended; (b) Me is behind
+  `MemberGate`, so staff without a membership may see the join card; (c) the voice consent prompt now appears in the
+  demo too — Playwright specs that tap the mic may need an Allow step; (d) no banned-employer / "left" applicant test.
 - **Delivery + COD simulation:** done (personas); conductor wrapping up the walkthrough at
   `D:\mechdost-qa\delivery-cod-sim-2026-11-27\walkthrough.html`. All settings restored (R9 16:43: agents OFF in Raipur,
   timer 15, order WhatsApp templates back ON). **Do NOT switch rider delivery on for real until DC-P11 (P0: every job
