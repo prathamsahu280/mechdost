@@ -492,7 +492,8 @@ export const NOTICE_CATALOGUE = {
     entity: 'ustaad',
     audience: 'member',
     text: ['jobCode'],
-    link: at('/ustaad/jobs/mine'),
+    // The job page shows its employer the applicants (SIM-P18); `/ustaad/jobs/mine` was never a page.
+    link: ustaadJob,
   }),
   'ustaad.application_status': def({
     category: T,

@@ -1,3 +1,4 @@
+import { ustaadApplicationMachine, type UstaadApplicationStatus } from '@mechdost/shared/state';
 import { formatPrice } from '../format';
 
 /**
@@ -113,4 +114,18 @@ export function rupeesToPaise(raw: string): number | null {
   if (!/^\d{1,7}$/.test(clean)) return null;
   const rupees = Number(clean);
   return rupees > 0 ? rupees * 100 : null;
+}
+
+/** The employer's buttons on one applicant (SIM-P18), in API action words; only what the machine allows, hire last. */
+export type ApplicantMove = 'seen' | 'shortlist' | 'reject' | 'hire';
+const MOVE_TO: Record<ApplicantMove, UstaadApplicationStatus> = {
+  seen: 'seen',
+  shortlist: 'shortlisted',
+  reject: 'rejected',
+  hire: 'hired',
+};
+export function applicantMoves(status: UstaadApplicationStatus): ApplicantMove[] {
+  return (['seen', 'shortlist', 'reject', 'hire'] as const).filter((m) =>
+    ustaadApplicationMachine.can(status, MOVE_TO[m]),
+  );
 }

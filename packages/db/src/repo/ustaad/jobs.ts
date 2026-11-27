@@ -34,6 +34,7 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '.
 import type { Tx } from '../orders';
 import { rowsOf } from '../sql-rows';
 import { recordUstaadEvent } from './events';
+import { notifyUstaad } from './notify';
 import { openUstaadAutoHoldReport, screenUstaadContent } from './moderation';
 import { readUstaadSettingValues } from './settings';
 
@@ -435,8 +436,106 @@ export async function applyToUstaadJob(
         props: { jobCode: job.code, applicationId: row.id },
       },
     );
+    // The employer hears about each new application once (SIM-P18; spec 23 § 12): keyed on the application, so a
+    // second applicant rings again and a repeat tap (the branch above) does not.
+    const [employer] = await tx
+      .select({ userId: ustaadMembers.userId })
+      .from(ustaadMembers)
+      .where(eq(ustaadMembers.id, job.employerMemberId))
+      .limit(1);
+    if (employer)
+      await notifyUstaad(tx, 'ustaad.job_application', {
+        userId: employer.userId,
+        entityId: row.id,
+        version: 1,
+        params: { jobCode: job.code },
+      });
     return { applicationId: row.id, status: 'applied' };
   });
+}
+
+/** One applicant as the employer sees them: name, level and the verified tick; never a phone number (SR-34). */
+export interface UstaadApplicantView {
+  applicationId: string;
+  status: UstaadApplicationStatus;
+  /** The applicant ticked "share my number"; the number itself is never in a response. */
+  sharePhone: boolean;
+  voiceIntro: boolean;
+  appliedAt: string;
+  version: number;
+  member: {
+    id: string;
+    handle: string;
+    displayName: string;
+    displayNameHi: string | null;
+    level: string;
+    verified: boolean;
+  };
+}
+
+/**
+ * The applicants of one job, for its employer only (SIM-P18): anyone else, and an unknown code, get the same 404.
+ * Newest first, keyset cursor on (created_at, id); the filter uses the (job_id, status) index.
+ */
+export async function listUstaadJobApplicants(
+  db: Tx,
+  actor: UstaadJobActor,
+  code: string,
+  opts: { cursor?: { createdAt: string; id: string } | null; limit?: number },
+): Promise<{ items: UstaadApplicantView[]; next: { createdAt: string; id: string } | null }> {
+  const [job] = await db
+    .select({ id: ustaadJobs.id, employer: ustaadJobs.employerMemberId })
+    .from(ustaadJobs)
+    .where(eq(ustaadJobs.code, code))
+    .limit(1);
+  if (job?.employer !== actor.memberId) throw new NotFoundError();
+  const limit = Math.min(Math.max(opts.limit ?? 20, 1), 50);
+  const c = opts.cursor;
+  // The cursor carries milliseconds (ISO); order and compare on the same precision so no row is skipped.
+  const at = sql`date_trunc('milliseconds', ${ustaadJobApplications.createdAt})`;
+  const rows = await db
+    .select({
+      app: ustaadJobApplications,
+      handle: ustaadMembers.handle,
+      displayName: ustaadMembers.displayName,
+      displayNameHi: ustaadMembers.displayNameHi,
+      level: ustaadMembers.level,
+      verification: ustaadMembers.verificationState,
+    })
+    .from(ustaadJobApplications)
+    .innerJoin(ustaadMembers, eq(ustaadMembers.id, ustaadJobApplications.memberId))
+    .where(
+      and(
+        eq(ustaadJobApplications.jobId, job.id),
+        c
+          ? sql`(${at}, ${ustaadJobApplications.id}) < (${c.createdAt}::timestamptz, ${c.id}::uuid)`
+          : undefined,
+      ),
+    )
+    .orderBy(desc(at), desc(ustaadJobApplications.id))
+    .limit(limit + 1);
+  const page = rows.slice(0, limit);
+  const last = page.at(-1);
+  return {
+    items: page.map((r) => ({
+      applicationId: r.app.id,
+      status: r.app.status as UstaadApplicationStatus,
+      sharePhone: r.app.sharePhone,
+      voiceIntro: r.app.voiceIntroMediaId !== null,
+      appliedAt: r.app.createdAt.toISOString(),
+      version: r.app.version,
+      member: {
+        id: r.app.memberId,
+        handle: r.handle,
+        displayName: r.displayName,
+        displayNameHi: r.displayNameHi,
+        level: r.level,
+        verified: r.verification === 'verified',
+      },
+    })),
+    next:
+      rows.length > limit && last ? { createdAt: last.app.createdAt.toISOString(), id: last.app.id } : null,
+  };
 }
 
 type EmployerMove = 'seen' | 'shortlisted' | 'rejected' | 'hired';

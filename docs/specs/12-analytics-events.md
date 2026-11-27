@@ -268,6 +268,10 @@ phone) and the smart-correction events; every control also carries `data-track` 
 votes, best answers, job posts, applications and pin confirmations are counted server-side (spec 23 § 16). Never
 text, names, phones or locations.
 
+**2026-11-27 (QA batch A, spec 23 § 21h):** `ustaad_job_applicants_viewed { count }` — the employer opened the
+applicants list of their job (rows on the first page). Moves on an application stay the server's
+`ustaad_application_moved`.
+
 ## Ustaad feed and social screens (2026-11-26, spec 23 § 21g)
 
 No new event names: the feed web screens send the catalogue's client events `ustaad_feed_viewed { tab }` (once per tab

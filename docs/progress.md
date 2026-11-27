@@ -2,6 +2,13 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-27 — Ustaad QA fixes, batch A (builder branch `worktree-agent-aeee83593b84bb5ee`, not pushed)
+
+From `docs/qa/ustaad-sim-fix-plan-2026-11-27.md` (Batch A); details and tests in spec 23 § 21h. One commit per item.
+
+- **Done:** SIM-P18 (employer bell on each application + Applicants list on the job page, owner-only API with cursor).
+- **Next:** SIM-P17, P11, P20/G17, P26, P19/P24, P27/P23, B8, P10, P34.
+
 ## 2026-11-27 overnight (lead, founder asleep) — handover (written 04:55)
 
 **NOT deployed.** Live site still runs `f511da9e` (yesterday). Everything below is merged on `main` (GitHub) but CI is red

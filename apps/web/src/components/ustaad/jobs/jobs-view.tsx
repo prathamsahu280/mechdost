@@ -22,6 +22,7 @@ import { ustaadClient, type Job, type JobRole } from '@/lib/ustaad/client';
 import { payRangeText } from '@/lib/ustaad/local-view';
 import type { Recording } from '../media/voice-recorder';
 import { UploadProgress } from '../media/upload-progress';
+import { JobApplicants } from './job-applicants';
 import {
   btnPrimary,
   btnQuiet,
@@ -412,6 +413,8 @@ export function JobDetail({ code }: { code: string }) {
           {t('apply')}
         </button>
       ) : null}
+
+      {j.mine && !j.underReview ? <JobApplicants code={j.code} /> : null}
 
       {sheet ? (
         <ApplySheet

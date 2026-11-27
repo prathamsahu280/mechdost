@@ -12,6 +12,7 @@ import {
   expireUstaadJobs,
   getUstaadJob,
   joinUstaad,
+  listUstaadJobApplicants,
   listUstaadJobs,
   moveUstaadApplication,
   moveUstaadJob,
@@ -302,5 +303,51 @@ describe('jobs (AT-JOB-1)', () => {
       applyToUstaadJob(t(), b, fresh.code, { sharePhone: false, voiceIntroMediaId: null }),
       'USTAAD_JOB_CLOSED',
     );
+  });
+});
+
+describe('employer sees and hears about applications (SIM-P18)', () => {
+  let c: { memberId: string; userId: string };
+  beforeAll(async () => {
+    const mc = await joinUstaad(t(), { userId: f.staff }, join({ displayName: 'Mahesh Patel' }), {
+      via: 'ustaad',
+    });
+    c = { memberId: mc.id, userId: f.staff };
+  });
+
+  it('each new application rings the employer once (ustaad.job_application); a repeat tap does not', async () => {
+    const j = await postUstaadJob(t(), a, job({ title: 'Denter wanted' }));
+    await applyToUstaadJob(t(), b, j.code, { sharePhone: false, voiceIntroMediaId: null });
+    await applyToUstaadJob(t(), b, j.code, { sharePhone: false, voiceIntroMediaId: null });
+    await applyToUstaadJob(t(), c, j.code, { sharePhone: true, voiceIntroMediaId: null });
+    const rows = await db
+      .select({ link: s.notifications.link, body: s.notifications.body })
+      .from(s.notifications)
+      .where(
+        sql`${s.notifications.userId} = ${a.userId}::uuid and ${s.notifications.kind} = 'ustaad.job_application'
+        and ${s.notifications.link} like ${`%/ustaad/jobs/${j.code}`}`,
+      );
+    expect(rows).toHaveLength(2);
+    expect(rows[0]?.body).toContain(j.code);
+  });
+
+  it('only the employer lists the applicants (404 for anyone else), newest first, cursor, no phone', async () => {
+    const j = await postUstaadJob(t(), a, job({ title: 'AC technician' }));
+    await applyToUstaadJob(t(), b, j.code, { sharePhone: false, voiceIntroMediaId: null });
+    await applyToUstaadJob(t(), c, j.code, { sharePhone: true, voiceIntroMediaId: null });
+    await expectCode(listUstaadJobApplicants(t(), b, j.code, {}), 'NOT_FOUND');
+    await expectCode(listUstaadJobApplicants(t(), a, 'UJ-RPR-2026-AAAAAA', {}), 'NOT_FOUND');
+    const first = await listUstaadJobApplicants(t(), a, j.code, { limit: 1 });
+    expect(first.items).toHaveLength(1);
+    expect(first.items[0]).toMatchObject({
+      member: { displayName: 'Mahesh Patel', verified: false },
+      status: 'applied',
+      sharePhone: true,
+    });
+    expect(first.next).not.toBeNull();
+    const second = await listUstaadJobApplicants(t(), a, j.code, { limit: 1, cursor: first.next });
+    expect(second.items[0]?.member).toMatchObject({ displayName: 'Suresh Verma', verified: true });
+    expect(second.next).toBeNull();
+    expect(JSON.stringify([first, second])).not.toMatch(/\+91|"phone/);
   });
 });

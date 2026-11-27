@@ -4,6 +4,7 @@
  * phone number anywhere (SR-34).
  */
 import { z } from 'zod';
+import { USTAAD_APPLICATION_STATUSES } from '../../state/ustaad-job';
 import { JOB_ROLES, LOCATION_SOURCES, USTAAD_SEGMENT_CODES } from '../codes';
 
 export const LocationDto = z
@@ -127,6 +128,34 @@ export const JobsQueryDto = z
 export const ApplyDto = z
   .object({ sharePhone: z.boolean().default(false), voiceIntroMediaId: z.uuid().nullable().default(null) })
   .strict();
+
+/** `GET /ustaad/jobs/{code}/applications` (SIM-P18): the employer's applicants list, cursor-paged. */
+export const ApplicantsQueryDto = z
+  .object({
+    cursor: z.string().max(200).optional(),
+    limit: z.coerce.number().int().min(1).max(50).optional(),
+  })
+  .strict();
+
+/** One applicant as their would-be employer sees them: never a phone number, only the "share my number" flag. */
+export const ApplicantDto = z.object({
+  applicationId: z.string(),
+  status: z.enum(USTAAD_APPLICATION_STATUSES),
+  sharePhone: z.boolean(),
+  voiceIntro: z.boolean(),
+  appliedAt: z.string(),
+  version: z.number().int(),
+  member: z.object({
+    id: z.string(),
+    handle: z.string(),
+    displayName: z.string(),
+    displayNameHi: z.string().nullable(),
+    level: z.string(),
+    verified: z.boolean(),
+  }),
+});
+export type ApplicantView = z.infer<typeof ApplicantDto>;
+export const ApplicantsResponseDto = z.object({ items: z.array(ApplicantDto), next: z.string().nullable() });
 
 export const JobCodeParam = z.object({ code: z.string().regex(/^UJ-[A-Z]{3}-\d{4}-[A-Z2-7]{6}$/) });
 export const ApplicationParam = z.object({

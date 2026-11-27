@@ -218,6 +218,20 @@ describe('jobs', () => {
     for (const text of [list.text, applied.text, held.text, open.text]) expect(text).not.toContain('+91');
   });
 
+  it('SIM-P18: the employer lists the applicants (cursor); the applicant and outsiders get 404', async () => {
+    const list = await call(worker, 'GET', '/ustaad/jobs');
+    const code = (list.body.items as { code: string }[])[0]?.code ?? '';
+    const mine = await call(employer, 'GET', `/ustaad/jobs/${code}/applications?limit=1`);
+    expect(mine.status).toBe(200);
+    const items = mine.body.items as { member: { displayName: string; verified: boolean }; status: string }[];
+    expect(items[0]?.member).toMatchObject({ displayName: 'Suresh Verma', verified: true });
+    expect(mine.body.next).toBeNull();
+    expect(mine.text).not.toContain('+91');
+    expect((await call(worker, 'GET', `/ustaad/jobs/${code}/applications`)).status).toBe(404);
+    expect((await call(customer, 'GET', `/ustaad/jobs/${code}/applications`)).status).toBe(404);
+    expect((await call(employer, 'GET', `/ustaad/jobs/${code}/applications?cursor=bad`)).status).toBe(400);
+  });
+
   it('jobs switched off → 404 on list, detail and apply; withdraw still works', async () => {
     const list = await call(worker, 'GET', '/ustaad/jobs');
     const code = (list.body.items as { code: string }[])[0]?.code ?? '';

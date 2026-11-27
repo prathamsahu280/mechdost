@@ -1946,6 +1946,24 @@ members/{id}/relationship,connections,blocks,mutes,discover,discover/tags,discov
   "Show more" keeps focus on the last row; queue filters are not in the URL; the full `API-ADM-USTAAD-CONSOLE` audit
   sweep and 768 px / dark screenshots (lead's speed-up: 1440 light + Hindi only).
 
+## 21h. QA simulation fixes, batch A (2026-11-27; `docs/qa/ustaad-sim-fix-plan-2026-11-27.md`)
+
+Each fix has a regression test named after the QA id.
+
+- **SIM-P18 — the employer hears about and sees applications.** `applyToUstaadJob` now queues
+  `ustaad.job_application` to the employer inside the apply transaction, keyed on the **application** id (a second
+  applicant rings again; a repeat tap returns the existing application and rings nothing). The notice opens the job
+  page (`/ustaad/jobs/{code}`; the catalogue's old `/ustaad/jobs/mine` was never a page). New
+  `GET /v1/ustaad/jobs/{code}/applications?cursor=&limit=` (`listUstaadJobApplicants`): the job's employer only, an
+  unknown code and anyone else get the same 404; newest first, keyset cursor on (created_at to the millisecond, id);
+  each row has the applicant's name (and Hindi name), level, verified tick, status, "shared their number" and "sent a
+  voice intro" flags, never a phone number. The job page shows the employer an **Applicants** card under the job:
+  the moves the application machine allows (`applicantMoves`: seen, shortlist, not this time, hire; hire and "not this
+  time" confirmed inline), and "See card and message", which opens the member's card where the existing Message
+  button lives. Client event `ustaad_job_applicants_viewed { count }`; the moves are the existing server event
+  `ustaad_application_moved`. Tests: `ustaad-local.test.ts` "employer sees and hears about applications (SIM-P18)",
+  `ustaad-local-api.test.ts` "SIM-P18 …", `apps/web/test/ustaad-applicants-view.test.ts`.
+
 ## 22. Not built / later
 
 Speech-to-text and transcripts (ruled out), voice search, auto-translation, server video/audio transcoding and the

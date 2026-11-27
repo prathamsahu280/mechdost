@@ -228,6 +228,8 @@ export const USTAAD_CLIENT_EVENT_SCHEMAS = {
     .strict(),
   ustaad_correction_choice: z.object({ choice: z.enum(['use', 'keep', 'edit']) }).strict(),
   ustaad_data_saver: z.object({ on: z.boolean() }).strict(),
+  /** SIM-P18: the employer opened the applicants list of their job (how many were shown on the first page). */
+  ustaad_job_applicants_viewed: z.object({ count }).strict(),
   ustaad_learn_completed: z.object({ resource: z.uuid() }).strict(),
   ustaad_join_step: z
     .object({ step: z.number().int().min(1).max(5), via: z.enum(['ustaad', 'partners_apply']) })
