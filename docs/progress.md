@@ -172,6 +172,17 @@ This file is the single source of truth for **where the build is right now**. It
 - Not done: see that table and the builder's report (P21/F7 bell locale, P23, P25, P30–P33, F4, F5, RT3, LEAD-1, LEAD-8
   and the rest of the P2/P3 rows).
 
+## 2026-11-28 night — Mechanic Network Saved upgrade (builder, branch `worktree-agent-a754e32db80755c6d`, NOT merged)
+
+- Research + design: `docs/superpowers/specs/2026-11-28-mechanic-network-saved-design.md` (WhatsApp stars / Message
+  yourself, Instagram + Facebook collections). Spec 23 § 21i, decisions 2026-11-28, Q234 (3 founder choices).
+- Built test-first: migration `0190_ustaad_saved_collections` (unapplied; lead renumbers), repo `repo/ustaad/saved.ts`
+  (db test 7/7), API `routes/ustaad/saved.ts` (api test 3/3), web `SaveControl` + `toggleSaved` (web test 4/4),
+  en/hi `ustaad.saveControl.*`, event `ustaad_item_save_toggled`.
+- **Next:** lead wires `SaveControl` into the restyled post/question/answer/job/lesson cards; build the Saved page UI
+  (tabs, search, counts, empty state) and the "Add to collection" sheet on the ready API; Me entry line; `pnpm
+db:migrate` before deploy. tsc not run (under 1.5 GB free).
+
 ## 2026-11-27 evening — delivery go-live blockers fixed (builder, branch `worktree-agent-adc124fa15469db75`, NOT merged)
 
 - Seven commits, test first (spec 24 § 17): DC-P11 job photos carry the job id; DC-B11 sweep audited + warns on

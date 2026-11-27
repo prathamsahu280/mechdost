@@ -397,6 +397,17 @@ export async function getUstaadJob(db: Tx, viewerMemberId: string, code: string)
   return viewOf(row.job, row.cityCode, viewerMemberId);
 }
 
+/** A job the member may see, by id (Saved, spec 23 § 5): the same rule as `getUstaadJob`; `NotFoundError` otherwise. */
+export async function assertUstaadJobVisible(db: Tx, viewerMemberId: string, id: string): Promise<void> {
+  const [row] = await db
+    .select({ code: ustaadJobs.code })
+    .from(ustaadJobs)
+    .where(eq(ustaadJobs.id, id))
+    .limit(1);
+  if (!row) throw new NotFoundError();
+  await getUstaadJob(db, viewerMemberId, row.code);
+}
+
 export async function applyToUstaadJob(
   db: Tx,
   actor: UstaadJobActor,

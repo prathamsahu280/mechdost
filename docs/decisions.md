@@ -2965,3 +2965,17 @@ workshop | delivery`) and a snake_case key (regex, ≤ 32 chars) so batches A–
   § 13's "no API change in v1" is superseded for this endpoint.
 - Not built in this pass (time): shop tab split and its notice-link mapping, shop BulletBar/DailyBars restyles, rider
   job StepRail. Batch B (workshop) imports the kit.
+
+## 2026-11-28 — Mechanic Network: Saved for every kind + collections (builder; spec 23 § 21i)
+
+- Saving extends to questions, answers, jobs and Learn lessons (`ustaad_saved_items`); posts keep `ustaad_saves` so
+  counters, ranking and the existing routes do not change. Targets are polymorphic (kind + id, no FK); every read joins
+  the live row and drops removed, out-of-reach or blocked items.
+- Members get private named collections (Instagram/Facebook pattern, research in
+  `docs/superpowers/specs/2026-11-28-mechanic-network-saved-design.md`): max 20, names unique ignoring case, an item
+  may sit in several, unsave removes it from all of them, deleting a collection keeps the saves. Limit and suggested
+  names are code constants until the founder decides (Q234).
+- One shared `SaveControl` for every kind (aria-pressed + the visible word), new client event
+  `ustaad_item_save_toggled {kind, saved}`, new rate limit `ustaad_saves` 200/day.
+- Migration `0190_ustaad_saved_collections` (high number on purpose, journal `when` 1795900000000; the lead renumbers
+  at merge).

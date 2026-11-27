@@ -283,7 +283,7 @@ action; Hindi default for new members (`general.default_lang`), English switch i
 | `/ustaad/jobs`, `/ustaad/jobs/[code]`, `/ustaad/jobs/mine` | Jobs list, detail + apply sheet, employer's jobs and applicants                                                                                                                                                              |
 | `/ustaad/learn`                                            | Courses, short videos, MechDost training                                                                                                                                                                                     |
 | `/ustaad/area`, `/ustaad/me/location`                      | Zone map; pin my garage (`/ustaad/pin` redirects here, § 21c)                                                                                                                                                                |
-| `/ustaad/saved`, `/ustaad/notifications`                   | Saved posts; notices filtered to the network (reuses the bell inbox, spec 10)                                                                                                                                                |
+| `/ustaad/saved`, `/ustaad/notifications`                   | Saved posts, questions, answers, jobs and lessons with kind/collection filters, word search and counts (§ 21i; page UI pending); notices filtered to the network (reuses the bell inbox, spec 10)                            |
 
 Admin (`/admin/ustaad`, page pattern of spec 08 "Page pattern"): sections General, Levels & Izzat, Verification (queue),
 Posts & media, Smart correction, Location & zones, Feed & hashtags, Promotions, Moderation (reports queue sorted by
@@ -2298,6 +2298,37 @@ closed, requestsTab}` are in the locale files, unused yet), optimistic Follow (p
   composer, the stamp-press / tag-swing / like-scale motions (keyframes live in U1's `globals.css`), similar
   questions (needs a spec addition), the `helpful` / `before` icons (U1 owns `icons.tsx`; Useful uses lucide
   `Wrench`).
+
+## 21i. Saved upgrade (2026-11-28; design `docs/superpowers/specs/2026-11-28-mechanic-network-saved-design.md`)
+
+Founder 2026-11-28: save more than posts and keep it like WhatsApp/Instagram/Facebook do. **Built (test-first):**
+
+- **Data** (migration `0190_ustaad_saved_collections`, unapplied): `ustaad_saved_items` (`member_id`, `kind` ∈
+  question/answer/job/lesson, `target_id`; PK on the three; index `member_id, created_at desc`),
+  `ustaad_save_collections` (`id`, `member_id`, `name` 1–40, unique `(member_id, lower(name))`, `version`,
+  `updated_at` triggers), `ustaad_save_collection_items` (`collection_id` cascade, `member_id`, `kind` ∈ all five,
+  `target_id`; PK collection+kind+target; index member+kind+target). RLS on + REVOKE; in `rls-inventory.ts`. Posts
+  keep `ustaad_saves`. Targets are polymorphic: every read joins the live row and drops removed / out-of-reach /
+  blocked items.
+- **Rules:** saving checks the kind's own visibility (404 otherwise); repeats change nothing; events `saved` /
+  `unsaved` on the question/answer/job entity, `lesson_saved` / `lesson_unsaved` on the member (lesson id in props);
+  unsave also removes the item from the member's collections; collections are the member's own (404 for any other),
+  max 20 (`USTAAD_SAVE_COLLECTIONS_MAX`, advisory lock per member, 422 `USTAAD_SAVE_COLLECTIONS_MAX`), names unique
+  ignoring case (409), rename compare-and-set on `version` (409), delete keeps the saves; only my saved items go into
+  a collection (404 otherwise).
+- **API:** `GET /ustaad/saves?kind&collectionId&q&cursor&limit` (newest save first, keyset), `GET
+/ustaad/saves/summary` (counts per kind + collections with counts), `PUT|DELETE /ustaad/saves/{kind}/{id}`, `POST
+/ustaad/save-collections`, `PATCH|DELETE /ustaad/save-collections/{id}`, `PUT|DELETE
+/ustaad/save-collections/{id}/items/{kind}/{itemId}`. Members only; rate limits `memberReads`, `saves` (200/day,
+  new), `membershipWrites`. The old `…/posts/{id}/save` and `GET /ustaad/saved` are unchanged.
+- **Web:** `SaveControl` (`components/ustaad/saved/save-control.tsx`) for every kind: `aria-pressed` + the word
+  ("Saved" / "सेव किया"), optimistic with rollback, `ustaad.saveControl.*` words, client event
+  `ustaad_item_save_toggled {kind, saved}`. The lead wires it into the restyled cards.
+- **Tests:** `packages/db/test/ustaad-saved.test.ts` (7), `apps/api/test/ustaad-saved-api.test.ts` (3),
+  `apps/web/test/ustaad-save-control.test.ts` (4).
+- **Not built yet:** the Saved page UI (tabs, search, counts, empty state) and the "Add to collection" sheet on top of
+  this API; the Me entry line; "Send to my WhatsApp" for non-post kinds (founder OK, Q in the inbox); collection limit
+  and suggested names as admin settings (founder OK).
 
 ## 22. Not built / later
 

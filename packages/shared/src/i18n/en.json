@@ -9206,6 +9206,25 @@
       "pause": "Pause",
       "play": "Play",
       "close": "Close"
+    },
+    "saveControl": {
+      "save": "Save",
+      "saved": "Saved",
+      "saveAria": "Save for later",
+      "savedAria": "Saved. Tap to remove from Saved",
+      "failed": "Could not save. Try again",
+      "kinds": {
+        "post": "Posts",
+        "question": "Questions",
+        "answer": "Answers",
+        "job": "Jobs",
+        "lesson": "Lessons"
+      },
+      "suggest": {
+        "wiring": "Wiring",
+        "part_prices": "Part prices",
+        "tips": "Tips"
+      }
     }
   },
   "savings": {
