@@ -2800,3 +2800,13 @@ Within the QA fix plan (`docs/qa/ustaad-sim-fix-plan-2026-11-27.md`, Batch A); n
   proper UI upgrade with better components and data visualisation. Same process as the Ustaad upgrade: research +
   visual study (D:\mechdost-qa\portal-inspiration-2026-11-27\board.html, internal reference only) → design doc
   `docs/superpowers/specs/2026-11-27-partner-portals-ui-upgrade-design.md` → founder sees it → build in batches.
+- **Founder answers to the UI-upgrade questions (2026-11-27, ~22:50 IST):**
+  - Q-UI-1: Ustaad bottom tabs become **Home · Ask · + (Create) · Jobs · Me**; Discover and Learn move to Home/Me shortcuts.
+  - Q-UI-2: add a weekly **"you helped N mechanics"** note on Me (no streaks, no leagues).
+  - Q-UI-3: add a second reaction **"Kaam ki baat / Useful"** beside Like.
+  - Q-UI-4: captions and summaries are **author-typed only** for now; the spec 23 "no speech-to-text" ruling stands.
+  - Q-PP-F1: partner charts are **our own SVG charts** (no Recharts).
+  - Q-PP-F2: shop and workshop portals are **split into tabs**.
+  - Q-PP-F3: the new-order sound is **on by default** (browsers still need one tap to unlock audio; the "Turn on order sound" tap is shown once).
+  - Q-PP-F4: the storefront header, search and footer **stay** on partner pages.
+  - Q-PP-F5: build the **rider per-day stats API now** (with batch C).

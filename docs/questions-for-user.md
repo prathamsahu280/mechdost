@@ -583,7 +583,7 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
 
 ## Ustaad UI upgrade (design doc `docs/superpowers/specs/2026-11-27-ustaad-ui-upgrade-design.md` § 9) — 2026-11-27 night
 
-- **Q-UI-1** Bottom bar tabs: keep today's (Home · Discover · Create · Learn · Me) or Home · Ask · + · Jobs · Me? Default meanwhile: keep today's.
-- **Q-UI-2** A weekly "you helped N mechanics" note (no streaks)? Default: neither.
-- **Q-UI-3** A second reaction "Kaam ki baat / Useful" beside Like? Default: Like only.
-- **Q-UI-4** Auto-captions / suggested summaries through an outside speech service later (amends the spec 23 "no speech-to-text" ruling; see Q-STT-1 research)? Default: author-written captions and summaries only.
+- **Q-UI-1** **ANSWERED 2026-11-27 — see decisions.md** Bottom bar tabs: keep today's (Home · Discover · Create · Learn · Me) or Home · Ask · + · Jobs · Me? Default meanwhile: keep today's.
+- **Q-UI-2** **ANSWERED 2026-11-27 — see decisions.md** A weekly "you helped N mechanics" note (no streaks)? Default: neither.
+- **Q-UI-3** **ANSWERED 2026-11-27 — see decisions.md** A second reaction "Kaam ki baat / Useful" beside Like? Default: Like only.
+- **Q-UI-4** **ANSWERED 2026-11-27 — see decisions.md** Auto-captions / suggested summaries through an outside speech service later (amends the spec 23 "no speech-to-text" ruling; see Q-STT-1 research)? Default: author-written captions and summaries only.
