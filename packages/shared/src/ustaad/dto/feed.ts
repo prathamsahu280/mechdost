@@ -240,10 +240,13 @@ export const PostViewDto = z.object({
   /** `likes` is null when `feed.show_like_counts` is off; `saves` only for the author. */
   counts: z.object({
     likes: z.number().int().nullable(),
+    /** "Kaam ki baat / Useful" reactions (founder Q-UI-3); always shown. */
+    useful: z.number().int(),
     comments: z.number().int(),
     saves: z.number().int().nullable(),
   }),
   likedByMe: z.boolean(),
+  usefulByMe: z.boolean(),
   savedByMe: z.boolean(),
   mine: z.boolean(),
   /** `held` only on the author's own posts ("Our team will check it first"; no reason given). */

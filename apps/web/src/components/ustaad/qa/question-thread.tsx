@@ -1,10 +1,10 @@
 'use client';
 
-import { ArrowLeft, Award, ShieldAlert, ShoppingBag, ThumbsUp } from 'lucide-react';
+import { ArrowLeft, Award, BadgeCheck, ShieldAlert, ShoppingBag, ThumbsUp } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useRef, useState } from 'react';
+import { useCallback, useId, useRef, useState } from 'react';
 import type { AnswerView, QuestionDetail } from '@mechdost/shared/ustaad/dto/qa';
 import { localePath } from '@/lib/locale-path';
 import { ustaadClient } from '@/lib/ustaad/client';
@@ -218,20 +218,34 @@ function AnswerBubble({
   const l = useTranslations('ustaad.labels');
   const locale = useLocale();
   const ago = useTimeAgo();
+  const stampId = useId();
+  // U3 (E9): "Choose as best" asks once, inline (no dialog): "Make this the best answer? [Yes, choose] [Not now]".
+  const [confirming, setConfirming] = useState(false);
+  const chooseRef = useRef<HTMLButtonElement>(null);
+  // Stable, so a parent re-render does not pull focus back to the confirm.
+  const focusOnMount = useCallback((el: HTMLButtonElement | null) => {
+    el?.focus();
+  }, []);
   return (
     <article
+      aria-labelledby={a.isBest ? stampId : undefined}
       className={`rounded-[22px] rounded-tr-md border p-4 shadow-card ${
         a.isBest
-          ? 'border-success/40 bg-success-bg'
+          ? 'border-success/40 bg-success-bg shadow-[inset_3px_0_0_var(--color-success)]'
           : a.mine
             ? 'border-accent/30 bg-accent-soft'
             : 'border-line-card bg-surface'
       }`}
     >
       {a.isBest ? (
-        <p className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-success-bg px-3 py-1 text-xs font-extrabold text-success ring-1 ring-success/40">
-          <Award aria-hidden="true" className="size-4" />
-          {t('bestBadge')}
+        // The stamp says who chose it (R23, RS4): the asker, never a vote count.
+        <p
+          id={stampId}
+          // Bench kit stamp (visual language § 3.5/4): radius 6, 2 px border + 1 px outline 2 px out, −2°.
+          className="mb-3 ml-1 inline-flex -rotate-2 items-center gap-1.5 rounded-[6px] border-2 border-success bg-success-bg px-3 py-1 text-[13px] font-extrabold text-success outline-1 outline-offset-2 outline-success"
+        >
+          <BadgeCheck aria-hidden="true" className="size-4" />
+          {t('bestStamp')}
         </p>
       ) : null}
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted">
@@ -295,18 +309,56 @@ function AnswerBubble({
         {a.mine && a.helpfulCount > 0 ? (
           <span className="text-sm font-bold text-muted">{t('helpfulCount', { n: a.helpfulCount })}</span>
         ) : null}
-        {canChooseBest ? (
+        {canChooseBest && !confirming ? (
           <button
+            ref={chooseRef}
             type="button"
-            onClick={onBest}
-            data-track="ustaad_answer_best"
-            className="press inline-flex min-h-11 items-center gap-1.5 rounded-full bg-navy px-4 text-sm font-bold text-white hover:brightness-110 focus-visible:outline-3 focus-visible:outline-focus"
+            onClick={() => {
+              setConfirming(true);
+            }}
+            data-track="ustaad_answer_best_ask"
+            className="press inline-flex min-h-11 items-center gap-1.5 rounded-full border border-input-border bg-surface px-4 text-sm font-bold text-ink hover:border-accent focus-visible:outline-3 focus-visible:outline-focus"
           >
             <Award aria-hidden="true" className="size-4" />
-            {t('markBest')}
+            {t('chooseBest')}
           </button>
         ) : null}
       </div>
+      {canChooseBest && confirming ? (
+        <div
+          role="group"
+          aria-label={t('chooseBestConfirm')}
+          className="mt-3 grid gap-2 rounded-2xl bg-surface-alt p-3"
+        >
+          <p className="text-[15px] font-bold text-ink">{t('chooseBestConfirm')}</p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              // Focus moves to the confirm the member just asked for (and back to "Choose as best" on Not now).
+              ref={focusOnMount}
+              onClick={() => {
+                setConfirming(false);
+                onBest();
+              }}
+              data-track="ustaad_answer_best"
+              className="press inline-flex min-h-11 items-center rounded-button bg-accent-button px-4 text-sm font-bold text-white hover:bg-accent-button-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+            >
+              {t('confirmYes')}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setConfirming(false);
+                window.setTimeout(() => chooseRef.current?.focus(), 0);
+              }}
+              data-track="ustaad_answer_best_cancel"
+              className="press inline-flex min-h-11 items-center rounded-button border border-input-border bg-surface px-4 text-sm font-bold text-ink focus-visible:outline-3 focus-visible:outline-focus"
+            >
+              {t('confirmNo')}
+            </button>
+          </div>
+        </div>
+      ) : null}
     </article>
   );
 }

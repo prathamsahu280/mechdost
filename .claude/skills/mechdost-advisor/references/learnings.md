@@ -700,3 +700,13 @@ L-QB-4 · 2026-11-27 · tooling · The brief named `docs/qa/qa-backlog-2026-11-2
   L-WB1 · 2026-11-27 · ui/portal tabs · Splitting a one-page portal into status lanes makes a job card jump lanes after each step (ready → billed → paid), so a flow that clicks three steps in a row loses the card. → Give lane lists a `?job=CODE` focus view that keeps the one job open across lanes, and point step-by-step e2e flows at it; map old one-page anchors to their new tab with a tested pure map.
   L-WB2 · 2026-11-27 · worktree/agents · A builder worktree started one commit behind main (the design doc was in the newer commits) and had no node_modules. → `git merge --ff-only main` first when the brief cites a doc that is not on disk; `pnpm install --frozen-lockfile --offline` (≈2.5 min) before any vitest/eslint. The worktree guard refuses long multi-command Bash lines: use one plain command per call and the Edit tool for code.
   L326 · 2026-11-28 · ui/a11y · a custom media slider fed by `timeupdate` re-announces its aria-valuetext ~4×/s while focused (aria-specialist, voice player) → keep a separate announced value updated on seeks and every ~10 s; a brief's event names (`voice_note_*`) can break the catalogue's module prefix → keep `ustaad_voice_*` and say so in spec 12.
+  L325 · 2026-11-27 · ustaad/web · A chip made interactive (Pehchaan tag → link to levels) was dropped into a shared
+  author line that also renders inside whole-card links (Ask list) — a nested link. → Shared name/label components
+  default to static inside rows that are links; only surfaces that are not themselves interactive get the button/link
+  variant (prop `interactive`).
+  L326 · 2026-11-27 · tooling · Python `open(p,'w')` on Windows wrote CRLF into TS files and the pre-commit prettier
+  check refused the commit → edit scripts open files with `newline=''` (read and write), or run prettier --write before
+  staging.
+  L327 · 2026-11-27 · ustaad/db · Adding a second reaction kind to a table keyed (post, member, kind): every "liked by
+  me" read that selected rows without `kind = 'like'` would have shown Useful as Like → when a kind column gains a value,
+  grep every read of the table (camelCase and raw SQL) and filter by kind in the same change.

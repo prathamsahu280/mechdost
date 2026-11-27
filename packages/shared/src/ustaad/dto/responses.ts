@@ -38,6 +38,7 @@ export const CreatedResponse = z.object({ id: z.uuid(), status: z.string() });
 export const StoryCreatedResponse = CreatedResponse.extend({ expiresAt: z.string() });
 export const StatusResponse = z.object({ status: z.string() });
 export const LikeStateResponse = z.object({ liked: z.boolean(), likes: z.number().int().nullable() });
+export const UsefulStateResponse = z.object({ useful: z.boolean(), usefulCount: z.number().int() });
 export const SavedResponse = z.object({ saved: z.boolean() });
 export const ShareLinkResponse = z.object({ token: z.string(), path: z.string() });
 export const CommentPageResponse = z.object({

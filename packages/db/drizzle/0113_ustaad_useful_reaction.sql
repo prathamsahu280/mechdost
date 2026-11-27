@@ -1,0 +1,5 @@
+ALTER TABLE "ustaad_post_counters" DROP CONSTRAINT "ustaad_post_counters_non_negative";--> statement-breakpoint
+ALTER TABLE "ustaad_reactions" DROP CONSTRAINT "ustaad_reactions_kind_valid";--> statement-breakpoint
+ALTER TABLE "ustaad_post_counters" ADD COLUMN "useful" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE "ustaad_post_counters" ADD CONSTRAINT "ustaad_post_counters_non_negative" CHECK ("ustaad_post_counters"."likes" >= 0 and "ustaad_post_counters"."useful" >= 0 and "ustaad_post_counters"."comments" >= 0 and "ustaad_post_counters"."saves" >= 0 and "ustaad_post_counters"."shares" >= 0 and "ustaad_post_counters"."views" >= 0);--> statement-breakpoint
+ALTER TABLE "ustaad_reactions" ADD CONSTRAINT "ustaad_reactions_kind_valid" CHECK ("ustaad_reactions"."kind" in ('like','useful'));

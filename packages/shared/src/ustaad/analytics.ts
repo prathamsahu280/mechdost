@@ -211,8 +211,13 @@ const code = z.string().regex(/^[a-z0-9_]{1,40}$/);
 /** Client events (browser, consent-gated like every client event). */
 export const USTAAD_CLIENT_EVENT_SCHEMAS = {
   ustaad_feed_viewed: z.object({ tab: z.enum(['for_you', 'following']) }).strict(),
-  ustaad_post_liked: z.object({}).strict(),
+  ustaad_post_liked: z.object({ via: z.enum(['button', 'double_tap']) }).strict(),
   ustaad_post_saved: z.object({}).strict(),
+  /** U2 (UI upgrade 2026-11-27): "Kaam ki baat / Useful" reaction, before/after toggle, composer tiles. */
+  ustaad_post_useful: z.object({}).strict(),
+  ustaad_before_after_toggled: z.object({ to: z.enum(['before', 'after']) }).strict(),
+  ustaad_composer_more_opened: z.object({}).strict(),
+  ustaad_camera_opened: z.object({ source: z.enum(['camera', 'gallery']) }).strict(),
   ustaad_post_shared: z.object({ channel: z.enum(['whatsapp', 'copy_link', 'member']) }).strict(),
   ustaad_story_viewed: z.object({}).strict(),
   ustaad_video_played: z.object({ secondsBand: z.enum(['lt15', '15to60', '60to180', 'gt180']) }).strict(),

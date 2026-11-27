@@ -60,6 +60,8 @@ export interface SocialClient {
   createPost(input: PostInput): Promise<ApiResult<{ id: string; status: string }>>;
   deletePost(id: string): Promise<ApiResult<{ status: string }>>;
   like(id: string, on: boolean): Promise<ApiResult<{ liked: boolean; likes: number | null }>>;
+  /** "Kaam ki baat / Useful" (founder Q-UI-3, 2026-11-27). */
+  useful(id: string, on: boolean): Promise<ApiResult<{ useful: boolean; usefulCount: number }>>;
   save(id: string, on: boolean): Promise<ApiResult<{ saved: boolean }>>;
   share(id: string, channel: 'whatsapp' | 'copy_link'): Promise<ApiResult<{ path: string }>>;
   comments(postId: string, cursor: string | null): Promise<ApiResult<Page<CommentView>>>;

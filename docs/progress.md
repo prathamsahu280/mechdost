@@ -64,6 +64,17 @@ This file is the single source of truth for **where the build is right now**. It
   `packages/shared/test/i18n.test.ts` (`portal.api_set_unit_kg` has no Devanagari; not from this branch);
   PageUp/PageDown steps optional.
 
+## 2026-11-27 night — Ustaad UI upgrade U2 + U3 (minus voice) (builder branch `worktree-agent-a2b58e19b5878ce08`, not pushed)
+
+- Built: "Useful" reaction (migration `0122_ustaad_useful_reaction`, repo, API, view, UI), Pehchaan tag + MemberName,
+  fix-log rows / Tip panel / Before-After toggle, double-tap like, optimistic like/useful/save with rollback, composer
+  big tiles + Camera/Gallery, best-answer stamp + "Choose as best" confirm. Spec 23 § 21i-U2/U3; decisions entry same
+  night.
+- Also: Ask list state words + vehicle titles, tag on Messages inbox rows, Bench kit tokens (`zinc`, `brass`,
+  `brass-text`, `surface-raised`) in `tokens.css`.
+- Not done: Messages thread restyle + closed flag, motions M2/M5, optimistic Follow (U4 file), Before/After labelled
+  slots in the composer. Gates run only where memory allowed (see the builder report).
+
 ## 2026-11-27 night — skills self-improvement step (docs only, uncommitted for the lead)
 
 - Promoted every lesson seen twice from the 2026-11-26/27 learnings: advisor `checklist.md` (UI focus-on-swap,

@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { PEHCHAAN_TONES } from '../src/components/ustaad/common/pehchaan-tones';
 
 /** Guards WCAG 2.2 AA contrast for every text/background pair, in light and dark themes (docs/design-system.md). */
 const css = readFileSync(new URL('../../../packages/ui/src/tokens.css', import.meta.url), 'utf8');
@@ -89,6 +90,10 @@ const TEXT_PAIRS: [fg: string, bg: string][] = [
   // Ustaad QA simulation 2026-11-27: WhatsApp share text on its tint (was 3.07:1 in dark)
   ['whatsapp-text', 'whatsapp-bg'],
   ['whatsapp-text', 'surface'],
+  // Mechanic Network "Bench kit" (decision 2026-11-27 night): level word on its tag fill, Useful brass text
+  ...Object.values(PEHCHAAN_TONES).map((t): [string, string] => [t.fg, t.fill]),
+  ['brass-text', 'surface'],
+  ['brass-text', 'bg'],
 ];
 
 const NON_TEXT_PAIRS: [fg: string, bg: string][] = [
@@ -108,6 +113,8 @@ const NON_TEXT_PAIRS: [fg: string, bg: string][] = [
   ['success', 'success-bg'],
   ['error', 'error-bg'],
   ['warning', 'warning-bg'],
+  // Pehchaan tag edges on the page surface (visual language § 3.2: every tag has a 1 px edge)
+  ...Object.values(PEHCHAAN_TONES).map((t): [string, string] => [t.edge, 'surface']),
 ];
 
 describe.each([

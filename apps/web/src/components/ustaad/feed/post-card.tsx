@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { Wrench } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
@@ -8,10 +9,13 @@ import type { PostView } from '@mechdost/shared/ustaad/dto/feed';
 import { track } from '@/lib/analytics';
 import { localePath } from '@/lib/locale-path';
 import { whatsappShareUrl } from '@/lib/ustaad/feed-format';
+import { doubleTapLike, toggleReaction, type Reaction } from '@/lib/ustaad/reactions';
 import { EditedText } from '../correction/edited-text';
 import { useCodeLabel, useTimeAgo } from '../common';
 import { RulesLink } from '../rules-link';
+import { PehchaanTag } from '../common/pehchaan-tag';
 import { UstaadIcon } from '../shell/icons';
+import { FixLogBody, TipTag } from './fix-log-body';
 import { PostMedia } from './post-media';
 import { Avatar, useMemberName, useSocialAction, useSocialError } from './social-common';
 
@@ -49,7 +53,6 @@ export function PostCard({
   eager?: boolean;
 }) {
   const t = useTranslations('ustaad.feed');
-  const l = useTranslations('ustaad.labels');
   const locale = useLocale();
   const timeAgo = useTimeAgo();
   const codeLabel = useCodeLabel();
@@ -65,44 +68,37 @@ export function PostCard({
   const author = name(post.author);
   const href = (p: string) => localePath(p, locale);
 
-  async function like() {
+  /**
+   * Like / Useful / Save change at once (`toggleReaction`) and roll back to the post as it was if the API says no
+   * (U2, E12). One write at a time per card; a failed like says so in words ("Couldn't like. Try again").
+   */
+  async function react(kind: Reaction, on: boolean, via: 'button' | 'double_tap' = 'button') {
     if (busy.current) return;
     busy.current = true;
-    const on = !post.likedByMe;
     const before = post;
-    onChange({
-      ...post,
-      likedByMe: on,
-      counts: {
-        ...post.counts,
-        likes: post.counts.likes === null ? null : post.counts.likes + (on ? 1 : -1),
-      },
-    });
-    const r = await (await client()).like(post.id, on);
+    const next = toggleReaction(post, kind, on);
+    onChange(next);
+    const c = await client();
+    const r =
+      kind === 'like'
+        ? await c.like(post.id, on)
+        : kind === 'useful'
+          ? await c.useful(post.id, on)
+          : await c.save(post.id, on);
     busy.current = false;
     if (!r.ok) {
       onChange(before);
-      setStatus(errorText(r.code));
+      setStatus(kind === 'like' && on ? t('likeFailed') : errorText(r.code));
       return;
     }
-    if (on) track('ustaad_post_liked', {});
-    onChange({ ...before, likedByMe: r.data.liked, counts: { ...before.counts, likes: r.data.likes } });
+    if (!on) return;
+    if (kind === 'like') track('ustaad_post_liked', { via });
+    else if (kind === 'useful') track('ustaad_post_useful', {});
+    else track('ustaad_post_saved', {});
   }
-
-  async function save() {
-    if (busy.current) return;
-    busy.current = true;
-    const on = !post.savedByMe;
-    onChange({ ...post, savedByMe: on });
-    const r = await (await client()).save(post.id, on);
-    busy.current = false;
-    if (!r.ok) {
-      onChange({ ...post, savedByMe: !on });
-      setStatus(errorText(r.code));
-      return;
-    }
-    if (on) track('ustaad_post_saved', {});
-  }
+  const like = () => react('like', !post.likedByMe);
+  const useful = () => react('useful', !post.usefulByMe);
+  const save = () => react('save', !post.savedByMe);
 
   async function share() {
     const r = await (await client()).share(post.id, 'whatsapp');
@@ -161,11 +157,9 @@ export function PostCard({
               <span className="rounded-full bg-navy px-2.5 py-0.5 text-xs font-bold text-white">
                 {t('officialBadge')}
               </span>
-            ) : l.has(`lvl_${post.author.level}` as 'lvl_naya') ? (
-              <span className="rounded-full bg-pill px-2.5 py-0.5 text-xs font-bold text-ink">
-                {l(`lvl_${post.author.level}` as 'lvl_naya')}
-              </span>
-            ) : null}
+            ) : (
+              <PehchaanTag level={post.author.level} />
+            )}
           </p>
           <p className="text-[13px] text-muted">
             <time dateTime={post.createdAt}>{timeAgo(post.createdAt)}</time>
@@ -199,37 +193,33 @@ export function PostCard({
       ) : null}
 
       <div className="grid gap-3 py-3">
-        {post.template ? (
+        {post.template && post.template !== 'tip' ? (
           <p className="mx-4 inline-flex w-fit items-center gap-1.5 rounded-full bg-accent-soft px-3 py-1 text-xs font-bold text-accent-soft-text">
             {t(`tpl_${post.template}` as 'tpl_tip')}
           </p>
         ) : null}
-        {post.body ? (
+        {post.template === 'tip' && post.body ? (
+          // U2 (E8): a tip sits in its own tinted panel with the "Tip" tag.
+          <div className="mx-4 grid gap-2 rounded-2xl bg-surface-alt p-4">
+            <TipTag />
+            <div className="text-[16px] leading-relaxed text-ink">
+              <EditedText body={post.body} bodyOriginal={post.bodyOriginal} />
+            </div>
+          </div>
+        ) : post.body ? (
           <div className="px-4 text-[16px] leading-relaxed text-ink">
             <EditedText body={post.body} bodyOriginal={post.bodyOriginal} />
           </div>
         ) : null}
-        {post.fix ? (
-          <dl className="mx-4 grid gap-2 rounded-2xl bg-surface-alt p-4 text-[15px]">
-            {(
-              [
-                ['fixSymptom', post.fix.symptom],
-                ['fixCause', post.fix.cause],
-                ['fixFix', post.fix.fix],
-              ] as const
-            ).map(([k, v]) =>
-              v ? (
-                <div key={k}>
-                  <dt className="text-xs font-bold text-muted">{t(k)}</dt>
-                  <dd data-user-content className="break-words text-ink">
-                    {v}
-                  </dd>
-                </div>
-              ) : null,
-            )}
-          </dl>
-        ) : null}
-        <PostMedia post={post} onVote={(id) => void vote(id)} eager={eager} />
+        {post.fix ? <FixLogBody fix={post.fix} /> : null}
+        <PostMedia
+          post={post}
+          onVote={(id) => void vote(id)}
+          onDoubleTap={() => {
+            if (doubleTapLike(post)) void react('like', true, 'double_tap');
+          }}
+          eager={eager}
+        />
         {post.tags.length > 0 ? (
           <ul className="flex flex-wrap gap-2 px-4">
             {post.tags.map((tg) => (
@@ -272,6 +262,22 @@ export function PostCard({
           </span>
         </button>
         <button
+          type="button"
+          onClick={() => void useful()}
+          aria-pressed={post.usefulByMe}
+          aria-label={`${String(post.counts.useful)} ${t('usefulAria')}`}
+          data-track="ustaad_post_useful"
+          className={`${actionBtn} ${post.usefulByMe ? 'bg-brass/20 text-brass-text' : 'text-ink hover:bg-pill'}`}
+        >
+          {/* Bench kit (visual language § 4): a wrench in brass for "Kaam ki baat", never the Like heart. */}
+          <Wrench aria-hidden="true" className="size-5" strokeWidth={2} />
+          {/* Wraps (never clips) at 360 px: the Hindi word is longer than "Like". */}
+          <span className="inline-flex flex-wrap items-center justify-center gap-x-1 text-center">
+            <span className="tabular-nums">{post.counts.useful}</span>
+            <span>{t('useful')}</span>
+          </span>
+        </button>
+        <button
           ref={commentRef}
           type="button"
           onClick={() => {
@@ -295,7 +301,7 @@ export function PostCard({
           className={`${actionBtn} ${post.savedByMe ? 'text-accent-soft-text' : 'text-ink hover:bg-pill'}`}
         >
           <UstaadIcon name="saved" filled={post.savedByMe} />
-          <span>{t('save')}</span>
+          <span>{post.savedByMe ? t('saved') : t('save')}</span>
         </button>
         {post.status === 'visible' ? (
           <button

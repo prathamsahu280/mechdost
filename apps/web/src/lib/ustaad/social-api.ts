@@ -9,6 +9,7 @@ import {
   ConnectionMovedResponse,
   CreatedResponse,
   LikeStateResponse,
+  UsefulStateResponse,
   MessageSentResponse,
   MutedResponse,
   OkResponse,
@@ -72,6 +73,8 @@ export function apiSocialClient(locale: string): SocialClient {
     deletePost: (id) => send(`/ustaad/posts/${enc(id)}`, StatusResponse, undefined, 'DELETE'),
     like: (id, on) =>
       send(`/ustaad/posts/${enc(id)}/like`, LikeStateResponse, undefined, on ? 'POST' : 'DELETE'),
+    useful: (id, on) =>
+      send(`/ustaad/posts/${enc(id)}/useful`, UsefulStateResponse, undefined, on ? 'POST' : 'DELETE'),
     save: (id, on) => send(`/ustaad/posts/${enc(id)}/save`, SavedResponse, undefined, on ? 'POST' : 'DELETE'),
     share: async (id, channel) =>
       map(await send(`/ustaad/posts/${enc(id)}/share`, ShareLinkResponse, { channel }), (d) => ({

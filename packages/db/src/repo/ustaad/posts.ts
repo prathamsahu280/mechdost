@@ -425,7 +425,7 @@ export async function ustaadPostsByIds(
       .orderBy(asc(ustaadTags.slug)),
     db.select().from(ustaadPostCounters).where(inArray(ustaadPostCounters.postId, postIds)),
     db
-      .select({ postId: ustaadReactions.postId })
+      .select({ postId: ustaadReactions.postId, kind: ustaadReactions.kind })
       .from(ustaadReactions)
       .where(and(eq(ustaadReactions.memberId, viewer), inArray(ustaadReactions.postId, postIds))),
     db
@@ -438,7 +438,8 @@ export async function ustaadPostsByIds(
       rows.map((r) => r.post.linkUrl).filter((u): u is string => u !== null),
     ),
   ]);
-  const likedSet = new Set(liked.map((x) => x.postId));
+  const likedSet = new Set(liked.filter((x) => x.kind === 'like').map((x) => x.postId));
+  const usefulSet = new Set(liked.filter((x) => x.kind === 'useful').map((x) => x.postId));
   const savedSet = new Set(saved.map((x) => x.postId));
   const counterOf = new Map(counters.map((c) => [c.postId, c]));
   const showLikes = s['ustaad.feed.show_like_counts'] === true;
@@ -468,10 +469,12 @@ export async function ustaadPostsByIds(
       tags: tags.filter((x) => x.postId === p.id).map(({ postId: _p, ...t }) => t),
       counts: {
         likes: showLikes ? (c?.likes ?? 0) : null,
+        useful: c?.useful ?? 0,
         comments: c?.comments ?? 0,
         saves: mine ? (c?.saves ?? 0) : null,
       },
       likedByMe: likedSet.has(p.id),
+      usefulByMe: usefulSet.has(p.id),
       savedByMe: savedSet.has(p.id),
       mine,
       status: p.status,
