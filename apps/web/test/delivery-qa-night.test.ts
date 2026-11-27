@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import en from '@mechdost/shared/i18n/en.json';
 import hi from '@mechdost/shared/i18n/hi.json';
 import { foldAttemptsLeft, wrongCodeLeft } from '../src/lib/delivery/view';
+import { riskOfChange } from '../src/lib/admin-settings-registry';
 import { shopStageKey } from '../src/lib/order-views';
 
 type Ns = Record<string, Record<string, string>>;
@@ -29,6 +30,18 @@ describe('DC-P13 shop return hand-back', () => {
 });
 
 const src = (p: string) => readFileSync(p, 'utf8');
+
+describe('DC-F4 city-wide delivery switch', () => {
+  it('asks before delivery agents are switched on (or off) for a city, with en and hi words', () => {
+    expect(riskOfChange('delivery.agents_enabled', false, true)).toBe('risk_agentsOn');
+    expect(riskOfChange('delivery.agents_enabled', true, false)).toBe('risk_agentsOff');
+    expect(riskOfChange('delivery.agents_enabled', null, true)).toBe('risk_agentsOn');
+    for (const m of [en, hi] as unknown as Ns[]) {
+      expect(m.adminSettings?.risk_agentsOn).toBeTruthy();
+      expect(m.adminSettings?.risk_agentsOff).toBeTruthy();
+    }
+  });
+});
 
 describe('DC-P1 partner status timeline', () => {
   it('names the current step "Current step", not the stage again ("Received (Received)")', () => {

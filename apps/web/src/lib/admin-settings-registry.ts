@@ -117,6 +117,8 @@ export function matchesQuery(haystack: string, query: string): boolean {
 export type RiskReason =
   | 'risk_codOff'
   | 'risk_codEveryone'
+  | 'risk_agentsOn'
+  | 'risk_agentsOff'
   | 'risk_assistantOff'
   | 'risk_redeemOff'
   | 'risk_verifiedEmail'
@@ -135,6 +137,9 @@ export function riskOfChange(
     // Founder 2026-11-26: cash handling is the reason COD is not for everyone; turning it on needs a second look.
     case 'checkout.cod_everyone':
       return to === true ? 'risk_codEveryone' : null;
+    // City-wide delivery agents switch (spec 24; DC-F4): either way changes who carries every order of the city.
+    case 'delivery.agents_enabled':
+      return to === true ? 'risk_agentsOn' : to === false ? 'risk_agentsOff' : null;
     case 'assistant.daily_messages':
       return to === 0 ? 'risk_assistantOff' : null;
     case 'coins.max_redeem_bp':

@@ -6657,6 +6657,8 @@
     "help_checkout_cod_min_items": "Cash on delivery only from this many pieces in one order. 1 = no minimum.",
     "help_checkout_cod_request_reapply_days": "After a request is turned down or approval is taken back, the customer waits this many days before asking again.",
     "risk_codEveryone": "Every customer will be able to pay cash on delivery again, even for a single piece. Cash handling at the door is the reason this is off.",
+    "risk_agentsOff": "No new delivery jobs will be offered to agents in this city. Orders already with an agent carry on.",
+    "risk_agentsOn": "MechDost delivery agents will be offered jobs from shops in this city that chose agent delivery. Check that verified agents are ready first.",
     "help_delivery_agents_enabled": "Off: every shop delivers its own orders, as before. Cash-on-delivery orders always stay with the shop.",
     "help_delivery_offer_timeout_min": "After this many minutes an unanswered offer goes back to the queue.",
     "help_delivery_max_active_jobs": "An agent with this many jobs is not suggested for more.",
