@@ -1294,6 +1294,6 @@ Done: launcher hides on phones while a field is focused and on `data-launcher-av
 - Also seen in the worker log: 6 `notify_send_failed` email `send_timeout` + `email_attachment_skipped`
   (PhaseTimeout) in 24 h — investigate with the email outbox (open).
 
-### 2026-11-28 00:37 IST — shutdown scheduled
+### 2026-11-28 00:23 IST — shutdown scheduled
 
-- Founder scheduled the PC shutdown for ~06:07 IST. Pause cleanly by **05:50** with the handover written here and a phone summary sent (overrides the 05:15 default of the overnight check).
+- Founder scheduled the PC shutdown for ~05:53 IST. Pause cleanly by **05:38** with the handover written here and a phone summary sent (overrides the 05:15 default of the overnight check).
