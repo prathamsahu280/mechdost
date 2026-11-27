@@ -434,7 +434,7 @@ function CodeStep({
             label={job.photosRequired ? (pickup ? t('photoPickup') : t('photoDelivery')) : t('photoOptional')}
             hint={pickup ? t('photoPickupHint') : t('photoFirst')}
             purpose={kind}
-            upload={client.uploadPhoto}
+            upload={(file, purpose) => client.uploadPhoto(file, purpose, job.jobId)}
             onMedia={setPhoto}
           />
         }
@@ -531,7 +531,7 @@ function FailForm({ job, onChanged }: { job: AgentJobDetailView; onChanged: () =
           id={`${id}-photo`}
           label={job.photosRequired ? t('photoFailure') : t('photoOptional')}
           purpose="failure"
-          upload={client.uploadPhoto}
+          upload={(file, purpose) => client.uploadPhoto(file, purpose, job.jobId)}
           onMedia={setPhoto}
         />
         <div className="grid grid-cols-2 gap-2">

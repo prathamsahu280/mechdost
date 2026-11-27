@@ -3,6 +3,7 @@
  * contract's error codes (`delivery.errors.*`). Zod-free and React-free, unit-tested in `test/delivery-view.test.ts`.
  */
 import type { DeliveryJobStatus } from '@mechdost/shared/delivery/codes';
+import type { ShopOrderDeliveryView } from './types';
 
 /** Under a minute left: the countdown turns to the warning colour and is announced once. */
 const URGENT_S = 60;
@@ -28,7 +29,11 @@ export function agentStep(status: DeliveryJobStatus, arrived: boolean): 1 | 2 | 
   return null;
 }
 
-/** Error codes the contract has copy for (`delivery.errors.<code>`). */
+/**
+ * Error codes the contract has copy for (`delivery.errors.<code>`, en + hi). Every code the delivery routes and
+ * repositories return is here (guard: `test/delivery-error-codes.test.ts`, DC-B3), so no screen prints a raw key or a
+ * bare "Something went wrong" for a refusal the API answers on purpose.
+ */
 export const DELIVERY_ERROR_CODES = [
   'AGENTS_DISABLED',
   'JOB_CHANGED',
@@ -44,10 +49,53 @@ export const DELIVERY_ERROR_CODES = [
   'INVITE_EXPIRED',
   'DOCUMENT_AADHAAR',
   'DOCUMENT_FORMAT',
+  'RATING_CLOSED',
+  'NOT_RATEABLE',
+  'WRONG_CODE_RETRY',
+  'AGENT_NOT_ELIGIBLE',
+  'AGENT_REQUIRED',
+  'ALREADY_AGENT',
+  'APPLICATION_DECIDED',
+  'CITY_UNKNOWN',
+  'CODE_FORMAT',
+  'DELIVERY_CODES_UNAVAILABLE',
+  'DOCUMENTS_NOT_VERIFIED',
+  'DOCUMENT_IN_USE',
+  'DOCUMENT_NOT_PENDING',
+  'IDEMPOTENCY_MISMATCH',
+  'INVITE_NOT_OPEN',
+  'INVITE_OPEN',
+  'INVITE_REVOKED',
+  'INVITE_USED',
+  'JOB_PICKED_UP',
+  'JOB_REQUIRED',
+  'NOTE_REQUIRED',
+  'NOT_A_PAYMENT',
+  'NOT_SWITCHABLE',
+  'NO_CODE',
+  'NO_DELIVERY_CODE',
+  'NO_SHIPMENT',
+  'NO_SHOP',
+  'PAYOUT_NOT_STORED',
+  'PHOTOS_UNAVAILABLE',
+  'PHOTO_TOO_LARGE',
+  'PHOTO_TYPE',
+  'RATING_STARS',
+  'REASON_REQUIRED',
+  'REQUEST_DECIDED',
+  'REQUEST_PENDING',
+  'RESERVED_KEY',
+  'SAME_MODE',
+  'STALE',
+  'SWITCH_PENDING',
+  'VERIFICATION_REQUIRED',
+  'WRONG_STEP',
 ] as const;
 export type DeliveryErrorCode = (typeof DELIVERY_ERROR_CODES)[number];
 
 export function deliveryErrorKey(code: string): DeliveryErrorCode | null {
+  // A plain `WRONG_CODE` (API refusal without the count in the code) gets the words without a number.
+  if (code === 'WRONG_CODE') return 'WRONG_CODE_RETRY';
   return DELIVERY_ERROR_CODES.find((c) => c === code) ?? null;
 }
 
@@ -94,4 +142,47 @@ export function nextPayoutKey(current: string, succeeded: boolean): string {
 /** The contract keeps ratings in tenths of a star (`ratingAvgX10`: 43 = 4.3); screens show stars. */
 export function ratingFromX10(avgX10: number | null): number | null {
   return avgX10 === null ? null : avgX10 / 10;
+}
+
+/**
+ * A staff photo link (rider document or job photo) on the API origin: the API answers its signed image route as a path
+ * (`/v1/delivery-photos/{id}/large?e=…&s=…`); a relative link opened the website's 404 page (DC-B7, QA 2026-11-27).
+ * Null when the web has no API base (demo build).
+ */
+export function deliveryPhotoHref(url: string, apiBase: string): string | null {
+  if (/^https?:\/\//.test(url)) return url;
+  const base = apiBase.replace(/\/$/, '');
+  if (!base) return null;
+  const path = url.startsWith('/v1/') ? url : `/v1${url.startsWith('/') ? '' : '/'}${url}`;
+  return `${base}${path}`;
+}
+
+/** Sub-order statuses where an agent-delivered order shows the agent hand-over instead of the shop's own steps. */
+export const AGENT_HANDOVER_STATUSES: readonly string[] = ['packed', 'ready_for_pickup', 'out_for_delivery'];
+
+/**
+ * The agent hand-over view of one shop sub-order, or null for the shop's own delivery steps. Keyed on the order's
+ * delivery mode: a packed agent order has no job yet (`delivery: null`) and must still offer "Mark ready for pickup",
+ * never the shop's "Mark out for delivery" (DC-P9, QA 2026-11-27).
+ */
+export function shopAgentHandover(order: {
+  status: string;
+  deliveryMode?: 'agent' | 'shop' | null | undefined;
+  delivery?: ShopOrderDeliveryView | null | undefined;
+}): ShopOrderDeliveryView | null {
+  const delivery = order.delivery ?? null;
+  const mode = order.deliveryMode ?? delivery?.mode ?? null;
+  if (mode !== 'agent' || !AGENT_HANDOVER_STATUSES.includes(order.status)) return null;
+  return (
+    delivery ?? {
+      mode: 'agent',
+      pickupCode: null,
+      pickupLocked: false,
+      jobStatus: null,
+      agentFirstName: null,
+      vehicleType: null,
+      returning: false,
+      switchRequest: null,
+    }
+  );
 }

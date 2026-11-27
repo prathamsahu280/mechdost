@@ -812,7 +812,8 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
   };
   const photoUrl = (mediaId: string) => {
     const { exp, sig } = signPhotoUrl(keyring(), mediaId);
-    return `/delivery-photos/${mediaId}/large?e=${String(exp)}&s=${sig}`;
+    // Path on the API origin (spec 24: `/v1/delivery-photos/{id}/{variant}`); the web prefixes its API base (DC-B7).
+    return `/v1/delivery-photos/${mediaId}/large?e=${String(exp)}&s=${sig}`;
   };
   const AgentId = z.object({ agentId: Uuid('agentId') });
   const JobId = z.object({ jobId: Uuid('jobId') });

@@ -144,8 +144,8 @@ export interface AgentClient extends Live {
     photoMediaId: string | undefined,
     version: number,
   ): Promise<Result<AgentJobDetailView>>;
-  /** A property, not a method: screens pass it on as `upload={client.uploadPhoto}`. */
-  uploadPhoto: (file: Blob, purpose: PhotoPurpose) => Promise<Result<{ mediaId: string }>>;
+  /** A property: screens pass it on to `PhotoCapture`; job photos add the job id (the API refuses them without it). */
+  uploadPhoto: (file: Blob, purpose: PhotoPurpose, jobId?: string) => Promise<Result<{ mediaId: string }>>;
   saveDocument(kind: AgentDocumentKind, number: string, mediaId: string): Promise<Result<AgentProfileView>>;
   /** Own payouts and delivered jobs (founder ruling 2026-11-26: manual payouts). */
   earnings(): Promise<Result<AgentEarningsView>>;

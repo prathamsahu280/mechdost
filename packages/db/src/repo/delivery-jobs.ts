@@ -614,7 +614,7 @@ export async function declineDeliveryOffer(
 export async function expireDueDeliveryOffers(
   db: Tx,
   limit = 50,
-): Promise<{ expired: number; failed: { offerId: string; error: unknown }[] }> {
+): Promise<{ due: number; expired: number; failed: { offerId: string; error: unknown }[] }> {
   const due = await db
     .select({
       id: deliveryJobOffers.id,
@@ -625,6 +625,7 @@ export async function expireDueDeliveryOffers(
     .from(deliveryJobOffers)
     .innerJoin(deliveryJobs, eq(deliveryJobs.id, deliveryJobOffers.jobId))
     .where(and(eq(deliveryJobOffers.status, 'offered'), lte(deliveryJobOffers.expiresAt, sql`now()`)))
+    .orderBy(deliveryJobOffers.expiresAt)
     .limit(limit);
   let n = 0;
   const failed: { offerId: string; error: unknown }[] = [];
@@ -656,6 +657,15 @@ export async function expireDueDeliveryOffers(
           agentId: d.agentId,
           actor: 'system',
         });
+        // Every mutation is audited (hard rule 3); the sweep had none (DC-B11, QA 2026-11-27).
+        await auditDelivery(tx, {
+          actorUserId: null,
+          actorRole: 'system',
+          action: 'delivery_job.offer_expired',
+          entity: 'delivery_job',
+          entityId: job.id,
+          after: { offerId: d.id, agentId: d.agentId },
+        });
         const o = await orderInfo(tx, job.orderId);
         await queueStaffNotice(tx, {
           kind: 'staff.delivery_offer_expired',
@@ -675,7 +685,7 @@ export async function expireDueDeliveryOffers(
     }
     if (done) n += 1;
   }
-  return { expired: n, failed };
+  return { due: due.length, expired: n, failed };
 }
 
 /** Staff take an offered or accepted (not yet picked up) job back; it returns to the queue. */

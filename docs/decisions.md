@@ -2768,3 +2768,14 @@ Within the QA fix plan (`docs/qa/ustaad-sim-fix-plan-2026-11-27.md`, Batch A); n
   (403 `USTAAD_VOICE_CONSENT`); `ustaad_voice` and `ustaad_correction` join the member's choices.
 - **Ban and conversations (SIM-P34):** derived, not stored: while a member is banned or has left, nothing is sent to
   or from them and their requests cannot be accepted; nothing to restore when the ban ends.
+
+## 2026-11-27 — Delivery agents: go-live fixes (builder; spec 24 § 17)
+
+- The staff photo URL the API answers is `/v1/delivery-photos/{id}/large?e=…&s=…` (was without `/v1`); the web
+  opens it on `NEXT_PUBLIC_API_URL` through one helper (`deliveryPhotoHref`, accepts both forms). DC-B7.
+- Every error code the delivery routes and `delivery-*` repositories return has en + hi copy in `delivery.errors`
+  (guard test). A plain `WRONG_CODE` without the count maps to `WRONG_CODE_RETRY` ("That code is not right. Check it
+  and try again."). DC-B3.
+- New audit action `delivery_job.offer_expired` (actor `system`) on each worker expiry; the worker logs
+  `delivery_offers_not_expired` (warn) when due offers neither expired nor failed. DC-B11 (production cause still to
+  be confirmed on the server).

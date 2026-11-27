@@ -48,10 +48,13 @@ import type {
   DeliveryAdminAction,
   Result,
 } from '@/lib/delivery/types';
-import { countdown, kmText, ratingFromX10 } from '@/lib/delivery/view';
+import { countdown, deliveryErrorKey, deliveryPhotoHref, kmText, ratingFromX10 } from '@/lib/delivery/view';
 import { PayoutsTab } from './admin-delivery-payouts';
 import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
 import { useStatusLine } from './status-line';
+
+/** Staff photo links open on the API origin (signed image route, DC-B7). */
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 
 const TABS = ['jobs', 'applications', 'agents', 'payouts', 'requests', 'settings'] as const;
 type Tab = (typeof TABS)[number];
@@ -133,12 +136,10 @@ function ListState({ failed, loading, onRetry }: { failed: boolean; loading: boo
 function useErr() {
   const t = useTranslations('deliveryAdmin');
   const e = useTranslations('delivery.errors');
+  // next-intl prints the key path for a missing message instead of throwing, so map first (DC-B3).
   return (code: string) => {
-    try {
-      return e(code as 'JOB_CHANGED', { attemptsLeft: 0 });
-    } catch {
-      return t('genericError', { code });
-    }
+    const key = deliveryErrorKey(code);
+    return key ? e(key, { attemptsLeft: 0 }) : t('genericError', { code });
   };
 }
 
@@ -834,8 +835,13 @@ export function JobTimeline({ job }: { job: AdminJobDetailView }) {
               {job.photos.map((p) => (
                 <li key={`${p.purpose}-${p.at}`} className="text-ink">
                   {t(`photo_${p.purpose}`)} · {when(p.at)}{' '}
-                  {p.url ? (
-                    <a href={p.url} target="_blank" rel="noopener noreferrer" className="font-bold underline">
+                  {p.url && deliveryPhotoHref(p.url, API_BASE) ? (
+                    <a
+                      href={deliveryPhotoHref(p.url, API_BASE) ?? undefined}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-bold underline"
+                    >
                       {t('open')}
                     </a>
                   ) : (
@@ -1653,8 +1659,13 @@ function DocumentReview({
           <p className="tabular-nums" lang="en">
             {t('docNumber', { number: view.number })}
           </p>
-          {view.photoUrl ? (
-            <a href={view.photoUrl} target="_blank" rel="noopener noreferrer" className="font-bold underline">
+          {view.photoUrl && deliveryPhotoHref(view.photoUrl, API_BASE) ? (
+            <a
+              href={deliveryPhotoHref(view.photoUrl, API_BASE) ?? undefined}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold underline"
+            >
               {t('open')}
             </a>
           ) : (

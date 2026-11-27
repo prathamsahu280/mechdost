@@ -93,6 +93,20 @@ export function AgentInvite({ token }: { token: string }) {
         body: { token },
       });
       res = r.ok ? { ok: true } : { ok: false, code: r.code };
+      if (r.ok) {
+        // The session's landing role was computed at sign-in; reload `/v1/me` with a fresh token so the portal
+        // opens now, without signing out and in (DC-P4). A failed refresh leaves the old session (sign-in fixes it).
+        const [{ fetchMe }, { adoptRealAccount }] = await Promise.all([
+          import('@/lib/auth/firebase-client'),
+          import('@/demo/session'),
+        ]);
+        const me = await fetchMe(true).catch(() => null);
+        try {
+          if (me && me !== 'blocked') adoptRealAccount(me);
+        } catch {
+          // An account without a phone cannot be adopted; the old session stays until the next sign-in.
+        }
+      }
     } else {
       const { acceptInvite } = await import('@/demo/delivery-store');
       const r = acceptInvite(token, session);

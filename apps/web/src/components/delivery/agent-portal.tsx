@@ -133,7 +133,7 @@ function StatusStrip() {
         </a>
       </div>
       {active ? (
-        <div className="mt-4 rounded-button bg-white px-4 py-2 text-ink">
+        <div className="mt-4 rounded-button bg-surface px-4 py-2 text-ink">
           <div className="flex items-center justify-between gap-3">
             <label htmlFor="agent-online" className="text-base font-extrabold">
               {t('onlineLabel')}
@@ -155,7 +155,7 @@ function StatusStrip() {
           </p>
         </div>
       ) : (
-        <p className="mt-4 rounded-button bg-white px-4 py-3 text-sm font-bold text-ink">
+        <p className="mt-4 rounded-button bg-surface px-4 py-3 text-sm font-bold text-ink">
           {profile.status === 'onboarding'
             ? t('notActive')
             : profile.status === 'paused'
