@@ -65,6 +65,7 @@ export interface PostUstaadJobInput {
 
 /** A job as members see it (no employer phone, no internal hold reason). */
 export interface UstaadJobView {
+  id: string;
   code: string;
   roleCode: JobRole;
   title: string;
@@ -203,6 +204,7 @@ async function extraScamPhrases(tx: Tx): Promise<string[]> {
 function viewOf(j: JobRow, cityCode: string, viewerMemberId: string): UstaadJobView {
   const mine = j.employerMemberId === viewerMemberId;
   return {
+    id: j.id,
     code: j.code,
     roleCode: j.roleCode as JobRole,
     title: j.title,

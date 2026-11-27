@@ -222,6 +222,14 @@ export const USTAAD_CLIENT_EVENT_SCHEMAS = {
   ustaad_camera_opened: z.object({ source: z.enum(['camera', 'gallery']) }).strict(),
   /** The shared Save control (2026-11-28): any kind saved or unsaved; ids never leave the browser. */
   ustaad_item_save_toggled: z.object({ kind: z.enum(USTAAD_SAVE_KINDS), saved: z.boolean() }).strict(),
+  /** The Saved page (2026-11-28): which filter was picked (a kind code, a collection or all); never a collection name or id. */
+  ustaad_saved_filter: z
+    .object({ by: z.enum(['all', 'kind', 'collection']), kind: z.enum(USTAAD_SAVE_KINDS).optional() })
+    .strict(),
+  /** The collections sheet: created / renamed / deleted a collection, or put an item in or took it out. */
+  ustaad_collection_changed: z
+    .object({ action: z.enum(['created', 'renamed', 'deleted', 'item_added', 'item_removed']) })
+    .strict(),
   ustaad_post_shared: z.object({ channel: z.enum(['whatsapp', 'copy_link', 'member']) }).strict(),
   ustaad_story_viewed: z.object({}).strict(),
   ustaad_video_played: z.object({ secondsBand: z.enum(['lt15', '15to60', '60to180', 'gt180']) }).strict(),
@@ -365,7 +373,7 @@ export const USTAAD_CLIENT_EVENT_SCHEMAS = {
   /** U4 (founder Q-UI-2): the weekly "you helped N mechanics" note was shown; a band, never names. */
   ustaad_helped_note_seen: z.object({ band: z.enum(['1', '2-5', '6+']) }).strict(),
   /** U4 (founder Q-UI-1): Learn and Discover reached from the Me shortcuts. */
-  ustaad_me_shortcut: z.object({ to: z.enum(['learn', 'discover']) }).strict(),
+  ustaad_me_shortcut: z.object({ to: z.enum(['learn', 'discover', 'saved']) }).strict(),
   /** U4 (§ 3.5): "Continue" on a half-watched video. */
   ustaad_learn_continue_tapped: z.object({}).strict(),
   /** U4 (§ 3.6): the one-line scam warning on Jobs expanded. */

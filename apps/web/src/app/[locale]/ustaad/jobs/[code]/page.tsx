@@ -25,6 +25,7 @@ export default async function UstaadJobPage({ params }: Props) {
         'ustaad.labels',
         'ustaad.card',
         'segments',
+        'ustaad.saveControl',
       ]}
     >
       <MemberGate>

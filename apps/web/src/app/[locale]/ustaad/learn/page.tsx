@@ -9,7 +9,14 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
 export default function UstaadLearnPage() {
   return (
     <ClientMessages
-      namespaces={['ustaad.shell', 'ustaad.standing', 'ustaad.learn', 'ustaad.labels', 'segments']}
+      namespaces={[
+        'ustaad.shell',
+        'ustaad.standing',
+        'ustaad.learn',
+        'ustaad.labels',
+        'ustaad.saveControl',
+        'segments',
+      ]}
     >
       <MemberGate>
         <LearnView />

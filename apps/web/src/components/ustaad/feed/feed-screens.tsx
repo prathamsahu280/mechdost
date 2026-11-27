@@ -65,27 +65,6 @@ export function PostDetail({ id }: { id: string }) {
   );
 }
 
-/** `/ustaad/saved`: what I saved, newest first (only I can see it). */
-export function SavedScreen() {
-  const t = useTranslations('ustaad.feed');
-  const locale = useLocale();
-  return (
-    <PostList
-      listKey="saved"
-      load={(c, cursor) => c.saved(cursor)}
-      empty={
-        <div className={`${card} grid justify-items-center gap-3 text-center`}>
-          <p className="text-[15px] text-muted">{t('savedEmpty')}</p>
-          <Link href={localePath('/ustaad', locale)} className={btnPrimary}>
-            <UstaadIcon name="home" />
-            {t('backToFeed')}
-          </Link>
-        </div>
-      }
-    />
-  );
-}
-
 /** `/ustaad/tags/[slug]`: the tag's name and group, Follow tag, and its posts. */
 export function TagScreen({ slug }: { slug: string }) {
   const t = useTranslations('ustaad.feed');

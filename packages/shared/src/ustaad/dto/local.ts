@@ -104,6 +104,8 @@ export const PostJobDto = z
 export type PostJobBody = z.infer<typeof PostJobDto>;
 
 export const JobDto = z.object({
+  /** The id the Save control needs (saves are by id); screens link by `code`. */
+  id: z.uuid(),
   code: z.string(),
   roleCode: z.enum(JOB_ROLES),
   title: z.string(),

@@ -63,6 +63,9 @@ export const SavedSummaryDto = z.object({
 });
 export type SavedSummary = z.infer<typeof SavedSummaryDto>;
 
+/** The 204 answers (collection changes): no body. */
+export const NoContentDto = z.null();
+
 export const SaveStateDto = z.object({ saved: z.boolean() });
 
 export const CreateCollectionDto = z.strictObject({ name: CollectionNameDto });

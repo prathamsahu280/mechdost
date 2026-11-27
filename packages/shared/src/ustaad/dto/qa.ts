@@ -83,6 +83,8 @@ const AuthorView = z.object({
 });
 
 export const QuestionCardDto = z.object({
+  /** The id the Save control needs (saves are by id); screens link by `code`. */
+  id: z.uuid(),
   code: z.string(),
   title: z.string().nullable(),
   hasVoice: z.boolean(),

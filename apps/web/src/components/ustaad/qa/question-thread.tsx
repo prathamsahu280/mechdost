@@ -14,6 +14,7 @@ import { SmartCorrection, correctForSend, type CorrectionMeta } from '../correct
 import { ListenButton } from '../media/listen-button';
 import { UploadProgress } from '../media/upload-progress';
 import { VoiceNote } from '../media/voice-note';
+import { SaveControl } from '../saved/save-control';
 import type { Recording } from '../media/voice-recorder';
 import {
   AuthorLine,
@@ -160,6 +161,10 @@ export function QuestionThread({ code }: { code: string }) {
         </ul>
       </article>
 
+      <div className="flex">
+        <SaveControl kind="question" id={q.id} saved={false} />
+      </div>
+
       {q.safetyTag ? (
         <p className="flex items-start gap-3 rounded-2xl border border-error/30 bg-error-bg p-4 text-[15px] leading-relaxed text-error">
           <ShieldAlert aria-hidden="true" className="mt-0.5 size-6 shrink-0" />
@@ -295,6 +300,7 @@ function AnswerBubble({
       ) : null}
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {a.body !== null ? <ListenButton text={a.body} /> : null}
+        <SaveControl kind="answer" id={a.id} saved={false} />
         {a.mine ? null : (
           <button
             type="button"
