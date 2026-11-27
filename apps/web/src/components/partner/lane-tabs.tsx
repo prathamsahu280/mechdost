@@ -16,7 +16,7 @@ export interface Lane {
 
 /**
  * Order/job lanes as tabs with counts (design 2026-11-27 § 4): links with `?lane=` so the URL keeps the state,
- * `aria-current` on the open lane, scrolls inside its own box at 360 px, arrow keys move between lanes. The caller
+ * `aria-current` on the open lane, scrolls inside its own box at 360 px, arrow keys (wrapping) and Home/End move between lanes. The caller
  * reads the lane from its page's `searchParams` (no search-params hook here, so no Suspense boundary is needed).
  */
 export function LaneTabs({
@@ -34,16 +34,19 @@ export function LaneTabs({
   hrefFor: (id: string) => string;
 }) {
   function onKey(e: KeyboardEvent<HTMLUListElement>) {
-    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(e.key)) return;
     const links = [...e.currentTarget.querySelectorAll<HTMLAnchorElement>('a')];
     const at = links.indexOf(document.activeElement as HTMLAnchorElement);
     if (at < 0) return;
     e.preventDefault();
-    const next = links[(at + (e.key === 'ArrowRight' ? 1 : links.length - 1)) % links.length];
-    next?.focus();
+    let to = 0;
+    if (e.key === 'End') to = links.length - 1;
+    else if (e.key !== 'Home') to = (at + (e.key === 'ArrowRight' ? 1 : links.length - 1)) % links.length;
+    links[to]?.focus();
   }
+  // 8 px of room on every side: the 3 px focus outline + 2 px offset is 5 px and an `overflow` box clips it (2.4.7/2.4.11).
   return (
-    <nav aria-label={label} className="-mx-1 overflow-x-auto px-1 pb-1">
+    <nav aria-label={label} className="-mx-2 -my-2 scroll-px-2 overflow-x-auto px-2 py-2">
       <ul className="flex w-max gap-2" onKeyDown={onKey}>
         {lanes.map((lane) => {
           const on = lane.id === current;
