@@ -27,6 +27,22 @@ This file is the single source of truth for **where the build is right now**. It
     (script or test in `packages/db`).
   - Worktree bootstrap that creates `apps/web/next-env.d.ts` before web `tsc`.
 
+## 2026-11-27 night — founder-approved improvements (builder, branch `worktree-agent-ad20a0e7e99566560`, NOT merged)
+
+- Five items, one commit each, test first: (1) Ustaad Hindi copy pass — one register (आप, -ें), वेरिफ़ाइड for status
+  ("पक्का" only in "पक्का उस्ताद"), ICU plurals, plainer words (built by a sub-builder, cherry-picked and spot-checked;
+  spec 23 § 21i); (2) "Read the network rules" link on Ustaad Home, Jobs, Me, both report forms, the composer and the
+  held note; (3) local drafts for the post, question and message composers + `beforeunload` warning; (4) `/partners`
+  intro, joining steps and home teaser name delivery partners; (5) theme follows the device until the visitor chooses
+  (decisions 2026-11-27 night, replaces "light by default"); (6, added by the lead) phone search is a top-bar icon
+  that opens the field inline over the bar, desktop modal unchanged (decisions 2026-11-27 night; the state-audit
+  `CHR-SEARCH` rows wait for `#header-search-panel` on phones now — re-run them).
+- Gates: targeted vitest files green, tsc web, eslint on changed files, prettier (see the branch report). No full
+  suites, no build, no e2e, no push. **Next:** lead merges, runs the full suites after 00:30, then `hindi-coverage`
+  e2e on `/hi/ustaad/*` and a real-browser check of the drafts (reload warning) and the dark device theme.
+- Open: `notify.*` texts cannot use ICU plurals (plain `{name}` substitution) — worded count-neutral instead;
+  `/partners/status` "पक्का" step key (SIM-P5) is outside `ustaad.*`, not changed; voice takes are not kept in drafts.
+
 ## 2026-11-27 evening — delivery go-live blockers fixed (builder, branch `worktree-agent-adc124fa15469db75`, NOT merged)
 
 - Seven commits, test first (spec 24 § 17): DC-P11 job photos carry the job id; DC-B11 sweep audited + warns on

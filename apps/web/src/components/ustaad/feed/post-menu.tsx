@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type { PostView } from '@mechdost/shared/ustaad/dto/feed';
 import { REPORT_REASONS, type UstaadReportTarget } from '@mechdost/shared/ustaad/codes';
 import { btnPrimary, btnQuiet, fieldClass } from '../common';
+import { RulesLink } from '../rules-link';
 import { UstaadIcon, type UstaadIconName } from '../shell/icons';
 import type { PostGone } from './post-card';
 import { Sheet } from './sheet';
@@ -112,6 +113,7 @@ export function ReportForm({
         <UstaadIcon name="flag" />
         {t('reportSend')}
       </button>
+      <RulesLink place="report" />
     </form>
   );
 }

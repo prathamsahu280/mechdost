@@ -35,6 +35,8 @@ beforeEach(() => {
   const store = new Map<string, string>([
     ['firebase:authUser:key:[DEFAULT]', '{}'],
     ['mechdost-theme', 'dark'],
+    ['mechdost-ustaad-draft:post', 'unsent tip'],
+    ['mechdost-ustaad-draft:dm:t1', 'unsent message'],
   ]);
   vi.stubGlobal('localStorage', {
     get length() {
@@ -95,6 +97,22 @@ describe('sign-out leaves nothing of the account on screen', () => {
     release();
     await done;
     expect(events.slice(-2)).toEqual(['firebase-signed-out', 'replace:/hi']);
+  });
+
+  it('the inline draft prefix matches the draft store', async () => {
+    const { DRAFT_PREFIX } = await import('../src/lib/ustaad/draft');
+    expect(readFileSync(join(__dirname, '..', 'src', 'lib', 'auth', 'sign-out.ts'), 'utf8')).toContain(
+      `startsWith('${DRAFT_PREFIX}')`,
+    );
+  });
+
+  it('forgets the Ustaad composer drafts (the next person on a shared phone must not see them), keeps the theme', async () => {
+    firebaseSignOut = () => Promise.resolve();
+    const { signOutEverywhere } = await import('../src/lib/auth/sign-out');
+    await signOutEverywhere();
+    expect(events).toContain('ls-removed:mechdost-ustaad-draft:post');
+    expect(events).toContain('ls-removed:mechdost-ustaad-draft:dm:t1');
+    expect(events).not.toContain('ls-removed:mechdost-theme');
   });
 
   it('a hanging push clean-up never skips the Firebase sign-out (security review 2026-11-23)', async () => {

@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { TagListItem } from '@mechdost/shared/ustaad/dto/feed';
 import { localePath } from '@/lib/locale-path';
 import { ustaadClient, type MediaDeclare } from '@/lib/ustaad/client';
@@ -18,6 +18,8 @@ import { btnPrimary, btnQuiet, card, fieldClass, SampleNote } from '../common';
 import { correctForSend, SmartCorrection, type CorrectionMeta } from '../correction/smart-correction';
 import { prepareImage, type PreparedImage } from '../media/image-picker';
 import { UploadProgress } from '../media/upload-progress';
+import { RulesLink } from '../rules-link';
+import { useDraft } from '../use-draft';
 import { VoiceRecorder, type Recording } from '../media/voice-recorder';
 import { UstaadIcon, type UstaadIconName } from '../shell/icons';
 import { useSocialAction, useSocialError } from './social-common';
@@ -197,6 +199,14 @@ export function Composer({ story }: { story: boolean }) {
   const [errField, setErrField] = useState<string | null>(null);
   const [done, setDone] = useState<{ id: string; held: boolean } | null>(null);
   const [sample, setSample] = useState(false);
+  // QA F-R14: the text survives leaving the page; cleared once the post is sent.
+  // A restored draft opens the text type (the body field only shows once a type is picked).
+  const restoreDraft = useCallback((d: string) => {
+    if (!d) return;
+    setBody(d);
+    setChoice((c) => c ?? 'text');
+  }, []);
+  const clearPostDraft = useDraft(story ? 'story' : 'post', body, restoreDraft, done === null);
   const idem = useRef(`p${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -317,6 +327,7 @@ export function Composer({ story }: { story: boolean }) {
           setError(errorText(r.code));
           return;
         }
+        clearPostDraft();
         setDone({ id: r.data.id, held: r.data.status === 'held' });
         return;
       }
@@ -363,6 +374,7 @@ export function Composer({ story }: { story: boolean }) {
         setError(errorText(r.code));
         return;
       }
+      clearPostDraft();
       setDone({ id: r.data.id, held: r.data.status === 'held' });
     } finally {
       setBusy(false);
@@ -737,6 +749,7 @@ export function Composer({ story }: { story: boolean }) {
               {busy ? t('posting') : story ? t('postStory') : t('post')}
             </button>
           ) : null}
+          <RulesLink place="composer" />
         </form>
       )}
     </section>

@@ -9,6 +9,7 @@ import { btnPrimary, btnQuiet, card, fieldClass } from '../common';
 import type { PreparedImage } from '../media/image-picker';
 import { UploadProgress } from '../media/upload-progress';
 import type { Recording } from '../media/voice-recorder';
+import { useDraft } from '../use-draft';
 import { useAct, useDmErrorText } from './shared';
 
 // The recorder and the photo picker load only when the member opens them (spec 23 § 17: storefront bundles never
@@ -55,6 +56,8 @@ export function Composer({
   const [rec, setRec] = useState<Recording | null>(null);
   const [img, setImg] = useState<PreparedImage | null>(null);
   const [pct, setPct] = useState<number | null>(null);
+  // QA F-R14: one local draft per thread; cleared once the message is sent.
+  const clearMessageDraft = useDraft(`dm:${threadId}`, text, setText);
   const field = useRef<HTMLTextAreaElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const firstPanel = useRef(true);
@@ -83,6 +86,7 @@ export function Composer({
     onNote(null);
     const r = await act('send', (c) => c.send(threadId, body));
     if (!r) return false;
+    clearMessageDraft();
     onNote(t('sentNote'));
     onSent();
     return true;

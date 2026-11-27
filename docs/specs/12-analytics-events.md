@@ -174,6 +174,9 @@ Server (same transaction; ids, codes, counts only): `workshop_slot_capacity_set 
 
 - **Shop portal tier 2 (2026-11-15):** server events `shop_csv_previewed` (shop, rows, errors, changes), `shop_csv_applied` (shop, stock, on/off and price-request counts), `shop_packing_slip_viewed` (shop, order code), `shop_performance_viewed` (shop), `partner_status_checked` (found yes/no, no identifiers). Client clicks: `shop_csv_template`, `shop_csv_check`, `shop_csv_apply`, `shop_slip_open`, `shop_slip_print`, `shop_perf_30`, `shop_perf_90`, `partner_status_found`, `partner_status_miss`. No cell text, names or phones in any property.
 - **Shop staff performance (2026-11-16):** server event `shop_staff_performance_viewed` (`shopId`, `scope` `owner` or `self`, `days` 30 or 90; one per view, written with the read); client `click` ids `shop_staff_perf_30`, `shop_staff_perf_90` and `data-track="shop_staff_performance_toggle"` on the section toggle. No per-ping live events (spec 10).
+- **Ustaad community rules link (2026-11-27 night):** client `click` ids `ustaad_rules_link_home`, `_jobs`, `_me`,
+  `_report`, `_dm_report`, `_composer`, `_held_note` (spec 23 § 21i). Local drafts send no events (text stays on the
+  device).
 
 ### Support next tier items 4 to 7 (2026-11-15)
 

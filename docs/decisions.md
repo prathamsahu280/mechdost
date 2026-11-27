@@ -2810,3 +2810,25 @@ Within the QA fix plan (`docs/qa/ustaad-sim-fix-plan-2026-11-27.md`, Batch A); n
   - Q-PP-F3: the new-order sound is **on by default** (browsers still need one tap to unlock audio; the "Turn on order sound" tap is shown once).
   - Q-PP-F4: the storefront header, search and footer **stay** on partner pages.
   - Q-PP-F5: build the **rider per-day stats API now** (with batch C).
+
+## 2026-11-27 (night) — Theme follows the device unless the visitor chose one
+
+Founder (2026-11-27 night, "all ranked improvements approved"): when the visitor never chose a theme the site follows
+the device (`prefers-color-scheme`) and switches live when the device does; an explicit choice saved under
+`mechdost-theme` (footer or account-menu toggle) still wins on every visit. **Replaces "Light mode by default"
+(2026-11-23).** No flash: the inline `THEME_INIT_SCRIPT` (`apps/web/src/lib/theme.ts`, CSP hash) resolves saved
+choice → device → light before paint and listens to the media query; `theme-client.ts` falls back to the device (the
+three maps read `data-theme`, which the script always sets). Guard `apps/web/test/theme-follows-device.test.ts`
+(renamed from `theme-light-default.test.ts`).
+
+## 2026-11-27 (night) — Phone search opens inline in the top bar
+
+Founder (2026-11-27 night): under 1024 px the header shows search as a 48 px icon in the top bar (the full-width
+search bar under the header is gone); tapping it expands the field inline over the whole bar (logo and icons covered,
+field focused, 48 px Close; Escape, Close or a tap outside restores the bar and focus returns to the icon); the
+suggestions drop down under the bar; no modal, no dimmed page, no scroll lock. Desktop keeps the modal palette.
+Code: `search-trigger.tsx` (phone icon: `aria-expanded` from a `mechdost:search-state` event, `aria-controls`
+`header-search-panel`, click id `header_search_phone` kept), `header-search.tsx` (`inline` prop: `role="search"`
+panel positioned on the header bar, field row = the bar's 56 px so nothing shifts), `header.tsx`. Guards
+`apps/web/test/header-search-inline.test.ts`, `chrome-v4.test.ts` (updated). e2e/state-audit rows that looked for
+the phone search bar's text need a re-run by the lead (not run here).

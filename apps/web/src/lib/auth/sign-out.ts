@@ -70,6 +70,16 @@ export async function signOutEverywhere(): Promise<void> {
   } catch {
     // Storage blocked: nothing kept there.
   }
+  // Unsent Ustaad composer drafts belong to this account (shared phones). Same prefix as `DRAFT_PREFIX` in
+  // lib/ustaad/draft.ts, inline so the sign-out button does not import it (pinned by sign-out-clean.test.ts).
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i -= 1) {
+      const key = localStorage.key(i);
+      if (key?.startsWith('mechdost-ustaad-draft:')) localStorage.removeItem(key);
+    }
+  } catch {
+    // Storage blocked: no drafts were kept.
+  }
   if (AUTH_MODE === 'firebase') {
     // The saved cart and wishlist on this browser belong to the person who signed out (shared devices, security review
     // 2026-11-15): the browser cart goes at once, and the sync and wishlist state are reset so nothing reaches the

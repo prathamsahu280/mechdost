@@ -5,6 +5,7 @@ import { ClientMessages } from '@/components/ui/client-messages';
 import { BannedGate, MemberGate } from '@/components/ustaad/common';
 import { HomeFeed } from '@/components/ustaad/feed/feed-list';
 import { StoryRow } from '@/components/ustaad/feed/story-row';
+import { RulesLink } from '@/components/ustaad/rules-link';
 import { UstaadIcon, type UstaadIconName } from '@/components/ustaad/shell/icons';
 import { CoachMark } from '@/components/ustaad/tutorial/coach-mark';
 import { UstaadGreeting } from '@/components/ustaad/shell/ustaad-gate';
@@ -208,6 +209,7 @@ export default async function UstaadHome({ params, searchParams }: Props) {
               <p className="mt-1 text-sm leading-relaxed text-muted">{t('pinBody')}</p>
             </div>
           </section>
+          <RulesLink place="home" />
         </BannedGate>
       </ClientMessages>
     </div>

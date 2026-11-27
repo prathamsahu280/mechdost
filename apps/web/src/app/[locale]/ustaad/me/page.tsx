@@ -3,6 +3,7 @@ import { ClientMessages } from '@/components/ui/client-messages';
 import { MyCardScreen } from '@/components/ustaad/card/my-card';
 import { MyChoices } from '@/components/ustaad/card/my-choices';
 import { MemberGate } from '@/components/ustaad/common';
+import { RulesLink } from '@/components/ustaad/rules-link';
 import type { Locale } from '@/i18n/routing';
 
 interface Props {
@@ -34,6 +35,7 @@ export default async function UstaadMePage({ params }: Props) {
           <MyCardScreen />
           {/* G17 / SIM-P10: smart-correction mode and the in-network consents. */}
           <MyChoices />
+          <RulesLink place="me" />
         </MemberGate>
       </ClientMessages>
     </div>

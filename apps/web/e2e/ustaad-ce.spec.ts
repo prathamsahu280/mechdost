@@ -92,7 +92,7 @@ test.describe('Ustaad Q&A (workstream C)', () => {
       'href',
       '/shop/exide-xltz4a-2w-battery',
     );
-    await expect(page.getByText('Community advice, not a professional guarantee.')).toBeVisible();
+    await expect(page.getByText('This is advice from other mechanics, not a guarantee.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Play voice note' }).first()).toBeVisible();
     // Helpful on someone else's answer: counted once.
     await page.getByRole('button', { name: 'Helpful · 3', exact: true }).click();
