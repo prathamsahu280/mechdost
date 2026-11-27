@@ -445,7 +445,8 @@ From `D:\mechdost-qa\delivery-cod-sim-2026-11-27\logs\bugs.md`; one commit each,
   `delivery_offers_not_expired` and compare open offers with `now()` on the server.
 - **DC-B7 (P1):** the API answers the signed image route as `/v1/delivery-photos/{id}/large?e=…&s=…`; staff screens
   open it on the API origin (`deliveryPhotoHref`, `NEXT_PUBLIC_API_URL`). Document views stay audited
-  (`viewAgentDocument`); job photo links come with the audited-read job detail.
+  (`viewAgentDocument`); job photo links come with the staff job detail, which is **not** audited per open yet
+  (open item).
 - **DC-B3 / DC-P5 / DC-P8 (P1/P2):** every error code the delivery routes and repositories return has en + hi words
   in `delivery.errors` and is in `DELIVERY_ERROR_CODES` (guard `apps/web/test/delivery-error-codes.test.ts` scans the
   route and the `delivery-*.ts` repositories); a plain `WRONG_CODE` maps to `WRONG_CODE_RETRY`; staff screens map

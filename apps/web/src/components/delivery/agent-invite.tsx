@@ -101,7 +101,11 @@ export function AgentInvite({ token }: { token: string }) {
           import('@/demo/session'),
         ]);
         const me = await fetchMe(true).catch(() => null);
-        if (me && me !== 'blocked') adoptRealAccount(me);
+        try {
+          if (me && me !== 'blocked') adoptRealAccount(me);
+        } catch {
+          // An account without a phone cannot be adopted; the old session stays until the next sign-in.
+        }
       }
     } else {
       const { acceptInvite } = await import('@/demo/delivery-store');
