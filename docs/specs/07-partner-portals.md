@@ -448,6 +448,12 @@ Q-PP-F2 (tabs), F3 (sound on by default), F4 (storefront header stays).
 
 ## Partner portals UI upgrade, batches 0 and A (2026-11-27 night; design `docs/superpowers/specs/2026-11-27-partner-portals-ui-upgrade-design.md`)
 
+- **Kit accessibility fixes (2026-11-28):** lane scroller room for the focus ring, Home/End in `LaneTabs`, bottom-bar
+  `scroll-padding-bottom` from `--partner-tabbar-h`, 12/13 px bar labels, focus to the page heading plus a polite
+  status after a user tab click (`tabFocusPlan`, `PartnerFrame heading` prop; the rider layout keeps its own `h1`), and
+  `focusHashTarget` for KPI hash links. Details in `docs/design-system.md` "Partner frame"; tests
+  `apps/web/test/partner-kit-a11y.test.ts`, `partner-kit.test.ts`.
+
 - **Partner kit** (`apps/web/src/components/partner/`, batch 0 owns it; others import from `@/components/partner`):
   `PartnerFrame` + `PartnerStrip` (navy strip with the state in words and Help; bottom tab bar under 1024 px, navy
   side rail from 1024 px; lives in a portal's layout), `PartnerTabs`, `KpiTile`, `OfferTimer` (big countdown, tread

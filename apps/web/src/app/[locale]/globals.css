@@ -259,8 +259,17 @@
 /* Focus never hides under the partner bottom tab bar (WCAG 2.4.11). */
 @media (max-width: 1023.98px) {
   html:has([data-partner-tabbar]) {
-    scroll-padding-bottom: 6rem;
+    /* Bar = 1 px border + 6 px top padding + 52 px tile + 6 px bottom padding + the device safe area. */
+    --partner-tabbar-h: calc(65px + env(safe-area-inset-bottom));
+    scroll-padding-bottom: calc(var(--partner-tabbar-h) + 8px);
   }
+}
+/* Partner bottom bar labels: 12 px, 13 px in Devanagari (a11y review 2026-11-28); the 52 px tile height is unchanged. */
+.partner-tab-label {
+  font-size: 12px;
+}
+:lang(hi) .partner-tab-label {
+  font-size: 13px;
 }
 
 /* Theme icon swap without JS (the toggle's state is the <html data-theme> / system preference). */

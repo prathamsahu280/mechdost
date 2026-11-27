@@ -91,3 +91,22 @@ export const SOUND_STORAGE_KEY = 'mechdost.partner.sound';
 export function soundOnFromStorage(raw: string | null): boolean {
   return raw !== 'off';
 }
+
+/**
+ * Whether focus should move to the new page's heading after a route change: only when the partner used a tab
+ * (`userInitiated`) and the path really changed. The first load (`prev` null) and back/forward never steal focus.
+ */
+export function tabFocusPlan(prev: string | null, next: string, userInitiated: boolean): boolean {
+  return userInitiated && prev !== null && prev !== next;
+}
+
+/** The decoded element id a link's hash points at, or null when it has none. */
+export function hashTargetId(href: string): string | null {
+  const at = href.indexOf('#');
+  if (at < 0 || at === href.length - 1) return null;
+  try {
+    return decodeURIComponent(href.slice(at + 1));
+  } catch {
+    return href.slice(at + 1);
+  }
+}

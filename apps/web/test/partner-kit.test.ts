@@ -6,10 +6,12 @@ import {
   clockText,
   countText,
   freshIds,
+  hashTargetId,
   laneFrom,
   minutesAgo,
   offerTimerState,
   soundOnFromStorage,
+  tabFocusPlan,
 } from '@/lib/partner-kit';
 
 const src = (p: string) => readFileSync(new URL(`../src/${p}`, import.meta.url), 'utf8');
@@ -135,5 +137,21 @@ describe('kit contract', () => {
     const css = src('app/[locale]/globals.css');
     expect(css).toMatch(/\.partner-tread/);
     expect(css).toMatch(/prefers-reduced-motion[\s\S]*partner-tread/);
+  });
+});
+
+describe('focus helpers', () => {
+  it('moves focus only for a user-initiated tab change, never on first load or the same page', () => {
+    expect(tabFocusPlan(null, '/partner/shop', true)).toBe(false);
+    expect(tabFocusPlan('/partner/shop', '/partner/shop', true)).toBe(false);
+    expect(tabFocusPlan('/partner/shop', '/partner/shop/orders', false)).toBe(false);
+    expect(tabFocusPlan('/partner/shop', '/partner/shop/orders', true)).toBe(true);
+  });
+
+  it('reads the target id of a hash link, nothing otherwise', () => {
+    expect(hashTargetId('/partner/shop/orders#packing')).toBe('packing');
+    expect(hashTargetId('/partner/shop/orders#')).toBeNull();
+    expect(hashTargetId('/partner/shop/orders')).toBeNull();
+    expect(hashTargetId('#a%20b')).toBe('a b');
   });
 });

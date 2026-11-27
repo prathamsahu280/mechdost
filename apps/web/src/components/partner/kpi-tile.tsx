@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { LocalLink } from '@/components/ui/local-link';
 import { track } from '@/lib/analytics';
+import { focusHashTarget } from '@/lib/focus-hash-target';
 
 /** Admin data colour by meaning (decision 2026-11-25): amber waiting, red urgent, blue in progress, green done/money. */
 export type KpiTone = 'waiting' | 'urgent' | 'progress' | 'done' | 'empty';
@@ -51,8 +52,12 @@ export function KpiTile({
   return (
     <LocalLink
       href={href}
-      onClick={() => {
+      onClick={(e) => {
         track('partner_kpi_clicked', { portal, tile: id });
+        // A hash link scrolls but leaves focus on the tile: move it to the target (keyboard and screen-reader users).
+        // Not for new-tab or modified clicks, which do not navigate this page.
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        focusHashTarget(href);
       }}
       className={`press group flex rounded-card border bg-surface shadow-card hover:border-ink/30 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus ${style.ring} ${
         compact
