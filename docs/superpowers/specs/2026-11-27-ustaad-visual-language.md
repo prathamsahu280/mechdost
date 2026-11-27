@@ -308,10 +308,25 @@ it keeps one confident accent used sparingly, and it leaves the photos of real w
 screen. B is the fallback if the founder wants the network to feel more like its own branded space. C is the most
 fun, but it spends colour everywhere, against the "spend boldness in one place" rule.
 
-**Where it still falls short (honest).** The lead asked for a side-by-side check against the best references
-(CRED, Linear, Arc, ADA winners). Only the NeoPOP image was saved as a reference, and there was no time to place our
-screenshots next to it, so no such check was done. From the screenshots alone, these are the gaps to close before
-building:
+**Side-by-side comparison** (`D:\mechdost-qa\ustaad-visual-2026-11-27\compare.html`, internal). Three real
+references were available tonight: Apple Design Award 2025 winner Speechify (`refs\apple-ada-2025`), CRED NeoPOP
+(`refs\neopop-web`) and Indian hand-painted signage (`refs\commons-bengaluru-sign`). Linear, Arc and Zepto
+screenshots were not captured. Our before shots (`A-home-390-hi-*`, `L-after-390`) sit next to the after shots
+(`{A,B,C}-v2-390-hi-{light,dark}.png`).
+
+| Axis            | Where ours was weaker                       | Fixed in the demo (craft pass)                                                                                                                                                         | Still short                                                                              |
+| --------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Depth           | Flat blocks; dark mode had no elevation cue | Lifted light (§ 3.7). In dark, cards float with a top-light hairline (`inset 0 1px 0 #ffffff12`) and navy panels lift to `#16294a` (white 14.48, hero copy 10.14, tag edges 6.27–6.78) | No per-surface tint; the soft deep shadow only appears on the player and primary         |
+| Type contrast   | Names and body both 15 px                   | Body 16 (hi 17, line-height 1.6), names 16/800                                                                                                                                         | No display moment on Home in the demo; headings are small next to the ADA reference      |
+| Spacing rhythm  | 12 px post padding, uneven gaps             | 16 px post top padding, 10 px card gaps, 12 px photo inset                                                                                                                             | Not yet a strict 8/12/16 grid in every component                                         |
+| Icon craft      | 2 px lucide looked heavy next to the type   | 1.75 px stroke (2.25 on the current tab); 44 px play button with a soft accent glow; primary buttons 52 px, radius 12, inner top light                                                 | Tag and stamp are CSS shapes, not drawn glyphs; QR and before/after icons are stand-ins  |
+| Colour richness | A reads plain next to CRED                  | Metal-sheen levels (A), enamel chrome (B), teal/marigold (C)                                                                                                                           | Grey photo placeholders make every option colder than it will be with real garage photos |
+
+After the comparison A is still the recommendation: next to Speechify, the quiet chrome is the right call for a
+work tool. Next to CRED, B holds up better in dark mode. If the founder wants more richness, the best option is
+**A in light and B's navy chrome in dark**, a combination we have not yet built in the demo.
+
+**First-pass gaps** (items 2 and 3 are now partly fixed by the craft pass; items 1, 4 and 5 are still open):
 
 1. The demo's photo placeholders are flat grey-blue drawings, so the feed looks emptier and colder than it will with
    real garage photos. Judge colour on real photos.

@@ -2852,3 +2852,11 @@ Implements the founder's night entry above; no founder decision changed.
   name changes to the visible word "Stop / रोको" while recording; time left announced once at 10 s.
 - **Not done in this change:** search over summaries (no content search exists; Q-STT-2), auto captions/summaries
   (research only, Q-STT-1, nothing wired), labelled voice line in comments and stories.
+- **Founder, 2026-11-28 ~00:00 IST — name and look of the network:**
+  - The network is called **"Mechanic Network"** to users (hi **"मैकेनिक नेटवर्क"**), never "Ustaad Network". Code
+    names (`ustaad.*` keys, routes `/ustaad`, tables) stay as they are; only user-facing copy, emails, titles and SEO
+    change. Level names (Naya/Pakka/Bada/Master Ustaad) are unchanged unless the founder says otherwise.
+  - Visual direction **A "Bench kit"** is chosen (`docs/superpowers/specs/2026-11-27-ustaad-visual-language.md`,
+    demo `D:\mechdost-qa\ustaad-visual-2026-11-27\demo.html`): the 4 new tokens, metal level finishes, grade lines,
+    stamp best answer, motions M1–M6 and the lifted light mode for the network are approved with it (V0–V8). V9
+    (site-wide light lift) is not yet decided.
