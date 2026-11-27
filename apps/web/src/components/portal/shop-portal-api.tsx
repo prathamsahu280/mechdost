@@ -7,7 +7,7 @@ import {
   type AssignmentDeclineReason,
 } from '@mechdost/shared/state';
 import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useRef, useState, type SyntheticEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { adminApi } from '@/lib/admin-api';
 import { deadlineView, istDayTime } from '@/lib/admin-shop-form';
 import { track } from '@/lib/analytics';
@@ -25,7 +25,7 @@ import {
 import { ApiError, ApiListState, LoadMore } from './api-list-state';
 import { useNow } from './use-now';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
-import { offerLeftParams } from '@/lib/offer-time';
+import { OfferTimer, OrderSoundButton, UpdatedAgo, useNewWorkAlert } from '@/components/partner';
 import { liveOffers, stepFlashKey } from '@/lib/shop-tier1';
 import { DeliveryLocked, EmptyWithAction } from './shop-empty';
 import { FlashNote, useFlash, type Flash } from './shop-flash';
@@ -78,6 +78,15 @@ export function ShopOrdersApi() {
   useNoticeRefresh(['shop.order_routed', 'shop.offer_expiring'], offers.reload);
   // An offer leaves the list at its end time, not at the next poll (assessment 2026-11-15, item 2).
   const openOffers = liveOffers(offers.items, now);
+  // New-order sound + vibration (spec 07 § UI; on by default, Q-PP-F3); the list and the bell say it too.
+  const alert = useNewWorkAlert(
+    'shop',
+    offers.loading ? null : openOffers.map((o) => o.assignmentId ?? o.code),
+  );
+  const [loadedAt, setLoadedAt] = useState<number | null>(null);
+  useEffect(() => {
+    if (!offers.loading) setLoadedAt(Date.now());
+  }, [offers.loading, offers.items]);
 
   return (
     <>
@@ -94,6 +103,10 @@ export function ShopOrdersApi() {
           {t('offered')}{' '}
           {offers.loading ? null : <span className="text-muted tabular-nums">({openOffers.length})</span>}
         </h2>
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3">
+          <OrderSoundButton alert={alert} />
+          <UpdatedAgo at={loadedAt} onRefresh={() => void offers.reload()} />
+        </div>
         <ApiListState
           loading={offers.loading}
           error={offers.error}
@@ -293,7 +306,7 @@ function OfferedOrder({
   const tt = useTranslations('shopTier1');
   const a = useTranslations('account');
   const locale = useLocale();
-  const now = useNow();
+  const now = useNow(1000);
   const [declining, setDeclining] = useState(false);
   // No reason is chosen for the shop (QA 2026-11-14, U2; rule 16: a code nobody picked is bad data).
   const [reason, setReason] = useState<AssignmentDeclineReason | ''>('');
@@ -332,12 +345,17 @@ function OfferedOrder({
 
   return (
     <article className={`${portalCard} border-accent-button/50`} aria-busy={busy || undefined}>
-      <p className="mb-2 inline-flex rounded-pill bg-warning-bg px-3 py-1 text-xs font-extrabold text-warning">
-        <span aria-hidden="true">⏱️ </span>
-        {deadline.kind === 'minutes'
-          ? t('expiresIn', offerLeftParams(deadline.minutes))
-          : t('shops_api_waitsUntil', { time: istDayTime(deadline.at, locale) })}
-      </p>
+      {deadline.kind === 'minutes' ? (
+        // The shared offer timer (design 2026-11-27 § 5.3): big countdown, "Hurry" under a minute, the rule in words.
+        <div className="mb-3">
+          <OfferTimer endsAt={order.expiresAt} now={now} showRule />
+        </div>
+      ) : (
+        <p className="mb-2 inline-flex rounded-pill bg-warning-bg px-3 py-1 text-xs font-extrabold text-warning">
+          <span aria-hidden="true">⏱️ </span>
+          {t('shops_api_waitsUntil', { time: istDayTime(deadline.at, locale) })}
+        </p>
+      )}
       <OrderLines order={order} />
       {error ? (
         <div className="mt-3">

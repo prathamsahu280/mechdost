@@ -49,7 +49,8 @@ describe('V1 offer countdown', () => {
       'components/portal/admin-console.tsx',
       'components/portal/admin-orders-api.tsx',
     ]) {
-      expect(src(f), f).toMatch(/offerLeftParams/);
+      // The shop API card moved to the partner kit's OfferTimer (design 2026-11-27 § 5.3), which never says "1440 min".
+      expect(src(f), f).toMatch(/offerLeftParams|<OfferTimer /);
       expect(src(f), f).not.toMatch(/expiresIn', \{ minutes/);
     }
   });
