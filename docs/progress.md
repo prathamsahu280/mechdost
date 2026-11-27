@@ -1384,3 +1384,20 @@ Done: launcher hides on phones while a field is focused and on `data-launcher-av
 - **Running:** Saved page UI agent (Sonnet, retry on the new base), report by 03:00.
 - **Next:** smoke-check deploy 1 live (DC-B11 heartbeat + 2-min offer test, email send_timeout, staff-preview page
   source, new screens light/dark en/hi), push batch 2, verify, merge Saved page, handover by 05:38.
+
+### 2026-11-28 02:50 IST — deploy 1 live; batch 2 + email fix pushed (lead)
+
+- **Deploy 1 (6a1db7be) live 01:43**, smoke-checked: api/web/worker on the new image, 0 errors; `/ustaad` and
+  `/hi/ustaad` answer 404 signed-out (SIM-B1 fixed live); partner portals + community rules 200; the new
+  `sweep_heartbeat` logs every 10 min (delivery offers sweep runs; lastDue 0). The DC-B11 2-minute live offer test
+  needs agents switched on — left for the founder (queued).
+- **Batch 2 gates (3b8960ed):** tsc 4 packages 0; lint 0 (one auto-fix); prettier 0; vitest shared 1126, db 1843, api
+  993, web 2243 — all green. Contains Bench kit polish, shop tabs + workshop kit swap, Saved page UI (Hindi converted
+  to the आप register). Pushed 02:40.
+- **Email bug found and fixed (f20c1e04):** all 5 failed emails in 24 h were `order_delivered` (6 retries each,
+  `send_timeout`). The data load (0.15–0.6 s) and PDF render (< 1 s) are fast from here; on the server the lookups
+  queued on the worker's 2-connection sweep pool until their deadlines and the attachment alone used up the 30 s send
+  deadline. Fix: 8 s attachment budget (mail goes without the PDF past it) + a separate 2-connection pool for mail
+  lookups. Test: never-settling PDF → mail still sent. Pushed 02:47 on top of batch 2.
+- Memory: the harness killed three background jobs at low memory (~01:45; gates, worktree cleanup, CI watcher); gates
+  were re-run in the foreground one package at a time. Worktree cleanup removed 26 merged agent copies (C: 14 → 21 GB).
