@@ -2779,3 +2779,20 @@ Within the QA fix plan (`docs/qa/ustaad-sim-fix-plan-2026-11-27.md`, Batch A); n
 - New audit action `delivery_job.offer_expired` (actor `system`) on each worker expiry; the worker logs
   `delivery_offers_not_expired` (warn) when due offers neither expired nor failed. DC-B11 (production cause still to
   be confirmed on the server).
+
+## 2026-11-27 (night) — Founder: improvements approved; voice/video text alternatives; Ustaad UI upgrade
+
+- **Voice and video get text:** videos get **captions** and every voice item (question, answer, message, audio post)
+  and video gets a **short typed summary** (author-written, optional auto-suggested; shown under the player,
+  searchable, used by moderation). Closes audit items 2/12/13 (WCAG 1.2.1/1.2.2). Provider for auto-captions is the
+  builder's research item (cost per minute, Hindi/Hinglish quality); author text works without it.
+- **Voice recorder upgrade approved:** visible Cancel, "Stop" while recording, time-left announcement, duration +
+  progress on voice notes, one player at a time.
+- **All ranked improvements approved** (docs/qa/ustaad-sim-fix-plan-2026-11-27.md, the run folders' audit.md /
+  improvements.md, and the lead's list of 20 on 2026-11-27): build them after the bug fixes, coding first, then the
+  test passes.
+- **Ustaad UI upgrade:** research first (what makes social/professional apps familiar and engaging for Indian
+  mechanics — Instagram, ShareChat/Moj, WhatsApp, YouTube Shorts, Apna, LinkedIn patterns), then a design doc, then
+  build. **Inspiration, not imitation** (memory "ui-redesign-feedback": two earlier samples were rejected for copying a
+  look and inventing toggles): keep the MechDost tokens/fonts/theme (hard rule 2), restyle the REAL network pages, no
+  invented features without a spec line, every new string en + hi, calm-UI rules kept (one primary action per screen).
