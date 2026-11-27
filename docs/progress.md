@@ -2,6 +2,10 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-28 — Messages restyle (U3 Messages part, builder worktree, NOT merged)
+
+- Sticky thread header/composer, IST day separators, closed state, inbox preview + requests group, polite incoming line, dock hidden on threads; additive `ThreadView.last` (API + demo). Spec 23 § 21i-M. Open: scroll-padding for stacked sticky headers, bubble fade-in.
+
 ## 2026-11-27 night — Ustaad UI upgrade U1 (builder, branch `worktree-agent-af3e09158b62176e9`, NOT merged)
 
 - Built: shell (compact chrome by CSS marker, 56 px network header, dock Home·Ask·Create·Jobs·Me, neutral frame +

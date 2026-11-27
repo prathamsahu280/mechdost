@@ -503,10 +503,35 @@ async function threadViews(tx: Tx, me: string, rows: ThreadRow[]): Promise<Threa
     tx,
     rows.map((r) => otherOf(r, me)),
   );
+  // The last message the caller may see per thread (one indexed pass on thread_id + created_at; held ones only for
+  // their sender, deleted never), for the inbox row's preview.
+  const lastRows = await tx
+    .selectDistinctOn([ustaadMessages.threadId], {
+      threadId: ustaadMessages.threadId,
+      kind: ustaadMessages.kind,
+      body: ustaadMessages.body,
+      mediaId: ustaadMessages.mediaId,
+      senderId: ustaadMessages.senderId,
+    })
+    .from(ustaadMessages)
+    .where(
+      and(
+        inArray(ustaadMessages.threadId, ids),
+        isNull(ustaadMessages.deletedAt),
+        or(isNull(ustaadMessages.heldReasonCode), eq(ustaadMessages.senderId, me)),
+      ),
+    )
+    .orderBy(ustaadMessages.threadId, desc(ustaadMessages.createdAt), desc(ustaadMessages.id));
+  const lastVoices = await ustaadMediaTextInfo(
+    tx,
+    lastRows.flatMap((m) => (m.kind === 'voice' && m.mediaId ? [m.mediaId] : [])),
+  );
+  const lastOf = new Map(lastRows.map((m) => [m.threadId, m]));
   const out: ThreadView[] = [];
   for (const r of rows) {
     const other = cards.get(otherOf(r, me));
     if (!other) continue;
+    const lm = lastOf.get(r.id);
     const mine = side.get(r.id);
     const unread =
       r.lastMessageAt !== null &&
@@ -519,6 +544,14 @@ async function threadViews(tx: Tx, me: string, rows: ThreadRow[]): Promise<Threa
       muted: mine?.muted ?? false,
       unread,
       lastMessageAt: r.lastMessageAt?.toISOString() ?? null,
+      last: lm
+        ? {
+            kind: lm.kind as MessageView['kind'],
+            text: lm.kind === 'text' && lm.body ? Array.from(lm.body).slice(0, 80).join('') : null,
+            durationMs: lm.mediaId ? (lastVoices.get(lm.mediaId)?.durationMs ?? null) : null,
+            mine: lm.senderId === me,
+          }
+        : null,
     });
   }
   return out;
