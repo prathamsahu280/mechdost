@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle2, Mic, MessageCircle } from 'lucide-react';
+import { CheckCircle2, Clock, MessageCircle, Mic } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -154,7 +154,8 @@ function QuestionRow({ q }: { q: QuestionCard }) {
           {q.title === null ? (
             <span className="inline-flex items-center gap-2">
               <Mic aria-hidden="true" className="size-5 text-accent-soft-text" />
-              {t('voiceQuestion')}
+              {/* Voice-only: the vehicle names the card ("Splendor · Voice question"). */}
+              {vehicle ? `${vehicle} · ${t('voiceQuestion')}` : t('voiceQuestion')}
             </span>
           ) : (
             <span data-user-content>{q.title}</span>
@@ -171,10 +172,12 @@ function QuestionRow({ q }: { q: QuestionCard }) {
         >
           {chip.key === 'solved' ? <CheckCircle2 aria-hidden="true" className="size-3.5" /> : null}
           {chip.key === 'answers' ? <MessageCircle aria-hidden="true" className="size-3.5" /> : null}
+          {chip.key === 'new' ? <Clock aria-hidden="true" className="size-3.5" /> : null}
+          {/* U3 (design § 3.4): state words "Solved" / "No answer yet", icon + word. */}
           {chip.key === 'solved'
-            ? t('chipSolved')
+            ? t('stateSolved')
             : chip.key === 'new'
-              ? t('chipNew')
+              ? t('stateOpen')
               : t('answersN', { n: chip.n })}
         </span>
       </div>
