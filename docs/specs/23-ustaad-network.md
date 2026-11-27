@@ -1096,7 +1096,10 @@ Client: `ustaad_feed_viewed {tab}`, `ustaad_post_liked`, `ustaad_post_saved`, `u
 {reason}`, `ustaad_correction_shown {engine, mode, changes}`, `ustaad_correction_choice {choice}`, `ustaad_data_saver
 {on}`, `ustaad_learn_completed {resource}`, `ustaad_join_step {step, via: ustaad|partners_apply}`,
 `tutorial_started`, `tutorial_step {card, narration_played}`, `tutorial_completed`, `tutorial_skipped {at_card}`,
-`ustaad_coachmark_seen {target}`, `ustaad_coachmark_dismissed {target}`, `ustaad_help_replayed`. Metrics from day one: weeks-active members, answered within 24 h, time to
+`ustaad_coachmark_seen {target}`, `ustaad_coachmark_dismissed {target}`, `ustaad_help_replayed`. **U1 (UI upgrade
+2026-11-27):** `ustaad_shell_home_logo`, `ustaad_feed_new_pill_shown`, `ustaad_feed_new_pill_tapped`,
+`ustaad_home_more_opened`, `ustaad_home_question_tapped {position}` (catalogued; fires when the questions strip ships),
+`ustaad_story_paused`; `ustaad_tab_opened {tab}` gains `ask` and `jobs`. Metrics from day one: weeks-active members, answered within 24 h, time to
 first answer, best-answer rate, verified share, report rate per 1,000 posts, takedowns on time, bytes per session,
 mutual-follow share.
 
@@ -2052,6 +2055,46 @@ Each fix has a regression test named after the QA id.
   list; nothing → 403 `USTAAD_EMPLOYER_REQUIRED`. Resuming a job re-checks through the same list. Not done: a member
   who is both a workshop owner and a trade account cannot pick the trade account in the form (the API still accepts
   `{kind:'trade'}`); the form does not yet say which account it posts as.
+
+## 21i-U1. UI upgrade batch U1 as built (2026-11-27 night; design `docs/superpowers/specs/2026-11-27-ustaad-ui-upgrade-design.md` § 3.0, 3.1, 3.3, 7, 8.1)
+
+- **Shell (E1, E2).** Inside `/ustaad` the layout renders a name-free marker `<span data-shell-compact hidden>`;
+  `globals.css` hides everything marked `data-site-chrome` (announcement strip, site header, phone parts search in
+  `site/header.tsx`) with `html:has([data-shell-compact])` — decided in the server HTML, so nothing shifts after
+  hydration. One sticky 56 px network header (MechDost mark → store, "Ustaad Network", Messages, bell) replaces both
+  old headers. Dock = **Home · Ask · + Create · Jobs · Me** (founder Q-UI-1): full-width 64 px bar, a word under every
+  icon (13 px, Hindi 14 px), Create as an accent disc with its word, current tab = filled icon + ink text + 3 px accent
+  bar; exactly one current tab from `ustaadTabFor` (`shell/tabs.ts`; `/ustaad/q/*` counts as Ask; Discover, Learn,
+  Messages have none in the dock). Rail (≥ 1024 px) = the five tabs + Discover, Learn, My network, Messages, Saved.
+  The dock hides while an input/textarea in `main` has focus on phones; scroll padding follows header (72 px) and dock.
+- **No gate shift (E1, § 7.1–7.3).** `UstaadGate` takes a `placeholder`: during `staff_preview` the **neutral frame**
+  (`common/shape-skeleton.tsx` `NeutralFrame`: 56 px bar, full-height column, 64 px dock area, no network words) until
+  the viewer is known, then the whole shell; when `open`, header + dock are server-rendered and the gate wraps only the
+  content column, showing `RouteShape` (`ShapeSkeleton` home/card/list/thread by path, visible only after 300 ms via
+  `.skeleton-late`, `aria-busy`). The staff preview note now sits **after** the page so it never pushes the frame.
+- **Home (E13).** Stories first (row height reserved), compact navy hero: 64 px mic = the one primary action, "Ask an
+  Ustaad" kept as the card's text button; four tiles (Ask, Jobs, Dukaan, Learn) + **More** (sheet loaded on tap:
+  Discover, My network, Area map, Saved, Pin garage, My card). Feed tab links keep scroll (`scroll={false}`) and each
+  tab restores its own position from session storage (`lib/ustaad/home-feed.ts`).
+- **New posts (E11, closes SIM-F4).** `GET /v1/ustaad/feed/fresh?tab=&since=<ISO>` → `{count}` (0–10): member gate,
+  `memberReads`, same candidates as the tab (visible, not story, not blocked/muted/hidden author; For you = my city,
+  followed or tag/speciality match; Following = followed), never my own posts; bounded `limit 10` read
+  (`countUstaadFreshFeed`). Web polls every 90 s while visible and data saver is off, `since` = when the list loaded; a
+  fixed pill "See new posts / नई पोस्ट देखो" (announced via a pre-mounted status line) scrolls to top and reloads page 1.
+- **Stories (E10).** Rings: unseen = 3 px accent stroke with a 2 px surface gap, seen = 1.5 px line stroke, plus a dot
+  under unseen names and "new" in the accessible name. Viewer: visible word buttons **Previous · Pause/Play · Next ·
+  Close** (48 px), tap zones kept for touch (out of the tab order), progress drawn with `transform: scaleX`, photos
+  6 s, voice/video never autoplay (they wait for Next), reduced motion = nothing advances by itself (WCAG 2.2.2).
+- **Copy:** `ustaad.shell.{home_logo_aria, tab_ask, tab_jobs, discover, learn, unread}`, `ustaad.home.{heroAction,
+more, moreTitle, moreClose, sc_discover, waitingTitle, answerNow, newPosts, newPostsSr}`, new `ustaad.story.{new,
+prev, next, pause, play, close}`; en + hi.
+- **Shared for U2–U4:** icon names `ask, before, after, fixlog, tip, camera, gallery, speed, stopSquare, cancel,
+helpful, bestStamp, shield, progress, prev, next, tag`; `ShapeSkeleton`; class constants (`DOCK_*`, `HOME_TILE`,
+  `STORY_BTN`, `NEW_POSTS_PILL`, `HEADER_BTN`) are where the visual-language pass swaps colours/motion.
+- **Not done in U1 (timebox):** "Waiting for your answer" question strip (copy and event catalogued; needs U3's Ask
+  list client), back arrow on sub-pages, live unread counts in the header, voice/video story auto-advance on end
+  (needs a callback from U2/voice-builder players), coach-mark no-stacking rule, Lighthouse/measure-js/axe/visual
+  acceptance runs (lead verifies live; no build or browser allowed in this batch).
 
 ## 22. Not built / later
 

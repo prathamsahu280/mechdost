@@ -225,3 +225,14 @@ The agent portal opens with the navy `blueprint` strip (existing utility): first
 button and a white inset holding the shared `Switch` ("Take new jobs") with its state in words. Below it a 4-tab bar
 (navy current tab). Countdown pills use `bg-pill`, turning `bg-warning-bg` under a minute. Job steps: a 4-segment
 bar (`bg-accent-button` done, `bg-line` to do) with "Step n of 4". All targets 48 px. No new colours, fonts or radii.
+
+### Ustaad Network shell (2026-11-27, UI upgrade U1)
+
+Inside `/ustaad` the storefront chrome steps aside in the server HTML (`data-shell-compact` marker + `data-site-chrome`)
+and one 56 px `bg-surface` header with a `border-line` bottom takes its place. The dock is a full-width 64 px bar
+(`bg-surface`, `border-t border-line`) with a word under every icon (13 px; Hindi 14 px); the current tab shows a filled
+icon, `text-ink` and a 3 px `bg-accent` bar on top (accent on surface ≥ 3:1). Story rings: unseen = 3 px accent stroke
+with a 2 px surface gap, seen = 1.5 px `line` stroke, plus a 6 px accent dot under unseen names. Loading shapes appear
+after 300 ms (`.skeleton-late`). Motion: `transform`/`opacity` only, token durations, off under reduced motion. Class
+constants in `ustaad-nav.tsx`, `home-more.tsx`, `story-viewer.tsx`, `feed-list.tsx` and the layout are the one place to
+restyle. No new colours, fonts or radii.
