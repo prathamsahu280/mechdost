@@ -217,6 +217,11 @@ export const USTAAD_CLIENT_EVENT_SCHEMAS = {
   ustaad_story_viewed: z.object({}).strict(),
   ustaad_video_played: z.object({ secondsBand: z.enum(['lt15', '15to60', '60to180', 'gt180']) }).strict(),
   ustaad_voice_played: z.object({}).strict(),
+  /** Voice-note player (founder 2026-11-28): how the listener moved and to which whole second; never ids or text. */
+  ustaad_voice_seeked: z
+    .object({ via: z.enum(['tap', 'drag', 'key', 'skip']), seconds: z.number().int().min(0).max(3600) })
+    .strict(),
+  ustaad_voice_speed_changed: z.object({ rate: z.enum(['1', '1.5', '2']) }).strict(),
   /** The author sent a voice note or video with a typed summary and/or captions (founder 2026-11-27 night). */
   ustaad_media_text_added: z
     .object({ kind: z.enum(['audio', 'video']), summary: z.boolean(), captions: z.boolean() })
