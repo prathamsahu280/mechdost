@@ -158,7 +158,7 @@ export function PreviewTestersCard() {
       </div>
 
       <form
-        className="grid gap-3 tab:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,2fr)_auto] tab:items-end"
+        className="grid gap-3 tab:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,2fr)_auto] tab:items-start"
         onSubmit={(e) => {
           e.preventDefault();
           void add();
@@ -223,7 +223,8 @@ export function PreviewTestersCard() {
             }}
           />
         </div>
-        <button type="submit" className={portalPrimary} aria-disabled={busy || undefined}>
+        {/* Top-aligned row: the hint under the first field must not lift its input; the button drops by one label. */}
+        <button type="submit" className={`${portalPrimary} tab:mt-6`} aria-disabled={busy || undefined}>
           {t('add')}
         </button>
       </form>
