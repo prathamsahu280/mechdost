@@ -22,9 +22,8 @@ audit core).
   where needed (login + portals; check that a signed-in shop/rider still resolves on storefront pages), or find ≥ 0.6 KB
   elsewhere in those chunks. Measure: `pnpm --filter @mechdost/web build` then `next start --port 3100` +
   `node scripts/measure-js.mjs http://localhost:3100` (~3 min on this PC). Do not touch the threshold.
-- **COD:** ships as ruled (`checkout.cod_everyone` OFF once deployed). **Before deploying, founder decides (Q-COD-1):**
-  Razorpay is on TEST keys, so normal customers would have no working way to pay — add live keys or switch "everyone" ON
-  in Settings > Payments. My attempts to change the setting/default were blocked as overriding his ruling (correct).
+- **COD:** ships as ruled (`checkout.cod_everyone` OFF once deployed). Razorpay is on **live** keys (founder
+  correction 2026-11-27 morning; server `.env` = `rzp_live`) — the overnight "test keys" risk was wrong and is closed.
 - **CI fixes tonight:** Ustaad gate `useLocale` outside the intl provider broke the demo prerender of /ustaad/area
   (locale now passed from the layout, guard test); Hindi crawl flagged sample name "Ravi" (`notify-labels.ts` SAMPLES;
   learning T-NIGHT1 after two wrong guesses).

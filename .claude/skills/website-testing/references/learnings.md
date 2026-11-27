@@ -397,3 +397,10 @@ T-NIGHT1 · 2026-11-27 · Hindi crawl · `/hi/admin/notifications: Ravi` failed 
 (email catalogue, WhatsApp meta) by guess; the page renders previews from `apps/web/src/components/portal/notify-labels.ts`
 SAMPLES · → trace the render path (grep the page's component for the sample source) before editing, and prove the fix
 locally with `latinOffenders()` from `apps/web/test/hindi-allowlist.ts` (a 2-line vitest) instead of a 25-min CI round.
+
+T-BUDGET2 · 2026-11-27 · JS budget · /shop 180.2, product 180.4, /cart 180.0 KB gz after the delivery/COD merges ·
+Turbopack drops unused code per file, not per export: `demo/store.ts` imported 4 reason arrays from
+`@mechdost/shared/state`, which put every machine of the 674-line `state/index.ts` into every page · moved them to
+`state/reasons.ts` (re-exported from the index): every page −4.4 KB (/shop 176.6, product 175.8, /cart 176.3) · guard
+`apps/web/test/shared-state-barrel.test.ts`. Measure locally (build + `next start` + `scripts/measure-js.mjs`, ~3 min)
+before pushing a budget fix.

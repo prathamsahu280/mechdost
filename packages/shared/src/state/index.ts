@@ -1,6 +1,9 @@
 import { defineMachine } from './machine';
+import { ORDER_CANCEL_REASONS, SERVICE_CANCEL_REASONS, type OrderCancelReason } from './reasons';
 
 export * from './machine';
+// Reason codes the always-loaded demo store needs, in a file of their own (JS budget: see reasons.ts).
+export * from './reasons';
 export * from './rsa';
 export * from './cod-request';
 // Ustaad Network machines (spec 23 § 7): one file per area; workstreams B–G only read them.
@@ -73,46 +76,10 @@ export const orderMachine = /* @__PURE__ */ defineMachine(
   ],
 );
 
-/**
- * Why staff rejected an order (spec 04; ML-ready codes, hard rule 16). The customer also gets a message.
- */
-export const ORDER_REJECT_REASONS = [
-  'no_stock_nearby',
-  'all_shops_declined',
-  'unserviceable_address',
-  'suspected_fraud',
-  'pricing_error',
-  'other',
-] as const;
-export type OrderRejectReason = (typeof ORDER_REJECT_REASONS)[number];
-
-/** Why an order was cancelled before delivery (customer or staff; ML-ready codes, spec 05). */
-export const ORDER_CANCEL_REASONS = [
-  'changed_mind',
-  'ordered_by_mistake',
-  'found_cheaper',
-  'delivery_too_slow',
-  'customer_unreachable',
-  /** System: an online order whose payment did not complete within the payment window. */
-  'payment_not_completed',
-  'other',
-] as const;
-export type OrderCancelReason = (typeof ORDER_CANCEL_REASONS)[number];
 /** Reasons a customer or staff member may pick; `payment_not_completed` is set by the system only. */
 export const PERSON_CANCEL_REASONS = ORDER_CANCEL_REASONS.filter(
   (r): r is Exclude<OrderCancelReason, 'payment_not_completed'> => r !== 'payment_not_completed',
 );
-
-/** Why a customer cancelled a workshop booking (spec 06: allowed until the vehicle is received). */
-export const SERVICE_CANCEL_REASONS = [
-  'changed_mind',
-  'booked_by_mistake',
-  'found_another_workshop',
-  'slot_not_suitable',
-  'problem_solved',
-  'other',
-] as const;
-export type ServiceCancelReason = (typeof SERVICE_CANCEL_REASONS)[number];
 
 /** Why staff cancelled a service request (spec 06 "Staff cancel", permission `service:cancel`); customer reasons stay above. */
 export const SERVICE_STAFF_CANCEL_REASONS = [
@@ -167,17 +134,6 @@ export const SERVICE_REJECT_REASONS = [
   'other',
 ] as const;
 export type ServiceRejectReason = (typeof SERVICE_REJECT_REASONS)[number];
-
-/** Why a shop declined an offered order (ML-ready codes; spec 04, partner scorecards). */
-export const ASSIGNMENT_DECLINE_REASONS = [
-  'out_of_stock',
-  'too_far',
-  'shop_closed',
-  'too_busy',
-  'price_mismatch',
-  'other',
-] as const;
-export type AssignmentDeclineReason = (typeof ASSIGNMENT_DECLINE_REASONS)[number];
 
 /** Why a shop gave up an accepted order before packing (ML-ready codes; counts against the shop's score, spec 04). */
 export const ASSIGNMENT_GIVE_UP_REASONS = [

@@ -519,10 +519,9 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
 
 #### Q-COD-1 … 5: cash on delivery only on request (founder ruling 2026-11-26)
 
-- **Q-COD-1 (Decision, P0) — live online payment before this ships.** Production still runs Razorpay **test** keys
-  (decisions 2026-11-14, Q75). With "Cash on delivery for every customer" off (the founder's default), an ordinary
-  customer can only pay online, so without live keys they cannot really buy. **Default meanwhile:** the rule ships as
-  ruled; Admin → Settings → Payments can switch "every customer" back on per city until live keys are in.
+- ~~**Q-COD-1** — live online payment before this ships.~~ **Closed 2026-11-27 (founder):** production already runs
+  Razorpay **live** keys (server `.env` checked: `rzp_live`). The lead's overnight "test keys" claim came from stale
+  decisions entries (2026-11-14, Q75) and was wrong; ordinary customers pay online, COD by approval ships as ruled.
 - **Q-COD-2 (Decision, P2) — bulk quote orders.** Staff negotiate each quote with the customer, so a quote accepted
   cash on delivery is **not** gated by COD eligibility (its own `quotes.cod_cap_paise` still applies; PIN rule and
   blocks too). Option: require eligibility for quotes as well. **Default meanwhile:** quotes exempt.

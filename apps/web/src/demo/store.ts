@@ -15,7 +15,7 @@ import {
   type OrderCancelReason,
   type OrderRejectReason,
   type ServiceCancelReason,
-} from '@mechdost/shared/state';
+} from '@mechdost/shared/state/reasons';
 import { useSyncExternalStore } from 'react';
 import type { PricedCart } from './cart-pricing';
 import type { CategoryKey } from './categories';
