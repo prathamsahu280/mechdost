@@ -1,6 +1,7 @@
 /**
  * Delivery + COD QA fixes, 2026-11-27 night batch (docs/qa/qa-backlog-2026-11-27.md). One block per backlog id.
  */
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import en from '@mechdost/shared/i18n/en.json';
 import hi from '@mechdost/shared/i18n/hi.json';
@@ -24,5 +25,16 @@ describe('DC-P13 shop return hand-back', () => {
       expect(m.order?.stage_ready_for_pickup).toBeTruthy();
       expect(m.order?.stage_returned).toBeTruthy();
     }
+  });
+});
+
+const src = (p: string) => readFileSync(p, 'utf8');
+
+describe('DC-P1 partner status timeline', () => {
+  it('names the current step "Current step", not the stage again ("Received (Received)")', () => {
+    const s = src('src/components/partners/partner-status.tsx');
+    expect(s).not.toMatch(/currentLabel=\{t\(`stage_/);
+    expect(s).toMatch(/currentLabel=\{t\('statusCurrent'\)\}/);
+    for (const m of [en, hi] as unknown as Ns[]) expect(m.shopTier2?.statusCurrent).toBeTruthy();
   });
 });

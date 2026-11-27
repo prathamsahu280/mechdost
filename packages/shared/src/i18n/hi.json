@@ -5467,6 +5467,7 @@
     "statusKind_mechanic": "मैकेनिक आवेदन",
     "statusUpdated": "अंतिम अपडेट {date}",
     "stage_new": "प्राप्त हुआ",
+    "statusCurrent": "मौजूदा चरण",
     "stage_in_review": "समीक्षा में है",
     "stage_approved": "मंज़ूर हुआ",
     "stage_rejected": "मंज़ूर नहीं हुआ",

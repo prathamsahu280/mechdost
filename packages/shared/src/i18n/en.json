@@ -5467,6 +5467,7 @@
     "statusKind_mechanic": "Mechanic application",
     "statusUpdated": "Last updated {date}",
     "stage_new": "Received",
+    "statusCurrent": "Current step",
     "stage_in_review": "Being reviewed",
     "stage_approved": "Approved",
     "stage_rejected": "Not approved",
