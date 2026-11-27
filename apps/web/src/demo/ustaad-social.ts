@@ -136,8 +136,14 @@ function post(
     media: [],
     poll: null,
     tags: [],
-    counts: { likes: counts.likes, comments: counts.comments, saves: who.id === ME.id ? 3 : null },
+    counts: {
+      likes: counts.likes,
+      useful: 0,
+      comments: counts.comments,
+      saves: who.id === ME.id ? 3 : null,
+    },
     likedByMe: false,
+    usefulByMe: false,
     savedByMe: false,
     mine: who.id === ME.id,
     status: 'visible',
@@ -557,6 +563,15 @@ export function demoSocialClient(): SocialClient {
         p.counts.likes = (p.counts.likes ?? 0) + (on ? 1 : -1);
       }
       return ok({ liked: on, likes: p.counts.likes });
+    },
+    useful: (id, on) => {
+      const p = findPost(id);
+      if (!p) return fail(404, 'NOT_FOUND');
+      if (p.usefulByMe !== on) {
+        p.usefulByMe = on;
+        p.counts.useful = Math.max(0, p.counts.useful + (on ? 1 : -1));
+      }
+      return ok({ useful: on, usefulCount: p.counts.useful });
     },
     save: (id, on) => {
       const p = findPost(id);

@@ -7271,7 +7271,14 @@
       "err_USTAAD_MEDIA_INVALID": "आवाज़ वाला नोट काम नहीं आया। फिर से रिकॉर्ड करो।",
       "err_USTAAD_QUESTION_CLOSED": "यह सवाल नए जवाबों के लिए बंद है।",
       "anyVehicle": "पता नहीं",
-      "anyWork": "पता नहीं"
+      "anyWork": "पता नहीं",
+      "bestStamp": "पूछने वाले ने चुना",
+      "chooseBest": "सबसे अच्छा चुनो",
+      "chooseBestConfirm": "इसे सबसे अच्छा जवाब चुनें?",
+      "confirmYes": "हाँ, चुनो",
+      "confirmNo": "रहने दो",
+      "stateSolved": "हल हुआ",
+      "stateOpen": "जवाब नहीं आया"
     },
     "feed": {
       "postBy": "{name} की पोस्ट",
@@ -7480,7 +7487,20 @@
       "kindName_story": "स्टोरी",
       "storyNewMark": "नई",
       "storySeenMark": "देख ली",
-      "sponsored": "प्रायोजित"
+      "sponsored": "प्रायोजित",
+      "useful": "काम की बात",
+      "usefulAria": "काम की बात: काम में आने वाली पोस्ट",
+      "saved": "सेव किया",
+      "likeFailed": "पसंद नहीं हो पाया, फिर कोशिश करो",
+      "tipTag": "टिप",
+      "beforeAfterAria": "पहले या बाद की फ़ोटो देखो",
+      "tileVoice": "बोलो",
+      "tileCamera": "फ़ोटो खींचो",
+      "tileVideo": "वीडियो",
+      "workWays": "काम दिखाने के तरीके",
+      "moreWays": "और: लिखो, पोल, लिंक, PDF",
+      "camera": "कैमरा",
+      "gallery": "गैलरी"
     },
     "local": {
       "title": "मेरा गैराज नक्शे पर",
@@ -8563,7 +8583,11 @@
       "closePhoto": "फ़ोटो बंद करो",
       "enterHint": "एंटर दबाने से मैसेज जाएगा। शिफ़्ट और एंटर से नई लाइन।",
       "err_NO_VOICE": "पहले आवाज़ रिकॉर्ड करो: माइक दबाकर बोलो।",
-      "err_NO_PHOTO": "पहले फ़ोटो खींचो या चुनो।"
+      "err_NO_PHOTO": "पहले फ़ोटो खींचो या चुनो।",
+      "previewVoice": "आवाज़",
+      "previewPhoto": "फ़ोटो",
+      "closed": "यह बातचीत बंद है",
+      "requestsTab": "अनुरोध ({count})"
     },
     "network": {
       "title": "मेरा नेटवर्क",

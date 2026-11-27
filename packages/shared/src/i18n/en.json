@@ -7271,7 +7271,14 @@
       "err_USTAAD_MEDIA_INVALID": "The voice note could not be used. Record it again.",
       "err_USTAAD_QUESTION_CLOSED": "This question is closed for new answers.",
       "anyVehicle": "Not sure",
-      "anyWork": "Not sure"
+      "anyWork": "Not sure",
+      "bestStamp": "Chosen by the asker",
+      "chooseBest": "Choose as best",
+      "chooseBestConfirm": "Make this the best answer?",
+      "confirmYes": "Yes, choose",
+      "confirmNo": "Not now",
+      "stateSolved": "Solved",
+      "stateOpen": "No answer yet"
     },
     "feed": {
       "postBy": "Post by {name}",
@@ -7480,7 +7487,20 @@
       "kindName_story": "Story",
       "storyNewMark": "new",
       "storySeenMark": "seen",
-      "sponsored": "Sponsored"
+      "sponsored": "Sponsored",
+      "useful": "Useful",
+      "usefulAria": "Kaam ki baat: useful for work",
+      "saved": "Saved",
+      "likeFailed": "Couldn't like. Try again",
+      "tipTag": "Tip",
+      "beforeAfterAria": "Show before or after",
+      "tileVoice": "Speak",
+      "tileCamera": "Take photo",
+      "tileVideo": "Video",
+      "workWays": "Ways to show your work",
+      "moreWays": "More: write, poll, link, PDF",
+      "camera": "Camera",
+      "gallery": "Gallery"
     },
     "local": {
       "title": "Pin my garage",
@@ -8563,7 +8583,11 @@
       "closePhoto": "Close photo",
       "enterHint": "Enter sends. Shift and Enter makes a new line.",
       "err_NO_VOICE": "Record a voice note first: hold the mic and speak.",
-      "err_NO_PHOTO": "Take or pick a photo first."
+      "err_NO_PHOTO": "Take or pick a photo first.",
+      "previewVoice": "Voice",
+      "previewPhoto": "Photo",
+      "closed": "This conversation is closed",
+      "requestsTab": "Requests ({count})"
     },
     "network": {
       "title": "My network",

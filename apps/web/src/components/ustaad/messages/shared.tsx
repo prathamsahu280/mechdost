@@ -8,6 +8,7 @@ import { localePath } from '@/lib/locale-path';
 import type { ApiResult } from '@/lib/orders-api';
 import { socialClient, type MemberCard, type Page, type SocialClient } from '@/lib/ustaad/messages-api';
 import { btnQuiet, type Loaded } from '../common';
+import { PehchaanTag } from '../common/pehchaan-tag';
 import { dmErrorKey, initials } from './view';
 
 /**
@@ -184,10 +185,8 @@ export function MemberLine({
 }) {
   const locale = useLocale();
   const t = useTranslations('ustaad.messages');
-  const l = useTranslations('ustaad.labels');
   const name = useMemberName()(m);
   const area = locale === 'hi' && m.areaLabelHi ? m.areaLabelHi : m.areaLabel;
-  const levelKey = `lvl_${m.level}`;
   const nameEl = link ? (
     <Link
       id={nameId}
@@ -213,11 +212,7 @@ export function MemberLine({
         {m.verified ? (
           <BadgeCheck aria-label={t('verified')} role="img" className="size-5 shrink-0 text-success" />
         ) : null}
-        {l.has(levelKey as 'lvl_naya') ? (
-          <span className="rounded-full bg-pill px-2.5 py-0.5 text-xs font-bold text-ink">
-            {l(levelKey as 'lvl_naya')}
-          </span>
-        ) : null}
+        <PehchaanTag level={m.level} />
       </div>
       <p className="text-sm text-muted">
         <span data-user-content>{area}</span>

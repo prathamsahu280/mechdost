@@ -8,6 +8,7 @@ import { localePath } from '@/lib/locale-path';
 import type { ApiResult } from '@/lib/orders-api';
 import { ustaadClient, type UstaadClient } from '@/lib/ustaad/client';
 import { memberGateView } from '@/lib/ustaad/standing-view';
+import { MemberName, PehchaanTag } from './common/pehchaan-tag';
 
 // Loaded only for a banned or limited member (rare), so the pages' first load does not grow (rule 6).
 const BannedScreen = dynamic(() => import('./standing/standing-view').then((m) => m.BannedScreen));
@@ -141,22 +142,13 @@ export function AuthorLine({
   author: { displayName: string; displayNameHi: string | null; level: string };
   tone?: 'muted' | 'light';
 }) {
-  const t = useTranslations('ustaad.labels');
   const locale = useLocale();
   const name = locale === 'hi' && author.displayNameHi ? author.displayNameHi : author.displayName;
-  const levelKey = `lvl_${author.level}`;
+  // U2 (E6): the level is the Pehchaan tag everywhere a name is shown.
   return (
     <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
-      <span data-user-content className={`font-bold ${tone === 'light' ? 'text-white' : 'text-ink'}`}>
-        {name}
-      </span>
-      {t.has(levelKey as 'lvl_naya') ? (
-        <span
-          className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${tone === 'light' ? 'bg-white/15 text-white' : 'bg-pill text-ink'}`}
-        >
-          {t(levelKey as 'lvl_naya')}
-        </span>
-      ) : null}
+      <MemberName name={name} className={`font-bold ${tone === 'light' ? 'text-white' : 'text-ink'}`} />
+      <PehchaanTag level={author.level} tone={tone === 'light' ? 'light' : 'default'} />
     </span>
   );
 }

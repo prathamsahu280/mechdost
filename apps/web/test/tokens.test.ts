@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { PEHCHAAN_TONES } from '../src/components/ustaad/common/pehchaan-tones';
 
 /** Guards WCAG 2.2 AA contrast for every text/background pair, in light and dark themes (docs/design-system.md). */
 const css = readFileSync(new URL('../../../packages/ui/src/tokens.css', import.meta.url), 'utf8');
@@ -89,6 +90,8 @@ const TEXT_PAIRS: [fg: string, bg: string][] = [
   // Ustaad QA simulation 2026-11-27: WhatsApp share text on its tint (was 3.07:1 in dark)
   ['whatsapp-text', 'whatsapp-bg'],
   ['whatsapp-text', 'surface'],
+  // Ustaad UI upgrade U2 (decision 2026-11-27 "Pehchaan tag shape"): every level tag pair
+  ...Object.values(PEHCHAAN_TONES).map((t): [string, string] => [t.fg, t.bg]),
 ];
 
 const NON_TEXT_PAIRS: [fg: string, bg: string][] = [
