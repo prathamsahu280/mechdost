@@ -625,8 +625,6 @@ const path = ANALYTICS_PATH;
 /** A stage duration in whole milliseconds (capped at 10 minutes). */
 const AUTH_MS = z.number().int().min(0).max(600_000);
 /** Partner portals (design 2026-11-27 § 10) and their tab / tile / lane keys (snake_case words, never data). */
-const PartnerPortal = z.enum(['shop', 'workshop', 'delivery']);
-const PartnerKey = z.string().regex(/^[a-z][a-z_]{0,31}$/);
 
 const EMAIL_ACTION_MODES = ['verifyEmail', 'resetPassword', 'recoverEmail', 'verifyAndChangeEmail'] as const;
 
@@ -987,10 +985,6 @@ export const CLIENT_EVENT_SCHEMAS = {
     .strict(),
   // Workshop analytics (design 2026-11-15): the owner opened Performance for a range; admin switched the tab.
   workshop_analytics_viewed: z.object({ rangeDays: z.number().int().min(1).max(180) }).strict(),
-  // Partner portals UI upgrade (design 2026-11-27 § 10): tab, tile and lane keys only; never codes or names.
-  partner_tab_viewed: z.object({ portal: PartnerPortal, tab: PartnerKey }).strict(),
-  partner_kpi_clicked: z.object({ portal: PartnerPortal, tile: PartnerKey }).strict(),
-  partner_lane_viewed: z.object({ portal: PartnerPortal, lane: PartnerKey }).strict(),
   admin_analytics_tab: z.object({ tab: z.enum(['overview', 'workshops']) }).strict(),
   // CSV exports (design 2026-11-15): which dataset and what happened; never the range text or any row content.
   // Roadside assistance (spec 22): the customer's steps in the browser. Codes only; never the pin or the note.
