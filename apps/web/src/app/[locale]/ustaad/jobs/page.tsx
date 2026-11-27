@@ -23,6 +23,7 @@ export default async function UstaadJobsPage({ searchParams }: Props) {
         'ustaad.jobs',
         'ustaad.media',
         'ustaad.labels',
+        'ustaad.card',
         'segments',
       ]}
     >

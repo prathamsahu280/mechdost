@@ -20,7 +20,15 @@ export default async function UstaadMePage({ params }: Props) {
       </h1>
       {/* SIM-P27: a banned member sees the banned screen here too (reason, end date, appeal). */}
       <ClientMessages
-        namespaces={['ustaad.card', 'ustaad.join', 'ustaad.shell', 'ustaad.standing', 'ustaad.media']}
+        namespaces={[
+          'ustaad.card',
+          'ustaad.join',
+          'ustaad.shell',
+          'ustaad.standing',
+          'ustaad.media',
+          'ustaad.labels',
+          'segments',
+        ]}
       >
         <MemberGate>
           <MyCardScreen />

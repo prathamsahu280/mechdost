@@ -15,6 +15,7 @@ export default function UstaadJobNewPage() {
         'ustaad.jobs',
         'ustaad.media',
         'ustaad.labels',
+        'ustaad.card',
         'segments',
       ]}
     >

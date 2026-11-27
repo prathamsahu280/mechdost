@@ -11,7 +11,7 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
  */
 export default function UstaadStandingPage() {
   return (
-    <ClientMessages namespaces={['ustaad.shell', 'ustaad.standing', 'ustaad.labels']}>
+    <ClientMessages namespaces={['ustaad.shell', 'ustaad.standing', 'ustaad.labels', 'segments']}>
       <MemberGate>
         <div className="mx-auto grid max-w-2xl gap-5">
           <StandingPanel heading="title" />

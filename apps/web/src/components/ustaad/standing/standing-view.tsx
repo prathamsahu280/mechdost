@@ -95,6 +95,7 @@ function Decision({ item, onFiled }: { item: Item; onFiled: (code: string, ticke
             setError(null);
             requestAnimationFrame(() => field.current?.focus());
           }}
+          data-disclosure-trigger={`appeal-${item.reportCode}`}
           data-track="ustaad_appeal_open"
         >
           {t('appeal')}
@@ -152,6 +153,8 @@ function Decision({ item, onFiled }: { item: Item; onFiled: (code: string, ticke
             <button
               type="button"
               className={btnQuiet}
+              data-panel-cancel={`appeal-${item.reportCode}`}
+              data-track="ustaad_appeal_cancel"
               onClick={() => {
                 setOpen(false);
                 requestAnimationFrame(() => opener.current?.focus());
