@@ -9,6 +9,7 @@ import { PROMOTION_HIDE_REASONS } from '@mechdost/shared/ustaad/codes';
 import { track } from '@/lib/analytics';
 import { localePath } from '@/lib/locale-path';
 import { feedExpired } from '@/lib/ustaad/feed-format';
+import { FRESH_POLL_MS, recallScroll, rememberScroll, shouldPollFresh } from '@/lib/ustaad/home-feed';
 import type { ApiResult } from '@/lib/orders-api';
 import type { SocialClient } from '@/lib/ustaad/social-client';
 import { btnPrimary, btnQuiet, card, LoadFailed, LoadingBlock, SampleNote } from '../common';
