@@ -53,6 +53,19 @@ export const ThreadViewDto = z.object({
   muted: z.boolean(),
   unread: z.boolean(),
   lastMessageAt: z.string().nullable(),
+  /**
+   * The last message the caller may see, for the inbox row (UI upgrade U3): its kind, the first 80 characters of a
+   * text, the length of a voice note, and whether it is mine. Held and deleted messages never count.
+   */
+  last: z
+    .object({
+      kind: z.enum(MESSAGE_KINDS),
+      text: z.string().max(80).nullable(),
+      durationMs: z.number().int().nullable(),
+      mine: z.boolean(),
+    })
+    .nullable()
+    .optional(),
 });
 export type ThreadView = z.infer<typeof ThreadViewDto>;
 

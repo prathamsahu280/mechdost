@@ -472,6 +472,27 @@ describe('request-only messages (SR-33, SR-34, AT-DM-1)', () => {
     expect(mine.items.filter((x) => x.mine).every((x) => x.read)).toBe(true);
   });
 
+  it('the inbox row carries the kind of the last message the viewer may see (never a held one)', async () => {
+    const a = await member();
+    const b = await member();
+    const th = await startUstaadThread(t(), a, { memberId: b.memberId, text: 'namaste bhai' });
+    await moveUstaadThread(t(), b, th.threadId, 'accept');
+    const asB = async () =>
+      (await listUstaadThreads(t(), b, { box: 'inbox' })).items.find((x) => x.id === th.threadId)?.last;
+    expect(await asB()).toEqual({ kind: 'text', text: 'namaste bhai', durationMs: null, mine: false });
+    const photo = await media(a, 'image');
+    await sendUstaadMessage(t(), a, th.threadId, { kind: 'photo', mediaId: photo });
+    expect(await asB()).toMatchObject({ kind: 'photo', text: null, mine: false });
+    const asA = (await listUstaadThreads(t(), a, { box: 'inbox' })).items.find((x) => x.id === th.threadId);
+    expect(asA?.last).toMatchObject({ kind: 'photo', mine: true });
+    // A message held for staff is visible to its sender only: the other member's row still shows the photo.
+    await sendUstaadMessage(t(), a, th.threadId, {
+      kind: 'text',
+      text: 'registration fee 500 bhejo sahu@ybl',
+    });
+    expect(await asB()).toMatchObject({ kind: 'photo' });
+  });
+
   it('dm_mode nobody refuses; everyone and connections open the thread at once', async () => {
     const a = await member();
     const closed = await member();

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { stripLocale } from '@/lib/locale-path';
-import { ustaadTabFor, type UstaadTabKey } from './tabs';
+import { hidesDock, ustaadTabFor, type UstaadTabKey } from './tabs';
 
 export interface UstaadTab {
   key: UstaadTabKey;
@@ -74,9 +74,11 @@ export function UstaadNav({
   const pathname = usePathname();
   const currentTab = ustaadTabFor(pathname);
   const barIndex = tabs.findIndex((t) => t.key === currentTab);
+  // A conversation has its own sticky composer: the dock steps aside there (rail unaffected above 1024 px).
+  const dockClass = hidesDock(pathname) ? `${DOCK} hidden` : DOCK;
   return (
     <>
-      <nav aria-label={label} data-ustaad-dock className={DOCK}>
+      <nav aria-label={label} data-ustaad-dock className={dockClass}>
         <div className="relative mx-auto h-16 max-w-xl">
           {/* M3 dock shift (visual language § 5): one bar that slides to the current tab (compositor-only). */}
           <span

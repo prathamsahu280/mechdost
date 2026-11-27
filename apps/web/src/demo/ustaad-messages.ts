@@ -178,6 +178,19 @@ const message = (
     ...over,
   }) satisfies MessageView;
 
+/** The inbox row's summary of a thread's newest message (as the API gives it). */
+const lastOf = (messages: readonly MessageView[]): ThreadView['last'] => {
+  const m = messages[0];
+  return m
+    ? {
+        kind: m.kind,
+        text: m.kind === 'text' && m.text ? Array.from(m.text).slice(0, 80).join('') : null,
+        durationMs: m.voice?.durationMs ?? null,
+        mine: m.mine,
+      }
+    : null;
+};
+
 function seedThreads(): DemoThread[] {
   const thread = (n: number, other: MemberCard, over: Partial<ThreadView>): ThreadView => ({
     id: uid(300 + n),
@@ -288,7 +301,7 @@ export function demoSocialClient(): SocialClient {
               ? t.view.status === 'requested' && !t.view.mine
               : t.view.status === 'requested' && t.view.mine,
         )
-        .map((t) => t.view)
+        .map((t) => ({ ...t.view, last: lastOf(t.messages) }))
         .sort((a, b) => (b.lastMessageAt ?? '').localeCompare(a.lastMessageAt ?? ''));
       return ok(paged(list, cursor, 20));
     },

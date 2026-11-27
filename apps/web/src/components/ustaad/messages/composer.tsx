@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { SendMessage } from '@mechdost/shared/ustaad/dto/messages';
-import { btnPrimary, btnQuiet, card, fieldClass } from '../common';
+import { btnPrimary, btnQuiet, fieldClass } from '../common';
 import type { PreparedImage } from '../media/image-picker';
 import { UploadProgress } from '../media/upload-progress';
 import type { Recording } from '../media/voice-recorder';
@@ -147,7 +147,7 @@ export function Composer({
   }
 
   return (
-    <div className={`${card} grid gap-3`}>
+    <div className="grid gap-3">
       {panel === 'voice' ? (
         <div
           ref={panelRef}
@@ -241,7 +241,7 @@ export function Composer({
             <>
               <button
                 type="button"
-                className={`${btnQuiet} px-3`}
+                className={`${btnQuiet} min-w-12 px-3`}
                 onClick={() => {
                   open('text');
                 }}
