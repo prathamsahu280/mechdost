@@ -176,6 +176,9 @@ const PUBLIC_PAGES = [
   '/admin',
   '/partner/shop',
   '/partner/workshop',
+  '/partner/workshop/jobs',
+  '/partner/workshop/numbers',
+  '/partner/workshop/profile',
   '/no-such-page',
   // Comparisons with products (design 2026-11-13): attribute labels and translated values are on screen.
   '/compare',
@@ -294,7 +297,16 @@ test.describe('Hindi pages have no English left (hard rule 10)', () => {
 
   test('workshop portal', async ({ page }) => {
     await signIn(page, PHONES.workshop);
-    const failures = await audit(page, ['/partner/workshop'], true);
+    const failures = await audit(
+      page,
+      [
+        '/partner/workshop',
+        '/partner/workshop/jobs',
+        '/partner/workshop/numbers',
+        '/partner/workshop/profile',
+      ],
+      true,
+    );
     expect(failures, report(failures)).toEqual([]);
   });
 
