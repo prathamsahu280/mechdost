@@ -98,6 +98,13 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 - ❌ A "Retry" or refresh that swaps the focused panel for a skeleton or another form: keep the control mounted
   (aria-busy on the region), focus the panel heading after, never return a bare skeleton after the first load
   (promoted from L-G2d + L-SAV3, 2026-11-26).
+- ❌ A write that replaces or unmounts the focused control (block → card, row removed, step swap, `<dialog>` closed by
+  unmounting, busy submit set `disabled`) with no focus target: move focus to the replacement in an effect keyed on
+  the new state, use `aria-disabled` + early return on busy buttons, keep one always-mounted `role=status` per panel
+  outside the swapped forms, close native dialogs with `.close()` before unmounting. Run the a11y specialists
+  before the build, not after (promoted 2026-11-27 from L-B2, L-UCE2, L-UDW1, L-UDM1, L-P23e, L-USAGE2, L-DLV3;
+  guard: `data-disclosure-trigger`/`data-panel-cancel` in `apps/web/test/panel-dismiss.test.ts` + e2e
+  `toBeFocused()` after each swap).
 
 ## Performance & scalability (spec 16, rule 6, 7)
 
@@ -105,6 +112,11 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 - ⚠️ Heavy client library not dynamically imported (maps, charts, scanner); client component where a Server Component works.
 - ⚠️ N+1 queries; uncached hot reads; no cache tag invalidation.
 - ⚠️ JS budget (L79, L90): anything a client component imports ships on every route that renders it (demo data, translation tables, Zod). Keep server-only data in its own module, import the narrowest module from client paths, keep small islands static (no `next/dynamic` for < 1 KB), and compare `scripts/measure-js.mjs` against the last CI run's budget lines before committing UI work.
+  - Turbopack tree-shakes per **file**, not per export: one constant imported from a big module (the
+    `@mechdost/shared/state` barrel, `@mechdost/shared/savings`) ships the whole file. Put small client-needed values
+    in their own module (`state/reasons.ts`, `savings-band`) and measure locally (build + `next start` +
+    `scripts/measure-js.mjs`) before pushing a budget fix (promoted 2026-11-27 from T-SAV2 + T-BUDGET2; guards
+    `apps/web/test/shared-state-barrel.test.ts`, `apps/web/test/savings-view.test.ts`).
 
 ## Dependencies & security (research/security-vulnerabilities.md)
 
@@ -115,6 +127,12 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 ## Docs & process
 
 - [ ] When a decision supersedes an earlier one, grep `CLAUDE.md`, `docs/README.md`, `docs/design-system.md` and the memory files for the old wording and fix them in the same change (promoted from L12 + L39).
+- ❌ An agent skips the skill chain under time pressure ("timebox", "followed in practice", "applied as a
+  checklist"). Every brief embeds `references/agent-brief.md` and names the skills to **invoke via the Skill tool**;
+  the lead rejects a report that does not list each skill run and each one skipped with its reason (promoted
+  2026-11-27 from L199 + L319; enforcement text in `agent-brief.md` § Enforcement).
+- ⚠️ A brief, Q text or catalogue entry states how the code works: verify with `git log -S` / the route files before
+  building to it (L-FX3, L-UDW3, L-DCSIM1).
 
 - ⚠️ Decision made without a dated entry in `decisions.md` or a ruling in `progress.md`.
 - ⚠️ A pending question answered by assumption instead of the documented default.
@@ -126,6 +144,52 @@ Mark each touched item ✅ / ⚠️ / ❌. Anything ❌ blocks implementation un
 - **Commit gates cannot be bypassed by a pipe (T44, L64):** every commit chain starts `set -o pipefail;` then `pnpm check && git add -A && git commit && git push` (`pnpm check` = Prettier + typecheck + lint + tests, one task at a time since 2026-11-11); a gate piped through grep/tail without pipefail reports the filter's success. The pre-commit hook checks formatting; CI checks everything.
 - **Invisible characters (L65):** backslash-u escapes written through the Write/Edit tools or a heredoc can land as the real character. Build the backslash with chr(92) in Python, then check: `packages/shared/test/source-hygiene.test.ts` fails on zero-width, BOM, line-separator and NUL characters in tracked source.
 - **Demo/API parity (L58):** before calling an API feature done, list the rules the demo store enforces for the same action (standing, blocks, windows, reason codes) and check each one exists in the repository with a test.
+- ❌ **drizzle-kit generate in a busy repo** (promoted 2026-11-27 from L-USAGE1, L-DA1, L-B5, L-QA1, L-QA-A4): it
+  names the file by journal count and overwrites another stream's `NNNN_snapshot.json`. Right after every
+  `generate`: `git status packages/db/drizzle/meta`, restore the overwritten snapshot from git, rename SQL + snapshot
+  - journal tag to the next free number, check `prevId` chains and that a second `generate` says "No schema changes".
+- ❌ **`.openapi()` on a shared Zod schema** (promoted 2026-11-27 from L101, L113, L313 api/zod, L317 api/zod): a
+  shared module that builds Zod at load time can run before `@hono/zod-openapi` extends Zod → "`.openapi` is not a
+  function" at boot. Pass shared DTOs to routes without `.openapi(...)`; runtime helpers the db package needs live
+  in Zod-free modules imported with `import type` for DTOs.
+- ⚠️ **Fresh worktree typecheck** (promoted 2026-11-27 from T-B3 + L318 worktree): no `node_modules` and no
+  gitignored `apps/web/next-env.d.ts` → `pnpm install --frozen-lockfile --offline` and copy `next-env.d.ts` from the
+  main checkout before web `tsc`; the 2 "image import" errors are not code errors (no guard yet: progress "Guards to
+  add").
+- ❌ **Scripts on Windows** (promoted 2026-11-27 from L311, L-G2c, L-P23d, L-UA3, L-UF3, L-D1, L-COD3, L-QA-A4, L-DA2):
+  never `python -I -` with an empty heredoc (hangs 120 s); Python writes CRLF unless `newline=''`/`'\n'` (run
+  prettier on every script-edited file); backticks in `node -e` inside double quotes are command-substituted;
+  `String.replace` with `$'`/`$&` in the replacement corrupts text. Write scripts to the scratchpad and run one plain
+  `python -I script.py args < /dev/null` / `node script.cjs` per call, or use the Edit tool.
+
+## Live QA runs on production (promoted 2026-11-27)
+
+- ❌ **Sign-in blocked for automated browsers** (L-SIM1, L315 QA, overnight handover, T46): real Cloudflare Turnstile
+  stops headed Playwright, and the web forms wait for a client widget token, so a server allowlist alone never
+  fires. Use the narrow, time-boxed server bypass (`apps/api/src/auth/qa-turnstile-bypass.ts`, test
+  `apps/api/test/qa-turnstile-bypass.test.ts`) plus a widget-script stub routed by `context.route` (placeholder
+  token; the server decides). Never weaken or swap the real keys to make QA pass; prove sign-in end to end at Gate 0.
+- ❌ **Turnstile key operations order** (L320; progress handover 2026-11-27 17:30): when restoring the real keys, the
+  web site key goes live first (rebuild + deploy, verify the widget key on /login), only then put the server secret
+  back, delete the backup, remove the `QA_TURNSTILE_BYPASS_*` lines and restart the API. A secret that does not match
+  the live site key fails every sign-in. A time-boxed switch treats a past expiry as off (L-QA2), never a boot refusal.
+- ❌ **Outward-message budgets need a counter the agent can read** (L321; SIM-F1 evidence, delivery run sent ~24–29
+  emails vs a cap of 10, harness refused DB reads): before the run, give QA agents a read-only outbox count (admin
+  screen or staff API, e.g. `GET /v1/admin/notifications/whatsapp` + an email equivalent) and check it at every gate;
+  a cap the agent cannot measure is not a cap (no email counter yet: progress "Guards to add").
+- ❌ **WhatsApp to strangers** (L-DCSIM1, L322; delivery gate0 risk 1): enabled WhatsApp templates send to the
+  Firebase test range, whose numbers may belong to real people on WhatsApp. Read `notification_templates` (or the
+  admin screen) and switch order templates off before any live order step; re-read before each step.
+- ⚠️ **Accounts and inboxes** (L323): the inbox for a test account comes from the DB / admin user row (its
+  `email`, its tag), never from memory or a previous run's notes; real test contacts stay out of the repo.
+- ⚠️ **Staff accounts need a verified email and a fresh token** (L315 QA, L-SIMF1, SIM-LEAD-1; same root as L317
+  delivery/web and T-DCSIM-P3): a role grant or an email verification done elsewhere is invisible until the ID token
+  is refreshed. Verify staff test accounts and re-sign-in before the run; product fix = force-refresh via
+  `currentIdToken(locale, true)` (`apps/web/src/lib/auth/firebase-client.ts`) on "check again" / after an invite.
+- ⚠️ **Plan from code, not from the brief** (L-DCSIM1, L-DCSIM2, L316 four-eyes): trace the state gate per payment
+  and role, budget a third staff account for four-eyes, a spare customer for negative API checks (rate limits count
+  refusals), API fallbacks for UI breaks, and real phone media (synthetic MP4/WebM fail the media checks, L-SIM2,
+  L-SIMF1).
 
 ## Data for ML (hard rule 16)
 

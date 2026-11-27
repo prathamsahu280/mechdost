@@ -195,7 +195,7 @@ Promoted lessons (rule now in `checklist.md`) are in `learnings-archive.md`; rea
 - L196 · 2026-11-15 · money/payouts · "Shop-funded" has an edge the design did not name: admin can route a sub-order to a different shop than the one that funds the coupon. → Write the rule down before building a funder field: the funder pays only for its own goods; if another shop delivers, MechDost makes that shop whole (payout entry), and say so in decisions with the cost-if-wrong.
 - L197 · 2026-11-15 · discounts/GST · Coins already left tax on the gross line; a coupon makes the question real (CGST s.15(3)(a) lowers the taxable value for a discount shown on the invoice, differently for shop- and MechDost-funded). → When a second kind of discount lands, check the tax treatment against research/promotions-referrals.md §6 and queue the decision (Q114) with the current behaviour as the default instead of silently copying the first discount's shortcut.
 - L198 · 2026-11-15 · process/tooling · In a worktree the shell refuses heredocs and multi-line `node -e` mixed with `cd`; a one-line `node -e` or a script file written with the Write tool in the scratchpad (then `node <file>`) works for text insertion into big JSON (locale files) and docs. → For locale and doc insertion write a small `.cjs` in the scratchpad that splices by index (never re-serialises JSON, L100) and parse the result once.
-- L199 · 2026-11-15 · agents · Sonnet builders loaded only mechdost-advisor (+1) via the Skill tool and "followed the rest in practice"; the brief said "the UI skills from the protocol table" instead of naming them; user asked that the rules be passed on → every agent brief names each mandatory skill per trigger (advisor, writing-plans, TDD, domain skills, ui-ux-pro-max → shadcn-component-discovery → shadcn → frontend-design → shadcn-component-review + web-design-guidelines, next-intl-hindi, website-testing, verification-before-completion) and requires the report to list skills loaded; branches that skipped the UI review skills get them run by the coordinator at merge.
+- L199 · 2026-11-15 · agents · Sonnet builders loaded only mechdost-advisor (+1) via the Skill tool and "followed the rest in practice"; the brief said "the UI skills from the protocol table" instead of naming them; user asked that the rules be passed on → every agent brief names each mandatory skill per trigger (advisor, writing-plans, TDD, domain skills, ui-ux-pro-max → shadcn-component-discovery → shadcn → frontend-design → shadcn-component-review + web-design-guidelines, next-intl-hindi, website-testing, verification-before-completion) and requires the report to list skills loaded; branches that skipped the UI review skills get them run by the coordinator at merge. · promoted (2026-11-27, with L319) → checklist.md § Docs & process
 - L200 · 2026-11-15 · slots/integrity · One hook in the single transition function (`transitionRequest`) released held slots for cancel, decline, reschedule, reroute and timeout at once, guarded by a `slot_released_at` marker on the proposal so a place can never go back twice. → Put "give the resource back" next to the one place every state change passes, and guard it with a once-only marker, not with callers remembering.
 - L201 · 2026-11-15 · timeouts · A sweep that decides expiry from a list read earlier can expire a request that left and re-entered the waiting status in between. → Re-read the clock under the row lock inside the expiry transaction, compare there.
 - L202 · 2026-11-15 · security review · A self-service location change that names a PIN code can move a record out of the approver's city scope. → Any self-service change touching a scope key (city, PIN) is validated against the record's own scope at filing and again at decision, or refused.
@@ -374,7 +374,7 @@ L308 · 2026-11-25 · security review · a public count used `status = 'live'` i
 L309 · 2026-11-25 · tooling · the sandbox refuses one Bash command that mixes `cd`, python heredocs and chained writes; put scripts in the scratchpad (Write tool) and run them with one plain command; a worktree branch can be behind main (the design spec was missing until `git merge main`).
 
 L310 · 2026-11-26 · docs/spec · a large spec from many inputs (founder rulings, coordinator provider rulings, two admin prototypes with different defaults, research, a security review) arrived in pieces mid-task → state the precedence order at the top of the spec (coordinator → founder → newest admin page → prototype → research), say which default set wins, and record every research recommendation that a ruling overrides together with its compensating control.
-L311 · 2026-11-26 · tooling · an empty `python -I - <<EOF` heredoc in Git Bash on Windows opens the interactive REPL and hangs the call for 120 s → write edit scripts to the scratchpad and run them with one plain `python -I script.py args` command.
+L311 · 2026-11-26 · tooling · an empty `python -I - <<EOF` heredoc in Git Bash on Windows opens the interactive REPL and hangs the call for 120 s → write edit scripts to the scratchpad and run them with one plain `python -I script.py args` command. · promoted → checklist.md § Tooling
 L312 · 2026-11-26 · schema planning · parallel builder streams collide on the Drizzle journal and on shared registries (rbac, settings, locales, analytics, notices, rls-inventory, router) → the foundations stream owns all migrations (named, renumbered at merge) and pre-creates per-stream slots and interface stubs before the others start.
 
 L313 · 2026-11-26 · LLM/privacy · an existing `ANTHROPIC_API_KEY` (assistant) would have silently switched member text to a third-party LLM if presence of a key meant "on" → a provider that receives personal text needs its own explicit switch (`SMART_CORRECTION_PROVIDER`, default `none`) plus the purpose consent; and a PII gate must fail closed on a whole-text count, not on segments an attacker can split.
@@ -382,14 +382,14 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
 
 - L-UA1 · 2026-11-26 · rbac · `isStaffGrant` treated every non-customer grant without a shop or workshop as staff, so a self-scoped member role (`mechanic`) would be withheld from normal sessions and shown as staff on the web. → A system role's `staff` flag decides; the heuristic is only for admin-made roles. Check any new self-scoped role against `isStaffGrant` and `demoRoleFor`. · active
 - L-UA2 · 2026-11-26 · security/media · Reviews found, one after another: TOCTOU between check and copy, deny-listed metadata, parser differentials (mvhd anywhere), fragmented MP4, unbounded reads, allow-by-default media reads, leave/rejoin resetting a ban-like standing. → For user uploads: verify a private copy, use structural allowlists that fail closed, cap every read, deny reads by default per host type; for membership: moderation standing must survive leave/rejoin. Do these up front next time. · active
-- L-UA3 · 2026-11-26 · tooling · drizzle-kit cuts a CHECK expression at a `;` (silently truncated SQL); regenerating unapplied migrations needs the journal entries removed and the schema exports re-added step by step. → Spell `;` as a regex escape (`\x3B`) inside CHECK regexes; keep a regen script; never hand-edit generated SQL. Python `open(..., 'w')` on Windows writes CRLF: always pass `newline='\n'`. · active
+- L-UA3 · 2026-11-26 · tooling · drizzle-kit cuts a CHECK expression at a `;` (silently truncated SQL); regenerating unapplied migrations needs the journal entries removed and the schema exports re-added step by step. → Spell `;` as a regex escape (`\x3B`) inside CHECK regexes; keep a regen script; never hand-edit generated SQL. Python `open(..., 'w')` on Windows writes CRLF: always pass `newline='\n'`. · promoted → checklist.md § Tooling
 - L-UA4 · 2026-11-26 · settings · A large feature-specific settings family (~140 keys) does not belong in `OPERATIONAL_SETTINGS` (the generic admin screen lists every key). → Own registry in the same table, own admin route; the generic screen stays as it is. · active
-  L313 · 2026-11-26 · api/zod · the db package imported a shared module that builds Zod schemas at load time, before `@hono/zod-openapi` extended Zod, so every route using those schemas crashed with `.openapi is not a function` (L101 again, new module) → keep runtime helpers the db package needs in a Zod-free module (`ustaad/admin-rules.ts`) and import DTO modules there as `import type` only.
+  L313 · 2026-11-26 · api/zod · the db package imported a shared module that builds Zod schemas at load time, before `@hono/zod-openapi` extended Zod, so every route using those schemas crashed with `.openapi is not a function` (L101 again, new module) → keep runtime helpers the db package needs in a Zod-free module (`ustaad/admin-rules.ts`) and import DTO modules there as `import type` only. · promoted → checklist.md § Tooling
   L314 · 2026-11-26 · parallel streams · the foundations stream created the same route file G1 was told to create (add/add conflict) → before creating a file named in a plan for another stream's interface, re-merge that stream and grep; when both exist, keep one router and route the other's endpoint through the same function.
   L315 · 2026-11-26 · i18n · `ClientMessages` took only top-level namespaces, so a big namespace (`ustaad`) would ship whole to admin → it now takes dotted parts (`ustaad.admin`); the coverage test treats a parent namespace as covering its parts.
 - L-B1 · 2026-11-26 · ustaad/identity · Revoking a vouch freed a monthly slot and cleared reciprocity (security review); G1 and B defined the badge rule shape twice (`count` vs `min`) → count every state that was ever "given" for caps and pair checks, and reuse the admin DTO shape for any rule the engine reads. A seed migration breaks CRUD tests that assume empty admin tables: clear them in those tests' setup.
   L316 · 2026-11-26 · ustaad codes · A's UQ/UJ/UR CHECKs use `[A-Z2-7]` but `publicCode` (ids.ts) is Crockford (0, 1, 8, 9 fail the CHECK) → use `ustaadPublicCode` from `shared/ustaad/public-code.ts` for every Ustaad code.
-  L317 · 2026-11-26 · api/zod · `.openapi('Name')` on a schema from `@mechdost/shared` crashed at load ("is not a function"; same root as L313) → in Ustaad routes pass shared DTOs to `body()`/`json()` without `.openapi(...)`; repeat of L313, promote to checklist when it happens again.
+  L317 · 2026-11-26 · api/zod · `.openapi('Name')` on a schema from `@mechdost/shared` crashed at load ("is not a function"; same root as L313) → in Ustaad routes pass shared DTOs to `body()`/`json()` without `.openapi(...)`; repeat of L313, promote to checklist when it happens again. · promoted → checklist.md § Tooling
   L318 · 2026-11-26 · settings typing · `readUstaadSettingValues` returns `UstaadSettingValue` (string | number | boolean) → wrap with `Number(...)` / `=== true` at the use site, as media.ts does.
 - L-UE1 · 2026-11-26 · ids/schema · Workstream A's `ustaad_jobs_code_format` CHECK expects `[A-Z2-7]{6}` but
   `publicCode` emits Crockford base32 (digits 0-9 included), so inserts failed ~half the time in tests → before using
@@ -397,7 +397,7 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
 - L-UE2 · 2026-11-26 · security/filters · Scam filters on user text must normalise first (NFKC, strip \p{Cf}, map all
   script digits) and must not rely on "not followed by ." to tell UPI ids from emails (sentence-ending full stops) →
   match a known PSP list first, then the generic rule; screen every member-visible free-text field, not just the body.
-- L-B2 · 2026-11-26 · ustaad/ui a11y · Specialist review of the new Ustaad screens found the same misses three times: status shown only by aria-hidden glyphs, live regions mounted together with their text, focus lost when the focused control unmounts (dismiss, retry, disabled submit), field errors not focused → for every new client screen: always-mounted role=status, sr-only state words beside glyphs, focus moved before unmounting, aria-disabled instead of disabled on a focused submit, focus the first invalid control after a failed step.
+- L-B2 · 2026-11-26 · ustaad/ui a11y · Specialist review of the new Ustaad screens found the same misses three times: status shown only by aria-hidden glyphs, live regions mounted together with their text, focus lost when the focused control unmounts (dismiss, retry, disabled submit), field errors not focused → for every new client screen: always-mounted role=status, sr-only state words beside glyphs, focus moved before unmounting, aria-disabled instead of disabled on a focused submit, focus the first invalid control after a failed step. · promoted → checklist.md § UI / UX
 - L-B3 · 2026-11-26 · ustaad/identity · A public page for people who are not members (the garage owner link) cannot live under `/ustaad/*`: the API gate 404s signed-out callers and the web shell shows "not found" to non-members → put public network pages at a sibling path (`/ustaad-attest/…`, like `/ustaad-access`) and say so in the spec. A one-time link the member could open would let them confirm themselves → staff issue it and the member never sees it; GET never consumes (crawlers), only the POST does with a conditional UPDATE; use hex tokens so the 32+-word-character scrubber removes them from logs and Sentry. A per-IP limited public API must be called from the visitor's browser, not from a Server Component (one server IP for everyone). · active
 - L-B4 · 2026-11-26 · ustaad/trust · A rule that checks a voucher's level but not their standing lets a restricted, banned or revoked member keep vouching, and revoking a voucher left their vouchees verified silently (lead's security finding) → trust checks take status and verification state, in the shared pure function; every "loses trust" path (revoke, ban) cascades: open requests expire, given evidence is revoked with a reason, dependants go back to staff review. · active
 - L-UF1 · 2026-11-26 · ustaad/moderation · The first F2 cut let any later sanction overwrite the member row (a 3-day
@@ -410,7 +410,7 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
   a decisions entry; never map it onto a nearby code (analytics and counsel read the codes).
 - L-UF3 · 2026-11-26 · tooling/windows · Python scripts that rewrite repo files on Windows wrote CRLF and broke the
   prettier pre-commit; the worktree guard also refuses long `&&` chains with heredocs → open files with `newline=''`,
-  keep scripts in the scratchpad, run them as one plain command.
+  keep scripts in the scratchpad, run them as one plain command. · promoted → checklist.md § Tooling
 
 - L-UCE1 · 2026-11-26 · ui/e2e · A screenshot helper that visits the Hindi page last left the test on `/hi`, so every
   English locator after it timed out (5 of 7 failures) → a shot helper must end where it started (same path, same
@@ -419,7 +419,7 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
   `aria-pressed` also flips, checkboxes used as single-select, focused buttons that unmount (recorder done panel,
   apply success, post success) and a `reload()` that blanked the thread after a write → run the specialists before
   the single build, not after; use `aria-disabled` + a guard on busy buttons, a silent refresh after writes, and keep
-  live regions mounted (`empty:sr-only`, never `empty:hidden`).
+  live regions mounted (`empty:sr-only`, never `empty:hidden`). · promoted → checklist.md § UI / UX
 - L-UCE3 · 2026-11-26 · worktree tooling · `next start` warns with `output: standalone` but serves; the worktree
   guard refuses multi-file heredocs → write files with the Write tool and patch with a scratchpad `python -I` script.
 - L-UCE4 · 2026-11-26 · security headers · `Permissions-Policy: microphone=()` silently blocked every voice note on our own
@@ -445,12 +445,12 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
 - L-UD3 · 2026-11-26 · hono/middleware · A `use('/ustaad/*', guard)` in one route module also guards every other
   module's `/ustaad/*` routes (L171/L190). → Bind a module's member guard to its own path prefixes
   (`onUstaadPaths` in `routes/ustaad/social.ts`). · active
-- L-B5 · 2026-11-26 · migrations/merge · Regenerating an unapplied migration after merging another stream's migration: drizzle-kit numbers the new file and its snapshot by journal count, so the new snapshot overwrote the other stream's `0096_snapshot.json` → after `generate`, rename both the SQL and the snapshot to the reserved number and `git checkout main -- <their snapshot>`; check the new SQL holds only your changes. · active
+- L-B5 · 2026-11-26 · migrations/merge · Regenerating an unapplied migration after merging another stream's migration: drizzle-kit numbers the new file and its snapshot by journal count, so the new snapshot overwrote the other stream's `0096_snapshot.json` → after `generate`, rename both the SQL and the snapshot to the reserved number and `git checkout main -- <their snapshot>`; check the new SQL holds only your changes. · promoted → checklist.md § Tooling
 - L-UDW1 · 2026-11-26 · ui/a11y · Three static a11y specialists (aria+keyboard, modal+live, forms+media) agreed on one
   root bug: callers focused the opener in the same handler that closed a native modal `<dialog>`, while the page was
   still inert, so focus fell to `<body>`; and every step swap inside a sheet unmounted the clicked button → restore
   focus in the dialog component's own effect cleanup (capture `document.activeElement` before `showModal()`, focus it
-  after `close()`), and on any in-sheet step change focus the new step's first control. · active
+  after `close()`), and on any in-sheet step change focus the new step's first control. · promoted → checklist.md § UI / UX
 - L-UDW2 · 2026-11-26 · ui/routing · A public page under a gated route segment (`/ustaad/s/[token]` under the
   `/ustaad` layout gate) cannot opt out of the layout → a small client switch in the layout keyed on the canonical
   pathname renders it bare; cheaper and merge-safer than moving every sibling into a route group while other
@@ -463,7 +463,7 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
   recorder panel, list row removed after an action, last "Show more") drops focus to `<body>`; plus identical button
   names per row ("Remove" × N). → When an action replaces the focused element, move focus to its replacement in an
   effect keyed on the new state (never on first render); give row actions an sr-only member name (`Who`); close a
-  native `<dialog>` with `.close()` before unmounting so the browser restores focus to the invoker. · active
+  native `<dialog>` with `.close()` before unmounting so the browser restores focus to the invoker. · promoted → checklist.md § UI / UX
 - L-UDM2 · 2026-11-26 · web/deps · `apps/web` has no zod dependency: shared DTO schemas work as `Schema<T>` but a new
   inline `z.object` in web code fails typecheck → reuse shared DTOs, or hand-write `safeParse` guards for tiny answers;
   never add zod to the web bundle for it. · active
@@ -480,6 +480,7 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
   action when building it.
 - L-G2c · 2026-11-26 · tooling · `python -I -` with no heredoc body (or a stray `<<'EOF'`) starts the interactive
   REPL and hangs the shell for two minutes on Windows. → Run scratchpad scripts as `python -I file.py args < /dev/null`.
+  · promoted → checklist.md § Tooling
 - L-G2d · 2026-11-26 · a11y · The four specialists (aria, keyboard, forms, live regions) agreed on one pattern the code
   got wrong in every panel: the success message lived in a StatusLine inside the form that the refresh unmounts, and
   focus fell to <body>. → Keep one status line per panel outside the swapped forms (children report via `onResult`),
@@ -521,23 +522,24 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
   (`cityScopeFrom(...).all`, 403 `ALL_CITIES_REQUIRED`) for any report over client events, with a role-leak test. · active
 - L-P23d · 2026-11-26 · tooling · Multi-statement shell edits (node heredocs touching several files, `cd && sed && git`)
   are refused in an isolated worktree as "too complex" → put edit scripts in the scratchpad and run one plain
-  `node script.cjs .` per call; never start `python -I -` with an empty heredoc (L-G2c again). · active
+  `node script.cjs .` per call; never start `python -I -` with an empty heredoc (L-G2c again). · promoted → checklist.md § Tooling
 - L-P23e · 2026-11-26 · ui/a11y · Five static a11y specialists on the personalisation UI agreed: a status `<p role=status>`
   mounted together with its text is often not announced, the same text set twice is silent, and a search picker gives
   no spoken result → one always-mounted status per widget, clear then set (rAF) for repeats, focus first and announce
   ~200 ms later, native radios for single choice (not aria-pressed buttons), and a bordered switch track (forced colours,
-  1.4.11 off-state contrast). · active
+  1.4.11 off-state contrast). · promoted → checklist.md § UI / UX
 - L-USAGE1 · 2026-11-26 · schema/migrations · `drizzle-kit generate` named the new file 0100 (journal count) and
   overwrote `0100_snapshot.json` of another stream; renumbering to a reserved slot (0103) needs: restore the old
   snapshot from git, copy the generated one to the new name (its `prevId` already chains), rename the SQL and the
   journal tag. A later schema tweak is folded in by generating a temp delta, moving its SQL in, taking its snapshot
   (prevId reset to the previous one) and dropping the temp journal entry; `generate` must then say "No schema
   changes". → Do this before writing hand SQL into the file, and check `git status drizzle/meta` after every generate.
+  · promoted → checklist.md § Tooling
 - L-USAGE2 · 2026-11-26 · a11y/forms · Seven specialists agreed on the same three defects in a fresh admin panel:
   `disabled` on a focused busy button drops focus (use `aria-disabled` + early return), a save with no announcement
   (route it to the page's one status line), and a reset effect keyed on a new array every reload wiping unsaved edits
   (key it on `version`). → Write busy buttons with `aria-disabled`, keep one status line outside swapped forms, and
-  key form resets on the stored version from the start.
+  key form resets on the stored version from the start. · promoted → checklist.md § UI / UX
 - L-USAGE3 · 2026-11-26 · settings design · The `settings` registry only takes ints and booleans and renders on Admin →
   Settings; a feature with lists (email recipients) and per-metric limits fits better in its own versioned tables
   edited on its own page, audited like settings. → Check the registry's kinds before planning an admin-editable list.
@@ -550,11 +552,12 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
   optional ones so a web build one deploy behind does not fail its Zod parse. The cart page stays anonymous (no
   token, no Firebase load).
 - L-COD3 · 2026-11-26 · shell · `node -e` strings containing backticks inside bash double quotes are command-
-  substituted silently (comments lost text twice) → write such edits with the Edit tool or a script file.
+  substituted silently (comments lost text twice) → write such edits with the Edit tool or a script file. · promoted
+  → checklist.md § Tooling
 - L-QA1 · 2026-11-27 · migrations · `drizzle-kit generate` again named the new file by journal count (0104) and
   OVERWROTE the existing `0104_snapshot.json`; fixed by moving the new snapshot to `0110_snapshot.json`, restoring 0104
   from git, renaming the SQL and the journal tag. → After every generate in a busy repo, `git status drizzle/meta`
-  before anything else (third occurrence: promote to the checklist).
+  before anything else (third occurrence: promote to the checklist). · promoted → checklist.md § Tooling
 - L-QA2 · 2026-11-27 · security/config · A "refuse to start if the expiry is in the past" rule would take production
   down on any restart after a time-boxed window. → Time-boxed switches: refuse malformed or too-long values, treat a
   past expiry as off with a log line, and re-check the window on every use.
@@ -566,10 +569,10 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
 - L-DA1 · 2026-11-26 · schema/migrations · `drizzle-kit generate` named the file by the journal count and overwrote the
   previous snapshot again (second time after L-USAGE1) → renumber, restore the old snapshot from git, and fold later
   schema changes into the unapplied migration with a temp delta (generate, move its SQL in, take its snapshot, drop the
-  temp journal entry); then `generate` must say "No schema changes". Candidate for promotion to a hard checklist. · active
+  temp journal entry); then `generate` must say "No schema changes". Candidate for promotion to a hard checklist. · promoted → checklist.md § Tooling
 - L-DA2 · 2026-11-26 · tooling · A JS `String.replace` whose replacement string contains `$'` (or `` $` ``, `$&`) inserts
   the rest of the file; an edit script silently duplicated text → use a replacer function `() => b`, or split/join, in
-  every edit script. · active
+  every edit script. · promoted → checklist.md § Tooling
 - L-DA3 · 2026-11-26 · authz/partners · Standing checks (active, paused, suspended) were per route and a suspended agent
   kept acting on held jobs → put the standing check in the shared agent lookup used by every job action, and decide up
   front per status × stage what a paused partner may still do (here: finish parcels already picked up, show the return
@@ -589,7 +592,7 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
   below it errors on the wrong field (put the photo first and hold the submit with `ready`), a status line inside a card
   that the action removes never speaks (lift it to the list), opened forms need `useDisclosureFocus` + a
   `data-disclosure-field`, row buttons need the row in their name, and codes shown big need a spaced sr-only reading.
-  → Build these in from the start for any portal list with in-place forms. · active
+  → Build these in from the start for any portal list with in-place forms. · promoted → checklist.md § UI / UX
 - L-DLV4 · 2026-11-27 · state audit · New component rows inserted in the middle of `COMPONENTS` made the merged checklist
   disagree with the model (order). → Append new rows at the end of `COMPONENTS`, add new `world`/`auth` values to
   `cases.ts` (`World`, `Role`, `AUTH_TEXT`) and the harness, and add the prefix to a chunk in `CHUNKS`. · active
@@ -605,18 +608,18 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
   always needs an email and sends one (budget). A clip that shows a sign-in form shows the phone number: start clips
   signed in, and trim (`imageio-ffmpeg` gives a portable ffmpeg) if a re-sign-in lands on camera. → For any live run,
   sign every account in off-camera first, stub the widget the same way, count sign-up emails, and record only signed-in
-  screens. · active
+  screens. · promoted → checklist.md § Live QA runs
 - L-SIM2 · 2026-11-27 · live QA / media · ffmpeg-made MP4s (udta box) and browser MediaRecorder WebMs (no Duration) are
   both refused by the v1 media checks, so a QA run cannot post a video from generated files, and neither can most phone
   gallery videos (SIM-P28). → Before a media chain, test one real phone recording and one gallery file on staging; do
   not plan video steps on synthetic files. · active
-  L315 · 2026-11-27 · QA live run / staff · A server-side Turnstile bypass is never reached by UI forms that wait for a client widget token; staff accounts also need a VERIFIED email before the console opens ("Verify your phone and email first"), and a fresh ID token after the link is clicked. → For any live QA plan: (1) prove sign-in end to end in the real form at Gate 0 (stub the widget script only where the server allowlist decides), (2) create staff test accounts with a reachable inbox and verify them before the run, (3) list every seed the run assumes (hashtags, banned words, protected words) and check them at Gate 0 — tonight all were empty (SIM-G16/G17/G18). · active
+  L315 · 2026-11-27 · QA live run / staff · A server-side Turnstile bypass is never reached by UI forms that wait for a client widget token; staff accounts also need a VERIFIED email before the console opens ("Verify your phone and email first"), and a fresh ID token after the link is clicked. → For any live QA plan: (1) prove sign-in end to end in the real form at Gate 0 (stub the widget script only where the server allowlist decides), (2) create staff test accounts with a reachable inbox and verify them before the run, (3) list every seed the run assumes (hashtags, banned words, protected words) and check them at Gate 0 — tonight all were empty (SIM-G16/G17/G18). · promoted → checklist.md § Live QA runs
   L316 · 2026-11-27 · moderation four-eyes · Two-staff setups cannot finish a ban appeal or unban (every attempt 403, correct), and the UI offers the decide/lift forms to both participants before refusing (SIM-B13: `decidedByMe` = report.decidedBy only = confirmer). → Any "participant" check in the UI must use the same participant set as the API (proposer + confirmer + decider); and a QA plan that tests four-eyes needs a third staff account (Q-SIM-1). · active
 
-L-DCSIM1 · 2026-11-27 · QA planning · a sim brief said "COD only" AND "agents deliver", but by design COD orders never get an agent (deliveryModeFor) → before planning a live chain, trace the state gate in code (who may enter each state, and under which payment) and look for existing test-account data (here 4 paid unrouted orders) before asking for new payments. Also: enabled WhatsApp templates send to the Firebase test range (+91 90000 0000x), which may be real strangers on WhatsApp, so check notification_templates before any live order step.
-L-SIMF1 · 2026-11-27 · live QA follow-up (agent F) · (1) a staff role granted mid-run (08) was useless because the account's email was never verified — the console needs phone+email verified and a fresh token (SIM-LEAD-1) → before granting a staff role in a QA run, check `email_verified_at` and plan the inbox click + re-sign-in. (2) ffmpeg `-map_metadata -1 -fflags +bitexact` still writes moov/udta → "metadata stripped" files still hit the MP4 allowlist; verify with a box scan, not by flags. (3) when writing JSON lines by sed, never insert raw double quotes — validate the log after each edit.
+L-DCSIM1 · 2026-11-27 · QA planning · a sim brief said "COD only" AND "agents deliver", but by design COD orders never get an agent (deliveryModeFor) → before planning a live chain, trace the state gate in code (who may enter each state, and under which payment) and look for existing test-account data (here 4 paid unrouted orders) before asking for new payments. Also: enabled WhatsApp templates send to the Firebase test range (+91 90000 0000x), which may be real strangers on WhatsApp, so check notification_templates before any live order step. · promoted → checklist.md § Live QA runs
+L-SIMF1 · 2026-11-27 · live QA follow-up (agent F) · (1) a staff role granted mid-run (08) was useless because the account's email was never verified — the console needs phone+email verified and a fresh token (SIM-LEAD-1) → before granting a staff role in a QA run, check `email_verified_at` and plan the inbox click + re-sign-in. (2) ffmpeg `-map_metadata -1 -fflags +bitexact` still writes moov/udta → "metadata stripped" files still hit the MP4 allowlist; verify with a box scan, not by flags. (3) when writing JSON lines by sed, never insert raw double quotes — validate the log after each edit. · promoted → checklist.md § Live QA runs
 L-DCSIM2 · 2026-11-27 · live QA (personas) · A demo-store-only e2e let two P0/P1 production breaks through (rider photos never upload; shop never sees "ready for pickup"), and a role granted mid-session locked the new rider out. → Any feature with a demo seam needs at least one e2e on the real API client for its main path; QA plans should budget API-assisted fallbacks (own session, logged as GAP) so a UI break does not stop the chain. Also: rate limits count refused attempts (COD request 429 after 2 API negative checks) — run negative API checks on a spare account, not the chain's main persona; read codes from a labelled element, never with a first-4-digits regex over page text (it caught the year "2026"). · active
-L-DCSIM2 · 2026-11-27 · live QA conducting · (1) The harness may refuse production DB reads (even READ ONLY recon) — plan every "DB-read" check with an admin-screen/staff-API fallback and a WhatsApp guard that needs no DB (`GET /v1/admin/notifications/whatsapp` month counter + template rows). (2) Staff/partner accounts get the signed-out checkout branch, and the COD request limit counts refused attempts — keep a spare plain customer account per COD chain. (3) A headed recording of a staff console catches the two-step phone and one-time invite links: record staff off-camera or mask before any reveal; the clip was deleted. (4) The site's dark theme is the stored `mechdost-theme`, not prefers-color-scheme — renders must set it. · active
+L-DCSIM2 · 2026-11-27 · live QA conducting · (1) The harness may refuse production DB reads (even READ ONLY recon) — plan every "DB-read" check with an admin-screen/staff-API fallback and a WhatsApp guard that needs no DB (`GET /v1/admin/notifications/whatsapp` month counter + template rows). (2) Staff/partner accounts get the signed-out checkout branch, and the COD request limit counts refused attempts — keep a spare plain customer account per COD chain. (3) A headed recording of a staff console catches the two-step phone and one-time invite links: record staff off-camera or mask before any reveal; the clip was deleted. (4) The site's dark theme is the stored `mechdost-theme`, not prefers-color-scheme — renders must set it. · promoted → checklist.md § Live QA runs
 
 - L-QA-A1 · 2026-11-27 · ustaad/notices · Five catalogued bell links pointed at pages that were never built
   (`/ustaad/notifications`, `/ustaad/me/verify`, `/ustaad/jobs/mine`) and nothing checked them → every notice link
@@ -633,10 +636,30 @@ L-DCSIM2 · 2026-11-27 · live QA conducting · (1) The harness may refuse produ
   overwrote the existing `0106_snapshot.json` → after generating, rename the SQL to the next free number, move the
   new snapshot to that number, `git checkout` the overwritten one, fix the journal tag, and check `prevId` chains to
   the latest snapshot. Shell-quoted node one-liners with backticks broke file text three times → write edit scripts
-  to the scratchpad and run them with node.
+  to the scratchpad and run them with node. · promoted → checklist.md § Tooling
   L-RT1 · 2026-11-27 · ustaad/gating · The batch A "banned screen on every network page" passed on 9 routes but failed on Home: Home gates only the feed block, and that block's ClientMessages lacked `ustaad.standing`, so raw keys showed. → When a fix says "every page", list the page files and check each wrapper's namespaces. Home pages put several gated sections side by side.
   L-RT2 · 2026-11-27 · notifications · Changing a link in notice-catalogue.ts does not fix rows already stored (the link is written at insert time). → A catalogue link change needs a data backfill or a redirect in the same change.
   L315 · 2026-11-27 · delivery/i18n · next-intl does NOT throw for a missing message (it prints the key path), so a `try { e(code) } catch` fallback never fires and staff saw `delivery.errors.STALE` → map codes through a typed list first, and guard it with a test that scans the route + repository throws for every code (DC-B3).
   L316 · 2026-11-27 · delivery/web · signed media URLs answered as a bare path (`/delivery-photos/…`) resolve on the website origin → API answers include `/v1`, and the web prefixes `NEXT_PUBLIC_API_URL` with one helper (DC-B7). Same check for any API-served link the web renders.
-  L317 · 2026-11-27 · delivery/web · a web role computed once at sign-in (`demoRoleFor`) goes stale after any action that grants a role (invite acceptance) → refresh `/v1/me` with a fresh token and re-adopt the account in the same handler (DC-P4).
-  L318 · 2026-11-27 · worktree · a fresh worktree has no node_modules and no `apps/web/next-env.d.ts` (ignored) → `pnpm install --frozen-lockfile --offline`, copy next-env.d.ts from the main checkout before web tsc; worktree-isolated Bash refuses `cd … && heredoc` chains → use Write/Edit or PowerShell from the worktree root.
+  L317 · 2026-11-27 · delivery/web · a web role computed once at sign-in (`demoRoleFor`) goes stale after any action that grants a role (invite acceptance) → refresh `/v1/me` with a fresh token and re-adopt the account in the same handler (DC-P4). · promoted → checklist.md § Live QA runs + bug-catalogue A
+  L318 · 2026-11-27 · worktree · a fresh worktree has no node_modules and no `apps/web/next-env.d.ts` (ignored) → `pnpm install --frozen-lockfile --offline`, copy next-env.d.ts from the main checkout before web tsc; worktree-isolated Bash refuses `cd … && heredoc` chains → use Write/Edit or PowerShell from the worktree root. · promoted → checklist.md § Tooling
+
+L319 · 2026-11-27 · agents/skills · Under the QA timebox an agent ran only part of the skill chain and listed the rest
+as "Skipped (timebox)" (Ustaad sim `logs/audit.md`, follow-up F); same pattern as L199 (2026-11-15, "followed the rest
+in practice"); reported by the lead as a repeat → the brief must demand invocation via the Skill tool and the lead
+rejects a report without the skills-run / skipped-with-reason list. · promoted → checklist.md § Docs & process
+L320 · 2026-11-27 · ops/Turnstile · Restoring production from the Cloudflare always-pass test keys had an order: real
+site key deployed and verified on /login first, server secret back from the backup only after, then bypass lines
+removed and the API restarted (progress handover 17:30); reported by the lead as a repeat → write the order into the
+run plan before switching keys. · promoted → checklist.md § Live QA runs
+L321 · 2026-11-27 · live QA/messages · Email budgets were not enforceable: the delivery run sent ~24–29 emails against a
+cap of 10 and the harness refused production DB reads, so agents could not count the outbox (progress handover;
+delivery gate0 risk 3; L-DCSIM2) → give QA agents a read-only outbox count before the run. · promoted → checklist.md
+§ Live QA runs
+L322 · 2026-11-27 · live QA/WhatsApp · Second occurrence of the Firebase test-range risk (L-DCSIM1; delivery gate0 risk
+1 "WhatsApp to a stranger"): templates had to be switched off and re-read before every order step. · promoted →
+checklist.md § Live QA runs
+L323 · 2026-11-27 · live QA/accounts · Account ↔ inbox mix-ups during the runs, reported by the lead (no log entry
+found) → take the inbox from the DB user row (the inbox tag), never from memory. · promoted → checklist.md § Live QA
+runs
+L319 · 2026-11-27 · ui/research · CLAUDE.md lists Recharts and shadcn registries in the stack, but neither is installed (no lockfile entry, no components.json); registry items that fit partner UIs pull Radix/Base UI/dnd-kit/motion → check the lockfile before a design names a library, prefer zero-dependency registry items as copied patterns, and ask the founder before adding a chart library. Play Store listing galleries (curl the details page, take play-lh image URLs) give reference screenshots without a browser; Swiggy/Zomato partner apps share the "timer inside the button" look, so treat it as their signature, not a pattern to copy.

@@ -2,6 +2,31 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-27 night — skills self-improvement step (docs only, uncommitted for the lead)
+
+- Promoted every lesson seen twice from the 2026-11-26/27 learnings: advisor `checklist.md` (UI focus-on-swap,
+  per-file tree-shaking, skill invocation, drizzle-kit snapshots, `.openapi()` on shared Zod, worktree typecheck,
+  Windows scripts, new § Live QA runs) and website-testing `bug-catalogue.md` § T (T1–T11). Learnings marked
+  "promoted → …", both changelogs logged. No code, no tests run.
+- **Guards to add** (lead schedules; each closes a promoted lesson that has no automated guard yet):
+  - Read-only outbox counts for QA agents: an admin/staff API or screen with this month's email + WhatsApp sends by
+    template (WhatsApp counter exists at `GET /v1/admin/notifications/whatsapp`; email has none).
+  - Live-run preflight script: WhatsApp order templates off, outbox count baseline, staff test accounts
+    `email_verified_at` set, seeds the plan assumes present (Gate 0, read-only).
+  - QA Turnstile widget stub kept in the repo (today only on `D:`), used only with the server bypass; plus a runbook
+    step for the key-restore order (web site key live first, then the server secret).
+  - Token force-refresh: "I've verified, check again" on the verify-first notice and after invite acceptance
+    (`currentIdToken(locale, true)` + `/v1/me`), with an e2e for each (SIM-LEAD-1, DC-P4).
+  - API test fake verifier rejects tokens the `BEARER` regex would ignore (bug-catalogue T5).
+  - Error-code → message scan for Ustaad and other route families like `apps/web/test/delivery-error-codes.test.ts`.
+  - API-client contract tests (stubbed fetch, shared-schema parse) for every other demo seam, like
+    `delivery-contract.test.ts`.
+  - Stored notice rows: data test that no `notifications` link falls outside the route tree (extend
+    `notice-links.test.ts`).
+  - Post-`drizzle-kit generate` check: snapshot `prevId` chain + journal `when` order + no overwritten snapshot
+    (script or test in `packages/db`).
+  - Worktree bootstrap that creates `apps/web/next-env.d.ts` before web `tsc`.
+
 ## 2026-11-27 evening — delivery go-live blockers fixed (builder, branch `worktree-agent-adc124fa15469db75`, NOT merged)
 
 - Seven commits, test first (spec 24 § 17): DC-P11 job photos carry the job id; DC-B11 sweep audited + warns on

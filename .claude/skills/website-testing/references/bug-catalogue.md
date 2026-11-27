@@ -228,3 +228,49 @@ which are automated. Add new classes at the end of the relevant section.
 - **Q3 · Copy ruling leaves an e2e literal behind** — a ruling rewords customer copy, the e2e asserting the old text
   keeps failing for days. Test: `git log -S '<literal>'` on every failing text assertion; the ruling's change greps
   `apps/web/e2e` for the old literal.
+
+## T · Promoted repeats (2026-11-27 self-improvement step)
+
+Each class below was seen at least twice; the guard is named, or listed in `docs/progress.md` "Guards to add".
+
+- **T1 · Raw JS `Date` in a `sql` template** (T169, T-DATE2) — PGlite accepts it, postgres-js throws
+  `ERR_INVALID_ARG_TYPE`, so the job fails only in production. Rule: `${d.toISOString()}::timestamptz` or drizzle
+  operators. Guard: `packages/db/src/testing.ts` `rejectDateParams` makes every test DB throw on a Date parameter.
+- **T2 · One import ships a whole module** (T-SAV2, T-BUDGET2) — Turbopack tree-shakes per file, so one constant from
+  `@mechdost/shared/state` or `/savings` puts the whole file on every page. Rule: small client values live in their
+  own module. Guards: `apps/web/test/shared-state-barrel.test.ts`, `apps/web/test/savings-view.test.ts`; measure with
+  `scripts/measure-js.mjs` before pushing.
+- **T3 · Hindi crawl fixed by guess** (T-NIGHT1 three CI rounds, T-SAV1, L-UDM3) — the offending text came from a
+  sample map the page did not use. Rule: grep the page's component for its sample/label source before editing and
+  prove the fix locally with `latinOffenders()` from `apps/web/test/hindi-allowlist.ts`; the gate is
+  `apps/web/e2e/hindi-coverage.spec.ts`. Demo names shown on `/hi` carry a transliterated `nameHi`.
+- **T4 · Stale ID token after verification or a role grant** (SIM-LEAD-1, T-DCSIM-P3 / L317 delivery, L-SIMF1) — the
+  API reads `email_verified` and roles from the token, so a change made on another device or by an invite stays
+  invisible for up to an hour. Rule: after the action (or on "check again"), `currentIdToken(locale, true)` and
+  re-read `/v1/me`. Test: e2e accept-invite → portal without re-sign-in; verify-email elsewhere → "check again" opens
+  the console (guard to add).
+- **T5 · Test bearer token under 20 characters** (T221, T-USAGE1, T-COD1) — `BEARER` in
+  `apps/api/src/middleware/auth.ts` needs 20+ characters; a shorter test token is silently ignored and the test sees
+  the signed-out path (401 / guest answer). Rule: `token-<area>-0000000NN`. Guard to add: the fake verifier throws on a
+  token the regex would reject.
+- **T6 · Demo store drifts from the API contract** (T-DLV3, T-DLV-1, T-DCSIM-P1, L-DLV5) — unit and e2e on the demo
+  store passed while every real photo upload failed (422 `JOB_REQUIRED`). Rule: parse every demo answer with the
+  shared schema, assert the API client's paths and bodies with a stubbed fetch, and run one e2e of the main path on
+  the real API client. Guard: `apps/web/test/delivery-contract.test.ts` (delivery only; other seams: guard to add).
+- **T7 · API error code without a message** (T-DCSIM-P4, T-DCSIM-L2, L315 delivery/i18n, L-QA-A3) — next-intl prints
+  the key path instead of throwing, so staff saw `delivery.errors.STALE` or "check your internet". Rule: map codes
+  through a typed list. Guard: `apps/web/test/delivery-error-codes.test.ts` (delivery); the same scan for Ustaad and
+  other route families is a guard to add.
+- **T8 · Notice link with no page** (T-QA-A1, T-RT2, T-SIM-P1) — catalogue links pointed at unbuilt pages, and the
+  catalogue fix left stored rows broken. Guard: `apps/web/test/notice-links.test.ts`; stored rows need a backfill or a
+  redirect in the same change (data check on stored rows: guard to add).
+- **T9 · e2e runs against someone else's server or locale** (T-FX5, T-FX6, T-P23c, L-UCE1, L-UCE5) —
+  `reuseExistingServer` reused another agent's `:3100`; another port loses the consent fixture; a visit to `/hi`
+  stores `NEXT_LOCALE=hi` and later English locators time out. Rule: own `E2E_PORT` + check the port owner, seed
+  `mechdost-consent` with `addInitScript`, clear `NEXT_LOCALE` and end shot helpers where they started.
+- **T10 · Per-user limits spent by earlier tests** (T-QA-A3, L192, L-D1, L-DCSIM2) — a test fails only in the full run
+  because an earlier test used the member's daily cap; live runs hit 429 after negative checks. Rule: a fresh member
+  (or a raised cap in `beforeEach`) for rate-limited writes; negative live checks on a spare account.
+- **T11 · Fresh worktree typecheck noise** (T-B3, L318 worktree) — web `tsc` fails on image imports without the
+  gitignored `apps/web/next-env.d.ts`. Rule: copy it from the main checkout first; not a code error (bootstrap guard
+  to add).
