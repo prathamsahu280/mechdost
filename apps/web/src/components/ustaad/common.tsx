@@ -193,6 +193,16 @@ export function useCodeLabel() {
  * Member screens need a membership (the API answers 404 otherwise, spec 23 § 3). Staff looking at the preview without
  * joining, and signed-in mechanics who have not joined, see one next action: join. Pages using it load `ustaad.shell`.
  */
+/**
+ * SIM-RT1: a whole page that must not show its member content to a banned member, without a loading block for
+ * everyone else (the Home renders at once; only a banned member's view swaps to the banned screen).
+ */
+export function BannedGate({ children }: { children: ReactNode }) {
+  const { loaded } = useUstaad((c) => c.me(), 'gate-me');
+  if (memberGateView(loaded) === 'banned') return <BannedScreen />;
+  return <>{children}</>;
+}
+
 export function MemberGate({ children }: { children: ReactNode }) {
   const t = useTranslations('ustaad.shell');
   const locale = useLocale();
