@@ -4,6 +4,7 @@ import { Flag, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
 import { btnPrimary, btnQuiet, fieldClass } from '../common';
+import { RulesLink } from '../rules-link';
 import { LiveNote, useAct, useDmErrorText } from './shared';
 
 /** Reasons that fit a conversation or a member (spec 23 § 13; codes from `REPORT_REASONS`). */
@@ -173,6 +174,7 @@ export function ReportDialog({
         >
           {busy ? t('working') : t('reportSend')}
         </button>
+        <RulesLink place="dm_report" />
       </form>
     </dialog>
   );

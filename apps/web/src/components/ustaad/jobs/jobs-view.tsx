@@ -22,6 +22,7 @@ import { ustaadClient, type Job, type JobRole } from '@/lib/ustaad/client';
 import { payRangeText } from '@/lib/ustaad/local-view';
 import type { Recording } from '../media/voice-recorder';
 import { UploadProgress } from '../media/upload-progress';
+import { RulesLink } from '../rules-link';
 import { JobApplicants } from './job-applicants';
 import {
   btnPrimary,
@@ -101,6 +102,7 @@ export function JobsList({ role }: { role: JobRole | null }) {
         </Link>
       </header>
       <ScamBanner />
+      <RulesLink place="jobs" className="-mt-2" />
 
       <nav aria-label={t('filterLabel')} className="-mx-4 overflow-x-auto px-4 tab:mx-0 tab:px-0">
         <ul className="flex w-max gap-2">

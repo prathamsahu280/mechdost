@@ -10,6 +10,7 @@ import { localePath } from '@/lib/locale-path';
 import { whatsappShareUrl } from '@/lib/ustaad/feed-format';
 import { EditedText } from '../correction/edited-text';
 import { useCodeLabel, useTimeAgo } from '../common';
+import { RulesLink } from '../rules-link';
 import { UstaadIcon } from '../shell/icons';
 import { PostMedia } from './post-media';
 import { Avatar, useMemberName, useSocialAction, useSocialError } from './social-common';
@@ -193,7 +194,7 @@ export function PostCard({
       ) : null}
       {post.status === 'held' ? (
         <p role="note" className="mx-4 mt-3 rounded-xl bg-warning-bg px-3 py-2 text-sm text-warning">
-          {t('held')}
+          {t('held')} <RulesLink place="held_note" inheritColor />
         </p>
       ) : null}
 

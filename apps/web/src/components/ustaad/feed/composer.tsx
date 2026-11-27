@@ -18,6 +18,7 @@ import { btnPrimary, btnQuiet, card, fieldClass, SampleNote } from '../common';
 import { correctForSend, SmartCorrection, type CorrectionMeta } from '../correction/smart-correction';
 import { prepareImage, type PreparedImage } from '../media/image-picker';
 import { UploadProgress } from '../media/upload-progress';
+import { RulesLink } from '../rules-link';
 import { VoiceRecorder, type Recording } from '../media/voice-recorder';
 import { UstaadIcon, type UstaadIconName } from '../shell/icons';
 import { useSocialAction, useSocialError } from './social-common';
@@ -737,6 +738,7 @@ export function Composer({ story }: { story: boolean }) {
               {busy ? t('posting') : story ? t('postStory') : t('post')}
             </button>
           ) : null}
+          <RulesLink place="composer" />
         </form>
       )}
     </section>
