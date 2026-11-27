@@ -4712,7 +4712,17 @@
     "prefsPromoHelp": "Only if you agree. At most two a week. You can change this any time.",
     "prefsSaved": "Saved.",
     "prefsError": "Could not save. Try again.",
-    "newUpdate": "New update: {title}"
+    "newUpdate": "New update: {title}",
+    "filterLabel": "Show",
+    "filterAll": "All",
+    "filterUstaad": "Ustaad",
+    "filterOrders": "Orders",
+    "filterService": "Service",
+    "filterEmpty": "Nothing here yet.",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "thisWeek": "This week",
+    "earlier": "Earlier"
   },
   "gstStates": {
     "10": "Bihar",

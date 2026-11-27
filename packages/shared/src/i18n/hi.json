@@ -4712,7 +4712,17 @@
     "prefsPromoHelp": "सिर्फ़ आपकी सहमति से। हफ़्ते में अधिकतम दो। आप कभी भी बदल सकते हैं।",
     "prefsSaved": "सेव हो गया।",
     "prefsError": "सेव नहीं हो सका। फिर कोशिश करें।",
-    "newUpdate": "नई जानकारी: {title}"
+    "newUpdate": "नई जानकारी: {title}",
+    "filterLabel": "दिखाओ",
+    "filterAll": "सब",
+    "filterUstaad": "उस्ताद",
+    "filterOrders": "ऑर्डर",
+    "filterService": "सर्विस",
+    "filterEmpty": "यहाँ अभी कुछ नहीं है।",
+    "today": "आज",
+    "yesterday": "कल",
+    "thisWeek": "इस हफ़्ते",
+    "earlier": "पहले"
   },
   "gstStates": {
     "10": "बिहार",
