@@ -224,7 +224,7 @@ export async function joinUstaad(
 
   return db.transaction(async (tx) => {
     const cityId = await ustaadRegionFor(tx, { pincode: input.pincode });
-    if (!cityId) throw new ValidationError('Ustaad Network is opening in your city soon', 'USTAAD_REGION');
+    if (!cityId) throw new ValidationError('Mechanic Network is opening in your city soon', 'USTAAD_REGION');
     const existing = await memberRowOfUser(tx, actor.userId);
     if (existing?.status === 'banned')
       throw new ForbiddenError('This account cannot use the network', 'USTAAD_BANNED');

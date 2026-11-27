@@ -338,7 +338,7 @@ export const ROLES = {
   },
   mechanic: {
     name: 'Mechanic',
-    description: 'Ustaad Network member (joining grants it; spec 23)',
+    description: 'Mechanic Network member (joining grants it; spec 23)',
     scope: 'self',
     staff: false,
     permissions: [

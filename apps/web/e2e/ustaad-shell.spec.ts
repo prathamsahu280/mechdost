@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
 /**
- * Ustaad Network shell and the staff preview (spec 23 § 5; plan task A3; founder 2026-11-26). The browser demo runs
+ * Mechanic Network shell and the staff preview (spec 23 § 5; plan task A3; founder 2026-11-26). The browser demo runs
  * the default `staff_preview`: signed out and customers see the site's ordinary "page not found", staff see the shell
  * with the preview note. Also the privacy notice and terms sections for the network and the grievance fallback.
  * With USTAAD_SHOTS set to a folder, the review screenshots are written there (390 / 1440 light, Hindi 390).
@@ -28,12 +28,12 @@ async function shot(page: Page, name: string, width: number) {
   await page.screenshot({ path: `${SHOTS}/${name}-${String(width)}.png`, fullPage: true });
 }
 
-test.describe('Ustaad Network: staff preview', () => {
+test.describe('Mechanic Network: staff preview', () => {
   test('signed out, /ustaad looks exactly like a page that does not exist', async ({ page }) => {
     await page.goto('/ustaad');
     await expect(page.getByRole('heading', { level: 1, name: 'Page not found' })).toBeVisible();
-    await expect(page.getByRole('navigation', { name: 'Ustaad Network sections' })).toHaveCount(0);
-    await expect(page.getByText('Ustaad Network')).toHaveCount(0);
+    await expect(page.getByRole('navigation', { name: 'Mechanic Network sections' })).toHaveCount(0);
+    await expect(page.getByText('Mechanic Network')).toHaveCount(0);
     await expect(page).not.toHaveTitle(/Ustaad/);
     const robots = await page.locator('meta[name="robots"]').getAttribute('content');
     expect(robots).toContain('noindex');
@@ -53,7 +53,7 @@ test.describe('Ustaad Network: staff preview', () => {
     await page.goto('/ustaad');
     await expect(page.getByRole('note')).toContainText('Staff preview');
     await expect(page.getByRole('heading', { name: 'Stuck on a job?' })).toBeVisible();
-    const nav = page.getByRole('navigation', { name: 'Ustaad Network sections' });
+    const nav = page.getByRole('navigation', { name: 'Mechanic Network sections' });
     await expect(nav).toHaveCount(1); // the dock is hidden at this width, the rail is shown
     await expect(nav.getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
     await expect(nav.getByRole('link', { name: 'Create a post' })).toBeVisible();
@@ -68,10 +68,10 @@ test.describe('Ustaad Network: staff preview', () => {
   });
 });
 
-test.describe('Policies for the Ustaad Network', () => {
+test.describe('Policies for the Mechanic Network', () => {
   test('privacy notice and terms carry the network sections and the grievance contact', async ({ page }) => {
     await page.goto('/policies/privacy');
-    await expect(page.getByRole('heading', { name: 'Ustaad Network: what mechanics share' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Mechanic Network: what mechanics share' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Smart correction of what you type' })).toBeVisible();
     await expect(page.getByText('Last updated: 26 November 2026')).toBeVisible();
     await expect(page.getByText('To be announced')).toBeVisible();
@@ -79,17 +79,17 @@ test.describe('Policies for the Ustaad Network', () => {
     await shot(page, 'privacy', 1440);
     await shot(page, 'privacy', 390);
     await page.goto('/terms');
-    await expect(page.getByRole('heading', { name: 'Ustaad Network rules' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Mechanic Network rules' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'What you may post in the network' })).toBeVisible();
     await shot(page, 'terms', 1440);
     await shot(page, 'terms', 390);
     await page.goto('/hi/policies/privacy');
     await expect(
-      page.getByRole('heading', { name: 'उस्ताद नेटवर्क: मिस्त्री क्या साझा करते हैं' }),
+      page.getByRole('heading', { name: 'मैकेनिक नेटवर्क: मिस्त्री क्या साझा करते हैं' }),
     ).toBeVisible();
     await shot(page, 'privacy-hi', 390);
     await page.goto('/hi/terms');
-    await expect(page.getByRole('heading', { name: 'उस्ताद नेटवर्क के नियम' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'मैकेनिक नेटवर्क के नियम' })).toBeVisible();
     await shot(page, 'terms-hi', 390);
   });
 });

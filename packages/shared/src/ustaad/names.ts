@@ -181,6 +181,7 @@ export const RESERVED_NAME_SEED: readonly string[] = [
   'Customer Care',
   'Community Manager',
   'Ustaad Network',
+  'Mechanic Network',
   'Ustaad Official',
   'Ustaad Team',
   'Shourya Integrated',
@@ -189,4 +190,5 @@ export const RESERVED_NAME_SEED: readonly string[] = [
   'मॉडरेटर',
   'ऑफिशियल',
   'उस्ताद नेटवर्क',
+  'मैकेनिक नेटवर्क',
 ];

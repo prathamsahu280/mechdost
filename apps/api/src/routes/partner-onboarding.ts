@@ -146,7 +146,7 @@ export async function human(deps: AppDeps, c: Context<AppEnv>, token: string) {
 async function refuseMechanicWhenOpen(deps: AppDeps, raw: unknown): Promise<void> {
   if (typeof raw !== 'object' || raw === null || (raw as { kind?: unknown }).kind !== 'mechanic') return;
   if ((await readUstaadAccess(deps.db)) === 'open')
-    throw new ApiError(410, 'MOVED_TO_USTAAD', 'Mechanics now join the Ustaad Network at /ustaad/join');
+    throw new ApiError(410, 'MOVED_TO_USTAAD', 'Mechanics now join the Mechanic Network at /ustaad/join');
 }
 
 function parseApplication(raw: unknown) {

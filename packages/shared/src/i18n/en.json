@@ -2049,7 +2049,7 @@
     "queue_done": "Confirmed and in delivery",
     "queue_rejected": "Rejected",
     "emptyQueue": "Nothing here right now.",
-    "ustaadNoticeTitle": "Mechanic applications moved to the Ustaad Network",
+    "ustaadNoticeTitle": "Mechanic applications moved to the Mechanic Network",
     "ustaadNoticeBody": "{count, plural, =0 {No verification requests are waiting.} one {# verification request is waiting.} other {# verification requests are waiting.}} Mechanics now join the network and MechDost staff verify them there. Older applications stay below for history.",
     "ustaadNoticeLink": "Open the verification queue",
     "orderMeta": "{items} · {total} · PIN {pin}",
@@ -3358,8 +3358,8 @@
     "cat_err_PRODUCT_SEGMENTS": "Unknown vehicle segment.",
     "syn_kind_segment": "Vehicle segment",
     "nav_ustaad": "Community and settings",
-    "adminHeader_ustaad": "Moderation, verification and settings of the Ustaad Network, the mechanics-only network.",
-    "navGroup_ustaad": "Ustaad Network",
+    "adminHeader_ustaad": "Moderation, verification and settings of the Mechanic Network, the mechanics-only network.",
+    "navGroup_ustaad": "Mechanic Network",
     "content_group_savings": "Savings wording",
     "field_savings_order": "Order page line (keep '{amount}')",
     "field_savings_account": "Account card line (keep '{amount}')",
@@ -3490,9 +3490,9 @@
       "rightsTitle": "Your choices and rights",
       "rightsBody": "Ask us to show, correct or delete your data, or withdraw a permission you gave. Deletion is confirmed by our support team first; order and invoice records are kept as long as tax law requires, then removed.",
       "help": "Questions, requests or complaints about your data? Call us:",
-      "updated": "Last updated: 26 November 2026 (Ustaad Network added).",
-      "ustaadTitle": "Ustaad Network: what mechanics share",
-      "ustaadBody": "The Ustaad Network is a part of MechDost only for people who repair vehicles. If you join, we keep your network profile: your name, area, the work you do, years of experience, level and Izzat, and your garage name only if you choose to show it. You can post voice notes, photos, short videos, PDF documents, links, polls and text, and ask and answer questions. Your phone number is never shown to other members.",
+      "updated": "Last updated: 26 November 2026 (Mechanic Network added).",
+      "ustaadTitle": "Mechanic Network: what mechanics share",
+      "ustaadBody": "The Mechanic Network is a part of MechDost only for people who repair vehicles. If you join, we keep your network profile: your name, area, the work you do, years of experience, level and Izzat, and your garage name only if you choose to show it. You can post voice notes, photos, short videos, PDF documents, links, polls and text, and ask and answer questions. Your phone number is never shown to other members.",
       "ustaadAudienceTitle": "Who sees what you post",
       "ustaadAudienceBody": "Only signed-in members of the network, who are mechanics, see your profile and posts. Customers and the public do not, and network pages are kept out of search engines. A post you share on WhatsApp shows only a card asking people to sign in, never the post itself. Our community managers see network content to keep it safe. Photos lose their location and camera details when uploaded, and the tool to blur faces and number plates is on by default.",
       "ustaadLocationTitle": "Your garage location",
@@ -3592,9 +3592,9 @@
       "contactTitle": "Questions and complaints",
       "contactBody": "Raise a support request from your account, call us or contact support on WhatsApp. Our grievance officer acknowledges a complaint within 48 hours and resolves it within one month, as the Consumer Protection (E-Commerce) Rules require.",
       "help": "Questions about these terms? Call us:",
-      "updated": "Last updated: 26 November 2026 (Ustaad Network rules added).",
-      "ustaadTitle": "Ustaad Network rules",
-      "ustaadBody": "The Ustaad Network is only for people who repair vehicles. Join with your own details, keep one account, and never pretend to be someone else or to speak for MechDost. Levels, badges and Izzat are respect only: they have no money value and cannot be exchanged for MechDost Coins or cash. Advice from members is community advice, not a professional guarantee; check safety work on brakes, steering, fuel, airbags and high-voltage electric parts yourself.",
+      "updated": "Last updated: 26 November 2026 (Mechanic Network rules added).",
+      "ustaadTitle": "Mechanic Network rules",
+      "ustaadBody": "The Mechanic Network is only for people who repair vehicles. Join with your own details, keep one account, and never pretend to be someone else or to speak for MechDost. Levels, badges and Izzat are respect only: they have no money value and cannot be exchanged for MechDost Coins or cash. Advice from members is community advice, not a professional guarantee; check safety work on brakes, steering, fuel, airbags and high-voltage electric parts yourself.",
       "ustaadContentTitle": "What you may post in the network",
       "ustaadContentBody": "Post only your own work or content you have the right to share. Not allowed: abuse or hate; sexual content, and anything sexual involving children, which we report to the police; photos or videos of children working; customers' faces, number plates or phone numbers; illegal modifications such as silencer, odometer, emission or number plate tampering; fake or misleading claims; spam and selling; job scams, including asking anyone to pay for a job; and AI-made content that falsely shows a real person. Mark content made or edited with AI. What you post stays yours, and you allow MechDost to show it to network members.",
       "ustaadEnforcementTitle": "Moderation, takedowns, jobs and appeals",
@@ -3602,8 +3602,8 @@
     },
     "communityRules": {
       "eyebrow": "Policies",
-      "title": "Ustaad Network Community Rules",
-      "lead": "The Ustaad Network is a place for mechanics to learn from each other. These rules keep it useful, safe and fair for everyone.",
+      "title": "Mechanic Network Community Rules",
+      "lead": "The Mechanic Network is a place for mechanics to learn from each other. These rules keep it useful, safe and fair for everyone.",
       "whoTitle": "Who can join",
       "whoBody": "Only people who repair vehicles. Join with your own details, keep one account, and never pretend to be someone else or to speak for MechDost.",
       "respectTitle": "Be respectful",
@@ -3739,7 +3739,7 @@
     "err_DELETION_ALREADY_CONFIRMED": "This deletion request is already confirmed.",
     "err_FORBIDDEN_DELETION": "Only an account administrator can confirm deletions.",
     "kind_rsa_bill_dispute": "Question about a roadside bill",
-    "kind_ustaad_appeal": "Ustaad Network appeal"
+    "kind_ustaad_appeal": "Mechanic Network appeal"
   },
   "consent": {
     "label": "Privacy choice",
@@ -4498,8 +4498,8 @@
       "body": "A short reminder of what you may and may not post."
     },
     "ustaad_invite": {
-      "title": "Join the Ustaad Network",
-      "body": "Mechanic applications have moved to the Ustaad Network. Join in two minutes."
+      "title": "Join the Mechanic Network",
+      "body": "Mechanic applications have moved to the Mechanic Network. Join in two minutes."
     },
     "ustaad_security_freeze": {
       "title": "Your sign-in details changed",
@@ -4670,7 +4670,7 @@
     "problem_placeholder": "Use only the placeholders listed, in curly brackets.",
     "problem_html": "Write plain text only.",
     "problem_long": "That text is too long (title 80, message 240 characters).",
-    "group_member": "To mechanics in the Ustaad Network"
+    "group_member": "To mechanics in the Mechanic Network"
   },
   "bell": {
     "label": "Notifications",
@@ -5129,7 +5129,7 @@
       "member": "member",
       "comment": "comment",
       "post": "post",
-      "ustaad": "Ustaad Network",
+      "ustaad": "Mechanic Network",
       "add": "add",
       "added": "added",
       "address": "address",
@@ -6947,9 +6947,9 @@
   },
   "ustaad": {
     "shell": {
-      "brand": "Ustaad Network",
+      "brand": "Mechanic Network",
       "tagline": "Hunar dikhao. Pehchaan banao.",
-      "navLabel": "Ustaad Network sections",
+      "navLabel": "Mechanic Network sections",
       "tab_home": "Home",
       "tab_discover": "Discover",
       "tab_create": "Create",
@@ -6961,9 +6961,9 @@
       "previewBody": "Only MechDost staff can see the network right now. Mechanics will see it when it opens.",
       "loading": "Opening the network…",
       "signInTitle": "Sign in to open the network",
-      "signInBody": "The Ustaad Network is only for mechanics. Sign in with your mobile number.",
+      "signInBody": "The Mechanic Network is only for mechanics. Sign in with your mobile number.",
       "signIn": "Sign in",
-      "joinTitle": "Join the Ustaad Network",
+      "joinTitle": "Join the Mechanic Network",
       "joinBody": "Ask Ustaads, show your work, earn Izzat and levels, find jobs. Only mechanics can see it.",
       "joinCta": "Join now",
       "messages": "Messages",
@@ -6978,7 +6978,7 @@
       "unread": "{count} new"
     },
     "home": {
-      "title": "Ustaad Network home",
+      "title": "Mechanic Network home",
       "greeting": "Namaste, {name}",
       "greetingStaff": "Namaste",
       "askTitle": "Stuck on a job?",
@@ -7061,7 +7061,7 @@
       "err_other": "Could not save. Try again."
     },
     "adminAccess": {
-      "title": "Who can open the Ustaad Network",
+      "title": "Who can open the Mechanic Network",
       "lead": "Switch the network between off, a preview for MechDost staff, and open for every mechanic. Every change is recorded in the audit log.",
       "mode_off": "Off",
       "mode_off_help": "Nobody can open it, staff included.",
@@ -7081,7 +7081,7 @@
       "title": "Does {name} work at your garage?",
       "facts": "{name} says they have worked with you since {year}. Area: {area}.",
       "factsNoYear": "{name} says they work with you. Area: {area}.",
-      "why": "MechDost asks garage owners to confirm mechanics on the Ustaad Network. Your answer helps their profile. We never show your number to anyone.",
+      "why": "MechDost asks garage owners to confirm mechanics on the Mechanic Network. Your answer helps their profile. We never show your number to anyone.",
       "confirm": "Yes, they work here",
       "decline": "No, I don't know them",
       "confirmTitle": "Confirm {name}",
@@ -7116,8 +7116,8 @@
       "err_generic": "Something went wrong. Check your connection and try again."
     },
     "join": {
-      "eyebrow": "Ustaad Network",
-      "title": "Join the Ustaad Network",
+      "eyebrow": "Mechanic Network",
+      "title": "Join the Mechanic Network",
       "lead": "Takes under 2 minutes. Only mechanics can see the network.",
       "stepOf": "Step {n} of {total}",
       "step_who": "Who are you?",
@@ -7217,7 +7217,7 @@
       "garageHidden": "Garage name hidden",
       "official": "MechDost team",
       "shareWhatsApp": "Share on WhatsApp",
-      "shareText": "I am on the Ustaad Network, the mechanics' network on MechDost. Join here:",
+      "shareText": "I am on the Mechanic Network, the mechanics' network on MechDost. Join here:",
       "stat_izzat": "Izzat",
       "stat_followers": "Followers",
       "stat_best": "Best answers",
@@ -7271,7 +7271,7 @@
       "reason_proofs_mismatch": "The proofs did not match.",
       "reason_duplicate_account": "This looks like a second account.",
       "reason_other": "See the message from MechDost.",
-      "openNetwork": "Open Ustaad Network",
+      "openNetwork": "Open Mechanic Network",
       "specialities": "My work",
       "opensNewTab": "(opens WhatsApp)",
       "state_done": "Done",
@@ -7381,7 +7381,7 @@
       "shareAria": "Share on WhatsApp",
       "copyLink": "Copy link",
       "copied": "Link copied",
-      "shareText": "See this work on Ustaad Network",
+      "shareText": "See this work on Mechanic Network",
       "likesN": "{count, plural, one {# like} other {# likes}}",
       "commentsN": "{count, plural, one {# comment} other {# comments}}",
       "more": "More options",
@@ -7564,7 +7564,7 @@
       "tagGroup_tool": "Tool",
       "postTitle": "Post",
       "postGone": "This post is not available.",
-      "teaserTitle": "A post on Ustaad Network",
+      "teaserTitle": "A post on Mechanic Network",
       "teaserBody": "Sign in as a mechanic to see it.",
       "teaserSignIn": "Sign in",
       "teaserGone": "This link is not working any more.",
@@ -8395,7 +8395,7 @@
       "e_coachTarget_jobs": "Jobs"
     },
     "tutorial": {
-      "title": "How Ustaad Network works",
+      "title": "How Mechanic Network works",
       "cardOf": "Card {n} of {total}",
       "listen": "Listen",
       "stop": "Stop",
@@ -9152,8 +9152,8 @@
       "allClear": "Your account is in good standing. Nothing was removed and there are no limits.",
       "allClearAction": "Read the community rules",
       "bannedTitle": "Your network account is blocked",
-      "bannedUntil": "You cannot use the Ustaad Network until {date}.",
-      "bannedForever": "You cannot use the Ustaad Network. This has no end date.",
+      "bannedUntil": "You cannot use the Mechanic Network until {date}.",
+      "bannedForever": "You cannot use the Mechanic Network. This has no end date.",
       "restrictedTitle": "Your account is limited",
       "restrictedUntil": "Until {date} you can read, but you cannot post, comment, answer, message or use jobs.",
       "restrictedReview": "While our team checks your account you can read, but you cannot post, comment, answer, message or use jobs.",

@@ -279,8 +279,8 @@ const LEARN: LearnView = {
     {
       id: '0193a400-0000-7000-8000-000000000041',
       code: 'how_to_use',
-      titleEn: 'How to use Ustaad Network',
-      titleHi: 'उस्ताद नेटवर्क कैसे चलाएँ',
+      titleEn: 'How to use Mechanic Network',
+      titleHi: 'मैकेनिक नेटवर्क कैसे चलाएँ',
       resources: [
         {
           id: '0193a500-0000-7000-8000-000000000051',

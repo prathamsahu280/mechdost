@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
 /**
- * Ustaad Network workstream D web (feed + social, spec 23 § 4 flows 4–7, § 5): Home feed with stories, post cards of
+ * Mechanic Network workstream D web (feed + social, spec 23 § 4 flows 4–7, § 5): Home feed with stories, post cards of
  * every kind, like / save / WhatsApp share / comments / ⋯ menu, the composer, the story viewer, a post, a tag, Saved,
  * a profile and the public share teaser, in the staff preview with the browser demo's sample data. Every screen: its
  * heading, axe clean on `main`, sheets close with Escape and give focus back. With USTAAD_SHOTS set to a folder,
@@ -228,7 +228,7 @@ test.describe('Ustaad feed and social (workstream D web)', () => {
     await shots(page, 'saved', '/ustaad/saved', 'main h1');
 
     await page.goto(TEASER);
-    await expect(page.getByRole('heading', { level: 1, name: 'A post on Ustaad Network' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'A post on Mechanic Network' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Sign in' }).last()).toBeVisible();
     await axe(page);
     await shots(page, 'teaser', TEASER, 'main h1');
@@ -240,6 +240,6 @@ test('signed out during the staff preview, the teaser is "page not found" and na
 }) => {
   await page.goto(TEASER);
   await expect(page.getByRole('heading', { level: 1, name: 'Page not found' })).toBeVisible();
-  await expect(page.getByText('Ustaad Network')).toHaveCount(0);
+  await expect(page.getByText('Mechanic Network')).toHaveCount(0);
   await expect(page).not.toHaveTitle(/Ustaad/);
 });
