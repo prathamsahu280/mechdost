@@ -664,3 +664,11 @@ found) → take the inbox from the DB user row (the inbox tag), never from memor
 runs
 L319 · 2026-11-27 · ui/research · CLAUDE.md lists Recharts and shadcn registries in the stack, but neither is installed (no lockfile entry, no components.json); registry items that fit partner UIs pull Radix/Base UI/dnd-kit/motion → check the lockfile before a design names a library, prefer zero-dependency registry items as copied patterns, and ask the founder before adding a chart library. Play Store listing galleries (curl the details page, take play-lh image URLs) give reference screenshots without a browser; Swiggy/Zomato partner apps share the "timer inside the button" look, so treat it as their signature, not a pattern to copy.
 L324 · 2026-11-27 · ui/perf/design · Ustaad UI upgrade design: (1) a ranked, cached feed snapshot cannot drive a "new posts" signal by comparing the first id — it needs a cheap "fresh count since" read; (2) hiding site chrome after a client gate admits the viewer creates a post-hydration shift — decide it in the server HTML by path (layout marker + `html:has()`); (3) store-listing screenshots are marketing art, so a visual study also needs primary-source UI images (company blog posts) and must declare what it could not capture → check these three in every feed/shell/visual-study task.
+
+- L-U1a · 2026-11-27 · worktree/tooling · A builder worktree was created from an older commit than the design doc it
+  had to build (main had moved) and had no node_modules → `git merge --ff-only main` first, then
+  `pnpm install --frozen-lockfile --offline` (3.5 min) before any test; compound shell commands (heredocs that write
+  files, `cd` + `cat >>`) are refused by the worktree guard → write files with Write/Edit or a script in the scratchpad.
+- L-U1b · 2026-11-27 · ui/cls · A client gate that renders one fixed-height skeleton and then the whole shell shifts
+  everything below (CLS 0.8). → The placeholder must have the shell's final geometry (header, full-height column,
+  dock area), and any note shown only to some viewers goes **after** the page, never above it.

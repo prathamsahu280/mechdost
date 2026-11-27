@@ -222,7 +222,16 @@ export function StoryViewer({
           />
         </div>
 
-        <footer className="grid gap-2 bg-navy/90 px-4 pt-2 pb-[calc(16px+env(safe-area-inset-bottom))]">
+        {/* The timer waits while a control or the caption has keyboard focus (WCAG 2.2.1). */}
+        <footer
+          onFocus={() => {
+            setHeld(true);
+          }}
+          onBlur={() => {
+            setHeld(false);
+          }}
+          className="grid gap-2 bg-navy/90 px-4 pt-2 pb-[calc(16px+env(safe-area-inset-bottom))]"
+        >
           {story.body ? (
             <p data-user-content className="text-[16px] leading-relaxed">
               {story.body}
@@ -240,14 +249,16 @@ export function StoryViewer({
               <UstaadIcon name="prev" size={20} />
               {st('prev')}
             </button>
-            {timed ? (
-              <button type="button" onClick={togglePause} aria-pressed={paused} className={STORY_BTN}>
-                <UstaadIcon name={paused ? 'play' : 'pause'} size={20} />
-                {paused ? st('play') : st('pause')}
-              </button>
-            ) : (
-              <span aria-hidden="true" />
-            )}
+            {/* Always mounted (focus never drops when a voice/video story comes next); the label says the action. */}
+            <button
+              type="button"
+              onClick={timed ? togglePause : undefined}
+              aria-disabled={timed ? undefined : true}
+              className={`${STORY_BTN} aria-disabled:opacity-50`}
+            >
+              <UstaadIcon name={paused ? 'play' : 'pause'} size={20} />
+              {paused ? st('play') : st('pause')}
+            </button>
             <button
               type="button"
               onClick={() => {

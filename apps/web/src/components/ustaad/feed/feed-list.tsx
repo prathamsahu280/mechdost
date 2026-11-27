@@ -273,17 +273,27 @@ export function HomeFeed({ tab }: { tab: FeedTab }) {
     );
   const fresh = useFreshPosts(tab);
   useTabScrollMemory(tab);
+  const list = useRef<HTMLDivElement>(null);
   return (
     <>
-      <NewPostsPill count={fresh.count} onShow={fresh.show} />
-      <PostList
-        key={fresh.generation}
-        listKey={`feed-${tab}-${String(fresh.generation)}`}
-        load={(c, cursor) => c.feed(tab, cursor)}
-        empty={empty}
-        promo={tab === 'for_you'}
-        first
+      <NewPostsPill
+        count={fresh.count}
+        onShow={() => {
+          fresh.show();
+          // The pill unmounts: focus goes to the reloading list, never to the page body (WCAG 2.4.3).
+          list.current?.focus({ preventScroll: true });
+        }}
       />
+      <div ref={list} tabIndex={-1} className="outline-none">
+        <PostList
+          key={fresh.generation}
+          listKey={`feed-${tab}-${String(fresh.generation)}`}
+          load={(c, cursor) => c.feed(tab, cursor)}
+          empty={empty}
+          promo={tab === 'for_you'}
+          first
+        />
+      </div>
     </>
   );
 }

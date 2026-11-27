@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { track } from '@/lib/analytics';
 
 /** The sheet loads on intent (design § 7.5b): no sheet code in Home's first load. */
@@ -39,6 +39,12 @@ export function HomeMore({
 }) {
   const [open, setOpen] = useState(false);
   const opener = useRef<HTMLButtonElement>(null);
+  const wasOpen = useRef(false);
+  // Focus returns after the modal has closed (while it is open the page is inert and a focus call is ignored).
+  useEffect(() => {
+    if (wasOpen.current && !open) opener.current?.focus();
+    wasOpen.current = open;
+  }, [open]);
   return (
     <>
       <button
@@ -60,7 +66,6 @@ export function HomeMore({
           title={title}
           onClose={() => {
             setOpen(false);
-            opener.current?.focus();
           }}
         >
           <ul className="grid grid-cols-3 gap-3">
