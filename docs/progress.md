@@ -26,6 +26,14 @@ This file is the single source of truth for **where the build is right now**. It
   timer 15, order WhatsApp templates back ON). **Do NOT switch rider delivery on for real until DC-P11 (P0: every job
   photo upload fails) and DC-P9 (P1: no "Mark ready for pickup" for packed agent orders) are fixed.** Other bugs
   DC-P1…P19 + DC-B* in that run's `logs\bugs.md`.
+  - **DC-B11 (P1) root cause narrowed (lead, 16:58):** worker and API both run 30d3220f; the delivery sweep in
+    `apps/api/src/worker.ts` (every 30 s) logged nothing in 3 h — no `delivery_offers_expired`, no
+    `delivery_sweep_failed` — so it runs and finds **0 due offers** although offers passed their deadline twice. The
+    bug is in the due-offer selection of `expireDueDeliveryOffers` (packages/db repo), not the deploy. Write a failing
+    test with an offer past `expires_at` first.
+  - Emails: the delivery run sent ~24–29 (Usage 106 → 135 this month), over its cap of 10; all to test accounts.
+  - Founder to decide: cancel the ₹360 refund request on B1195T (never send it), keep or offboard riders 06/07,
+    order HXDGD3 (its only suggested shop has no owner).
 - **Founder decisions queued:** network emails for bans/appeal results (SIM-F1); real phone video (fix the location
   check, accept .mov/.3gp, in-app recorder?); dock tabs; voice text alternative.
 
