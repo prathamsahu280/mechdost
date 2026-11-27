@@ -38,7 +38,7 @@ async function toEstimateBuilder(page: Page): Promise<string> {
   await job(page, code).getByRole('button', { name: 'Send proposal' }).click();
   await page.goto(`/service/${code}`);
   await page.getByRole('button', { name: 'Accept proposal' }).click();
-  await page.goto('/partner/workshop');
+  await page.goto('/partner/workshop/jobs');
   const card = job(page, code);
   await card.getByLabel('Odometer (km)').fill('24500');
   await card.getByRole('button', { name: 'Vehicle received' }).click();
@@ -88,7 +88,7 @@ test('the customer approves line by line; only approved work is billed, with GST
   await estimate.getByRole('button', { name: 'Confirm my choices' }).click();
   await expect(page.getByText('Selected work approved.')).toBeVisible();
 
-  await page.goto('/partner/workshop');
+  await page.goto('/partner/workshop/jobs');
   const card = job(page, code);
   await card.getByRole('button', { name: 'Start approved work' }).click();
   await card.getByRole('button', { name: 'Ready for pickup' }).click();
@@ -128,7 +128,7 @@ test('revising the estimate clears the approvals and asks the customer again', a
   await expect(page.getByText('Selected work approved.')).toBeVisible();
 
   // Extra work found: the workshop sends version 2.
-  await page.goto('/partner/workshop');
+  await page.goto('/partner/workshop/jobs');
   const card = job(page, code);
   await card.getByRole('button', { name: 'Revise estimate' }).click();
   await card.getByRole('button', { name: 'Add a line' }).click();
@@ -157,7 +157,7 @@ test('declining every line ends with no work approved; the workshop returns the 
   await expect(page.getByText('No work approved', { exact: true }).first()).toBeVisible();
   await expect(page.getByText(/Nothing is charged/)).toBeVisible();
 
-  await page.goto('/partner/workshop');
+  await page.goto('/partner/workshop/jobs');
   const card = job(page, code);
   await expect(card.getByText('No work approved')).toBeVisible();
   await card.getByRole('button', { name: 'Vehicle returned' }).click();
@@ -170,7 +170,7 @@ test('the workshop must enter a valid odometer reading and valid lines', async (
   await job(page, code).getByRole('button', { name: 'Send proposal' }).click();
   await page.goto(`/service/${code}`);
   await page.getByRole('button', { name: 'Accept proposal' }).click();
-  await page.goto('/partner/workshop');
+  await page.goto('/partner/workshop/jobs');
   const card = job(page, code);
   await card.getByRole('button', { name: 'Vehicle received' }).click();
   await expect(card.getByText('Enter the odometer reading in km.')).toBeVisible();

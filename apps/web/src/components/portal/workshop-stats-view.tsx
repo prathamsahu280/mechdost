@@ -10,7 +10,9 @@ import {
 import { durationParts, formatCount } from '@/lib/admin-analytics-view';
 import { formatPrice } from '@/lib/format';
 import { funnelBars, ratingText, reasonKey } from '@/lib/workshop-analytics-view';
+import { bulletScale } from '@/lib/workshop-portal-view';
 import { portalCard } from './portal-styles';
+import { BulletBar } from './workshop/_kit-shim';
 
 /**
  * The numbers of one workshop (the portal's Performance) or of all workshops of a city (the admin Workshops tab),
@@ -57,6 +59,10 @@ export function WorkshopStatsView({
   const shown = medians.workshops >= 3;
   const med = (v: number | null, f: (x: number | null) => string) =>
     shown && v !== null ? t('city_median', { value: f(v) }) : null;
+  // Bullet bars (partner portals UI upgrade, design 2026-11-27 § 6.5): your value against the city middle; the middle
+  // marker only when three or more workshops make it, and both values are also written as text.
+  const bar = (v: number | null, md: number | null, kind: 'percent' | 'count') =>
+    v === null ? null : bulletScale(v, shown ? md : null, kind);
   const bars = funnelBars(stats);
   const modeTotal = stats.byMode.workshop + stats.byMode.home;
 
@@ -67,32 +73,38 @@ export function WorkshopStatsView({
           label={t('tile_requests')}
           value={n(stats.requests)}
           compare={med(m.requests, (x) => n(x ?? 0))}
+          bar={bar(stats.requests, m.requests, 'count')}
         />
         <Tile
           label={t('tile_acceptance')}
           value={pct(rates.acceptancePercent)}
           compare={med(m.acceptancePercent, pct)}
+          bar={bar(rates.acceptancePercent, m.acceptancePercent, 'percent')}
         />
         <Tile
           label={t('tile_propose')}
           value={minutes(stats.medianMinutesToPropose)}
           compare={med(m.minutesToPropose, minutes)}
+          bar={bar(stats.medianMinutesToPropose, m.minutesToPropose, 'count')}
         />
         <Tile
           label={t('tile_approval')}
           value={pct(rates.approvalPercent)}
           compare={med(m.approvalPercent, pct)}
+          bar={bar(rates.approvalPercent, m.approvalPercent, 'percent')}
         />
         <Tile
           label={t('tile_bill')}
           value={money(rates.averageBillPaise)}
           compare={med(m.averageBillPaise, money)}
+          bar={bar(rates.averageBillPaise, m.averageBillPaise, 'count')}
         />
         <Tile
           label={t('tile_rating')}
           value={rating(stats.ratingTenths)}
           note={stats.ratingCount > 0 ? t('rating_count', { n: stats.ratingCount }) : undefined}
           compare={med(m.ratingTenths, rating)}
+          bar={bar(stats.ratingTenths, m.ratingTenths, 'count')}
         />
       </ul>
       {shown ? null : <p className="text-xs text-muted">{t('median_none')}</p>}
@@ -111,7 +123,7 @@ export function WorkshopStatsView({
                 </span>
               </div>
               <div className="mt-1 h-2 overflow-hidden rounded-pill bg-pill" aria-hidden="true">
-                <div className="h-full rounded-pill bg-accent" style={{ width: `${String(b.width)}%` }} />
+                <div className="h-full rounded-pill bg-info" style={{ width: `${String(b.width)}%` }} />
               </div>
             </li>
           ))}
@@ -258,17 +270,22 @@ function Tile({
   value,
   note,
   compare,
+  bar = null,
 }: {
   label: string;
   value: string;
   note?: string | undefined;
   compare: string | null;
+  bar?: { valuePct: number; medianPct: number | null } | null;
 }) {
   return (
     <li className={`${portalCard} min-w-0`}>
       <p className="text-xs font-bold text-muted">{label}</p>
       <p className="mt-1 break-words font-heading text-2xl font-extrabold tabular-nums text-ink">{value}</p>
       {note ? <p className="text-xs text-muted">{note}</p> : null}
+      {bar ? (
+        <BulletBar valuePct={bar.valuePct} medianPct={bar.medianPct} valueText={value} medianText={compare} />
+      ) : null}
       {compare ? <p className="mt-1 text-xs text-muted">{compare}</p> : null}
     </li>
   );

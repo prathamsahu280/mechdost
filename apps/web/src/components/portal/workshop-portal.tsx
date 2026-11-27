@@ -14,48 +14,72 @@ import {
   type RequestStage,
 } from '@/demo/store';
 import { track } from '@/lib/analytics';
-import { AUTH_MODE } from '@/lib/auth/mode';
 import { formatPrice } from '@/lib/format';
-import { PartnerGate } from './partner-gate';
+import type { WorkshopTab } from '@/lib/workshop-portal-view';
 import { WorkshopRoadside } from './workshop-roadside';
 import { JobCard, RequestSummary } from './workshop-job';
-import { PortalGuard } from './portal-guard';
+import { useWorkshopAccount } from './workshop/workshop-frame';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
 const SLOTS = ['morning', 'afternoon', 'evening'] as const;
 
-/** Real sign-in: the portal reads and acts through the API; demo builds never load it (Stream E, 2026-11-14). */
-const WorkshopRequestsApi = dynamic(
-  () => import('./workshop-portal-api').then((m) => m.WorkshopRequestsApi),
-  { ssr: false, loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" /> },
+/** Real sign-in: the tabs read and act through the API; demo builds never load them (Stream E, 2026-11-14). */
+const loading = () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />;
+const WorkshopTodayApi = dynamic(() => import('./workshop-portal-api').then((m) => m.WorkshopTodayApi), {
+  ssr: false,
+  loading,
+});
+const WorkshopJobsApi = dynamic(() => import('./workshop-portal-api').then((m) => m.WorkshopJobsApi), {
+  ssr: false,
+  loading,
+});
+const WorkshopProfileApi = dynamic(() => import('./workshop-portal-api').then((m) => m.WorkshopProfileApi), {
+  ssr: false,
+  loading,
+});
+const WorkshopNumbersApi = dynamic(
+  () => import('./workshop-performance-api').then((m) => m.WorkshopPerformanceApi),
+  { ssr: false, loading },
 );
 
 /**
- * Workshop portal (spec 07): propose slot + expected cost; then the job card — vehicle received (odometer),
- * itemised estimate, work on approved lines, bill, paid at the workshop.
+ * Workshop portal (spec 07; tabs since the partner portals UI upgrade, design 2026-11-27 § 6): propose slot +
+ * expected cost; then the job card — vehicle received (odometer), itemised estimate, work on approved lines, bill,
+ * paid at the workshop. The frame (guard, tabs, demo gate) lives in the layout; this renders one tab's body.
  */
-export function WorkshopPortal() {
-  const api = AUTH_MODE === 'firebase';
+export function WorkshopPortal({ tab }: { tab: WorkshopTab }) {
+  const account = useWorkshopAccount();
+  if (!account) return null;
+  if (account.api) {
+    if (tab === 'jobs') return <WorkshopJobsApi />;
+    if (tab === 'numbers') return <WorkshopNumbersApi />;
+    if (tab === 'profile') return <WorkshopProfileApi />;
+    return (
+      <>
+        <WorkshopTodayApi />
+        <WorkshopRoadside />
+      </>
+    );
+  }
+  if (tab === 'numbers' || tab === 'profile') return <ApiOnly />;
   return (
-    <PortalGuard role="workshop" path="/partner/workshop" demoNote={!api}>
-      {(account) =>
-        api ? (
-          <>
-            <WorkshopRequestsApi />
-            <WorkshopRoadside />
-          </>
-        ) : (
-          <PartnerGate kind="workshop" slug={account.partner ?? ''}>
-            <WorkshopRequests workshopSlug={account.partner ?? ''} />
-            <WorkshopRoadside />
-          </PartnerGate>
-        )
-      }
-    </PortalGuard>
+    <>
+      <WorkshopRequests workshopSlug={account.slug} tab={tab} />
+      {tab === 'today' ? <WorkshopRoadside /> : null}
+    </>
   );
 }
 
-function WorkshopRequests({ workshopSlug }: { workshopSlug: string }) {
+function ApiOnly() {
+  const t = useTranslations('partnerWorkshop');
+  return (
+    <p className="rounded-card border border-dashed border-line-card bg-surface p-6 text-center text-sm text-muted">
+      {t('api_only')}
+    </p>
+  );
+}
+
+function WorkshopRequests({ workshopSlug, tab }: { workshopSlug: string; tab: 'today' | 'jobs' }) {
   const t = useTranslations('portal');
   const locale = useLocale();
   const found = findWorkshop(workshopSlug);
@@ -66,6 +90,48 @@ function WorkshopRequests({ workshopSlug }: { workshopSlug: string }) {
   const waiting = mine.filter((r) => at(r, 'proposed'));
   const jobs = mine.filter((r) => !at(r, 'requested', 'proposed', 'completed'));
   const done = mine.filter((r) => at(r, 'completed')).slice(0, 10);
+
+  if (tab === 'jobs')
+    return (
+      <>
+        <section aria-labelledby="jobs-title">
+          <h2 id="jobs-title" className="font-heading text-xl font-extrabold text-ink">
+            {t('jobs')}
+          </h2>
+          {jobs.length === 0 ? (
+            <p className="mt-3 text-sm text-muted">{t('noneJobs')}</p>
+          ) : (
+            <ul className="mt-3 grid gap-3 nav:grid-cols-2">
+              {jobs.map((r) => (
+                <li key={r.code}>
+                  <JobCard request={r} workshopSlug={workshopSlug} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section aria-labelledby="completed-jobs">
+          <h2 id="completed-jobs" className="font-heading text-xl font-extrabold text-ink">
+            {t('completedJobs')} <span className="text-muted tabular-nums">({done.length})</span>
+          </h2>
+          {done.length === 0 ? (
+            <p className="mt-3 text-sm text-muted">{t('noneCompleted')}</p>
+          ) : (
+            <ul className={`mt-3 divide-y divide-line-card ${portalCard}`}>
+              {done.map((r) => (
+                <li key={r.code} className="flex flex-wrap justify-between gap-x-4 py-2 text-sm">
+                  <span className="font-heading font-extrabold text-ink">{r.code}</span>
+                  <span className="text-muted">
+                    {r.bill ? formatPrice(r.bill.totalPaise) : t('noWorkApproved')}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </>
+    );
 
   return (
     <>
@@ -115,43 +181,6 @@ function WorkshopRequests({ workshopSlug }: { workshopSlug: string }) {
           </ul>
         </section>
       ) : null}
-
-      <section aria-labelledby="jobs-title">
-        <h2 id="jobs-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('jobs')}
-        </h2>
-        {jobs.length === 0 ? (
-          <p className="mt-3 text-sm text-muted">{t('noneJobs')}</p>
-        ) : (
-          <ul className="mt-3 grid gap-3 nav:grid-cols-2">
-            {jobs.map((r) => (
-              <li key={r.code}>
-                <JobCard request={r} workshopSlug={workshopSlug} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section aria-labelledby="completed-jobs">
-        <h2 id="completed-jobs" className="font-heading text-xl font-extrabold text-ink">
-          {t('completedJobs')} <span className="text-muted tabular-nums">({done.length})</span>
-        </h2>
-        {done.length === 0 ? (
-          <p className="mt-3 text-sm text-muted">{t('noneCompleted')}</p>
-        ) : (
-          <ul className={`mt-3 divide-y divide-line-card ${portalCard}`}>
-            {done.map((r) => (
-              <li key={r.code} className="flex flex-wrap justify-between gap-x-4 py-2 text-sm">
-                <span className="font-heading font-extrabold text-ink">{r.code}</span>
-                <span className="text-muted">
-                  {r.bill ? formatPrice(r.bill.totalPaise) : t('noWorkApproved')}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
     </>
   );
 }

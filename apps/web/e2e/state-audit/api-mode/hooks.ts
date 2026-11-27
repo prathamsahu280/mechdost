@@ -299,16 +299,12 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
       await settleApi(page);
     }
   }
+  // The Numbers tab (/partner/workshop/numbers, 2026-11-27 tab split) shows Performance without a toggle.
   if (c.code === 'API-WS-PERFORMANCE') {
-    const open = main.locator('[data-track="workshop_performance_toggle"]');
-    if ((await open.count()) === 0) notes.push('no Performance button');
-    else {
-      await open.click();
+    await settleApi(page);
+    if (c.state.perf === 'ninety') {
+      await main.locator('[data-track="workshop_analytics_preset_90"]').click();
       await settleApi(page);
-      if (c.state.perf === 'ninety') {
-        await main.locator('[data-track="workshop_analytics_preset_90"]').click();
-        await settleApi(page);
-      }
     }
   }
 

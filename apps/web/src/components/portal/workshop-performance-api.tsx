@@ -13,8 +13,8 @@ const PRESETS: readonly RangePreset[] = [30, 90];
 
 /**
  * Workshop portal → Performance (spec 07, design 2026-11-15): the owner's own numbers for the last 30 or 90 days
- * next to the anonymised city median. Loaded on demand through `workshop-performance-lazy.tsx` (nothing in the header
- * or layout imports it). A failed call shows the error with "Try again"; staff accounts see why it is not for them.
+ * next to the anonymised city median. Loaded on demand by the Numbers tab (`workshop-portal.tsx`, next/dynamic;
+ * nothing in the header or layout imports it). A failed call shows the error with "Try again"; staff accounts see why it is not for them.
  */
 export function WorkshopPerformanceApi() {
   const t = useTranslations('workshopAnalytics');

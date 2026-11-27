@@ -10,8 +10,23 @@ import {
 } from '@mechdost/shared/service-api';
 import { SERVICE_DECLINE_REASONS, type ServiceDeclineReason } from '@mechdost/shared/state';
 import { VEHICLE_ICON } from '@mechdost/shared/vehicles';
+import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState, type SyntheticEvent } from 'react';
+import { LocalLink } from '@/components/ui/local-link';
 import { adminApi } from '@/lib/admin-api';
+import {
+  JOB_STEPS,
+  WORKSHOP_LANES,
+  countText,
+  estimateTotals,
+  jobStep,
+  laneOf,
+  lineStateKey,
+  pickLane,
+  workshopKpis,
+  type WorkshopLane,
+} from '@/lib/workshop-portal-view';
+import { KpiTile, LaneTabs, StepRail } from './workshop/_kit-shim';
 import { track } from '@/lib/analytics';
 import { estimateSummary } from '@/lib/estimate-summary';
 import { formatDate, formatPrice } from '@/lib/format';
@@ -25,7 +40,6 @@ import { PushPromptSlot } from '../notices/push-prompt-slot';
 import { useApiList } from './use-api-list';
 import { JobPhotosPanelLazy } from '../photos/photos-lazy';
 import { EstimateBuilderApi, JobStepsApi, OdometerFormApi } from './workshop-job-api';
-import { WorkshopPerformanceLazy } from './workshop-performance-lazy';
 import { HourPickerApi, MyWorkshopApi } from './workshop-tier1-api';
 import { isTier1Error, Tier1Error } from '../workshops/tier1-error';
 
@@ -38,8 +52,7 @@ const loc = (locale: string) => (locale === 'hi' ? 'hi' : 'en');
  * next step each (vehicle received + odometer, estimate, start, ready, bill, paid), and recently closed requests.
  * The API scopes everything to the workshops in the signed-in person's grants; every step sends the `version`.
  */
-export function WorkshopRequestsApi() {
-  const t = useTranslations('portal');
+function useWorkshopLists() {
   const locale = useLocale();
   const page = useCallback(
     (view: 'new' | 'active' | 'done') => async (cursor: string | null) => {
@@ -60,6 +73,38 @@ export function WorkshopRequestsApi() {
     await Promise.all([fresh.reload(), active.reload(), done.reload()]);
   }, [fresh, active, done]);
   const name = [...fresh.items, ...active.items, ...done.items].find((x) => x.workshop)?.workshop?.name;
+  return { fresh, active, done, refresh, name };
+}
+
+const KPI_TILES = [
+  { key: 'new_requests', label: 'kpi_new_requests', href: '/partner/workshop#new-requests', tone: 'waiting' },
+  {
+    key: 'waiting_customer',
+    label: 'kpi_waiting_customer',
+    href: '/partner/workshop/jobs?lane=proposed',
+    tone: 'neutral',
+  },
+  {
+    key: 'in_workshop',
+    label: 'kpi_in_workshop',
+    href: '/partner/workshop/jobs?lane=in_workshop',
+    tone: 'progress',
+  },
+  { key: 'to_bill', label: 'kpi_to_bill', href: '/partner/workshop/jobs?lane=ready_bill', tone: 'done' },
+] as const;
+
+/**
+ * Today (design 2026-11-27 § 6.1): four tiles counted from the lists the portal already loads (no new API), then the
+ * new requests to propose a slot and cost for, or decline with a reason. Roadside offers sit below (portal page).
+ */
+export function WorkshopTodayApi() {
+  const t = useTranslations('portal');
+  const pw = useTranslations('partnerWorkshop');
+  const { fresh, active, refresh, name } = useWorkshopLists();
+  const kpis = workshopKpis(
+    { count: fresh.items.length, more: Boolean(fresh.next) },
+    { items: active.items, more: Boolean(active.next) },
+  );
 
   return (
     <>
@@ -70,12 +115,38 @@ export function WorkshopRequestsApi() {
         </section>
       ) : null}
 
-      <MyWorkshopApi />
+      <section aria-label={pw('kpi_label')}>
+        {fresh.loading || active.loading ? (
+          <div className="grid grid-cols-2 gap-3 tab:grid-cols-4" aria-hidden="true">
+            {KPI_TILES.map((k) => (
+              <div key={k.key} className="skeleton min-h-28 rounded-card" />
+            ))}
+          </div>
+        ) : (
+          <ul className="grid grid-cols-2 gap-3 tab:grid-cols-4">
+            {KPI_TILES.map((k) => {
+              const value = kpis[k.key];
+              const waiting = k.tone === 'waiting' && value !== '0';
+              return (
+                <li key={k.key}>
+                  <KpiTile
+                    href={k.href}
+                    value={value}
+                    label={pw(k.label)}
+                    tone={value === '0' ? 'neutral' : k.tone}
+                    needsYou={waiting ? pw('needs_you') : undefined}
+                    onClick={() => {
+                      track('partner_kpi_clicked', { portal: 'workshop', tile: k.key });
+                    }}
+                  />
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
 
-      <HomeSettingsApi />
-      <WorkshopPerformanceLazy />
-
-      <section aria-labelledby="new-requests">
+      <section aria-labelledby="new-requests" id="new-requests-section">
         <h2 id="new-requests" className="font-heading text-xl font-extrabold text-ink">
           {t('newRequests')}{' '}
           {fresh.loading ? null : <span className="text-muted tabular-nums">({fresh.items.length})</span>}
@@ -98,45 +169,113 @@ export function WorkshopRequestsApi() {
         ) : null}
         <LoadMore show={Boolean(fresh.next)} onClick={() => void fresh.loadMore()} />
       </section>
+    </>
+  );
+}
 
-      <section aria-labelledby="jobs-title">
-        <h2 id="jobs-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('jobs')}
+/** My workshop (design 2026-11-27 § 6.1): profile, hours, busy, capacity, menu; home servicing. */
+export function WorkshopProfileApi() {
+  return (
+    <>
+      <MyWorkshopApi />
+      <HomeSettingsApi />
+    </>
+  );
+}
+
+/**
+ * Jobs (design 2026-11-27 § 6.1/6.3): lanes with counts over the `active` and `done` lists; `?lane=` keeps the lane
+ * and `?job=SR-…` opens one job in place (it stays open while it moves from lane to lane, so a workshop can go from
+ * "Ready" to "Bill" to "Paid" without hunting for the card).
+ */
+export function WorkshopJobsApi() {
+  const t = useTranslations('portal');
+  const pw = useTranslations('partnerWorkshop');
+  const params = useSearchParams();
+  const { active, done, refresh } = useWorkshopLists();
+  const all = [...active.items, ...done.items];
+  const counts = Object.fromEntries(
+    WORKSHOP_LANES.map((l) => [l, all.filter((r) => laneOf(r.status) === l).length]),
+  ) as Record<WorkshopLane, number>;
+  const lane = pickLane(params.get('lane'), counts);
+  const jobCode = params.get('job');
+  const loading = active.loading || done.loading;
+
+  // Logged once the lists are in, so the "first lane with work" default is the lane actually shown.
+  useEffect(() => {
+    if (!jobCode && !loading) track('partner_lane_viewed', { portal: 'workshop', lane });
+  }, [lane, jobCode, loading]);
+
+  if (jobCode) {
+    const job = all.find((r) => r.code === jobCode);
+    return (
+      <section aria-labelledby="job-open" className="grid gap-3">
+        <h2 id="job-open" className="sr-only">
+          {jobCode}
         </h2>
-        <ApiListState
-          loading={active.loading}
-          error={active.error}
-          count={active.items.length}
-          empty={t('noneJobs')}
-          onRetry={() => void active.reload()}
-        />
-        {active.items.length > 0 ? (
-          <ul className="mt-3 grid gap-3 nav:grid-cols-2">
-            {active.items.map((r) => (
+        <LocalLink
+          href={`/partner/workshop/jobs?lane=${job ? (laneOf(job.status) ?? lane) : lane}`}
+          className={portalQuiet}
+        >
+          {pw('back_to_jobs')}
+        </LocalLink>
+        {job ? (
+          <JobCardApi summary={job} onChanged={refresh} />
+        ) : loading ? (
+          <div className="skeleton h-64 rounded-card" aria-hidden="true" />
+        ) : (
+          <p className="text-sm text-muted">{pw('job_missing')}</p>
+        )}
+      </section>
+    );
+  }
+
+  const more = (l: WorkshopLane) => Boolean(l === 'done' ? done.next : active.next);
+  const items = all.filter((r) => laneOf(r.status) === lane);
+  return (
+    <section aria-labelledby="jobs-title" className="grid gap-3">
+      <h2 id="jobs-title" className="font-heading text-xl font-extrabold text-ink">
+        {t('jobs')}
+      </h2>
+      <LaneTabs
+        label={pw('lanes_label')}
+        current={lane}
+        lanes={WORKSHOP_LANES.map((l) => {
+          const count = countText(counts[l], more(l));
+          return {
+            key: l,
+            href: `/partner/workshop/jobs?lane=${l}`,
+            label: pw(`lane_${l}`),
+            count,
+            accessibleName: pw('lane_count', { lane: pw(`lane_${l}`), count }),
+          };
+        })}
+      />
+      <ApiListState
+        loading={loading}
+        error={lane === 'done' ? done.error : active.error}
+        count={items.length}
+        empty={pw('lane_empty')}
+        onRetry={() => void refresh()}
+      />
+      {items.length > 0 ? (
+        lane === 'done' ? (
+          <DoneList items={items} />
+        ) : (
+          <ul className="grid gap-3 nav:grid-cols-2">
+            {items.map((r) => (
               <li key={r.code}>
                 <JobCardApi summary={r} onChanged={refresh} />
               </li>
             ))}
           </ul>
-        ) : null}
-        <LoadMore show={Boolean(active.next)} onClick={() => void active.loadMore()} />
-      </section>
-
-      <section aria-labelledby="completed-jobs">
-        <h2 id="completed-jobs" className="font-heading text-xl font-extrabold text-ink">
-          {t('completedJobs')}
-        </h2>
-        <ApiListState
-          loading={done.loading}
-          error={done.error}
-          count={done.items.length}
-          empty={t('noneCompleted')}
-          onRetry={() => void done.reload()}
-        />
-        {done.items.length > 0 ? <DoneList items={done.items} /> : null}
-        <LoadMore show={Boolean(done.next)} onClick={() => void done.loadMore()} />
-      </section>
-    </>
+        )
+      ) : null}
+      <LoadMore
+        show={more(lane)}
+        onClick={() => void (lane === 'done' ? done.loadMore() : active.loadMore())}
+      />
+    </section>
   );
 }
 
@@ -493,11 +632,98 @@ function NewRequestApi({
   );
 }
 
-const LINE_MARK = {
-  approved: 'lineApproved',
-  declined: 'lineDeclined',
-  pending: 'linePending',
+const LINE_TONE = {
+  approved: { badge: 'bg-success-bg text-success', mark: '✓' },
+  pending: { badge: 'bg-warning-bg text-warning', mark: '…' },
+  declined: { badge: 'bg-pill text-muted', mark: '✕' },
 } as const;
+
+/**
+ * The estimate as rows (design 2026-11-27 § 6.3): each line with its state in words (approved / waiting for the
+ * customer / declined, never colour alone), a declined line struck through, then the totals by state. "Approved" is
+ * never shown before a line is approved.
+ */
+function EstimateRows({
+  est,
+  withGst,
+  totalPaise,
+}: {
+  est: NonNullable<ServiceRequestDetail['estimate']>;
+  withGst: boolean;
+  totalPaise: number;
+}) {
+  const t = useTranslations('portal');
+  const pw = useTranslations('partnerWorkshop');
+  const totals = estimateTotals(est.items);
+  return (
+    <div className="mt-3 rounded-tile border border-line-card bg-surface-alt p-3 text-sm">
+      <p className="flex flex-wrap items-baseline justify-between gap-x-3 font-bold text-ink">
+        <span>{pw('estimate_heading')}</span>
+        <span className="font-heading text-base tabular-nums">
+          {t(withGst ? 'estimateSummary' : 'estimateSummaryNoGst', {
+            version: est.revision,
+            total: formatPrice(totalPaise),
+          })}
+        </span>
+      </p>
+      <ul className="mt-2 divide-y divide-line-card">
+        {est.items.map((l) => (
+          <li
+            key={l.id}
+            className="flex min-h-11 flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2"
+          >
+            <span className={`min-w-0 text-ink ${l.decision === 'declined' ? 'line-through' : ''}`}>
+              <span data-user-content>{l.description}</span>{' '}
+              <span className="text-muted tabular-nums">
+                · {l.qty} × {formatPrice(l.unitPaise)}
+              </span>
+            </span>
+            <span
+              className={`inline-flex items-center gap-1 rounded-pill px-2.5 py-0.5 text-xs font-extrabold ${LINE_TONE[l.decision].badge}`}
+            >
+              <span aria-hidden="true">{LINE_TONE[l.decision].mark}</span>
+              {pw(lineStateKey(l.decision))}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 flex flex-wrap gap-x-3 text-xs font-bold text-ink">
+        {totals.anyApproved ? (
+          <span>{pw('totals_approved', { amount: formatPrice(totals.approvedPaise) })}</span>
+        ) : null}
+        {totals.waitingPaise > 0 ? (
+          <span>{pw('totals_waiting', { amount: formatPrice(totals.waitingPaise) })}</span>
+        ) : null}
+        {totals.declinedPaise > 0 ? (
+          <span className="text-muted">
+            {pw('totals_declined', { amount: formatPrice(totals.declinedPaise) })}
+          </span>
+        ) : null}
+      </p>
+    </div>
+  );
+}
+
+/** The job's six steps (received → paid) with "Step n of 6: name" in words; nothing before the vehicle arrives. */
+function JobRail({ status }: { status: ServiceRequestSummary['status'] }) {
+  const pw = useTranslations('partnerWorkshop');
+  const step = jobStep(status);
+  if (!step) return null;
+  const names = JOB_STEPS.map((s) => pw(`step_${s}`));
+  return (
+    <StepRail
+      label={pw('steps_label')}
+      steps={names}
+      current={step.index}
+      allDone={step.allDone}
+      caption={
+        step.allDone
+          ? pw('steps_all_done')
+          : pw('step_of', { n: step.index + 1, total: JOB_STEPS.length, name: names[step.index] ?? '' })
+      }
+    />
+  );
+}
 
 /** One job: loads its detail (estimate, bill, customer) and shows the one next step for its status. */
 function JobCardApi({
@@ -562,6 +788,7 @@ function JobCardApi({
   return (
     <article className={portalCard}>
       <SummaryHead request={detail} detail={detail} />
+      <JobRail status={detail.status} />
       {detail.proposal && action === 'wait_customer' ? (
         <p className="mt-3 rounded-lg bg-accent-soft p-3 text-sm font-bold text-accent-soft-text">
           {t('waitingCustomer')} · {formatDate(detail.proposal.date, locale)}, {w(detail.proposal.slot)} ·{' '}
@@ -582,24 +809,7 @@ function JobCardApi({
         }}
       />
       {est && estView && !revising && action !== 'estimate' ? (
-        <div className="mt-3 rounded-lg bg-surface-alt p-3 text-sm">
-          <p className="font-bold text-ink">
-            {t(estView.withGst ? 'estimateSummary' : 'estimateSummaryNoGst', {
-              version: est.revision,
-              total: formatPrice(estView.totalPaise),
-            })}
-          </p>
-          <ul className="mt-1 space-y-0.5 text-muted">
-            {est.items.map((l) => (
-              <li key={l.id}>
-                <span className={l.decision === 'declined' ? 'line-through' : undefined}>
-                  <span data-user-content>{l.description}</span> · {l.qty} × {formatPrice(l.unitPaise)}
-                </span>{' '}
-                <span className="font-bold text-ink">· {t(LINE_MARK[l.decision])}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <EstimateRows est={est} withGst={estView.withGst} totalPaise={estView.totalPaise} />
       ) : null}
       {revising && est ? (
         <EstimateBuilderApi

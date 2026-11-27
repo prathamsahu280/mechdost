@@ -96,15 +96,13 @@ const staticImport = (name: string) => new RegExp(`^\\s*import\\s[^;]*from\\s+['
 describe('JS budget: the workshop analytics screens load on demand', () => {
   it('the portal screen is imported statically only by nothing, and dynamically by its wrapper', () => {
     for (const f of all) expect(f.text, f.path).not.toMatch(staticImport('workshop-performance-api'));
-    const wrapper = all.find((f) => f.path === 'components/portal/workshop-performance-lazy.tsx');
+    // Since the tab split (design 2026-11-27 § 6.1) the Numbers tab loads it with `next/dynamic` from the portal.
+    const wrapper = all.find((f) => f.path === 'components/portal/workshop-portal.tsx');
     expect(wrapper?.text).toMatch(/import\(\s*['"]\.\/workshop-performance-api['"]\s*\)/);
   });
 
-  it('only the portal and admin analytics screens import the wrapper or the admin tab, never the shell', () => {
-    const users = all
-      .filter((f) => staticImport('workshop-performance-lazy').test(f.text))
-      .map((f) => f.path);
-    expect(users).toEqual(['components/portal/workshop-portal-api.tsx']);
+  it('the old toggle wrapper is gone and the admin tab loads on demand, never in the shell', () => {
+    expect(all.some((f) => f.path === 'components/portal/workshop-performance-lazy.tsx')).toBe(false);
     for (const f of all) expect(f.text, f.path).not.toMatch(staticImport('admin-workshop-analytics-api'));
     const tab = all.find((f) => f.path === 'components/portal/admin-analytics-api.tsx');
     expect(tab?.text).toMatch(/import\(\s*['"]\.\/admin-workshop-analytics-api['"]\s*\)/);

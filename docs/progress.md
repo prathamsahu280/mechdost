@@ -25,6 +25,27 @@ This file is the single source of truth for **where the build is right now**. It
 - Gates run under the memory limit only (see the builder report): db card tests, web `ustaad-card` tests, eslint on the
   Me files; tsc and the notifications/learn/jobs lint left for the lead.
 
+## 2026-11-27 night — partner portals UI upgrade, batch B: workshop portal (builder, branch `worktree-agent-ae831b8c40c7219cb`, NOT merged)
+
+- Built (spec 07 § "Workshop portal tabs"): layout frame with tabs Today · Jobs · Numbers · My workshop; Today tiles,
+  new requests and roadside; Jobs lanes with counts (`?lane=`, `?job=` focus view); job card step rail; estimate rows
+  with state words and totals by state; 48 px hour chips with free places; menu rows with the "Hindi name missing"
+  badge; bullet bars vs the city middle on Numbers; old anchors forwarded; events `partner_tab_viewed`,
+  `partner_kpi_clicked`, `partner_lane_viewed` (spec 12); strings `partnerWorkshop` (en + hi).
+- **Kit shims** in `apps/web/src/components/portal/workshop/_kit-shim.tsx` (`PartnerTabs`, `KpiTile`, `LaneTabs`,
+  `StepRail`, `BulletBar`, `KitSection`): the lead swaps them for batch 0's `components/partner/*` on merge.
+- **Merge overlap to expect:** `packages/shared/src/analytics.ts` (batch A adds the same `partner_*` events; keep one
+  copy with the `shop | workshop | delivery` enum).
+- Not done: master–detail at ≥ 1024 px; calendar agenda + accepted date/hour on list rows (P1, design § 6.4);
+  staff (mechanic) seeing Jobs only (all four tabs show; Numbers already tells staff it is not for them); single-hue
+  payment split, reasons bars and "Show as table" on Numbers; kit pieces new-order sound (founder: on by default),
+  `OfferTimer` on roadside, updated/offline line; demo job card (`workshop-job.tsx`) rail and rows; new state-audit
+  row `WS-FRAME` and a split of `API-WS-HOMEJOB` (spans three tabs); checklist not regenerated after the
+  `model-api.ts` path changes (PHOTOS → Jobs, MYWORKSHOP → profile, PERFORMANCE → Numbers). axe, e2e and audit rows
+  not run (paths updated in `service-estimate.spec.ts`; Hindi coverage lists the new routes).
+- Merge note: `BulletBar` and the one-blue funnel live in `WorkshopStatsView`, which the admin Workshops analytics
+  tab also renders (admin changes the same way).
+
 ## 2026-11-27 night — skills self-improvement step (docs only, uncommitted for the lead)
 
 - Promoted every lesson seen twice from the 2026-11-26/27 learnings: advisor `checklist.md` (UI focus-on-swap,
