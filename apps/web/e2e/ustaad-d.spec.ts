@@ -155,12 +155,12 @@ test.describe('Ustaad feed and social (workstream D web)', () => {
     await expect(viewer).toBeVisible();
     await expect(viewer.getByRole('status')).toHaveText(/1 of 2/);
     await axe(page, 'dialog[open]');
-    const pause = viewer.getByRole('button', { name: 'Pause' });
-    await pause.click();
-    await expect(pause).toHaveAttribute('aria-pressed', 'true');
+    // U1: the visible button says what it does (Pause ↔ Play), no aria-pressed with a changing label.
+    await viewer.getByRole('button', { name: 'Pause' }).click();
+    await expect(viewer.getByRole('button', { name: 'Play' })).toBeVisible();
     await viewer.getByRole('button', { name: 'Next story' }).click();
     await expect(viewer.getByRole('status')).toHaveText(/2 of 2/);
-    await viewer.getByRole('button', { name: 'Close stories' }).click();
+    await viewer.getByRole('button', { name: 'Close', exact: true }).click();
     await expect(viewer).toBeHidden();
     await expect(ring).toBeFocused();
     // My own story shows "Seen by".

@@ -859,9 +859,9 @@ html:has([data-shell-compact]) {
   }
 }
 
-/* Hindi member pages: small text gets taller lines (audit: Devanagari line-height 1.25 clipped matras). */
-[data-ustaad-shell]:lang(hi) :is(p, li, a, button, label) {
-  line-height: 1.5;
+/* Hindi member pages: only the tight leading utilities grow (audit: Devanagari at 1.25 clipped matras). */
+html:has([data-shell-compact]):lang(hi) :is(.leading-tight, .leading-snug) {
+  line-height: 1.45;
 }
 
 /* Late skeleton: shape boxes appear only after 300 ms, so a fast load never flashes them (design § 7.3). */

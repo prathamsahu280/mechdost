@@ -368,19 +368,26 @@ const NEW_POSTS_PILL =
 
 /** Each feed tab keeps its scroll position for the session (no reload feel when switching tabs). */
 function useTabScrollMemory(tab: FeedTab) {
+  const previous = useRef<FeedTab | null>(null);
   useEffect(() => {
     const store = safeSession();
     if (!store) return;
-    const y = recallScroll(store, tab);
+    // Only a switch between the two tabs restores a place; a fresh visit to Home starts at the top.
+    const switched = previous.current !== null && previous.current !== tab;
+    previous.current = tab;
+    const y = switched ? recallScroll(store, tab) : 0;
+    let frame = 0;
     if (y > 0) {
-      // Wait two frames for the list to paint before restoring.
-      const id = requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({ top: y })));
-      return () => {
-        cancelAnimationFrame(id);
-        rememberScroll(store, tab, window.scrollY);
+      // Wait (≤ 3 s) until the list is tall enough, so the target is not clamped to a short loading page.
+      const until = performance.now() + 3_000;
+      const tryRestore = () => {
+        if (document.documentElement.scrollHeight >= y + window.innerHeight) window.scrollTo({ top: y });
+        else if (performance.now() < until) frame = requestAnimationFrame(tryRestore);
       };
+      frame = requestAnimationFrame(tryRestore);
     }
     return () => {
+      cancelAnimationFrame(frame);
       rememberScroll(store, tab, window.scrollY);
     };
   }, [tab]);

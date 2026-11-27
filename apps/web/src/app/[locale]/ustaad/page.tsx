@@ -64,7 +64,7 @@ export default async function UstaadHome({ params, searchParams }: Props) {
             <h2 id="ustaad-stories" className="font-heading text-lg font-extrabold text-ink">
               {t('storiesTitle')}
             </h2>
-            <div className="mt-3 min-h-24">
+            <div className="mt-3">
               <ClientMessages
                 namespaces={[
                   'ustaad.feed',
@@ -169,7 +169,7 @@ export default async function UstaadHome({ params, searchParams }: Props) {
                   <Link
                     href={href('/ustaad')}
                     scroll={false}
-                    aria-current={following ? undefined : 'page'}
+                    aria-current={following ? undefined : 'true'}
                     data-track="ustaad_feed_for_you"
                     className={`inline-flex min-h-11 items-center rounded-full px-4 text-sm font-bold ${following ? 'text-muted hover:text-ink' : 'bg-surface text-ink shadow-card'}`}
                   >
@@ -180,7 +180,7 @@ export default async function UstaadHome({ params, searchParams }: Props) {
                   <Link
                     href={href('/ustaad?tab=following')}
                     scroll={false}
-                    aria-current={following ? 'page' : undefined}
+                    aria-current={following ? 'true' : undefined}
                     data-track="ustaad_feed_following"
                     className={`inline-flex min-h-11 items-center rounded-full px-4 text-sm font-bold ${following ? 'bg-surface text-ink shadow-card' : 'text-muted hover:text-ink'}`}
                   >
@@ -221,7 +221,7 @@ export default async function UstaadHome({ params, searchParams }: Props) {
                 <Link
                   href={href('/ustaad/me/location')}
                   data-track="ustaad_home_pin"
-                  className="underline-offset-4 hover:underline"
+                  className="inline-flex min-h-12 items-center underline-offset-4 hover:underline"
                 >
                   {t('pinTitle')}
                 </Link>

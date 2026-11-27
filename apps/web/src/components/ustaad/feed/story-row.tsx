@@ -24,7 +24,6 @@ export function StoryRow() {
   const [open, setOpen] = useState<number | null>(null);
   const opener = useRef<HTMLButtonElement | null>(null);
   const rings = loaded.state === 'ok' ? loaded.data : [];
-  const hasMine = rings.some((r) => r.mine);
   const ringBtn =
     'press flex w-[76px] flex-col items-center gap-1.5 rounded-2xl text-center text-[13px] font-bold text-ink focus-visible:outline-3 focus-visible:outline-focus';
 
@@ -39,8 +38,9 @@ export function StoryRow() {
 
   return (
     <>
-      <ul className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none]">
-        {!hasMine ? (
+      {/* Fixed row height (U1, CLS): rings, names and the "new" dot fit in 120 px; "Add story" stays inside the row. */}
+      <ul className="flex h-[120px] gap-3 overflow-x-auto overflow-y-hidden pt-1 [scrollbar-width:none]">
+        {loaded.state !== 'loading' ? (
           <li>
             <Link
               href={localePath('/ustaad/create?story=1', locale)}
@@ -100,15 +100,6 @@ export function StoryRow() {
           <li className="flex items-center text-sm text-muted">{t('storiesEmpty')}</li>
         ) : null}
       </ul>
-      {hasMine ? (
-        <Link
-          href={localePath('/ustaad/create?story=1', locale)}
-          className="mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-lg text-sm font-bold text-accent-soft-text hover:underline focus-visible:outline-3 focus-visible:outline-focus"
-        >
-          <UstaadIcon name="plus" size={18} />
-          {t('addStory')}
-        </Link>
-      ) : null}
       {open !== null ? (
         <StoryViewer
           rings={rings}

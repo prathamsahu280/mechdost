@@ -188,7 +188,7 @@ export default async function UstaadLayout({ children, params }: Props) {
 
   return (
     <UstaadPublicSwitch open={children} enabled={access === 'open'}>
-      <div data-ustaad-shell>
+      <div>
         {/* Name-free marker: storefront chrome steps aside in the server HTML (globals.css), no shift after load. */}
         <span data-shell-compact hidden />
         {access === 'open' ? shell(gate(<RouteShape />, children)) : gate(<NeutralFrame />, shell(children))}

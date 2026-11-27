@@ -224,8 +224,9 @@ export function StoryViewer({
 
         {/* The timer waits while a control or the caption has keyboard focus (WCAG 2.2.1). */}
         <footer
-          onFocus={() => {
-            setHeld(true);
+          onFocus={(e) => {
+            // Keyboard focus only: a tap on Play or Next must not freeze the timer.
+            if (e.target.matches(':focus-visible')) setHeld(true);
           }}
           onBlur={() => {
             setHeld(false);
