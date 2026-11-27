@@ -797,7 +797,8 @@ export async function listCodRequests(
         ...publicView(effective(typedRow({ ...rest, userId }), now)),
         customerId: userId,
         customerName,
-        customerPhone: input.canReadPii ? customerPhone : maskPhone(customerPhone),
+        // DC-B6 (spec 13): a staff list masks phones for every role; the full number is an audited customer view.
+        customerPhone: maskPhone(customerPhone),
         cityCode,
         deliveredOrders,
         cancelledOrders,
