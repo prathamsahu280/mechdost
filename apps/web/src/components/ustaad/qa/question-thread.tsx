@@ -219,7 +219,7 @@ function AnswerBubble({
       }`}
     >
       {a.isBest ? (
-        <p className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-success px-3 py-1 text-xs font-extrabold text-white">
+        <p className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-success-bg px-3 py-1 text-xs font-extrabold text-success ring-1 ring-success/40">
           <Award aria-hidden="true" className="size-4" />
           {t('bestBadge')}
         </p>

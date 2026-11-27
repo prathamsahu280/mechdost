@@ -46,6 +46,8 @@
   --color-info: #1b4f8f;
   --color-whatsapp: #167b42;
   --color-whatsapp-bg: #eff8f2;
+  /* WhatsApp-green text on its tint or on a surface (the solid button keeps white on --color-whatsapp). */
+  --color-whatsapp-text: #167b42;
   --color-whatsapp-line: #cfe6d7;
   --color-hero-copy: #cfd9e5;
   --color-focus: #e65325;
@@ -123,6 +125,7 @@
   --color-info-bg: #12263d;
   --color-info: #a6c9f5;
   --color-whatsapp-bg: #0e2419;
+  --color-whatsapp-text: #7fd8a3;
   --color-whatsapp-line: #1f4a33;
   --color-focus: #ff8b59;
   --color-star: #f5b041;
@@ -164,6 +167,7 @@
     --color-info-bg: #12263d;
     --color-info: #a6c9f5;
     --color-whatsapp-bg: #0e2419;
+    --color-whatsapp-text: #7fd8a3;
     --color-whatsapp-line: #1f4a33;
     --color-focus: #ff8b59;
     --color-star: #f5b041;

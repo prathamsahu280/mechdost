@@ -2738,3 +2738,12 @@ correction returns the first one and any client key is ignored. Client payout ke
 - **State audit:** world `delivery` and auth `agent` / `agentshop` in the harness; rows `DLV-*` in chunk E; the core
   subset limit is 108 (one delivery case).
 - Contract gaps G1–G8 for the backend stream are listed in spec 24 § Web screens.
+
+## 2026-11-27 — Token `--color-whatsapp-text` (dark-theme contrast, Ustaad QA simulation)
+
+WhatsApp-green **text on its tint** (the post Share button) was 3.07:1 in dark (`--color-whatsapp` is not redefined
+there because the solid button keeps white text on it). New token `--color-whatsapp-text`: light `#167b42` (same as
+today), dark `#7fd8a3` (9.54:1 on `--color-whatsapp-bg`, measured live). Pairs added to `apps/web/test/tokens.test.ts`.
+Same pass, no new colours: coach-mark button `text-ink` → `text-navy` on white (was 1.17:1 in dark); Best-answer pill →
+`success` on `success-bg` (was white on light green, 1.72:1); recorder stop while recording → `error` on `error-bg`
+(was a white icon on the light dark-theme error, 2.17:1).

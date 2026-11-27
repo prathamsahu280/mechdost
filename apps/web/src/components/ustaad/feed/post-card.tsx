@@ -302,7 +302,7 @@ export function PostCard({
             onClick={() => void share()}
             aria-label={t('shareAria')}
             data-track="ustaad_post_share"
-            className={`${actionBtn} bg-whatsapp-bg text-whatsapp hover:brightness-95`}
+            className={`${actionBtn} bg-whatsapp-bg text-whatsapp-text hover:brightness-95`}
           >
             <UstaadIcon name="whatsapp" />
             <span>{t('share')}</span>

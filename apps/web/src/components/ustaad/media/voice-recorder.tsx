@@ -253,10 +253,11 @@ export function VoiceRecorder({
             onContextMenu={(e) => {
               e.preventDefault();
             }}
-            className={`press flex size-[76px] shrink-0 touch-none items-center justify-center rounded-full text-white shadow-float ring-4 select-none focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-focus ${
+            className={`press flex size-[76px] shrink-0 touch-none items-center justify-center rounded-full shadow-float ring-4 select-none focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-focus ${
               recording
-                ? 'bg-error ring-error/25 motion-safe:animate-pulse'
-                : 'bg-accent-button ring-accent/20 hover:bg-accent-button-hover'
+                ? // Tinted, not solid: the dark theme's light error colour under a white icon was 2.17:1 (QA 2026-11-27).
+                  'bg-error-bg text-error ring-error/40 motion-safe:animate-pulse'
+                : 'bg-accent-button text-white ring-accent/20 hover:bg-accent-button-hover'
             }`}
           >
             {recording ? (

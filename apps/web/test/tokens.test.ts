@@ -86,6 +86,9 @@ const TEXT_PAIRS: [fg: string, bg: string][] = [
   ['cart-badge-text', 'cart-badge'],
   ['accent-soft-text', 'pill'],
   ['muted', 'accent-soft'],
+  // Ustaad QA simulation 2026-11-27: WhatsApp share text on its tint (was 3.07:1 in dark)
+  ['whatsapp-text', 'whatsapp-bg'],
+  ['whatsapp-text', 'surface'],
 ];
 
 const NON_TEXT_PAIRS: [fg: string, bg: string][] = [

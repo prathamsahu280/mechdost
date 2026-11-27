@@ -64,7 +64,7 @@ export function CoachMark({ target, returnFocusTo }: { target: CoachmarkTarget; 
                 api.saveOnboarding(locale, { event: 'coachmark', target }),
               );
             }}
-            className="press mt-2 min-h-12 rounded-button bg-white px-4 text-sm font-bold text-ink focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-white"
+            className="press mt-2 min-h-12 rounded-button bg-white px-4 text-sm font-bold text-navy focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
             {t('gotIt')}
           </button>
