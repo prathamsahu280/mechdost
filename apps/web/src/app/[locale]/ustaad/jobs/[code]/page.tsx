@@ -17,7 +17,15 @@ export default async function UstaadJobPage({ params }: Props) {
   if (!JobCodeParam.safeParse({ code }).success) notFound();
   return (
     <ClientMessages
-      namespaces={['ustaad.shell', 'ustaad.jobs', 'ustaad.media', 'ustaad.labels', 'ustaad.card', 'segments']}
+      namespaces={[
+        'ustaad.shell',
+        'ustaad.standing',
+        'ustaad.jobs',
+        'ustaad.media',
+        'ustaad.labels',
+        'ustaad.card',
+        'segments',
+      ]}
     >
       <MemberGate>
         <JobDetail code={code} />

@@ -15,7 +15,14 @@ export default async function UstaadDiscoverPage({ searchParams }: Props) {
   const filters = parseDiscoverFilters((await searchParams) ?? {});
   return (
     <ClientMessages
-      namespaces={['ustaad.shell', 'ustaad.discover', 'ustaad.messages', 'ustaad.labels', 'segments']}
+      namespaces={[
+        'ustaad.shell',
+        'ustaad.standing',
+        'ustaad.discover',
+        'ustaad.messages',
+        'ustaad.labels',
+        'segments',
+      ]}
     >
       <MemberGate>
         <DiscoverView filters={filters} />

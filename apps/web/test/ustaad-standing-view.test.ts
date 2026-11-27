@@ -3,7 +3,7 @@ import en from '@mechdost/shared/i18n/en.json';
 import hi from '@mechdost/shared/i18n/hi.json';
 import { REPORT_REASONS } from '@mechdost/shared/ustaad/codes';
 import { STANDING_ACTIONS } from '@mechdost/shared/ustaad/dto/moderation';
-import { standingReasonKey, standingSummary } from '../src/lib/ustaad/standing-view';
+import { memberGateView, standingReasonKey, standingSummary } from '../src/lib/ustaad/standing-view';
 
 const base = { restrictedUntil: null, bannedUntil: null, restrictedMode: 'none', items: [] };
 
@@ -28,6 +28,23 @@ describe('member standing (SIM-P19 / SIM-P23 / SIM-P27)', () => {
       until: null,
     });
     expect(standingSummary({ ...base, status: 'active' })).toEqual({ kind: 'clear', until: null });
+  });
+
+  it('SIM-P27: the member gate shows the banned screen, the limited banner, the join card or the page', () => {
+    const me = (status: string, restrictedMode = 'none') => ({
+      state: 'ok' as const,
+      data: { member: { status, restrictedMode }, staffPreview: false },
+    });
+    expect(memberGateView(me('banned'))).toBe('banned');
+    expect(memberGateView({ state: 'error', status: 403, code: 'USTAAD_BANNED' })).toBe('banned');
+    expect(memberGateView(me('restricted'))).toBe('limited');
+    expect(memberGateView(me('active', 'minor_report'))).toBe('limited');
+    expect(memberGateView(me('active'))).toBe('member');
+    expect(memberGateView({ state: 'ok', data: { member: null, staffPreview: true } })).toBe('join');
+    expect(memberGateView({ state: 'error', status: 404, code: 'USTAAD_NOT_MEMBER' })).toBe('join');
+    expect(memberGateView({ state: 'loading' })).toBe('loading');
+    // Any other failure lets the page show its own error (and retry).
+    expect(memberGateView({ state: 'error', status: 0, code: 'NETWORK' })).toBe('member');
   });
 
   it('every standing string and reason label exists in English and Hindi', () => {

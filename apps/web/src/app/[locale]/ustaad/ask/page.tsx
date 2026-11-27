@@ -14,7 +14,9 @@ interface Props {
 export default async function UstaadAskPage({ searchParams }: Props) {
   const filter = parseQuestionFilter((await searchParams)?.filter);
   return (
-    <ClientMessages namespaces={['ustaad.shell', 'ustaad.qa', 'ustaad.labels', 'segments']}>
+    <ClientMessages
+      namespaces={['ustaad.shell', 'ustaad.standing', 'ustaad.qa', 'ustaad.labels', 'segments']}
+    >
       <MemberGate>
         <AskList filter={filter} />
       </MemberGate>

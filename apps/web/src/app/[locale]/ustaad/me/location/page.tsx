@@ -9,7 +9,14 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
 export default function UstaadPinPage() {
   return (
     <ClientMessages
-      namespaces={['ustaad.shell', 'ustaad.local', 'ustaad.media', 'ustaad.labels', 'segments']}
+      namespaces={[
+        'ustaad.shell',
+        'ustaad.standing',
+        'ustaad.local',
+        'ustaad.media',
+        'ustaad.labels',
+        'segments',
+      ]}
     >
       <MemberGate>
         <PinGarage />

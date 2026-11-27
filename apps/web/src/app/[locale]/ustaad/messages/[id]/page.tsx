@@ -17,7 +17,14 @@ export default async function UstaadThreadPage({ params }: Props) {
   if (!ThreadIdParamDto.safeParse({ id }).success) notFound();
   return (
     <ClientMessages
-      namespaces={['ustaad.shell', 'ustaad.messages', 'ustaad.media', 'ustaad.labels', 'segments']}
+      namespaces={[
+        'ustaad.shell',
+        'ustaad.standing',
+        'ustaad.messages',
+        'ustaad.media',
+        'ustaad.labels',
+        'segments',
+      ]}
     >
       <MemberGate>
         <ThreadScreen id={id} />

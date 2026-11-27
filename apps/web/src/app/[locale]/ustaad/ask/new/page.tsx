@@ -11,6 +11,7 @@ export default function UstaadAskNewPage() {
     <ClientMessages
       namespaces={[
         'ustaad.shell',
+        'ustaad.standing',
         'ustaad.qa',
         'ustaad.media',
         'ustaad.labels',

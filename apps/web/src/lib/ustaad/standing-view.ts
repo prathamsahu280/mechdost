@@ -25,3 +25,30 @@ export function standingSummary(v: Omit<StandingView, 'items'> & { items?: unkno
   if (v.restrictedMode !== 'none') return { kind: 'review', until: null };
   return { kind: 'clear', until: null };
 }
+
+type GateLoad =
+  | { state: 'loading' }
+  | { state: 'error'; status: number; code: string }
+  | {
+      state: 'ok';
+      data: { member: { status: string; restrictedMode?: string } | null; staffPreview: boolean };
+    };
+
+/**
+ * What the member gate draws (SIM-P27): a banned member gets the banned screen (reason, end date, appeal) on every
+ * network page instead of each page's "check your internet"; a restricted or under-review member gets the page with
+ * the one limited banner (SIM-P23); a non-member the join card. Any other failure lets the page show its own error.
+ */
+export function memberGateView(loaded: GateLoad): 'loading' | 'banned' | 'limited' | 'join' | 'member' {
+  if (loaded.state === 'loading') return 'loading';
+  if (loaded.state === 'error') {
+    if (loaded.code === 'USTAAD_BANNED') return 'banned';
+    if (loaded.code === 'USTAAD_NOT_MEMBER') return 'join';
+    return 'member';
+  }
+  const m = loaded.data.member;
+  if (!m) return 'join';
+  if (m.status === 'banned') return 'banned';
+  if (m.status === 'restricted' || (m.restrictedMode ?? 'none') !== 'none') return 'limited';
+  return 'member';
+}

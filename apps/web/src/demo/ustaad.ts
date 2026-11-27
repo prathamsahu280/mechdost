@@ -79,6 +79,7 @@ const MEMBER: MemberView = {
   lang: 'hi',
   official: false,
   founding: true,
+  restrictedMode: 'none',
   joinedAt: ago(60 * 24 * 40),
   version: 3,
 };

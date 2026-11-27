@@ -28,7 +28,6 @@ export function StandingSummaryText({ summary }: { summary: StandingSummary }) {
 /** One decision with its plain reason, dates and its single Appeal action (an inline form, no dialog). */
 function Decision({ item, onFiled }: { item: Item; onFiled: (code: string, ticket: string) => void }) {
   const t = useTranslations('ustaad.standing');
-  const l = useTranslations('ustaad.labels');
   const locale = useLocale();
   const ids = useId();
   const [open, setOpen] = useState(false);
@@ -155,12 +154,53 @@ function Decision({ item, onFiled }: { item: Item; onFiled: (code: string, ticke
                 requestAnimationFrame(() => opener.current?.focus());
               }}
             >
-              {l('cancel')}
+              {t('cancel')}
             </button>
           </div>
         </form>
       ) : null}
     </li>
+  );
+}
+
+/** SIM-P27: the banned screen every network page shows a banned member (reason, end date, appeal). */
+export function BannedScreen() {
+  return (
+    <div className="mx-auto grid max-w-2xl gap-5">
+      <StandingPanel heading="bannedTitle" />
+    </div>
+  );
+}
+
+/**
+ * SIM-P23: the one banner a restricted (or under-review) member sees above every network page: what is limited and
+ * until when, and the way to the reason and the appeal. The space is reserved while the date loads (no jump).
+ */
+export function LimitedBanner() {
+  const t = useTranslations('ustaad.standing');
+  const locale = useLocale();
+  const { loaded } = useUstaad((c) => c.standing(), 'standing-banner');
+  const summary = loaded.state === 'ok' ? standingSummary(loaded.data) : null;
+  return (
+    <section
+      aria-labelledby="ustaad-limited-h"
+      className="mx-auto mb-4 grid min-h-[132px] w-full max-w-2xl gap-2 rounded-2xl border border-line-card bg-warning-bg p-4"
+    >
+      <h2 id="ustaad-limited-h" className="flex items-center gap-2 text-[16px] font-extrabold text-warning">
+        <ShieldAlert aria-hidden="true" className="size-5 shrink-0" />
+        {t('restrictedTitle')}
+      </h2>
+      <p className="text-[15px] leading-relaxed text-ink">
+        {summary ? <StandingSummaryText summary={summary} /> : t('restrictedReview')}
+      </p>
+      <Link
+        href={localePath('/ustaad/me/standing', locale)}
+        className="inline-flex min-h-11 items-center justify-self-start text-[15px] font-bold text-info underline underline-offset-4 hover:no-underline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+        data-track="ustaad_limited_banner_open"
+      >
+        {t('seeStanding')}
+      </Link>
+    </section>
   );
 }
 

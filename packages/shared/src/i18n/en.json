@@ -9009,7 +9009,8 @@
       "gac": "Not happy with the reply? You can also go to the Grievance Appellate Committee at gac.gov.in.",
       "back": "Back to Me",
       "loadFailed": "Your standing did not load. Try again.",
-      "retry": "Try again"
+      "retry": "Try again",
+      "cancel": "Cancel"
     }
   },
   "savings": {

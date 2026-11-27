@@ -93,6 +93,7 @@ async function viewOf(tx: Tx, m: MemberRow): Promise<MemberView> {
     track: m.track as MemberView['track'],
     level: m.level as MemberView['level'],
     status: m.status as MemberView['status'],
+    restrictedMode: m.restrictedMode as MemberView['restrictedMode'],
     verificationState: m.verificationState as MemberView['verificationState'],
     cityCode: city?.code ?? '',
     areaLabel: m.areaLabel,

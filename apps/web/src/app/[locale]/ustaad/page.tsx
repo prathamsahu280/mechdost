@@ -97,6 +97,7 @@ export default async function UstaadHome({ params, searchParams }: Props) {
               'ustaad.media',
               'ustaad.correction',
               'ustaad.shell',
+              'ustaad.standing',
               'segments',
             ]}
           >

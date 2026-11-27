@@ -2004,6 +2004,17 @@ Each fix has a regression test named after the QA id.
   `ustaad_appeal_filed { reportId }`). Staff still decide it in Admin → Ustaad → Appeals (four-eyes). The GAC line
   (gac.gov.in) closes the decisions list. Tests: `ustaad-moderation.test.ts` "member standing and appeal …",
   `ustaad-moderation-api.test.ts` "member standing and appeal …", `apps/web/test/ustaad-standing-view.test.ts`.
+- **SIM-P27 / SIM-P23 — banned and limited members see why, on every network page.** The API already answered
+  403 `USTAAD_BANNED`, but only the join flow understood it, so a banned member saw "check your internet" everywhere.
+  `MemberGate` (every network page, and now Me too) decides with `memberGateView`: banned (from `GET /ustaad/me`
+  `status`, or a 403 `USTAAD_BANNED`) → the **banned screen** (the standing panel titled "Your network account is
+  blocked": until when or no end date, each decision with its plain reason and the Appeal action); restricted or
+  under review (`MemberView.restrictedMode`, new field, default `none`) → the page under **one limited banner**
+  ("Until {date} you can read, but you cannot post, comment, answer, message or use jobs" / "While our team checks your
+  account …", link "See why and appeal"); not a member → the join card. Both views load on demand (`next/dynamic`)
+  so the pages' first load does not grow; the banner reserves its height while the date loads. Every gated page loads
+  the `ustaad.standing` messages. Test: `apps/web/test/ustaad-standing-view.test.ts` "SIM-P27 …". Not done: the
+  composers' own refusal texts for `USTAAD_RESTRICTED` stay as they were (the banner is the one wording).
 - **SIM-P26 — the appellant hears the appeal's outcome.** `decideUstaadAppeal` sent the reporter's
   `ustaad.report_outcome` ("Your report was checked – thank you") to the appellant. New kinds `ustaad.appeal_upheld`
   ("The decision stays") and `ustaad.appeal_overturned` ("We took the decision back"), en + hi in `notify.*`,

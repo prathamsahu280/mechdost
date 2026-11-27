@@ -26,6 +26,7 @@ export default async function UstaadSavedPage({ params }: Props) {
       <ClientMessages
         namespaces={[
           'ustaad.shell',
+          'ustaad.standing',
           'ustaad.feed',
           'ustaad.labels',
           'ustaad.media',

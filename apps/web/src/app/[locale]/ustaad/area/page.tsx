@@ -8,7 +8,9 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
 /** Area map (spec 23 § 5 `/ustaad/area`): zone bands for verified members, a stylised map plus the same list. */
 export default function UstaadAreaPage() {
   return (
-    <ClientMessages namespaces={['ustaad.shell', 'ustaad.local', 'ustaad.labels', 'segments']}>
+    <ClientMessages
+      namespaces={['ustaad.shell', 'ustaad.standing', 'ustaad.local', 'ustaad.labels', 'segments']}
+    >
       <MemberGate>
         <AreaZones />
       </MemberGate>

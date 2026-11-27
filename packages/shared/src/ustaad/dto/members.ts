@@ -15,6 +15,7 @@ import {
   USTAAD_WORK_PLACES,
   USTAAD_CORRECTION_MODES,
   USTAAD_MEMBER_STATUSES,
+  USTAAD_RESTRICTED_MODES,
 } from '../codes';
 
 const name = z.string().trim().min(2).max(60);
@@ -139,6 +140,8 @@ export const MemberViewDto = z.object({
   track: z.enum(USTAAD_TRACKS),
   level: z.enum(USTAAD_LEVELS),
   status: z.enum(USTAAD_MEMBER_STATUSES),
+  /** SIM-P23/P27: limited while staff check (no end date); the gate shows the one limited banner. */
+  restrictedMode: z.enum(USTAAD_RESTRICTED_MODES).default('none'),
   verificationState: z.enum(USTAAD_VERIFICATION_STATES),
   cityCode: z.string(),
   areaLabel: z.string(),
