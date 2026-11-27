@@ -2034,6 +2034,12 @@ Each fix has a regression test named after the QA id.
   which lets the LLM engine run instead of the word list). Each change saves at once. Not done: the admin "Fix by
   itself" default still needs at least one protected word (seed gap, runbook). Tests: `ustaad-media.test.ts` "voice
   consent (SIM-P10 …)", `ustaad-profile.test.ts` (choices shape), `apps/web/test/ustaad-voice-consent.test.ts`.
+- **SIM-P34 — a ban closes the banned member's conversations.** Derived, not stored (ruling: a ban ends by the clock,
+  an unban or an overturned appeal, and a stored `blocked` status would need restoring and could be lifted by the
+  other member): while the other member of a thread is banned or has left, `sendUstaadMessage` and accepting their
+  request answer 403 `USTAAD_DM_NOT_ALLOWED` ("This conversation is closed", the existing copy); the banned member
+  cannot reach messages at all (403 `USTAAD_BANNED`). Test: `ustaad-social.test.ts` "SIM-P34 …". Not done: the inbox
+  does not yet mark such a thread as closed before a send is tried.
 - **SIM-P26 — the appellant hears the appeal's outcome.** `decideUstaadAppeal` sent the reporter's
   `ustaad.report_outcome` ("Your report was checked – thank you") to the appellant. New kinds `ustaad.appeal_upheld`
   ("The decision stays") and `ustaad.appeal_overturned` ("We took the decision back"), en + hi in `notify.*`,

@@ -8,7 +8,7 @@ From `docs/qa/ustaad-sim-fix-plan-2026-11-27.md` (Batch A); details and tests in
 
 - **Done:** SIM-P18 (employer bell on each application + Applicants list on the job page, owner-only API with cursor); SIM-P17 (server picks the employer account; form sends none).
 - **Done:** P18 security follow-up (gate, hidden jobs, blocks, banned/withdrawn hidden, card tick).
-- **Done:** SIM-P11 (voucher bell); SIM-P20 (a request can no longer escalate suggest to auto); SIM-P26 (appeal outcome notices); SIM-P19/P24 (all notice links are pages; /ustaad/me/standing with reason, limits, end date and one Appeal; ticket kind ustaad_appeal, migration 0111 NOT applied); SIM-P27/P23 (banned screen and one limited banner on every network page); SIM-B8 (Remove and warn on holds; scam holds reasoned job_scam); SIM-P10/G17 (voice consent before the first recording, enforced by the API; My choices with "Fix by itself").
+- **Done:** SIM-P11 (voucher bell); SIM-P20 (a request can no longer escalate suggest to auto); SIM-P26 (appeal outcome notices); SIM-P19/P24 (all notice links are pages; /ustaad/me/standing with reason, limits, end date and one Appeal; ticket kind ustaad_appeal, migration 0111 NOT applied); SIM-P27/P23 (banned screen and one limited banner on every network page); SIM-B8 (Remove and warn on holds; scam holds reasoned job_scam); SIM-P10/G17 (voice consent before the first recording, enforced by the API; My choices with "Fix by itself"); SIM-P34 (threads with a banned member are closed, derived).
 - **Next:** P20/G17, P26, P19/P24, P27/P23, B8, P10, P34.
 
 ## 2026-11-27 overnight (lead, founder asleep) — handover (written 04:55)

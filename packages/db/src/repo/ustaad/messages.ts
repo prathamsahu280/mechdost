@@ -73,6 +73,21 @@ async function scamPhrases(tx: Tx): Promise<string[]> {
 const otherOf = (t: ThreadRow, me: string) => (t.lowId === me ? t.highId : t.lowId);
 
 /**
+ * SIM-P34: a ban closes the banned member's conversations. Derived, not stored (a ban ends by the clock, an unban or an
+ * overturned appeal, and the thread then works again with nothing to restore): while the other member is banned or
+ * has left, nothing more is sent in either direction and a request from them cannot be accepted.
+ */
+async function assertCounterpartReachable(tx: Tx, thread: ThreadRow, me: string): Promise<void> {
+  const [other] = await tx
+    .select({ status: ustaadMembers.status })
+    .from(ustaadMembers)
+    .where(eq(ustaadMembers.id, otherOf(thread, me)))
+    .limit(1);
+  if (!other || other.status === 'banned' || other.status === 'left')
+    throw new ForbiddenError('This conversation is closed', 'USTAAD_DM_NOT_ALLOWED');
+}
+
+/**
  * The receiver (the member who did not start the request) may see the thread only on content, never on a proxy
  * column (security review 2026-11-26): while `requested`, the requester's latest message (the request; only one is
  * allowed per request) must be unheld and not deleted; in any other state at least one unheld, undeleted message
@@ -397,6 +412,7 @@ export async function sendUstaadMessage(
       throw new ConflictError('Wait until the request is accepted', 'USTAAD_DM_PENDING');
     if (thread.status !== 'open')
       throw new ForbiddenError('This conversation is closed', 'USTAAD_DM_NOT_ALLOWED');
+    await assertCounterpartReachable(tx, thread, me.id);
     const c: Content = {
       kind: input.kind,
       body: 'text' in input && input.text !== undefined ? input.text : null,
@@ -420,6 +436,7 @@ export async function moveUstaadThread(
     const thread = await myThread(tx, me.id, threadId);
     if (thread.status !== 'requested' || thread.requestedBy === me.id)
       throw new NotFoundError('Conversation not found');
+    if (action === 'accept') await assertCounterpartReachable(tx, thread, me.id);
     const moved = await moveThread(
       tx,
       thread,
