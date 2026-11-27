@@ -565,3 +565,25 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
 - ~~Q-DC-5~~ Lead: "everyone" COD is not switched on (open the switch, read the warning, cancel).
 - ~~Q-DC-6~~ Default kept: ≤ 10 emails, then outbox rows only.
 - ~~Q-DC-7~~ **Founder: the ₹1 Racer4 listing is his deliberate payment test price** — not a bug.
+
+#### Partner portals UI upgrade (design `docs/superpowers/specs/2026-11-27-partner-portals-ui-upgrade-design.md` § 14) — 2026-11-27
+
+- **Q-PP-F1 (Decision):** add Recharts (about 50–90 KB gz in a lazy chunk; it is in CLAUDE.md's stack list but not
+  installed) for the partner charts, or keep our own drawn SVG charts like the admin? **Default meanwhile:** our own
+  SVG charts, no new dependency.
+- **Q-PP-F2 (Decision):** split the shop and workshop portals into tabs (Today · Orders/Jobs · Stock & prices ·
+  Numbers · My shop/workshop), with the same content in new places? **Default meanwhile:** yes, as designed.
+- **Q-PP-F3 (Decision):** new-order sound: on by default after the first tap, or off until the partner turns it on?
+  **Default meanwhile:** off until the partner taps "Turn on order sound".
+- **Q-PP-F4 (Decision):** on partner pages, hide the storefront announcement bar, phone search bar and customer
+  footer so the work starts ≈ 180 px higher (the Ustaad upgrade proposes the same inside `/ustaad`)? **Default
+  meanwhile:** keep them; the page intro moves into the partner strip.
+- **Q-PP-F5 (Decision):** build the small rider per-day stats API (P1) for a "delivered per day" chart next?
+  **Default meanwhile:** later (P1).
+
+## Ustaad UI upgrade (design doc `docs/superpowers/specs/2026-11-27-ustaad-ui-upgrade-design.md` § 9) — 2026-11-27 night
+
+- **Q-UI-1** Bottom bar tabs: keep today's (Home · Discover · Create · Learn · Me) or Home · Ask · + · Jobs · Me? Default meanwhile: keep today's.
+- **Q-UI-2** A weekly "you helped N mechanics" note (no streaks)? Default: neither.
+- **Q-UI-3** A second reaction "Kaam ki baat / Useful" beside Like? Default: Like only.
+- **Q-UI-4** Auto-captions / suggested summaries through an outside speech service later (amends the spec 23 "no speech-to-text" ruling; see Q-STT-1 research)? Default: author-written captions and summaries only.
