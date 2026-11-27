@@ -156,7 +156,7 @@ export function SavedScreen() {
     <div className="grid gap-4">
       <SampleNote show={sample} />
 
-      <nav aria-label={t('kindsLabel')} className="-mx-4 overflow-x-auto px-4 tab:mx-0 tab:px-0">
+      <div role="group" aria-label={t('kindsLabel')} className="-mx-4 overflow-x-auto px-4 tab:mx-0 tab:px-0">
         <ul className="flex w-max gap-2">
           <li>
             <button
@@ -187,9 +187,13 @@ export function SavedScreen() {
             </li>
           ))}
         </ul>
-      </nav>
+      </div>
 
-      <section aria-label={t('collectionsLabel')} className="-mx-4 overflow-x-auto px-4 tab:mx-0 tab:px-0">
+      <div
+        role="group"
+        aria-label={t('collectionsLabel')}
+        className="-mx-4 overflow-x-auto px-4 tab:mx-0 tab:px-0"
+      >
         <ul className="flex w-max items-center gap-2">
           {list.map((c) => (
             <li key={c.id}>
@@ -221,7 +225,7 @@ export function SavedScreen() {
             </button>
           </li>
         </ul>
-      </section>
+      </div>
 
       <div className="grid gap-1">
         <label htmlFor="saved-search" className="text-[14px] font-bold text-ink">
@@ -240,6 +244,10 @@ export function SavedScreen() {
           }}
         />
       </div>
+
+      <p role="status" className="sr-only">
+        {page.status === 'ok' ? t('resultCount', { count: items.length }) : ''}
+      </p>
 
       {page.status === 'loading' ? <LoadingBlock /> : null}
       {page.status === 'error' ? (
@@ -261,7 +269,7 @@ export function SavedScreen() {
       ) : null}
 
       {page.status === 'ok' && items.length > 0 ? (
-        <ul className="grid gap-3" aria-live="polite">
+        <ul className="grid gap-3">
           {items.map((it) => {
             const gone = unsaved.has(`${it.kind}:${it.id}`);
             const words = it.kind === 'lesson' && locale === 'hi' && it.textHi ? it.textHi : it.text;

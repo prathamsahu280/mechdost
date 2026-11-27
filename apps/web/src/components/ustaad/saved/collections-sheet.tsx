@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import type { SaveCollection, SavedItem } from '@mechdost/shared/ustaad/dto/saved';
 import { USTAAD_SAVE_SUGGESTED_COLLECTIONS } from '@mechdost/shared/ustaad/saved';
 import { track } from '@/lib/analytics';
@@ -41,6 +41,13 @@ export function CollectionsSheet({
   const [editing, setEditing] = useState<{ id: string; name: string; version: number } | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const newInput = useRef<HTMLInputElement>(null);
+  // A view swap unmounts the pressed button: put focus on the row's Rename button (or the new-name field).
+  const focusRename = (id: string) => {
+    requestAnimationFrame(() => {
+      document.getElementById(`${uid}-rn-${id}`)?.focus();
+    });
+  };
 
   const suggestions = freeSuggestions(
     USTAAD_SAVE_SUGGESTED_COLLECTIONS.map((code) => ({ code, word: sc(`suggest.${code}`) })),
@@ -55,6 +62,7 @@ export function CollectionsSheet({
     const problem = nameProblem(name);
     if (problem) {
       setNameError(problem);
+      newInput.current?.focus();
       return;
     }
     setBusy(true);
@@ -62,6 +70,7 @@ export function CollectionsSheet({
     if (!r.ok) {
       setBusy(false);
       setNameError(savedErrorKey(r.code));
+      newInput.current?.focus();
       return;
     }
     track('ustaad_collection_changed', { action: 'created' });
@@ -113,6 +122,7 @@ export function CollectionsSheet({
     replace(r.data);
     setEditing(null);
     setRowError(null);
+    focusRename(editing.id);
   }
 
   async function remove(id: string) {
@@ -127,6 +137,7 @@ export function CollectionsSheet({
     track('ustaad_collection_changed', { action: 'deleted' });
     onCollections(collections.filter((c) => c.id !== id));
     setDeleting(null);
+    newInput.current?.focus();
   }
 
   return (
@@ -150,6 +161,7 @@ export function CollectionsSheet({
                         id={`${uid}-r-${c.id}`}
                         className={fieldClass}
                         value={editing.name}
+                        autoFocus
                         maxLength={40}
                         aria-invalid={err ? true : undefined}
                         aria-describedby={err ? errId : undefined}
@@ -179,6 +191,7 @@ export function CollectionsSheet({
                           onClick={() => {
                             setEditing(null);
                             setRowError(null);
+                            focusRename(c.id);
                           }}
                         >
                           {t('cancel')}
@@ -200,6 +213,7 @@ export function CollectionsSheet({
                           type="button"
                           className={btnPrimary}
                           disabled={busy}
+                          autoFocus
                           onClick={() => void remove(c.id)}
                           data-track="ustaad_collection_delete_yes"
                         >
@@ -210,6 +224,7 @@ export function CollectionsSheet({
                           className={btnQuiet}
                           onClick={() => {
                             setDeleting(null);
+                            focusRename(c.id);
                           }}
                         >
                           {t('cancel')}
@@ -248,7 +263,9 @@ export function CollectionsSheet({
                       <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
+                          id={`${uid}-rn-${c.id}`}
                           className={btnQuiet}
+                          aria-label={t('renameNamed', { name: c.name })}
                           onClick={() => {
                             setEditing({ id: c.id, name: c.name, version: c.version });
                             setRowError(null);
@@ -259,6 +276,7 @@ export function CollectionsSheet({
                         <button
                           type="button"
                           className={btnQuiet}
+                          aria-label={t('deleteNamed', { name: c.name })}
                           onClick={() => {
                             setDeleting(c.id);
                             setRowError(null);
@@ -293,6 +311,7 @@ export function CollectionsSheet({
           <div className="flex flex-wrap gap-2">
             <input
               id={`${uid}-new`}
+              ref={newInput}
               className={`${fieldClass} min-w-0 flex-1`}
               value={name}
               maxLength={40}

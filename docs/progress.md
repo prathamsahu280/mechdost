@@ -172,6 +172,15 @@ This file is the single source of truth for **where the build is right now**. It
 - Not done: see that table and the builder's report (P21/F7 bell locale, P23, P25, P30–P33, F4, F5, RT3, LEAD-1, LEAD-8
   and the rest of the P2/P3 rows).
 
+## 2026-11-28 night — Saved upgrade UI (builder, branch `worktree-agent-a19b10efc8dfaaca4`, NOT merged)
+
+- Built test-first on top of the Saved API: web client methods (real + demo), new `/ustaad/saved` page (kind and
+  collection chips with counts, word search, rows that open the item, empty states, Load more), the "Add to
+  collection" sheet (create, rename, delete with confirm, 409 / limit words), one Me row, `SaveControl` on the question,
+  answers, job detail and Learn lessons, events `ustaad_saved_filter` and `ustaad_collection_changed`. Question and job
+  DTOs gained `id`. Spec 23 § 21i "as built". Not done: "saved by me" flags in the DTOs (controls start unsaved),
+  posts in feed cards keep their own button, no e2e or browser run. Lead: run hindi-coverage and axe on `/ustaad/saved`.
+
 ## 2026-11-28 night — Mechanic Network Saved upgrade (builder, branch `worktree-agent-a754e32db80755c6d`, NOT merged)
 
 - Research + design: `docs/superpowers/specs/2026-11-28-mechanic-network-saved-design.md` (WhatsApp stars / Message

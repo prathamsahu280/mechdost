@@ -289,7 +289,7 @@ shown), `ustaad_post_liked {}` and `ustaad_post_saved {}` (only when turned on),
 saved }` (the shared Save control for posts, questions, answers, jobs and lessons, 2026-11-28; no ids),
 `ustaad_saved_filter { by, kind? }` (the Saved page: `by` is `all`, `kind` or `collection`; `kind` only for `by: kind`; never a
 collection name or id) and `ustaad_collection_changed { action }` (`created`, `renamed`, `deleted`, `item_added`,
-`item_removed`; Saved upgrade, spec 23 § 21i, 2026-11-28),
+`item_removed`; Saved upgrade, spec 23 § 21i, 2026-11-28), and `ustaad_me_shortcut { to }` now also takes `saved`,
 `ustaad_post_shared { channel }`
 (`whatsapp`; Copy link sends no event), `ustaad_story_viewed {}` (once per story seen, not one's own),
 `ustaad_video_played { secondsBand }` (feed and story videos, on tap), `ustaad_video_link_added { provider }` (a pasted

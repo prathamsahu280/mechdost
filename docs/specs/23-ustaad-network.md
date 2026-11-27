@@ -2380,9 +2380,30 @@ Founder 2026-11-28: save more than posts and keep it like WhatsApp/Instagram/Fac
   `ustaad_item_save_toggled {kind, saved}`. The lead wires it into the restyled cards.
 - **Tests:** `packages/db/test/ustaad-saved.test.ts` (7), `apps/api/test/ustaad-saved-api.test.ts` (3),
   `apps/web/test/ustaad-save-control.test.ts` (4).
-- **Not built yet:** the Saved page UI (tabs, search, counts, empty state) and the "Add to collection" sheet on top of
-  this API; the Me entry line; "Send to my WhatsApp" for non-post kinds (founder OK, Q in the inbox); collection limit
-  and suggested names as admin settings (founder OK).
+- **Saved UI as built (2026-11-28, builder `worktree-agent-a19b10efc8dfaaca4`, test-first):**
+  - `UstaadClient` gained `savedList`, `savedSummary`, `setSaved`, `createCollection`, `renameCollection`,
+    `deleteCollection`, `setInCollection` (real client in `lib/ustaad/api-client.ts`, the browser demo in
+    `demo/ustaad-saved.ts` with the same rules: unique names ignoring case, rename by version, max 20, unsave empties
+    collections). `SaveControl` now goes through this seam, so it also works in the demo. `QuestionCard` and `Job` DTOs
+    carry `id` (the Save control saves by id; screens still link by code).
+  - `/ustaad/saved` (`components/ustaad/saved/saved-screen.tsx`): chips All · Posts · Questions · Answers · Jobs ·
+    Lessons and one chip per collection, each with its count from `/summary` (a pressed chip is `aria-pressed`); a word
+    search (300 ms pause, API `q`); a row per item that opens it (post `/ustaad/p/{id}`, question and answer `/ustaad/q/{code}`,
+    job `/ustaad/jobs/{code}`, lesson Learn; lessons show the Hindi title on `/hi`); per row the Save control (unsaving
+    keeps the row until the next load so a slip can be undone) and "Add to collection"; Load more by cursor; empty
+    states with one next action (Home, or Show everything when a filter is on). Words `ustaad.saved.*` (en + hi).
+  - "Add to collection" / "Manage collections" (`collections-sheet.tsx`, the shared native `<dialog>` `Sheet`,
+    loaded on intent): ticks per collection, create (suggested names Wiring · Part prices · Tips left out once used,
+    new collection is ticked for the item), rename, delete with an inline confirm; errors next to the field (duplicate
+    name 409 `UNIQUE_VIOLATION`, limit 422 `USTAAD_SAVE_COLLECTIONS_MAX`, stale version 409 `CONFLICT`, 404).
+  - Me has one row "Saved" in the shortcuts (`ustaad_me_shortcut {to: 'saved'}`); `SaveControl` sits on the question
+    thread (under the question), each answer, the job detail and each Learn lesson, starting `saved={false}` (no flag
+    in those DTOs yet). Events: `ustaad_saved_filter {by, kind?}`, `ustaad_collection_changed {action}` (spec 12).
+  - Tests: `apps/web/test/ustaad-saved-client.test.ts` (6), `ustaad-saved-view.test.ts` (7), `ustaad-me-saved.test.ts`
+    (2), `ustaad-save-wiring.test.ts` (3), plus `client-messages-coverage` and `panel-dismiss`.
+- **Still not built:** "saved by me" flags on question, answer, job and lesson DTOs (controls start unsaved; the
+  server keeps the truth, a second tap is idempotent); "Send to my WhatsApp" for non-post kinds (founder OK, Q234);
+  collection limit and suggested names as admin settings (founder OK); an e2e of the page and sheet.
 
 ## 22. Not built / later
 
