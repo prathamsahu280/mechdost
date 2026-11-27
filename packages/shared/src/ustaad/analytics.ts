@@ -26,6 +26,7 @@ import {
   PROMOTION_SLOTS,
 } from './codes';
 import type { USTAAD_CONNECTION_STATUSES, USTAAD_THREAD_STATUSES } from '../state';
+import { VIDEO_PROVIDERS } from './video-links';
 
 type Of<T extends readonly string[]> = T[number];
 
@@ -217,6 +218,10 @@ export const USTAAD_CLIENT_EVENT_SCHEMAS = {
   ustaad_story_viewed: z.object({}).strict(),
   ustaad_video_played: z.object({ secondsBand: z.enum(['lt15', '15to60', '60to180', 'gt180']) }).strict(),
   ustaad_voice_played: z.object({}).strict(),
+  /** A pasted link was recognised as a video in the composer (spec 23 § 10b). */
+  ustaad_video_link_added: z.object({ provider: z.enum(VIDEO_PROVIDERS) }).strict(),
+  /** The facade was tapped and the embedded player loaded (spec 23 § 10b). */
+  ustaad_video_link_played: z.object({ provider: z.enum(VIDEO_PROVIDERS) }).strict(),
   ustaad_discover_searched: z.object({ results: count }).strict(),
   ustaad_tag_opened: z.object({}).strict(),
   ustaad_promo_impression: z.object({ promo: z.uuid(), slot: z.enum(PROMOTION_SLOTS) }).strict(),

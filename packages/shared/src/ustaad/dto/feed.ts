@@ -9,6 +9,7 @@
 import { z } from 'zod';
 import { CORRECTION_APPLIED, POST_TEMPLATES, TAG_GROUPS, USTAAD_SEGMENT_CODES } from '../codes';
 import { safeLinkUrl } from '../links';
+import { VIDEO_PROVIDERS, YOUTUBE_ID_RE } from '../video-links';
 
 const idemKey = z.string().regex(/^[A-Za-z0-9_-]{8,64}$/);
 const text = (max: number) => z.string().trim().min(1).max(max);
@@ -220,6 +221,20 @@ export const PostViewDto = z.object({
       url: z.string(),
       host: z.string().nullable(),
       preview: z.object({ title: z.string().nullable(), description: z.string().nullable() }).nullable(),
+      /**
+       * A recognised video link (spec 23 § 10b): the player, thumbnail and "Open in YouTube" URLs are rebuilt from
+       * `videoId` on the website; `title` / `author` come from oEmbed and were screened with the post text.
+       */
+      video: z
+        .object({
+          provider: z.enum(VIDEO_PROVIDERS),
+          videoId: z.string().regex(YOUTUBE_ID_RE),
+          startS: z.number().int().min(0),
+          title: z.string().nullable(),
+          author: z.string().nullable(),
+        })
+        .nullable()
+        .optional(),
     })
     .nullable(),
   media: z.array(PostMediaViewDto),

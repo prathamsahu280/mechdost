@@ -6,7 +6,7 @@
  * image pipeline), so `image_media_id` stays null.
  */
 import { createHash } from 'node:crypto';
-import { eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { LINK_PREVIEW_STATES } from '@mechdost/shared/ustaad/codes';
 import { ustaadLinkPreviews } from '../../schema';
 import type { Tx } from '../orders';
@@ -39,6 +39,8 @@ export interface LinkPreviewResult {
   finalHost: string | null;
   title: string | null;
   description: string | null;
+  /** oEmbed `author_name` (video links, spec 23 § 10b). */
+  author?: string | null;
 }
 
 const clip = (v: string | null, max: number) => (v === null ? null : v.slice(0, max));
@@ -48,6 +50,7 @@ export async function saveUstaadLinkPreview(db: Tx, url: string, r: LinkPreviewR
     finalHost: clip(r.finalHost, 253),
     title: r.status === 'ok' ? clip(r.title, 200) : null,
     description: r.status === 'ok' ? clip(r.description, 500) : null,
+    authorName: r.status === 'ok' ? clip(r.author ?? null, 100) : null,
     status: r.status,
     checkedAt: new Date(),
   };
@@ -74,4 +77,27 @@ export async function ustaadLinkPreviewsFor(
     if (url && r.status === 'ok') out.set(url, { title: r.title, description: r.description });
   }
   return out;
+}
+
+/**
+ * The cached oEmbed title and author of a video's canonical watch URL when the row is `ok` and fresh, else null (the
+ * API then asks oEmbed again). Refreshed after `maxAgeHours`; failures are not cached as answers.
+ */
+export async function ustaadVideoMetaCached(
+  db: Tx,
+  watchUrl: string,
+  maxAgeHours = LINK_PREVIEW_MAX_AGE_HOURS,
+): Promise<{ title: string | null; author: string | null } | null> {
+  const [row] = await db
+    .select({ title: ustaadLinkPreviews.title, author: ustaadLinkPreviews.authorName })
+    .from(ustaadLinkPreviews)
+    .where(
+      and(
+        eq(ustaadLinkPreviews.urlHash, ustaadLinkUrlHash(watchUrl)),
+        eq(ustaadLinkPreviews.status, 'ok'),
+        sql`${ustaadLinkPreviews.checkedAt} > now() - make_interval(hours => ${maxAgeHours})`,
+      ),
+    )
+    .limit(1);
+  return row ?? null;
 }
