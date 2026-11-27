@@ -1,6 +1,6 @@
 /**
  * Workshop portal tabs (partner portals UI upgrade, batch B; design 2026-11-27 § 6): lanes by status, the job step
- * rail, estimate totals by line state, Today tiles, hour chips, bullet-bar scale and the old links after the split.
+ * rail, estimate totals by line state, Today tiles, hour chips and the old links after the split.
  */
 import { describe, expect, it } from 'vitest';
 import { NOTICE_CATALOGUE, noticeKinds } from '@mechdost/shared/notice-catalogue';
@@ -8,7 +8,6 @@ import type { EstimateLine } from '@mechdost/shared/service-bill';
 import {
   WORKSHOP_LANES,
   WORKSHOP_TABS,
-  bulletScale,
   countText,
   estimateTotals,
   hourChip,
@@ -143,19 +142,6 @@ describe('hour chips', () => {
   it('says how many places are free or that the hour is full', () => {
     expect(hourChip({ hour: 9, free: 2 })).toEqual({ time: '09:00', full: false, free: 2 });
     expect(hourChip({ hour: 14, free: 0 })).toEqual({ time: '14:00', full: true, free: 0 });
-  });
-});
-
-describe('bullet bar scale', () => {
-  it('percent measures use 0–100', () => {
-    expect(bulletScale(80, 60, 'percent')).toEqual({ valuePct: 80, medianPct: 60 });
-  });
-  it('other measures leave headroom over the larger of value and median', () => {
-    expect(bulletScale(40, 50, 'count')).toEqual({ valuePct: 64, medianPct: 80 });
-  });
-  it('has no marker without a city median', () => {
-    expect(bulletScale(10, null, 'count').medianPct).toBeNull();
-    expect(bulletScale(0, null, 'count')).toEqual({ valuePct: 0, medianPct: null });
   });
 });
 

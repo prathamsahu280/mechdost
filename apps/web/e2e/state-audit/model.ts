@@ -1705,7 +1705,7 @@ export const REAL_MODE_VIEWS = [
     page: 'Shop portal (/partner/shop), real sign-in',
     component: "Notes from MechDost: the shop's warnings (spec 07)",
     file: 'src/components/portal/shop-warnings-api.tsx',
-    reach: 'sign in as shop owner → /partner/shop → "Notes from MechDost" section (#warnings)',
+    reach: 'sign in as shop owner → /partner/shop/numbers → "Notes from MechDost" (#warnings)',
     states: ['loading', 'empty', 'one', 'at-threshold', 'withdrawn-row', 'note-long', 'error-retry'],
     notShownFor: [],
   },

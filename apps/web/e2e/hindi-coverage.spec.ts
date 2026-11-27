@@ -175,6 +175,10 @@ const PUBLIC_PAGES = [
   '/account',
   '/admin',
   '/partner/shop',
+  '/partner/shop/orders',
+  '/partner/shop/stock',
+  '/partner/shop/numbers',
+  '/partner/shop/profile',
   '/partner/workshop',
   '/partner/workshop/jobs',
   '/partner/workshop/numbers',
@@ -291,7 +295,17 @@ test.describe('Hindi pages have no English left (hard rule 10)', () => {
 
   test('shop portal', async ({ page }) => {
     await signIn(page, PHONES.shop);
-    const failures = await audit(page, ['/partner/shop'], true);
+    const failures = await audit(
+      page,
+      [
+        '/partner/shop',
+        '/partner/shop/orders',
+        '/partner/shop/stock',
+        '/partner/shop/numbers',
+        '/partner/shop/profile',
+      ],
+      true,
+    );
     expect(failures, report(failures)).toEqual([]);
   });
 

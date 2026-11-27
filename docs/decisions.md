@@ -3020,3 +3020,19 @@ look"); V9 (the same lift site-wide) is NOT approved, so everything below is sco
   as `.ustaad-seg` but the network has no segmented control yet; the dock pill is applied in dark as well (its colours
   are an existing contrast pair).
 - Not decided here: V9 (site-wide lift) stays pending in the visual-language doc § 9.
+
+## 2026-11-28 — Shop portal split into tabs; workshop kit shim removed (builder, partner portals batch A)
+
+- Shop portal is five tab pages (Today, Orders, Stock & prices, Numbers, My shop) in a `(portal)` route group so the
+  print slip stays outside the frame (Q-PP-F2). Frame = the kit's `PartnerFrame` with a strip that reads `GET /v1/shop/me`
+  once (several shops: "{n} shops", never one shop's state). Sound on by default (F3) and the storefront header stays
+  (F4), both unchanged.
+- Order lanes come from the real order state (`shopLaneOf`), not a new field: Packing, Ready for pickup (agent shops
+  only), Out for delivery, Delivered, Given up or cancelled. `?order=` opens one order in place.
+- Notice links: new `partner.warning` notices open `/partner/shop/numbers`, `shop.delivery_mode_decided` opens
+  `/partner/shop/profile`; stored notices with `/partner/shop` still land on Today, and old hash links are forwarded by
+  the frame (`legacyShopTarget`). A test lists every shop link of the catalogue.
+- Workshop frame now uses the real kit (`PartnerFrame`, no strip: the name plate stays on Today); the shim and the
+  `bulletScale` helper are deleted (the kit's `bulletGeometry` is tested in `partner-kit.test.ts`). Workshop bullet tiles
+  show the city middle through the kit's own line; the empty "not enough workshops" line is the section note.
+- Not built: shop switcher / shop name per order card, per-row stock −/+, "Delivered today" (API gaps listed in spec 07).

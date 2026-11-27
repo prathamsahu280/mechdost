@@ -23,7 +23,7 @@ export function ShopTodayTiles({
   const compact = !loading && counts.newOrders !== '0';
   const v = (s: string) => (loading ? null : s);
   return (
-    <nav aria-label={t('tiles_label')}>
+    <section aria-label={t('tiles_label')}>
       <ul className={compact ? 'grid grid-cols-4 gap-2' : 'grid grid-cols-2 gap-3 tab:grid-cols-4'}>
         <li>
           <KpiTile
@@ -42,7 +42,7 @@ export function ShopTodayTiles({
           <KpiTile
             portal="shop"
             id="packing"
-            href="/partner/shop#active-title"
+            href="/partner/shop/orders?lane=packing"
             value={v(counts.packing)}
             label={t('kpi_packing')}
             tone="progress"
@@ -55,7 +55,7 @@ export function ShopTodayTiles({
             <KpiTile
               portal="shop"
               id="ready"
-              href="/partner/shop#active-title"
+              href="/partner/shop/orders?lane=ready"
               value={v(counts.readyForPickup)}
               label={t('kpi_ready')}
               tone="waiting"
@@ -66,7 +66,7 @@ export function ShopTodayTiles({
             <KpiTile
               portal="shop"
               id="out"
-              href="/partner/shop#active-title"
+              href="/partner/shop/orders?lane=out"
               value={v(counts.out)}
               label={t('kpi_out')}
               tone="progress"
@@ -79,7 +79,7 @@ export function ShopTodayTiles({
           <KpiTile
             portal="shop"
             id="delivered"
-            href="/partner/shop#delivered-title"
+            href="/partner/shop/orders?lane=delivered"
             value={v(counts.delivered)}
             label={t('kpi_delivered')}
             tone="done"
@@ -88,6 +88,6 @@ export function ShopTodayTiles({
           />
         </li>
       </ul>
-    </nav>
+    </section>
   );
 }

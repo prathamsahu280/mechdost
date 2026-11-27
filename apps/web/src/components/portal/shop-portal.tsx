@@ -19,13 +19,14 @@ import {
 } from '@/demo/store';
 import { track } from '@/lib/analytics';
 import { DELIVERY_CODE_LENGTH } from '@/lib/auth/auto-submit-code';
-import { AUTH_MODE } from '@/lib/auth/mode';
 import { useAutoSubmitCode } from '@/lib/auth/use-auto-submit-code';
 import { formatDate, formatPrice } from '@/lib/format';
 import { ShopAgreement } from './agreement-cards';
-import { PartnerGate } from './partner-gate';
+
 import { ShopPrices } from './shop-prices';
-import { PortalGuard } from './portal-guard';
+import { useShopAccount } from './shop/shop-frame';
+import type { ShopTab } from '@/lib/shop-portal-view';
+
 import { useNow } from './use-now';
 import { portalCard, portalPrimary, portalQuiet, portalField } from './portal-styles';
 import { offerLeftParams } from '@/lib/offer-time';
@@ -33,34 +34,58 @@ import { GstInvoiceLine } from '@/components/commerce/gst-invoice-line';
 import { useDemoShopDelivery } from '@/components/delivery/demo-shop-delivery';
 import { ShopDeliveryModeCard, ShopDeliveryPanel } from '@/components/delivery/shop-delivery';
 
-/** Real sign-in: the portal reads and acts through the API; demo builds never load it (Stream C2, 2026-11-14). */
-const ShopOrdersApi = dynamic(() => import('./shop-portal-api').then((m) => m.ShopOrdersApi), {
+/** Real sign-in: the tabs read and act through the API; demo builds never load them (Stream C2, 2026-11-14). */
+const loading = () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />;
+const ShopTodayApi = dynamic(() => import('./shop-portal-api').then((m) => m.ShopTodayApi), {
   ssr: false,
-  loading: () => <div className="skeleton h-96 rounded-card" aria-hidden="true" />,
+  loading,
+});
+const ShopOrdersTabApi = dynamic(() => import('./shop-orders-tab-api').then((m) => m.ShopOrdersTabApi), {
+  ssr: false,
+  loading,
+});
+const ShopStockApi = dynamic(() => import('./shop-tabs-api').then((m) => m.ShopStockApi), {
+  ssr: false,
+  loading,
+});
+const ShopNumbersApi = dynamic(() => import('./shop-tabs-api').then((m) => m.ShopNumbersApi), {
+  ssr: false,
+  loading,
+});
+const ShopMyShopApi = dynamic(() => import('./shop-tabs-api').then((m) => m.ShopMyShopApi), {
+  ssr: false,
+  loading,
 });
 
 /**
- * Shop portal (spec 07): orders MechDost routed to this shop with an accept timer, then pack → deliver.
- * Big tap targets — shop owners use phones.
+ * Shop portal (spec 07; tabs since the partner portals UI upgrade, design 2026-11-27 § 5): orders MechDost routed to
+ * this shop with an accept timer, then pack → deliver. The frame (guard, strip, tabs, demo gate) lives in the layout;
+ * this renders one tab's body. Big tap targets: shop owners use phones.
  */
-export function ShopPortal() {
-  const api = AUTH_MODE === 'firebase';
+export function ShopPortal({ tab }: { tab: ShopTab }) {
+  const account = useShopAccount();
+  if (!account) return null;
+  if (account.api) {
+    if (tab === 'orders') return <ShopOrdersTabApi />;
+    if (tab === 'stock') return <ShopStockApi />;
+    if (tab === 'numbers') return <ShopNumbersApi />;
+    if (tab === 'profile') return <ShopMyShopApi />;
+    return <ShopTodayApi />;
+  }
+  if (tab === 'numbers') return <ApiOnly />;
+  return <ShopOrders shopSlug={account.slug} tab={tab} />;
+}
+
+function ApiOnly() {
+  const t = useTranslations('partnerShop');
   return (
-    <PortalGuard role="shop" path="/partner/shop" demoNote={!api}>
-      {(account) =>
-        api ? (
-          <ShopOrdersApi />
-        ) : (
-          <PartnerGate kind="shop" slug={account.partner ?? ''}>
-            <ShopOrders shopSlug={account.partner ?? ''} />
-          </PartnerGate>
-        )
-      }
-    </PortalGuard>
+    <p className="rounded-card border border-dashed border-line-card bg-surface p-6 text-center text-sm text-muted">
+      {t('api_only')}
+    </p>
   );
 }
 
-function ShopOrders({ shopSlug }: { shopSlug: string }) {
+function ShopOrders({ shopSlug, tab }: { shopSlug: string; tab: ShopTab }) {
   const t = useTranslations('portal');
   const locale = useLocale();
   const now = useNow();
@@ -88,28 +113,51 @@ function ShopOrders({ shopSlug }: { shopSlug: string }) {
     .toSorted((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 10);
 
+  if (tab === 'stock') return found ? <ShopPrices shop={found} /> : null;
+  if (tab === 'orders')
+    return (
+      <section aria-labelledby="delivered-title">
+        <h2 id="delivered-title" className="font-heading text-xl font-extrabold text-ink">
+          {t('shopDelivered')} <span className="text-muted tabular-nums">({delivered.length})</span>
+        </h2>
+        {delivered.length === 0 ? (
+          <p className="mt-3 text-sm text-muted">{t('shopDeliveredNone')}</p>
+        ) : (
+          <ul className="mt-3 grid gap-3 nav:grid-cols-2">
+            {delivered.map((o) => (
+              <li key={o.code} className={portalCard}>
+                <OrderLines order={o} showBusiness />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    );
+  if (tab === 'profile')
+    return (
+      <>
+        {shop ? (
+          <section className="blueprint rounded-card p-6 text-white shadow-card">
+            <h2 className="font-heading text-2xl font-extrabold">🏪 {shop.name}</h2>
+            <p className="mt-1 text-sm text-white/80">
+              {shop.area} · {shop.pincode}
+            </p>
+            <p className="mt-3 text-sm font-bold">
+              {t('shopStats', {
+                rate: shop.acceptance,
+                minutes: shop.acceptMinutes,
+                rating: shop.rating.toFixed(1),
+              })}
+            </p>
+          </section>
+        ) : null}
+        <ShopAgreement shopSlug={shopSlug} />
+        <ShopDeliveryModeCard shopId={shopSlug} isOwner />
+      </>
+    );
+
   return (
     <>
-      {shop ? (
-        <section className="blueprint rounded-card p-6 text-white shadow-card">
-          <h2 className="font-heading text-2xl font-extrabold">🏪 {shop.name}</h2>
-          <p className="mt-1 text-sm text-white/80">
-            {shop.area} · {shop.pincode}
-          </p>
-          <p className="mt-3 text-sm font-bold">
-            {t('shopStats', {
-              rate: shop.acceptance,
-              minutes: shop.acceptMinutes,
-              rating: shop.rating.toFixed(1),
-            })}
-          </p>
-        </section>
-      ) : null}
-
-      <ShopAgreement shopSlug={shopSlug} />
-
-      <ShopDeliveryModeCard shopId={shopSlug} isOwner />
-
       <section aria-labelledby="offered-title">
         <h2 id="offered-title" className="font-heading text-xl font-extrabold text-ink">
           {t('offered')} <span className="text-muted tabular-nums">({offered.length})</span>
@@ -159,25 +207,6 @@ function ShopOrders({ shopSlug }: { shopSlug: string }) {
           </ul>
         </section>
       ) : null}
-
-      <section aria-labelledby="delivered-title">
-        <h2 id="delivered-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('shopDelivered')} <span className="text-muted tabular-nums">({delivered.length})</span>
-        </h2>
-        {delivered.length === 0 ? (
-          <p className="mt-3 text-sm text-muted">{t('shopDeliveredNone')}</p>
-        ) : (
-          <ul className="mt-3 grid gap-3 nav:grid-cols-2">
-            {delivered.map((o) => (
-              <li key={o.code} className={portalCard}>
-                <OrderLines order={o} showBusiness />
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {found ? <ShopPrices shop={found} /> : null}
     </>
   );
 }

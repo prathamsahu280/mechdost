@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { ShopPortal } from '@/components/portal/shop-portal';
+import type { ReactNode } from 'react';
+import { ShopFrame } from '@/components/portal/shop/shop-frame';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { Container, PageIntro } from '@/components/ui/page-intro';
 import type { Locale } from '@/i18n/routing';
@@ -15,8 +16,13 @@ export async function generateMetadata({
   return { title: t('shopTitle'), robots: { index: false } };
 }
 
-/** Partner portal (spec 07), demo mode. */
-export default async function PartnerPage() {
+/**
+ * Shop portal (spec 07; partner portals UI upgrade, batch A). The frame (guard, strip, tabs, message bundles) lives in
+ * this layout and stays mounted while the tabs change (no reload feel). Tabs are pages below: Today, Orders, Stock &
+ * prices, Numbers, My shop. It is a route group so the packing slip (`/partner/shop/slip/{code}`, a print page) stays
+ * outside the frame.
+ */
+export default async function ShopPortalLayout({ children }: { children: ReactNode }) {
   const t = await getTranslations('portal');
   return (
     <Container className="py-10 tab:py-14">
@@ -47,7 +53,7 @@ export default async function PartnerPage() {
             'partnerShop',
           ]}
         >
-          <ShopPortal />
+          <ShopFrame>{children}</ShopFrame>
         </ClientMessages>
       </div>
     </Container>

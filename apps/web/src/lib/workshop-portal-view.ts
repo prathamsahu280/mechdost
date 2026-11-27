@@ -143,17 +143,3 @@ export const hourChip = (s: {
   full: s.free <= 0,
   free: Math.max(0, s.free),
 });
-
-/**
- * Bullet bar positions (0–100) for "you vs the city middle". Percent measures sit on 0–100; others on 1.25 × the
- * larger of the two so neither mark touches the end. No city middle → no marker.
- */
-export function bulletScale(
-  value: number,
-  median: number | null,
-  kind: 'percent' | 'count',
-): { valuePct: number; medianPct: number | null } {
-  const max = kind === 'percent' ? 100 : Math.max(value, median ?? 0) * 1.25;
-  const pos = (v: number) => (max > 0 ? Math.min(100, Math.max(0, Math.round((v * 100) / max))) : 0);
-  return { valuePct: pos(value), medianPct: median === null ? null : pos(median) };
-}

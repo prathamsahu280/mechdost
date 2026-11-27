@@ -310,7 +310,7 @@ export const NOTICE_CATALOGUE = {
     entity: 'shop',
     audience: 'partner',
     text: [],
-    link: at('/partner/shop'),
+    link: at('/partner/shop/numbers'),
   }),
   // ----- Staff (by permission and city, like live pings) ------------------------------------------------------
   'staff.order_needs_routing': def({
@@ -675,7 +675,7 @@ export const NOTICE_CATALOGUE = {
     entity: 'shop',
     audience: 'partner',
     text: [],
-    link: at('/partner/shop'),
+    link: at('/partner/shop/profile'),
   }),
   'order.picked_up': def({
     category: T,

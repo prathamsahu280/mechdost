@@ -10,9 +10,8 @@ import {
 import { durationParts, formatCount } from '@/lib/admin-analytics-view';
 import { formatPrice } from '@/lib/format';
 import { funnelBars, ratingText, reasonKey } from '@/lib/workshop-analytics-view';
-import { bulletScale } from '@/lib/workshop-portal-view';
 import { portalCard } from './portal-styles';
-import { BulletBar } from './workshop/_kit-shim';
+import { BulletBar } from '@/components/partner';
 
 /**
  * The numbers of one workshop (the portal's Performance) or of all workshops of a city (the admin Workshops tab),
@@ -62,7 +61,8 @@ export function WorkshopStatsView({
   // Bullet bars (partner portals UI upgrade, design 2026-11-27 § 6.5): your value against the city middle; the middle
   // marker only when three or more workshops make it, and both values are also written as text.
   const bar = (v: number | null, md: number | null, kind: 'percent' | 'count') =>
-    v === null ? null : bulletScale(v, shown ? md : null, kind);
+    v === null ? null : { value: v, city: shown ? md : null, max: kind === 'percent' ? 100 : undefined };
+  const cmp = (v: number | null, f: (x: number | null) => string) => (shown && v !== null ? f(v) : null);
   const bars = funnelBars(stats);
   const modeTotal = stats.byMode.workshop + stats.byMode.home;
 
@@ -73,30 +73,35 @@ export function WorkshopStatsView({
           label={t('tile_requests')}
           value={n(stats.requests)}
           compare={med(m.requests, (x) => n(x ?? 0))}
+          cityText={cmp(m.requests, (x) => n(x ?? 0))}
           bar={bar(stats.requests, m.requests, 'count')}
         />
         <Tile
           label={t('tile_acceptance')}
           value={pct(rates.acceptancePercent)}
           compare={med(m.acceptancePercent, pct)}
+          cityText={cmp(m.acceptancePercent, pct)}
           bar={bar(rates.acceptancePercent, m.acceptancePercent, 'percent')}
         />
         <Tile
           label={t('tile_propose')}
           value={minutes(stats.medianMinutesToPropose)}
           compare={med(m.minutesToPropose, minutes)}
+          cityText={cmp(m.minutesToPropose, minutes)}
           bar={bar(stats.medianMinutesToPropose, m.minutesToPropose, 'count')}
         />
         <Tile
           label={t('tile_approval')}
           value={pct(rates.approvalPercent)}
           compare={med(m.approvalPercent, pct)}
+          cityText={cmp(m.approvalPercent, pct)}
           bar={bar(rates.approvalPercent, m.approvalPercent, 'percent')}
         />
         <Tile
           label={t('tile_bill')}
           value={money(rates.averageBillPaise)}
           compare={med(m.averageBillPaise, money)}
+          cityText={cmp(m.averageBillPaise, money)}
           bar={bar(rates.averageBillPaise, m.averageBillPaise, 'count')}
         />
         <Tile
@@ -104,6 +109,7 @@ export function WorkshopStatsView({
           value={rating(stats.ratingTenths)}
           note={stats.ratingCount > 0 ? t('rating_count', { n: stats.ratingCount }) : undefined}
           compare={med(m.ratingTenths, rating)}
+          cityText={cmp(m.ratingTenths, rating)}
           bar={bar(stats.ratingTenths, m.ratingTenths, 'count')}
         />
       </ul>
@@ -271,22 +277,38 @@ function Tile({
   note,
   compare,
   bar = null,
+  cityText = null,
 }: {
   label: string;
   value: string;
   note?: string | undefined;
   compare: string | null;
-  bar?: { valuePct: number; medianPct: number | null } | null;
+  bar?: { value: number; city: number | null; max: number | undefined } | null;
+  /** The city middle's value alone ("62%"), for the bar's own line. */
+  cityText?: string | null;
 }) {
   return (
     <li className={`${portalCard} min-w-0`}>
-      <p className="text-xs font-bold text-muted">{label}</p>
-      <p className="mt-1 break-words font-heading text-2xl font-extrabold tabular-nums text-ink">{value}</p>
-      {note ? <p className="text-xs text-muted">{note}</p> : null}
       {bar ? (
-        <BulletBar valuePct={bar.valuePct} medianPct={bar.medianPct} valueText={value} medianText={compare} />
-      ) : null}
-      {compare ? <p className="mt-1 text-xs text-muted">{compare}</p> : null}
+        <BulletBar
+          label={label}
+          value={bar.value}
+          valueText={value}
+          city={bar.city}
+          {...(cityText ? { cityText } : {})}
+          {...(bar.max === undefined ? {} : { max: bar.max })}
+          noCityText=""
+        />
+      ) : (
+        <>
+          <p className="text-xs font-bold text-muted">{label}</p>
+          <p className="mt-1 break-words font-heading text-2xl font-extrabold tabular-nums text-ink">
+            {value}
+          </p>
+          {compare ? <p className="mt-1 text-xs text-muted">{compare}</p> : null}
+        </>
+      )}
+      {note ? <p className="text-xs text-muted">{note}</p> : null}
     </li>
   );
 }

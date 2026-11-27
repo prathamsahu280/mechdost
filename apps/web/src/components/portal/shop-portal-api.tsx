@@ -1,13 +1,13 @@
 'use client';
 
-import { ShopOrderList, OrderChanged, DeliveryCheck, type ShopOrderDto } from '@mechdost/shared/order-views';
+import { OrderChanged, DeliveryCheck, type ShopOrderDto } from '@mechdost/shared/order-views';
 import {
   ASSIGNMENT_DECLINE_REASONS,
   ASSIGNMENT_GIVE_UP_REASONS,
   type AssignmentDeclineReason,
 } from '@mechdost/shared/state';
 import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from 'react';
+import { useRef, useState, type SyntheticEvent } from 'react';
 import { adminApi } from '@/lib/admin-api';
 import { deadlineView, istDayTime } from '@/lib/admin-shop-form';
 import { track } from '@/lib/analytics';
@@ -22,73 +22,38 @@ import {
   nextShopAction,
   shopStageKey,
 } from '@/lib/order-views';
-import { ApiError, ApiListState, LoadMore } from './api-list-state';
+import { ApiError, ApiListState } from './api-list-state';
 import { useNow } from './use-now';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { OfferTimer, OrderSoundButton, UpdatedAgo, useNewWorkAlert } from '@/components/partner';
-import { liveOffers, stepFlashKey } from '@/lib/shop-tier1';
 import { shopTodayCounts } from '@/lib/shop-today';
 import { ShopTodayTiles } from './shop-today-tiles';
 import { DeliveryLocked, EmptyWithAction } from './shop-empty';
 import { FlashNote, useFlash, type Flash } from './shop-flash';
 import { GiveUpOrder } from './shop-give-up';
-import { ShopPricesApi } from './shop-prices-api';
-import { ShopAgreementApi } from './shop-onboarding-api';
-import { ShopNewProductApi, ShopProfileApi } from './shop-profile-api';
-import { ShopWarningsApi } from './shop-warnings-api';
+import { stepFlashKey } from '@/lib/shop-tier1';
+import { ShopProfileApi } from './shop-profile-api';
+import { useShopLists } from './use-shop-lists';
 import { PushPromptSlot } from '../notices/push-prompt-slot';
-import { useNoticeRefresh } from '../notices/use-notice-refresh';
-import { useApiList } from './use-api-list';
 import { ShopDeliveryPanel } from '../delivery/shop-delivery';
 import { shopAgentHandover } from '@/lib/delivery/view';
 
-const OFFER_POLL_MS = 30_000;
-
 /**
- * Shop portal on the API (spec 07, real sign-in only; loaded by `shop-portal.tsx` with a dynamic import so demo
- * builds do not carry it): offers with their accept timer (polled every 30 s), orders in progress with one next
- * step each, delivery with the customer's code, recent delivered/cancelled orders and "Your prices". The API scopes
+ * Shop portal, Today tab on the API (spec 07, real sign-in only; loaded by `shop-portal.tsx` with a dynamic import so
+ * demo builds do not carry it; design 2026-11-27 § 5.2): the number tiles, the offers with their accept timer (polled
+ * every 30 s) and the orders in progress with one next step each. The other tabs are their own pages. The API scopes
  * everything to the shops in the signed-in person's grants.
  */
-export function ShopOrdersApi() {
+export function ShopTodayApi() {
   const t = useTranslations('portal');
   const tt = useTranslations('shopTier1');
-  const locale = useLocale();
-  const now = useNow();
   const { flash, show } = useFlash();
-  const view = useCallback(
-    (name: 'offers' | 'active' | 'done') => async (cursor: string | null) => {
-      const q = new URLSearchParams({ view: name });
-      if (cursor) q.set('cursor', cursor);
-      const res = await adminApi(locale, `/shop/orders?${q.toString()}`, ShopOrderList);
-      return res.ok
-        ? { ok: true as const, data: { items: res.data.orders, next: res.data.nextCursor } }
-        : res;
-    },
-    [locale],
-  );
-  const offersPage = useCallback((c: string | null) => view('offers')(c), [view]);
-  const activePage = useCallback((c: string | null) => view('active')(c), [view]);
-  const donePage = useCallback((c: string | null) => view('done')(c), [view]);
-  const offers = useApiList(offersPage, OFFER_POLL_MS);
-  const active = useApiList(activePage);
-  const done = useApiList(donePage);
-  const refresh = useCallback(async () => {
-    await Promise.all([offers.reload(), active.reload(), done.reload()]);
-  }, [offers, active, done]);
-  // A new order (or its "about to expire" reminder) reaches the bell within seconds: show it without the 30 s wait.
-  useNoticeRefresh(['shop.order_routed', 'shop.offer_expiring'], offers.reload);
-  // An offer leaves the list at its end time, not at the next poll (assessment 2026-11-15, item 2).
-  const openOffers = liveOffers(offers.items, now);
+  const { offers, active, done, openOffers, refresh, loadedAt } = useShopLists();
   // New-order sound + vibration (spec 07 § UI; on by default, Q-PP-F3); the list and the bell say it too.
   const alert = useNewWorkAlert(
     'shop',
     offers.loading ? null : openOffers.map((o) => o.assignmentId ?? o.code),
   );
-  const [loadedAt, setLoadedAt] = useState<number | null>(null);
-  useEffect(() => {
-    if (!offers.loading) setLoadedAt(Date.now());
-  }, [offers.loading, offers.items]);
 
   return (
     <>
@@ -96,9 +61,7 @@ export function ShopOrdersApi() {
 
       <FlashNote flash={flash} sticky />
 
-      <ShopProfileApi />
-
-      <ShopAgreementApi />
+      <ShopProfileApi part="today" />
 
       <ShopTodayTiles
         loading={offers.loading || active.loading || done.loading}
@@ -129,7 +92,7 @@ export function ShopOrdersApi() {
             <EmptyWithAction
               text={tt('emptyOffers')}
               actionLabel={tt('emptyOffersAction')}
-              href="#prices-title"
+              href="/partner/shop/stock"
             />
           }
           onRetry={() => void offers.reload()}
@@ -172,48 +135,11 @@ export function ShopOrdersApi() {
           </ul>
         ) : null}
       </section>
-
-      <section aria-labelledby="delivered-title">
-        <h2 id="delivered-title" className="font-heading text-xl font-extrabold text-ink">
-          {t('shopDelivered')}
-        </h2>
-        <ApiListState
-          loading={done.loading}
-          error={done.error}
-          count={done.items.length}
-          empty={
-            <EmptyWithAction
-              text={tt('emptyDone')}
-              actionLabel={tt('emptyDoneAction')}
-              href="#new-product-title"
-            />
-          }
-          onRetry={() => void done.reload()}
-        />
-        {done.items.length > 0 ? (
-          <ul className="mt-3 grid gap-3 nav:grid-cols-2">
-            {done.items.map((o) => (
-              <li key={`${o.code}-${o.status}`} className={portalCard}>
-                <StatusPill status={o.status} />
-                <OrderLines order={o} />
-                <GivenUpWhy reason={o.givenUpReason} />
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        <LoadMore show={Boolean(done.next)} onClick={() => void done.loadMore()} />
-      </section>
-
-      <ShopWarningsApi />
-
-      <ShopPricesApi />
-
-      <ShopNewProductApi />
     </>
   );
 }
 
-function StatusPill({ status }: { status: string }) {
+export function StatusPill({ status }: { status: string }) {
   const t = useTranslations('portal');
   const o = useTranslations('order');
   const g = useTranslations('shopGiveUp');
@@ -234,7 +160,7 @@ function StatusPill({ status }: { status: string }) {
 }
 
 /** History row of an order this shop gave back: the reason code it chose, in the shop's language. */
-function GivenUpWhy({ reason }: { reason: string | null | undefined }) {
+export function GivenUpWhy({ reason }: { reason: string | null | undefined }) {
   const g = useTranslations('shopGiveUp');
   const code = ASSIGNMENT_GIVE_UP_REASONS.find((r) => r === reason);
   if (!code) return null;
@@ -243,7 +169,7 @@ function GivenUpWhy({ reason }: { reason: string | null | undefined }) {
   );
 }
 
-function OrderLines({ order }: { order: ShopOrderDto }) {
+export function OrderLines({ order }: { order: ShopOrderDto }) {
   const t = useTranslations('portal');
   const a = useTranslations('account');
   const locale = useLocale();
@@ -460,7 +386,7 @@ function OfferedOrder({
   );
 }
 
-function ActiveOrder({
+export function ActiveOrder({
   order,
   onChanged,
   onFlash,
