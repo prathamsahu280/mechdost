@@ -2083,6 +2083,13 @@ One commit per item, test first. Ids from `D:\mechdost-qa\ustaad-sim-2026-11-27\
   `packages/db/src/ustaad/starter-lists.ts`, runbook `docs/runbooks/ustaad.md` § 11): 11 curated work hashtags (en + hi,
   aliases), Banned words (Devanagari, Hinglish, English), Personal details to hide, Blocked link sites. Existing rows
   (any admin edit, also switched off) are never changed. **Must be run on production by the lead** (outward action).
+- **SIM-P22** Discover search works across scripts and on work words (`packages/shared/src/ustaad/search.ts`): a name
+  key (consonant skeleton in one Latin alphabet; vowels, matras, h/ह, virama, nukta dropped; v/w, f/फ → p, श/ष/स → s,
+  ड़ → r, anusvara → n) is computed for the query in TypeScript and for `display_name` / `display_name_hi` in SQL with
+  `translate()` from the same map, so "Ramesh" finds "रमेश वर्मा" and "सुरेश" finds "Suresh Sahu". Query words found in
+  `USTAAD_WORK_WORDS` (en + hi + common spellings: wiring/बिजली → electrical, scanner/स्कैनर → diagnostics …) also match
+  members with that work or vehicle code. Keys shorter than two consonants do not use the key match. The key match is a
+  scan within the city filter (no index; fine at launch size, revisit with Meilisearch).
 
 ## 22. Not built / later
 

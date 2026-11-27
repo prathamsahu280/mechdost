@@ -12,6 +12,12 @@
  * 2026-11-26 "D2" and queued as Q-U-D2a.
  */
 import { and, desc, eq, inArray, ne, sql, type SQL } from 'drizzle-orm';
+import {
+  NAME_KEY_FROM,
+  NAME_KEY_TO,
+  ustaadNameKey,
+  ustaadWorkCodesFor,
+} from '@mechdost/shared/ustaad/search';
 import type { DiscoverPerson, DiscoverQuery, TopPost } from '@mechdost/shared/ustaad/dto/discover';
 import type { UstaadSpecialityCode } from '@mechdost/shared/ustaad/codes';
 import { DISCOVER_PAGE_SIZE, discoverScore, rankDiscover } from '@mechdost/shared/ustaad/social-rules';
@@ -86,9 +92,25 @@ export async function discoverUstaadPeople(
     ];
     if (q.q) {
       const pattern = like(q.q);
+      // SIM-P22: the name in the other script (consonant-skeleton key, same map in TS and SQL) and work words.
+      const key = ustaadNameKey(q.q);
+      const keyMatch =
+        key.replace(/[^a-z]/g, '').length >= 2
+          ? sql` or translate(lower(${ustaadMembers.displayName}), ${NAME_KEY_FROM}, ${NAME_KEY_TO}) like ${like(key)}
+              or translate(lower(coalesce(${ustaadMembers.displayNameHi}, '')), ${NAME_KEY_FROM}, ${NAME_KEY_TO}) like ${like(key)}`
+          : sql``;
+      const codes = ustaadWorkCodesFor(q.q);
+      const workMatch =
+        codes.length > 0
+          ? sql` or exists (select 1 from ustaad_member_specialities sp where sp.member_id = ${ustaadMembers.id}
+              and sp.code in (${sql.join(
+                codes.map((c) => sql`${c}`),
+                sql`, `,
+              )}))`
+          : sql``;
       filters.push(
         sql`(${ustaadMembers.displayName} ilike ${pattern} or ${ustaadMembers.handle}::text ilike ${pattern}
-          or coalesce(${ustaadMembers.displayNameHi}, '') ilike ${pattern} or ${ustaadMembers.areaLabel} ilike ${pattern})`,
+          or coalesce(${ustaadMembers.displayNameHi}, '') ilike ${pattern} or ${ustaadMembers.areaLabel} ilike ${pattern}${keyMatch}${workMatch})`,
       );
     } else filters.push(eq(ustaadMembers.suggestMe, true));
     if (q.level) filters.push(eq(ustaadMembers.level, q.level));

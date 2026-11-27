@@ -734,6 +734,29 @@ describe('Discover (spec 23 § 9.4, SR-37)', () => {
     expect(none.items).toHaveLength(0);
   });
 
+  it('SIM-P22: a Latin search finds a Devanagari name and back; work words match work tags', async () => {
+    const hiName = await member();
+    const latin = await member();
+    await db
+      .update(s.ustaadMembers)
+      .set({ displayName: 'रमेश वर्मा' })
+      .where(eq(s.ustaadMembers.id, hiName.memberId));
+    await db
+      .update(s.ustaadMembers)
+      .set({ displayName: 'Suresh Sahu' })
+      .where(eq(s.ustaadMembers.id, latin.memberId));
+    const ids = async (q: string) => (await discoverUstaadPeople(t(), viewer, { q })).items.map((p) => p.id);
+    expect(await ids('Ramesh')).toContain(hiName.memberId);
+    expect(await ids('ramesh verma')).toContain(hiName.memberId);
+    expect(await ids('सुरेश')).toContain(latin.memberId);
+    expect(await ids('Ramesh')).not.toContain(latin.memberId);
+    // Work words match work tags in either script: only hiName does diagnostics.
+    await db.insert(s.ustaadMemberSpecialities).values({ memberId: hiName.memberId, code: 'diagnostics' });
+    expect(await ids('scanner')).toEqual([hiName.memberId]);
+    expect(await ids('स्कैनर')).toEqual([hiName.memberId]);
+    expect(await ids('wiring')).not.toContain(latin.memberId);
+  });
+
   it('the daily profile cap (discover.profiles_per_day) answers 429 once reached', async () => {
     await setSetting('ustaad.discover.profiles_per_day', 50);
     const v = await member();
