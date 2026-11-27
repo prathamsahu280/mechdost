@@ -1427,7 +1427,8 @@ Done: launcher hides on phones while a field is focused and on `data-launcher-av
 
 ## HANDOVER 2026-11-28 ~04:20 IST (lead) — read this first next session
 
-**Live on mechdost.com:** deploy 2 = 05990f6e (03:15). **Deploy 3 = fb65ca94 pushed 04:16** (partner kit a11y + Messages
+**Live on mechdost.com:** deploy 3 = fb65ca94 (live 04:38, smoke-checked 04:48: api/web/worker healthy, 0 errors, all
+routes 200, signed-out /ustaad 404 with no network copy). Deploy 2 = 05990f6e. **Deploy 3 was pushed 04:16** (partner kit a11y + Messages
 restyle on top) — check `gh run list --branch main` first; if it failed, fix and redeploy before anything else.
 
 **Built and live tonight (founder-approved, 2026-11-27/28):** "Mechanic Network" name everywhere users see it; the
