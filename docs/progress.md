@@ -2,6 +2,19 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-28 00:45 — Ustaad video-link posts (builder, branch `worktree-agent-a989d761015358579`, NOT merged)
+
+- Founder 2026-11-28 request (decisions entry same date; spec 23 § 10b): YouTube links in link posts play in an
+  embedded click-to-play player with a preview (oEmbed title + author, screened; thumbnail from the id). Commits:
+  shared parser + db (migration **0150_ustaad_video_links**, journal entry after 0111; lead renumbers at merge), API
+  oEmbed fetcher + route, web `link-embed` (facade, composer preview, CSP, next.config remotePatterns, en + hi), docs.
+- Gates: vitest on touched files only (shared video-links 36 + i18n/analytics 9; db video-links + feed 41, schema 29;
+  api feed-api + oEmbed 20; web csp + link-embed 17), eslint changed files 0, prettier. **Not run:** tsc (about
+  830 MB free, below the 1.5 GB rule), full suites, build / JS budget, e2e, browser.
+- **Next (lead):** merge with the U2 post-card / composer restyle (hook-in lines only in `post-media.tsx` and
+  `composer.tsx`), renumber 0150, tsc all packages, `pnpm db:migrate` before the deploy, real-browser check of the
+  sandboxed iframe (autoplay, fullscreen, one at a time, stop off-screen) in light / dark and on `/hi`.
+
 ## 2026-11-27 evening — delivery go-live blockers fixed (builder, branch `worktree-agent-adc124fa15469db75`, NOT merged)
 
 - Seven commits, test first (spec 24 § 17): DC-P11 job photos carry the job id; DC-B11 sweep audited + warns on

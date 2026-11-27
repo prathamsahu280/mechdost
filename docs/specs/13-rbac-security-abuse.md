@@ -221,3 +221,13 @@ The pencil link on cards and the product page is convenience only; authority sta
   CSV under the existing CSV export budget.
 - **Invite token:** single use, phone-bound, 72 h, sent in the email link only. The WhatsApp message carries no token
   (lock screens, chat backups); signing in with the invite's phone finds the open invite.
+
+## Video-link embeds (2026-11-28, spec 23 § 10b)
+
+- **SSRF:** the only server fetch for a video is `https://www.youtube.com/oembed?format=json&url=<canonical watch URL>`
+  built from an id matching `^[A-Za-z0-9_-]{11}$`; no user-controlled host, path or port is fetched; redirects
+  refused, 3 s, 64 KB, Zod; only title and author kept as plain text and screened like post text. The generic link
+  preview (spec 23 § 10a rules) never runs for a video.
+- **CSP:** `frame-src https://www.youtube-nocookie.com` and `img-src https://i.ytimg.com` only; no YouTube origin in
+  `script-src` / `connect-src`. The iframe is sandboxed (`allow-scripts allow-same-origin allow-presentation
+allow-popups`), mounted only after a tap, `strict-origin-when-cross-origin` referrer; no raw user HTML is rendered.
