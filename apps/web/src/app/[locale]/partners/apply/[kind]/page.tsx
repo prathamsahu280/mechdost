@@ -55,7 +55,10 @@ export default async function ApplyPage({ params }: Props) {
   const tj = await getTranslations('ustaad.join');
   return (
     <Container className="py-10 tab:py-14">
-      <LocalLink href="/partners" className="text-sm font-bold text-ink hover:underline">
+      <LocalLink
+        href="/partners"
+        className="inline-flex min-h-6 items-center text-sm font-bold text-ink hover:underline"
+      >
         ← {t('back')}
       </LocalLink>
       <div className="mt-5 grid gap-8 nav:grid-cols-[1fr_minmax(0,640px)] nav:items-start">
@@ -86,7 +89,10 @@ async function DeliveryAgentApply() {
   const [t, d] = await Promise.all([getTranslations('apply'), getTranslations('deliveryApply')]);
   return (
     <Container className="py-10 tab:py-14">
-      <LocalLink href="/partners" className="text-sm font-bold text-ink hover:underline">
+      <LocalLink
+        href="/partners"
+        className="inline-flex min-h-6 items-center text-sm font-bold text-ink hover:underline"
+      >
         ← {t('back')}
       </LocalLink>
       <div className="mt-5 grid gap-8 nav:grid-cols-[1fr_minmax(0,640px)] nav:items-start">
