@@ -457,6 +457,17 @@ describe('decisions', () => {
       .from(s.ustaadModerationActions)
       .where(and(eq(s.ustaadModerationActions.targetId, p2.id), eq(s.ustaadModerationActions.action, 'ban')));
     expect(ban).toMatchObject({ actorId: cmA.userId, secondActorId: cmA2.userId, days: 30 });
+    // SIM-B16: the second approver has an audit row of their own (Admin → Audit log and their My actions).
+    const confirmRows = await db
+      .select()
+      .from(s.auditLog)
+      .where(and(eq(s.auditLog.actorUserId, cmA2.userId), eq(s.auditLog.action, 'ustaad.ban_confirmed')));
+    expect(confirmRows).toHaveLength(1);
+    expect(confirmRows[0]).toMatchObject({ entity: 'ustaad_post', entityId: p2.id });
+    // SIM-B13: the proposer (decidedBy is the confirmer) also took part, so the console hides appeal / lift forms.
+    expect((await ustaadReportDetail(t(), cmA, r2.code)).decidedByMe).toBe(true);
+    expect((await ustaadReportDetail(t(), cmA2, r2.code)).decidedByMe).toBe(true);
+    expect((await ustaadReportDetail(t(), cmB, r2.code).catch(() => null))?.decidedByMe ?? false).toBe(false);
   });
 
   it('appeal: linked to the author ticket, decided by another staff member; overturned restores post and media', async () => {

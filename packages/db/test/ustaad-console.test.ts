@@ -466,7 +466,8 @@ describe('queue filters and four-eyes flags', () => {
     });
     const decided = await ustaadReportDetail(t(), cmA2, rep.code);
     expect(decided.decidedByMe).toBe(true);
-    expect((await ustaadReportDetail(t(), cmA, rep.code)).decidedByMe).toBe(false);
+    // SIM-B13: the proposer took part too (the API refuses them the appeal), so the console treats them as a participant.
+    expect((await ustaadReportDetail(t(), cmA, rep.code)).decidedByMe).toBe(true);
     // Lift it again for the later tests.
     await db
       .update(s.ustaadMembers)
