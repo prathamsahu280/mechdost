@@ -7296,7 +7296,8 @@
       "openLevelSheet": "{level}: इसका मतलब",
       "shortcutsH": "आपके लिए और",
       "shortcutLearn": "सीखें: छोटे वीडियो",
-      "shortcutDiscover": "आसपास के उस्ताद खोजो"
+      "shortcutDiscover": "आसपास के उस्ताद खोजो",
+      "shortcutSaved": "सेव किया हुआ: बाद के लिए"
     },
     "qa": {
       "title": "उस्तादों से पूछें",

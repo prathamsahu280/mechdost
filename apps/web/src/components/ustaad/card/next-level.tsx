@@ -105,6 +105,7 @@ export function MeShortcuts() {
   const items = [
     { to: 'learn', href: '/ustaad/learn', icon: 'learn', label: t('shortcutLearn') },
     { to: 'discover', href: '/ustaad/discover', icon: 'discover', label: t('shortcutDiscover') },
+    { to: 'saved', href: '/ustaad/saved', icon: 'saved', label: t('shortcutSaved') },
   ] as const;
   return (
     <nav aria-labelledby="ustaad-me-shortcuts" className="grid gap-3">
