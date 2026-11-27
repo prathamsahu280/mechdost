@@ -210,6 +210,7 @@ function RiderFrame({ children }: { children: ReactNode }) {
       tabs={tabs}
       strip={<StatusStrip />}
       narrow
+      heading={false}
     >
       {children}
     </PartnerFrame>

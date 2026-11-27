@@ -3,10 +3,15 @@
 import type { PartnerPortal } from '@mechdost/shared/partner-client-events';
 import { Phone } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
+import { useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { track } from '@/lib/analytics';
+import { tabFocusPlan } from '@/lib/partner-kit';
 import { site } from '@/lib/site';
-import { PartnerTabs, type PartnerTab } from './partner-tabs';
+import { PartnerTabs, useCurrentTab, type PartnerTab } from './partner-tabs';
+
+/** A tab click counts as the cause of the next route change for this long. */
+const USER_NAV_WINDOW_MS = 5000;
 
 export type PartnerStateTone = 'ok' | 'busy' | 'off';
 
@@ -30,6 +35,7 @@ export function PartnerFrame({
   strip,
   children,
   narrow = false,
+  heading = true,
 }: {
   portal: PartnerPortal;
   /** Accessible name of the tab navigation, e.g. "Shop portal". */
@@ -42,7 +48,36 @@ export function PartnerFrame({
   children: ReactNode;
   /** One centred column (rider): the work stays phone-width on a computer. */
   narrow?: boolean;
+  /** Render the page's main heading (the current tab's name, screen-reader only). Off when the layout has its own h1. */
+  heading?: boolean;
 }) {
+  const pathname = usePathname();
+  const current = useCurrentTab(tabs);
+  const headingText = tabs.find((tab) => tab.id === current)?.label ?? railTitle;
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const statusRef = useRef<HTMLParagraphElement>(null);
+  const prevPath = useRef<string | null>(null);
+  const tabClickedAt = useRef(0);
+  const onUserNavigate = useCallback(() => {
+    tabClickedAt.current = Date.now();
+  }, []);
+
+  // After a tab the partner picked: focus the new page's heading and say its name once in the polite status. Never on
+  // the first load, and never on back/forward (the tab click is only valid for a few seconds).
+  useEffect(() => {
+    const byUser = Date.now() - tabClickedAt.current < USER_NAV_WINDOW_MS;
+    const move = tabFocusPlan(prevPath.current, pathname, byUser);
+    prevPath.current = pathname;
+    if (!move) return;
+    tabClickedAt.current = 0;
+    const target = headingRef.current ?? document.querySelector<HTMLElement>('h1');
+    if (target) {
+      if (!target.hasAttribute('tabindex')) target.tabIndex = -1;
+      target.focus({ preventScroll: true });
+    }
+    if (statusRef.current) statusRef.current.textContent = headingText;
+  }, [pathname, headingText]);
+
   return (
     <div
       data-partner-frame={portal}
@@ -51,14 +86,32 @@ export function PartnerFrame({
       <aside className="hidden nav:sticky nav:top-4 nav:block">
         <div className="rounded-card bg-navy-sidebar p-3 text-white shadow-card">
           <p className="px-3 pt-1 pb-3 font-heading text-sm font-extrabold text-white/80">{railTitle}</p>
-          <PartnerTabs portal={portal} tabs={tabs} label={navLabel} variant="rail" />
+          <PartnerTabs
+            portal={portal}
+            tabs={tabs}
+            label={navLabel}
+            variant="rail"
+            onUserNavigate={onUserNavigate}
+          />
         </div>
       </aside>
       <div className={`grid min-w-0 gap-5 pb-24 nav:pb-0 ${narrow ? 'mx-auto w-full max-w-xl' : ''}`}>
+        {heading ? (
+          <h1 ref={headingRef} tabIndex={-1} className="sr-only">
+            {headingText}
+          </h1>
+        ) : null}
+        <p ref={statusRef} role="status" aria-live="polite" className="sr-only" />
         {strip}
         {children}
       </div>
-      <PartnerTabs portal={portal} tabs={tabs} label={navLabel} variant="bar" />
+      <PartnerTabs
+        portal={portal}
+        tabs={tabs}
+        label={navLabel}
+        variant="bar"
+        onUserNavigate={onUserNavigate}
+      />
     </div>
   );
 }
