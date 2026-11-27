@@ -78,7 +78,7 @@ export function apiAgentClient(locale: string): AgentClient {
         ...(photoMediaId ? { photoMediaId } : {}),
         version,
       }),
-    uploadPhoto: (file, purpose) => uploadAgentPhoto(locale, file, purpose),
+    uploadPhoto: (file, purpose, jobId) => uploadAgentPhoto(locale, file, purpose, jobId),
     saveDocument: (kind, number, mediaId) =>
       adminApi(locale, '/agent/me/documents', AgentProfile, {
         method: 'PUT',
@@ -93,6 +93,7 @@ async function uploadAgentPhoto(
   locale: string,
   file: Blob,
   purpose: string,
+  jobId?: string,
 ): Promise<Result<{ mediaId: string }>> {
   const API = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/$/, '');
   if (!API) return { ok: false, status: 0, code: 'UNAVAILABLE' };
@@ -102,6 +103,8 @@ async function uploadAgentPhoto(
   const form = new FormData();
   form.set('file', file, file.type === 'image/webp' ? 'photo.webp' : 'photo.jpg');
   form.set('purpose', purpose);
+  // Job photos (pickup, delivery, failure) belong to a job; the API refuses them without it (DC-P11).
+  if (jobId) form.set('jobId', jobId);
   let res: Response;
   try {
     res = await fetch(`${API}/v1/agent/photos`, {
