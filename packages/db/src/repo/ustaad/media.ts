@@ -547,3 +547,10 @@ export async function ustaadMediaTextInfo(
     });
   return out;
 }
+
+/** The player's slice of the text info (no captions: voice notes have none). */
+export function voiceInfoOf(
+  v: UstaadMediaTextInfo | undefined,
+): { durationMs: number | null; bytes: number; summary: string | null } | null {
+  return v ? { durationMs: v.durationMs, bytes: v.bytes, summary: v.summary } : null;
+}

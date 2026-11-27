@@ -94,3 +94,33 @@ describe('analytics for typed summaries and captions (hard rule 9; flags only, n
     );
   });
 });
+
+describe('read DTOs carry the text alternative to the players', () => {
+  it('post media keeps summary, caption language and the built WebVTT', async () => {
+    const { PostMediaViewDto } = await import('../src/ustaad/dto/feed');
+    const v = PostMediaViewDto.parse({
+      mediaId: '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b',
+      kind: 'video',
+      role: null,
+      position: 0,
+      durationMs: 6000,
+      width: null,
+      height: null,
+      bytes: 10,
+      lqip: null,
+      summary: 'Brake pads',
+      captionsLang: 'hi',
+      captionsVtt: 'WEBVTT\n\n',
+    });
+    expect(v.summary).toBe('Brake pads');
+    expect(v.captionsVtt).toBe('WEBVTT\n\n');
+  });
+  it('answers, questions and messages carry voice info (duration, size, summary)', async () => {
+    const { VoiceInfoDto } = await import('../src/ustaad/dto/media');
+    expect(VoiceInfoDto.parse({ durationMs: 42_000, bytes: 30_000, summary: null })).toEqual({
+      durationMs: 42_000,
+      bytes: 30_000,
+      summary: null,
+    });
+  });
+});

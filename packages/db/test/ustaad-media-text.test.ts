@@ -8,6 +8,9 @@ import {
   declareUstaadMedia,
   explainUstaadScreen,
   joinUstaad,
+  markUstaadMediaUploaded,
+  markUstaadMediaVerified,
+  ustaadMediaViews,
   saveUstaadChoices,
   getUstaadChoices,
   syncRbacCatalogue,
@@ -160,5 +163,42 @@ describe('batched text info for readers', () => {
       'WEBVTT\n\n1\n00:00:00.000 --> 00:00:06.000\nWhole clip caption\n',
     );
     expect(info.size).toBe(2);
+  });
+});
+
+describe('post media views carry the text alternative', () => {
+  it('a video post gives the player its summary, caption language and WebVTT', async () => {
+    const row = await declareUstaadMedia(
+      t(),
+      voice({
+        kind: 'video',
+        mime: 'video/mp4',
+        bytes: 700_000,
+        durationMs: 4_000,
+        summary: 'Chain tension',
+        captions: { lang: 'hi', text: 'चेन ढीली है' },
+      }),
+    );
+    const up = await markUstaadMediaUploaded(t(), row);
+    await markUstaadMediaVerified(t(), up, {
+      bucket: 'media',
+      objectKey: `m/${a}/${crypto.randomUUID()}.mp4`,
+      durationMs: 4_000,
+      width: null,
+      height: null,
+      lqip: null,
+    });
+    const [post] = await db
+      .insert(s.ustaadPosts)
+      .values({ authorId: a, cityId: f.raipur, kind: 'video' })
+      .returning();
+    if (!post) throw new Error('post');
+    await db.insert(s.ustaadPostMedia).values({ postId: post.id, mediaId: row.id, position: 0 });
+    const views = await ustaadMediaViews(t(), [post.id]);
+    expect(views.get(post.id)?.[0]).toMatchObject({
+      summary: 'Chain tension',
+      captionsLang: 'hi',
+      captionsVtt: 'WEBVTT\n\n1\n00:00:00.000 --> 00:00:04.000\nचेन ढीली है\n',
+    });
   });
 });

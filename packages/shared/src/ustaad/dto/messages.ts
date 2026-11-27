@@ -5,6 +5,7 @@
  */
 import { z } from 'zod';
 import { MESSAGE_KINDS } from '../codes';
+import { VoiceInfoDto } from './media';
 import { USTAAD_THREAD_STATUSES } from '../../state';
 import { CursorDto, MemberCardDto } from './social';
 
@@ -32,6 +33,8 @@ export const MessageViewDto = z.object({
   kind: z.enum(MESSAGE_KINDS),
   text: z.string().nullable(),
   mediaId: z.uuid().nullable(),
+  /** Voice messages: duration, size and typed summary (spec 23 § 10a). */
+  voice: VoiceInfoDto.nullable().optional(),
   postId: z.uuid().nullable(),
   /** Only on the sender's own held message: "Our team will check it first" (no reason, no filter oracle). */
   pending: z.boolean(),

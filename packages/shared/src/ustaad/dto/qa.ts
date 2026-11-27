@@ -6,6 +6,7 @@
  */
 import { z } from 'zod';
 import { CORRECTION_APPLIED, SAFETY_TAGS, USTAAD_SEGMENT_CODES, USTAAD_WORK_CODES } from '../codes';
+import { VoiceInfoDto } from './media';
 
 const idemKey = z.string().regex(/^[A-Za-z0-9_-]{8,64}$/);
 const text = (max: number) => z.string().trim().min(1).max(max);
@@ -103,6 +104,8 @@ export const AnswerViewDto = z.object({
   bodyOriginal: z.string().nullable(),
   correction: z.string(),
   voiceMediaId: z.uuid().nullable(),
+  /** Duration, size and typed summary of the voice answer (spec 23 § 10a). */
+  voice: VoiceInfoDto.nullable().optional(),
   helpfulCount: z.number().int(),
   votedByMe: z.boolean(),
   isBest: z.boolean(),
@@ -120,6 +123,7 @@ export const QuestionDetailDto = QuestionCardDto.extend({
   bodyOriginal: z.string().nullable(),
   correction: z.string(),
   voiceMediaId: z.uuid().nullable(),
+  voice: VoiceInfoDto.nullable().optional(),
   bestAnswerId: z.uuid().nullable(),
   vehicleModel: z.string().nullable(),
   /** What the viewer may do on this thread (the API checks again on every write). */

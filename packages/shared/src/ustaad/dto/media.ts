@@ -68,5 +68,13 @@ export interface DeclaredUpload {
   expiresAt: string;
 }
 
+/** What a player needs before the tap: duration, size and the author's typed summary (spec 23 § 10a). */
+export const VoiceInfoDto = z.object({
+  durationMs: z.number().int().nullable(),
+  bytes: z.number().int(),
+  summary: z.string().nullable(),
+});
+export type VoiceInfo = z.infer<typeof VoiceInfoDto>;
+
 export const isMediaKind = (v: string): v is UstaadMediaKind =>
   (MEDIA_KINDS as readonly string[]).includes(v);

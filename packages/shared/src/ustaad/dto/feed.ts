@@ -192,6 +192,10 @@ export const PostMediaViewDto = z.object({
   height: z.number().int().nullable(),
   bytes: z.number().int(),
   lqip: z.string().nullable(),
+  /** Spec 23 § 10a: the author's typed summary (voice or video) and, for video, captions as WebVTT. */
+  summary: z.string().nullable().optional(),
+  captionsLang: z.enum(['hi', 'en']).nullable().optional(),
+  captionsVtt: z.string().nullable().optional(),
 });
 export type PostMediaView = z.infer<typeof PostMediaViewDto>;
 
