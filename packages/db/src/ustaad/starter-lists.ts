@@ -156,17 +156,7 @@ export const USTAAD_STARTER = {
       'कमीना',
       'कुत्ते की औलाद',
     ]),
-    ...words('en', [
-      'fuck',
-      'fucker',
-      'motherfucker',
-      'bitch',
-      'bastard',
-      'asshole',
-      'cunt',
-      'slut',
-      'whore',
-    ]),
+    ...words('en', ['fuck', 'fucker', 'motherfucker', 'bitch', 'asshole', 'cunt', 'slut', 'whore']),
   ],
   piiPattern: [
     ...words('hinglish', [

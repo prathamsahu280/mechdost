@@ -94,10 +94,12 @@ export async function discoverUstaadPeople(
       const pattern = like(q.q);
       // SIM-P22: the name in the other script (consonant-skeleton key, same map in TS and SQL) and work words.
       const key = ustaadNameKey(q.q);
+      // Anchored at a word start: "Ram" (rm) must not hit "Verma" (vrm).
+      const wordStart = `% ${like(key).slice(1)}`;
       const keyMatch =
         key.replace(/[^a-z]/g, '').length >= 2
-          ? sql` or translate(lower(${ustaadMembers.displayName}), ${NAME_KEY_FROM}, ${NAME_KEY_TO}) like ${like(key)}
-              or translate(lower(coalesce(${ustaadMembers.displayNameHi}, '')), ${NAME_KEY_FROM}, ${NAME_KEY_TO}) like ${like(key)}`
+          ? sql` or (' ' || translate(lower(${ustaadMembers.displayName}), ${NAME_KEY_FROM}, ${NAME_KEY_TO})) like ${wordStart}
+              or (' ' || translate(lower(coalesce(${ustaadMembers.displayNameHi}, '')), ${NAME_KEY_FROM}, ${NAME_KEY_TO})) like ${wordStart}`
           : sql``;
       const codes = ustaadWorkCodesFor(q.q);
       const workMatch =
