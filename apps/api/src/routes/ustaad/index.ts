@@ -20,6 +20,7 @@ import { json } from '../service-schemas';
 import { ustaadMediaRoutes } from './media';
 import { ustaadCorrectRoutes } from './correct';
 import { ustaadFeedRoutes, ustaadShareTeaserRoutes } from './feed';
+import { ustaadSavedRoutes } from './saved';
 import { ustaadLocalRoutes } from './local';
 import { ustaadMemberRoutes } from './members';
 import { ustaadProfileRoutes } from './profile';
@@ -64,6 +65,7 @@ export function ustaadRoutes(deps: AppDeps, sessions: SessionCache, access: Usta
   app.route('/', ustaadAttestRoutes(deps, access));
   app.route('/', ustaadQaRoutes(deps));
   app.route('/', ustaadFeedRoutes(deps)); // D part 1: feed, posts, stories, comments, tags
+  app.route('/', ustaadSavedRoutes(deps)); // Saved of every kind + collections (2026-11-28)
   // D2: graph, messages, Discover, promotions (each guards only its own path prefixes).
   app.route('/', ustaadSocialRoutes(deps));
   app.route('/', ustaadMessageRoutes(deps));

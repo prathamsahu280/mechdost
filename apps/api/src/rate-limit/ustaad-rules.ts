@@ -25,6 +25,8 @@ export const USTAAD_RATE_RULES = {
   posts: { name: 'ustaad_posts', limit: 20, windowSeconds: DAY },
   comments: { name: 'ustaad_comments', limit: 30, windowSeconds: H },
   likes: { name: 'ustaad_likes', limit: 100, windowSeconds: DAY },
+  /** Saved (2026-11-28): save/unsave of questions, answers, jobs, lessons and collection add/remove. */
+  saves: { name: 'ustaad_saves', limit: 200, windowSeconds: DAY },
   stories: { name: 'ustaad_stories', limit: 10, windowSeconds: DAY },
   // Q&A (C)
   questions: { name: 'ustaad_questions', limit: 10, windowSeconds: DAY },
