@@ -12,7 +12,40 @@ import {
  * money in whole rupees and checks every value with the same rules before sending it.
  */
 export type SettingUnit =
-  'rupees' | 'minutes' | 'days' | 'units' | 'count' | 'bp' | 'coins' | 'requests' | 'switch';
+  | 'rupees'
+  | 'minutes'
+  | 'hours'
+  | 'days'
+  | 'units'
+  | 'count'
+  | 'messages'
+  | 'percent'
+  | 'tenths'
+  | 'kg'
+  | 'bp'
+  | 'coins'
+  | 'requests'
+  | 'switch';
+
+/**
+ * The unit word after a number box (portal namespace). `count` shows no word: a plain number of jobs, tries or items
+ * reads correctly on its own (DC-B2: every count used to say "messages").
+ */
+export const UNIT_LABEL_KEY = {
+  rupees: 'api_set_unit_rupees',
+  minutes: 'api_set_unit_minutes',
+  hours: 'api_set_unit_hours',
+  days: 'api_set_unit_days',
+  units: 'api_set_unit_units',
+  count: null,
+  messages: 'api_set_unit_messages',
+  percent: 'api_set_unit_percent',
+  tenths: 'api_set_unit_tenths',
+  kg: 'api_set_unit_kg',
+  requests: 'api_set_unit_requests',
+  bp: 'coins_api_unit_bp',
+  coins: 'coins_api_unit_coins',
+} as const satisfies Record<Exclude<SettingUnit, 'switch'>, string | null>;
 
 export function settingUnit(key: SettingKey): SettingUnit {
   const spec: SettingSpec = OPERATIONAL_SETTINGS[key];
@@ -20,7 +53,12 @@ export function settingUnit(key: SettingKey): SettingUnit {
   if (key.startsWith('api.')) return 'requests';
   if (key.endsWith('_paise')) return 'rupees';
   if (key.endsWith('_minutes') || key.endsWith('_min')) return 'minutes';
+  if (key.endsWith('_hours')) return 'hours';
   if (key.endsWith('_days')) return 'days';
+  if (key.endsWith('_messages')) return 'messages';
+  if (key.endsWith('_pct')) return 'percent';
+  if (key.endsWith('_x10')) return 'tenths';
+  if (key.endsWith('_kg')) return 'kg';
   if (key.endsWith('_units')) return 'units';
   // Coin rules (spec 20): shares in basis points (100 = 1%), bonuses in coins.
   if (key.endsWith('_bp')) return 'bp';

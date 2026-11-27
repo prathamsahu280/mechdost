@@ -129,7 +129,7 @@ describe('settings view', () => {
     expect(toInput('orders.customer_self_cancel_cod', true)).toBe('true');
     expect(fromInput('orders.customer_self_cancel_cod', 'false')).toEqual({ ok: true, value: false });
     expect(settingUnit('partners.invite_days')).toBe('days');
-    expect(settingUnit('assistant.daily_messages')).toBe('count');
+    expect(settingUnit('assistant.daily_messages')).toBe('messages');
     // Bulk quote minimum (spec 19): a number of units, not messages.
     expect(settingUnit('quotes.min_units')).toBe('units');
     expect(settingBounds('quotes.min_units')).toEqual([2, 500]);
