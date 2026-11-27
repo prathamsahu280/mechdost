@@ -429,3 +429,12 @@ T-DCSIM-P3 · 2026-11-27 · auth/session (live QA, agent DP) · role granted mid
 T-DCSIM-P4 · 2026-11-27 · error mapping (live QA, agent DP) · API codes missing from the web's code list fall back to "Something went wrong" (WRONG_CODE, DOCUMENT_IN_USE, AADHAAR via VALIDATION detail) (DC-P5/P8/P13) · guard: a test that every `code` thrown by delivery routes has a message key in en+hi
 T-DCSIM-L1 · 2026-11-27 · worker/timers (live QA, agent DL) · delivery offers never expired on the staff side in production (DC-B11): agent API hid the offer at its deadline, job stayed `offered` 6+ min, no `delivery_offer_expired` audit/notice, no Sentry issue · cause not confirmed (worker image vs. stuck re-entry flag in `worker.ts` delivery sweep) · guard to add: a worker-tick test that closes an offer past `expires_at` in one tick + a stuck-sweep watchdog like `notify_tick_stuck`; live runs must assert a timer on BOTH sides
 T-DCSIM-L2 · 2026-11-27 · admin i18n (live QA, agent DL) · staff delivery screens print raw `delivery.errors.STALE / INVITE_OPEN / AGENT_NOT_ELIGIBLE` (DC-B3) and staff document/photo links are relative to the web origin → 404 (DC-B7) · missing message keys; URL built without the API base · guard: a test that every code in the delivery API error enum has an en + hi message, and an e2e that opens one staff document link and expects an image
+T-QA-A1 · 2026-11-27 · ustaad/notices · bell links 404 (SIM-P19) · catalogue links written before the pages existed,
+no check · guard: `apps/web/test/notice-links.test.ts` (every catalogued link matches a page).
+T-QA-A2 · 2026-11-27 · ustaad/jobs · employer never told about applications and could not see them (SIM-P18); the
+first cut of the list ignored blocks, bans, withdrawals, the member gate and the card's verified rule (lead's security
+review) · a new owner-side list must reuse the sibling's gate and the shared card rule · guard: `ustaad-local.test.ts`
+"security: …" cases (blocked applicant hidden + no notice, restricted employer refused, removed job 404, pre-verified
+level no tick).
+T-QA-A3 · 2026-11-27 · ustaad/api tests · a new test in a shared-state API file failed only in the full run: an earlier
+test spent the reporter's 20 reports a day · use a fresh member for writes that are rate-limited per user.

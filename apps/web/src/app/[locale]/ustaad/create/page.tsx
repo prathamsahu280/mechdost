@@ -16,6 +16,7 @@ export default async function UstaadCreatePage({ searchParams }: Props) {
     <ClientMessages
       namespaces={[
         'ustaad.shell',
+        'ustaad.standing',
         'ustaad.feed',
         'ustaad.labels',
         'ustaad.media',

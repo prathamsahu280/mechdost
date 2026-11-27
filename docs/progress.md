@@ -61,6 +61,16 @@ This file is the single source of truth for **where the build is right now**. It
 - Next: fix bugs test-first (plan § 10.6); write `docs/qa/ustaad-simulation-report-2026-11-27.md` from the logs;
   founder decisions Q-SIM-1..3.
 
+## 2026-11-27 — Ustaad QA fixes, batch A (builder branch `worktree-agent-aeee83593b84bb5ee`, not pushed)
+
+From `docs/qa/ustaad-sim-fix-plan-2026-11-27.md` (Batch A); details and tests in spec 23 § 21h. One commit per item.
+
+- **Done:** SIM-P18 (employer bell on each application + Applicants list on the job page, owner-only API with cursor); SIM-P17 (server picks the employer account; form sends none).
+- **Done:** P18 security follow-up (gate, hidden jobs, blocks, banned/withdrawn hidden, card tick).
+- **Done:** SIM-P11 (voucher bell); SIM-P20 (a request can no longer escalate suggest to auto); SIM-P26 (appeal outcome notices); SIM-P19/P24 (all notice links are pages; /ustaad/me/standing with reason, limits, end date and one Appeal; ticket kind ustaad_appeal, migration 0111 NOT applied); SIM-P27/P23 (banned screen and one limited banner on every network page); SIM-B8 (Remove and warn on holds; scam holds reasoned job_scam); SIM-P10/G17 (voice consent before the first recording, enforced by the API; My choices with "Fix by itself"); SIM-P34 (threads with a banned member are closed, derived).
+- **Open for the lead:** apply migration **0111_ustaad_appeal_ticket_kind** before deploying (support_tickets kind CHECK); fill the live word lists (runbook § "Word lists before launch", Q-SIM-5); real-browser check of the standing page, banned screen, limited banner, applicants card, voice consent prompt and My choices (en/hi, light/dark, 390/1440); measure the JS budget (the banned/limited views and the recorder prompt load on demand; Me gained My choices).
+- **Not done:** a give/decline vouch screen (Q-SIM-4); the inbox does not mark a thread closed before a send; the job form cannot pick the trade account when the member is also a workshop owner; composers keep their own USTAAD_RESTRICTED texts.
+
 ## 2026-11-27 overnight (lead, founder asleep) — handover (written 04:55)
 
 **NOT deployed.** Live site still runs `f511da9e` (yesterday). Everything below is merged on `main` (GitHub) but CI is red

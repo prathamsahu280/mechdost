@@ -1,5 +1,6 @@
 import type { JOB_ROLES } from '@mechdost/shared/ustaad/codes';
-import type { MemberView } from '@mechdost/shared/ustaad/dto/members';
+import type { Choices, ChoicesView, MemberView } from '@mechdost/shared/ustaad/dto/members';
+import type { StandingView } from '@mechdost/shared/ustaad/dto/moderation';
 import type {
   AnswerInput,
   AskQuestion,
@@ -9,7 +10,7 @@ import type {
   QuestionDetail,
   QuestionFilter,
 } from '@mechdost/shared/ustaad/dto/qa';
-import type { LocationBody, PostJobBody } from '@mechdost/shared/ustaad/dto/local';
+import type { ApplicantView, LocationBody, PostJobBody } from '@mechdost/shared/ustaad/dto/local';
 import { AUTH_MODE } from '../auth/mode';
 import type { ApiResult } from '../orders-api';
 import type { Banded } from './local-view';
@@ -20,6 +21,7 @@ import type { Banded } from './local-view';
  * labelled sample data (`demo/ustaad.ts`). Both are loaded on demand, so storefront bundles never carry either.
  */
 
+export type { ApplicantView, StandingView };
 export type JobRole = (typeof JOB_ROLES)[number];
 
 export interface MyLocation {
@@ -120,6 +122,26 @@ export interface UstaadClient {
   moveJob(
     code: string,
     action: 'pause' | 'resume' | 'close' | 'fill',
+  ): Promise<ApiResult<{ status: string }>>;
+  /** My choices and consents (SIM-P10 voice consent, G17 smart-correction mode). */
+  choices(): Promise<ApiResult<ChoicesView>>;
+  saveChoices(body: Choices): Promise<ApiResult<ChoicesView>>;
+  /** My standing (SIM-P19/P27): readable while banned or restricted. */
+  standing(): Promise<ApiResult<StandingView>>;
+  /** Appeal one decision (a support ticket of kind ustaad_appeal). */
+  fileAppeal(
+    reportCode: string,
+    note: string,
+  ): Promise<ApiResult<{ ticketCode: string; reportCode: string }>>;
+  /** The employer's applicants of one job (SIM-P18); 404 for anyone else. */
+  applicants(
+    code: string,
+    cursor: string | null,
+  ): Promise<ApiResult<{ items: ApplicantView[]; next: string | null }>>;
+  /** Employer: seen / shortlist / reject / hire one application. */
+  moveApplication(
+    applicationId: string,
+    action: 'seen' | 'shortlist' | 'reject' | 'hire',
   ): Promise<ApiResult<{ status: string }>>;
   /** Declare → upload (progress 0–100) → verify; resolves with the media id once the API accepted the file. */
   upload(

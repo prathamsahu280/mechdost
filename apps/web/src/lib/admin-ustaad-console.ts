@@ -69,14 +69,14 @@ export interface ReportFlags {
   decidedByMe: boolean;
 }
 
-/** Decisions a moderator may take on an open report (holds: release or remove). */
+/** Decisions a moderator may take on an open report (holds: release, remove, or warn = remove + strike, SIM-B8). */
 export function decisionsFor(
   item: ReportFlags,
   caps: ConsoleCapsView,
   queue: 'open' | 'held',
 ): ModerationDecision[] {
   if (!caps.moderate || item.banWaiting) return [];
-  if (queue === 'held') return ['keep', 'remove'];
+  if (queue === 'held') return ['keep', 'remove', 'warn'];
   const all: ModerationDecision[] = ['keep', 'remove', 'warn', 'restrict', 'ban'];
   return item.targetType === 'member' ? all.filter((d) => d !== 'remove') : all;
 }

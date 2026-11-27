@@ -11,7 +11,7 @@
  * - The phone number is never part of any view here (SR-34); `sharePhone` is a flag the employer UI reads.
  */
 import { ustaadPublicCode } from '@mechdost/shared/ustaad/public-code';
-import { and, desc, eq, inArray, lt, or, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, lt, ne, notInArray, or, sql } from 'drizzle-orm';
 import {
   ustaadApplicationMachine,
   ustaadJobMachine,
@@ -22,7 +22,6 @@ import type { JOB_ROLES, UstaadSegmentCode } from '@mechdost/shared/ustaad/codes
 import { jobScamSignals, settingBool, settingInt } from '@mechdost/shared/ustaad/local';
 import {
   cities,
-  roles,
   tradeAccounts,
   userRoles,
   ustaadJobApplications,
@@ -34,6 +33,8 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '.
 import type { Tx } from '../orders';
 import { rowsOf } from '../sql-rows';
 import { recordUstaadEvent } from './events';
+import { ustaadBlockedEitherWay, ustaadMemberCard, ustaadNotBlockedSql } from './graph-common';
+import { notifyUstaad } from './notify';
 import { openUstaadAutoHoldReport, screenUstaadContent } from './moderation';
 import { readUstaadSettingValues } from './settings';
 
@@ -46,7 +47,8 @@ export interface UstaadJobActor {
 }
 
 export interface PostUstaadJobInput {
-  employer: { kind: 'workshop'; workshopId: string } | { kind: 'trade' };
+  /** Omitted: the server picks the member's employer account (SIM-P17). */
+  employer?: { kind: 'workshop'; workshopId: string } | { kind: 'trade' } | undefined;
   roleCode: JobRole;
   title: string;
   description: string;
@@ -94,10 +96,11 @@ async function memberGate(
   tx: Tx,
   memberId: string,
   now: Date,
-): Promise<{ cityId: string; cityCode: string }> {
+): Promise<{ cityId: string; cityCode: string; workshopId: string | null }> {
   const [m] = await tx
     .select({
       cityId: ustaadMembers.cityId,
+      workshopId: ustaadMembers.workshopId,
       cityCode: cities.code,
       restricted: ustaadMembers.restrictedMode,
       frozen: ustaadMembers.perksFrozenUntil,
@@ -112,31 +115,58 @@ async function memberGate(
     throw new ForbiddenError('This is not available on your account right now', 'USTAAD_RESTRICTED');
   if (m.frozen && m.frozen > now)
     throw new ForbiddenError('Jobs are paused on your account for a short while', 'USTAAD_PERKS_FROZEN');
-  return { cityId: m.cityId, cityCode: m.cityCode };
+  return { cityId: m.cityId, cityCode: m.cityCode, workshopId: m.workshopId };
 }
 
-/** The employer behind a job: a workshop the user holds a grant on, or the user's verified trade account. */
+/**
+ * Who this user may post jobs as (SIM-P17): every workshop they hold a grant on (the member's own linked workshop
+ * first), then their verified trade account. One query each; the server decides from this list, never the client.
+ */
+export async function ustaadJobEmployerOptions(
+  tx: Tx,
+  userId: string,
+  memberWorkshopId: string | null = null,
+): Promise<({ kind: 'workshop'; workshopId: string } | { kind: 'trade'; tradeAccountId: string })[]> {
+  const grants = await tx
+    .selectDistinct({ workshopId: userRoles.workshopId })
+    .from(userRoles)
+    .where(and(eq(userRoles.userId, userId), isNotNull(userRoles.workshopId)));
+  const workshops = grants
+    .map((g) => g.workshopId)
+    .filter((id): id is string => id !== null)
+    .sort((x, y) => Number(y === memberWorkshopId) - Number(x === memberWorkshopId));
+  const [t] = await tx
+    .select({ id: tradeAccounts.id })
+    .from(tradeAccounts)
+    .where(and(eq(tradeAccounts.userId, userId), eq(tradeAccounts.status, 'verified')))
+    .limit(1);
+  return [
+    ...workshops.map((workshopId) => ({ kind: 'workshop' as const, workshopId })),
+    ...(t ? [{ kind: 'trade' as const, tradeAccountId: t.id }] : []),
+  ];
+}
+
+/**
+ * The employer behind a job. Named by the client: honoured only when it is one of the user's options. Not named (the
+ * web form, SIM-P17): the first option — the member's own workshop, another workshop they hold a grant on, then the
+ * verified trade account. No option: 403 `USTAAD_EMPLOYER_REQUIRED`.
+ */
 async function employerOf(
   tx: Tx,
   userId: string,
   employer: PostUstaadJobInput['employer'],
+  memberWorkshopId: string | null = null,
 ): Promise<{ workshopId: string | null; tradeAccountId: string | null }> {
-  if (employer.kind === 'workshop') {
-    const [g] = await tx
-      .select({ id: userRoles.id })
-      .from(userRoles)
-      .innerJoin(roles, eq(roles.id, userRoles.roleId))
-      .where(and(eq(userRoles.userId, userId), eq(userRoles.workshopId, employer.workshopId)))
-      .limit(1);
-    if (g) return { workshopId: employer.workshopId, tradeAccountId: null };
-  } else {
-    const [t] = await tx
-      .select({ id: tradeAccounts.id })
-      .from(tradeAccounts)
-      .where(and(eq(tradeAccounts.userId, userId), eq(tradeAccounts.status, 'verified')))
-      .limit(1);
-    if (t) return { workshopId: null, tradeAccountId: t.id };
-  }
+  const options = await ustaadJobEmployerOptions(tx, userId, memberWorkshopId);
+  const pick = employer
+    ? options.find((o) =>
+        employer.kind === 'workshop'
+          ? o.kind === 'workshop' && o.workshopId === employer.workshopId
+          : o.kind === 'trade',
+      )
+    : options[0];
+  if (pick?.kind === 'workshop') return { workshopId: pick.workshopId, tradeAccountId: null };
+  if (pick?.kind === 'trade') return { workshopId: null, tradeAccountId: pick.tradeAccountId };
   throw new ForbiddenError(
     'Only a verified workshop or trade account can post a job',
     'USTAAD_EMPLOYER_REQUIRED',
@@ -215,7 +245,7 @@ export async function postUstaadJob(
         .limit(1);
       if (dup) return viewOf(dup, place.cityCode, actor.memberId);
     }
-    const employer = await employerOf(tx, actor.userId, input.employer);
+    const employer = await employerOf(tx, actor.userId, input.employer, place.workshopId);
     // Every member-visible free-text field goes through the filters (title, description, timing, area labels).
     const text = [input.title, input.description, input.timing, input.areaLabel, input.areaLabelHi ?? '']
       .filter(Boolean)
@@ -381,6 +411,8 @@ export async function applyToUstaadJob(
     if (job?.cityId !== place.cityId) throw new NotFoundError();
     if (job.employerMemberId === actor.memberId)
       throw new ValidationError('You cannot apply to your own job', 'USTAAD_OWN_JOB');
+    // SR-35: blocked either way with the employer = the job does not exist for this member (and nobody is told).
+    if (await ustaadBlockedEitherWay(tx, job.employerMemberId, actor.memberId)) throw new NotFoundError();
     if (job.status !== 'open') {
       if (job.status === 'pending_review' || job.status === 'removed' || job.status === 'draft')
         throw new NotFoundError();
@@ -435,8 +467,114 @@ export async function applyToUstaadJob(
         props: { jobCode: job.code, applicationId: row.id },
       },
     );
+    // The employer hears about each new application once (SIM-P18; spec 23 § 12): keyed on the application, so a
+    // second applicant rings again and a repeat tap (the branch above) does not.
+    const [employer] = await tx
+      .select({ userId: ustaadMembers.userId })
+      .from(ustaadMembers)
+      .where(eq(ustaadMembers.id, job.employerMemberId))
+      .limit(1);
+    if (employer)
+      await notifyUstaad(tx, 'ustaad.job_application', {
+        userId: employer.userId,
+        entityId: row.id,
+        version: 1,
+        params: { jobCode: job.code },
+      });
     return { applicationId: row.id, status: 'applied' };
   });
+}
+
+/** One applicant as the employer sees them: name, level and the verified tick; never a phone number (SR-34). */
+export interface UstaadApplicantView {
+  applicationId: string;
+  status: UstaadApplicationStatus;
+  /** The applicant ticked "share my number"; the number itself is never in a response. */
+  sharePhone: boolean;
+  voiceIntro: boolean;
+  appliedAt: string;
+  version: number;
+  member: {
+    id: string;
+    handle: string;
+    displayName: string;
+    displayNameHi: string | null;
+    level: string;
+    verified: boolean;
+  };
+}
+
+/** Jobs only their employer may see as such; their applicants list answers 404 like an unknown code. */
+const HIDDEN_JOB_STATUSES = new Set(['draft', 'pending_review', 'removed']);
+
+/**
+ * The applicants of one job, for its employer only (SIM-P18): anyone else, and an unknown code, get the same 404.
+ * Newest first, keyset cursor on (created_at, id); the filter uses the (job_id, status) index.
+ */
+export async function listUstaadJobApplicants(
+  db: Tx,
+  actor: UstaadJobActor,
+  code: string,
+  opts: { cursor?: { createdAt: string; id: string } | null; limit?: number },
+  now = new Date(),
+): Promise<{ items: UstaadApplicantView[]; next: { createdAt: string; id: string } | null }> {
+  // Same gate as the employer's moves (restricted, frozen, banned or left employers are refused).
+  await memberGate(db, actor.memberId, now);
+  const [job] = await db
+    .select({ id: ustaadJobs.id, employer: ustaadJobs.employerMemberId, status: ustaadJobs.status })
+    .from(ustaadJobs)
+    .where(eq(ustaadJobs.code, code))
+    .limit(1);
+  if (job?.employer !== actor.memberId || HIDDEN_JOB_STATUSES.has(job.status)) throw new NotFoundError();
+  const limit = Math.min(Math.max(opts.limit ?? 20, 1), 50);
+  const c = opts.cursor;
+  // The cursor carries milliseconds (ISO); order and compare on the same precision so no row is skipped.
+  const at = sql`date_trunc('milliseconds', ${ustaadJobApplications.createdAt})`;
+  const rows = await db
+    .select({ app: ustaadJobApplications, m: ustaadMembers })
+    .from(ustaadJobApplications)
+    .innerJoin(ustaadMembers, eq(ustaadMembers.id, ustaadJobApplications.memberId))
+    .where(
+      and(
+        eq(ustaadJobApplications.jobId, job.id),
+        // Withdrawn applications are the applicant's to take back: the employer no longer sees them. Banned or
+        // departed members and anyone blocked either way with the employer are left out (SR-35).
+        ne(ustaadJobApplications.status, 'withdrawn'),
+        notInArray(ustaadMembers.status, ['banned', 'left']),
+        ustaadNotBlockedSql(actor.memberId, sql`${ustaadJobApplications.memberId}`),
+        c
+          ? sql`(${at}, ${ustaadJobApplications.id}) < (${c.createdAt}::timestamptz, ${c.id}::uuid)`
+          : undefined,
+      ),
+    )
+    .orderBy(desc(at), desc(ustaadJobApplications.id))
+    .limit(limit + 1);
+  const page = rows.slice(0, limit);
+  const last = page.at(-1);
+  return {
+    items: page.map((r) => {
+      const card = ustaadMemberCard(r.m);
+      return {
+        applicationId: r.app.id,
+        status: r.app.status as UstaadApplicationStatus,
+        sharePhone: r.app.sharePhone,
+        voiceIntro: r.app.voiceIntroMediaId !== null,
+        appliedAt: r.app.createdAt.toISOString(),
+        version: r.app.version,
+        member: {
+          id: card.id,
+          handle: card.handle,
+          displayName: card.displayName,
+          displayNameHi: card.displayNameHi,
+          level: card.level,
+          // The trust signal every other screen shows (pre-verified levels never carry the tick).
+          verified: card.verified,
+        },
+      };
+    }),
+    next:
+      rows.length > limit && last ? { createdAt: last.app.createdAt.toISOString(), id: last.app.id } : null,
+  };
 }
 
 type EmployerMove = 'seen' | 'shortlisted' | 'rejected' | 'hired';

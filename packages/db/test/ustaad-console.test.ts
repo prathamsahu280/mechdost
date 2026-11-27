@@ -338,6 +338,22 @@ describe('keep on a held item runs the publish side effects (F2 not-done item)',
     expect(await noticesOf(answerer.userId, 'ustaad.message_request')).toHaveLength(1);
   });
 
+  it('SIM-B8: a held scam DM is reasoned job_scam; warn removes it and strikes the author once', async () => {
+    const a = await member();
+    const b = await member();
+    const th = await startUstaadThread(t(), a, { memberId: b.memberId, text: FEE });
+    const r = await reportFor(th.messageId);
+    expect(r).toMatchObject({ source: 'auto_scam', reasonCode: 'job_scam' });
+    await actOnUstaadReport(t(), cmA, r.code, { action: 'warn', reasonCode: 'job_scam', version: r.version });
+    const [msg] = await db.select().from(s.ustaadMessages).where(eq(s.ustaadMessages.id, th.messageId));
+    expect(msg?.deletedAt).not.toBeNull();
+    const strikes = await db.select().from(s.ustaadStrikes).where(eq(s.ustaadStrikes.memberId, a.memberId));
+    expect(strikes).toHaveLength(1);
+    expect(await noticesOf(a.userId, 'ustaad.strike')).toHaveLength(1);
+    expect(await noticesOf(a.userId, 'ustaad.content_removed')).toHaveLength(0);
+    expect(await noticesOf(b.userId, 'ustaad.message_request')).toHaveLength(0);
+  });
+
   it('remove on a held message deletes it for both and never notifies', async () => {
     const th = await startUstaadThread(t(), other, { memberId: answerer.memberId, text: FEE });
     const r = await reportFor(th.messageId);

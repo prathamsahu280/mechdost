@@ -9,9 +9,11 @@ import type { Join } from '@mechdost/shared/ustaad/dto/members';
 import {
   applyToUstaadJob,
   buildUstaadZoneCounts,
+  ensureUser,
   expireUstaadJobs,
   getUstaadJob,
   joinUstaad,
+  listUstaadJobApplicants,
   listUstaadJobs,
   moveUstaadApplication,
   moveUstaadJob,
@@ -301,6 +303,168 @@ describe('jobs (AT-JOB-1)', () => {
     await expectCode(
       applyToUstaadJob(t(), b, fresh.code, { sharePhone: false, voiceIntroMediaId: null }),
       'USTAAD_JOB_CLOSED',
+    );
+  });
+});
+
+describe('employer sees and hears about applications (SIM-P18)', () => {
+  let c: { memberId: string; userId: string };
+  let seq = 0;
+  async function extraMember(name: string): Promise<{ memberId: string; userId: string }> {
+    seq += 1;
+    const id = String(seq).padStart(4, '0');
+    const u = await ensureUser(db, {
+      firebaseUid: `ustaad-local-x-${id}`,
+      phone: `+9197300${id.padStart(5, '0')}`,
+      email: `ustaad-local-x-${id}@example.com`,
+      emailVerified: true,
+    });
+    const m = await joinUstaad(t(), { userId: u.id }, join({ displayName: name }), { via: 'ustaad' });
+    return { memberId: m.id, userId: u.id };
+  }
+  const noticesFor = async (userId: string, code: string) =>
+    db
+      .select({ id: s.notifications.id })
+      .from(s.notifications)
+      .where(
+        sql`${s.notifications.userId} = ${userId}::uuid and ${s.notifications.kind} = 'ustaad.job_application'
+        and ${s.notifications.link} like ${`%/ustaad/jobs/${code}`}`,
+      );
+  beforeAll(async () => {
+    const mc = await joinUstaad(t(), { userId: f.staff }, join({ displayName: 'Mahesh Patel' }), {
+      via: 'ustaad',
+    });
+    c = { memberId: mc.id, userId: f.staff };
+    // Suresh is a verified Pakka Ustaad here (the tick needs a verified state and a level past the pre-verified ones).
+    await db.update(s.ustaadMembers).set({ level: 'pakka' }).where(eq(s.ustaadMembers.id, b.memberId));
+  });
+
+  it('security: a member blocked either way with the employer cannot apply (404) and rings nothing', async () => {
+    const j = await postUstaadJob(t(), a, job({ title: 'Tyre fitter' }));
+    const d = await extraMember('Dinesh Sahu');
+    await db.insert(s.ustaadBlocks).values({ memberId: a.memberId, targetId: d.memberId });
+    await expectCode(
+      applyToUstaadJob(t(), d, j.code, { sharePhone: false, voiceIntroMediaId: null }),
+      'NOT_FOUND',
+    );
+    expect(await noticesFor(a.userId, j.code)).toHaveLength(0);
+  });
+
+  it('security: blocked, banned, left and withdrawn applicants are not listed', async () => {
+    const j = await postUstaadJob(t(), a, job({ title: 'Painter' }));
+    const e = await extraMember('Ganesh Yadav');
+    const g = await extraMember('Harish Netam');
+    const h = await extraMember('Kamal Dhruw');
+    for (const m of [b, e, g, h])
+      await applyToUstaadJob(t(), m, j.code, { sharePhone: false, voiceIntroMediaId: null });
+    await db.insert(s.ustaadBlocks).values({ memberId: e.memberId, targetId: a.memberId });
+    await db.update(s.ustaadMembers).set({ status: 'banned' }).where(eq(s.ustaadMembers.id, g.memberId));
+    const [hApp] = await db
+      .select({ id: s.ustaadJobApplications.id })
+      .from(s.ustaadJobApplications)
+      .where(eq(s.ustaadJobApplications.memberId, h.memberId));
+    await moveUstaadApplication(t(), h, hApp?.id ?? '', 'withdrawn');
+    const list = await listUstaadJobApplicants(t(), a, j.code, {});
+    expect(list.items.map((i) => i.member.displayName)).toEqual(['Suresh Verma']);
+  });
+
+  it('security: a restricted employer is refused; a held or removed job answers 404', async () => {
+    const held = await postUstaadJob(t(), a, job({ description: 'Registration fee 500, pay to x@okaxis' }));
+    await expectCode(listUstaadJobApplicants(t(), a, held.code, {}), 'NOT_FOUND');
+    const j = await postUstaadJob(t(), a, job({ title: 'Washer' }));
+    await db.update(s.ustaadJobs).set({ status: 'removed' }).where(eq(s.ustaadJobs.code, j.code));
+    await expectCode(listUstaadJobApplicants(t(), a, j.code, {}), 'NOT_FOUND');
+    const open = await postUstaadJob(t(), a, job({ title: 'Spare helper' }));
+    await db
+      .update(s.ustaadMembers)
+      .set({ restrictedMode: 'review' })
+      .where(eq(s.ustaadMembers.id, a.memberId));
+    await expectCode(listUstaadJobApplicants(t(), a, open.code, {}), 'USTAAD_RESTRICTED');
+    await db
+      .update(s.ustaadMembers)
+      .set({ restrictedMode: 'none' })
+      .where(eq(s.ustaadMembers.id, a.memberId));
+  });
+
+  it('security: a pre-verified level shows no verified tick (same rule as member cards)', async () => {
+    const j = await postUstaadJob(t(), a, job({ title: 'Apprentice' }));
+    const p = await extraMember('Pawan Sen');
+    await db
+      .update(s.ustaadMembers)
+      .set({ verificationState: 'verified', level: 'ustaad_pending' })
+      .where(eq(s.ustaadMembers.id, p.memberId));
+    await applyToUstaadJob(t(), p, j.code, { sharePhone: false, voiceIntroMediaId: null });
+    const list = await listUstaadJobApplicants(t(), a, j.code, {});
+    expect(list.items[0]?.member).toMatchObject({ displayName: 'Pawan Sen', verified: false });
+  });
+
+  it('each new application rings the employer once (ustaad.job_application); a repeat tap does not', async () => {
+    const j = await postUstaadJob(t(), a, job({ title: 'Denter wanted' }));
+    await applyToUstaadJob(t(), b, j.code, { sharePhone: false, voiceIntroMediaId: null });
+    await applyToUstaadJob(t(), b, j.code, { sharePhone: false, voiceIntroMediaId: null });
+    await applyToUstaadJob(t(), c, j.code, { sharePhone: true, voiceIntroMediaId: null });
+    const rows = await db
+      .select({ link: s.notifications.link, body: s.notifications.body })
+      .from(s.notifications)
+      .where(
+        sql`${s.notifications.userId} = ${a.userId}::uuid and ${s.notifications.kind} = 'ustaad.job_application'
+        and ${s.notifications.link} like ${`%/ustaad/jobs/${j.code}`}`,
+      );
+    expect(rows).toHaveLength(2);
+    expect(rows[0]?.body).toContain(j.code);
+  });
+
+  it('only the employer lists the applicants (404 for anyone else), newest first, cursor, no phone', async () => {
+    const j = await postUstaadJob(t(), a, job({ title: 'AC technician' }));
+    await applyToUstaadJob(t(), b, j.code, { sharePhone: false, voiceIntroMediaId: null });
+    await applyToUstaadJob(t(), c, j.code, { sharePhone: true, voiceIntroMediaId: null });
+    await expectCode(listUstaadJobApplicants(t(), b, j.code, {}), 'NOT_FOUND');
+    await expectCode(listUstaadJobApplicants(t(), a, 'UJ-RPR-2026-AAAAAA', {}), 'NOT_FOUND');
+    const first = await listUstaadJobApplicants(t(), a, j.code, { limit: 1 });
+    expect(first.items).toHaveLength(1);
+    expect(first.items[0]).toMatchObject({
+      member: { displayName: 'Mahesh Patel', verified: false },
+      status: 'applied',
+      sharePhone: true,
+    });
+    expect(first.next).not.toBeNull();
+    const second = await listUstaadJobApplicants(t(), a, j.code, { limit: 1, cursor: first.next });
+    expect(second.items[0]?.member).toMatchObject({ displayName: 'Suresh Verma', verified: true });
+    expect(second.next).toBeNull();
+    expect(JSON.stringify([first, second])).not.toMatch(/\+91|"phone/);
+  });
+});
+describe('employer kind is decided by the server (SIM-P17)', () => {
+  it('a workshop owner without a trade account posts as their workshop when no kind is sent', async () => {
+    const [w] = await db
+      .insert(s.workshops)
+      .values({
+        cityId: f.raipur,
+        slug: 'ustl-garage',
+        name: 'Garage L',
+        addressLine: 'GE Road',
+        area: 'Pandri',
+        pincode: '492001',
+        location: { lng: 81.66, lat: 21.26 },
+        vehicleTypes: ['2W'],
+        hours: { open: '09:00', close: '19:00', days: [1] },
+      })
+      .returning({ id: s.workshops.id });
+    const [role] = await db.select({ id: s.roles.id }).from(s.roles).where(eq(s.roles.key, 'workshop_owner'));
+    await db
+      .insert(s.userRoles)
+      .values({ userId: b.userId, roleId: role?.id ?? '', workshopId: w?.id ?? null });
+    const posted = await postUstaadJob(t(), b, job({ employer: undefined, title: 'Workshop helper' }));
+    expect(posted.status).toBe('open');
+    const [row] = await db
+      .select({ workshopId: s.ustaadJobs.workshopId, trade: s.ustaadJobs.tradeAccountId })
+      .from(s.ustaadJobs)
+      .where(eq(s.ustaadJobs.code, posted.code));
+    expect(row).toEqual({ workshopId: w?.id, trade: null });
+    // A workshop the member holds no grant on stays refused even when named.
+    await expectCode(
+      postUstaadJob(t(), a, job({ employer: { kind: 'workshop', workshopId: w?.id ?? '' } })),
+      'USTAAD_EMPLOYER_REQUIRED',
     );
   });
 });

@@ -96,6 +96,8 @@ export const NOTICE_PRIORITY_OF_KIND = {
   'ustaad.job_application': 'action',
   'ustaad.application_status': 'info',
   'ustaad.report_outcome': 'info',
+  'ustaad.appeal_upheld': 'info',
+  'ustaad.appeal_overturned': 'success',
   'ustaad.content_removed': 'action',
   'ustaad.strike': 'action',
   'ustaad.rules_reminder': 'info',

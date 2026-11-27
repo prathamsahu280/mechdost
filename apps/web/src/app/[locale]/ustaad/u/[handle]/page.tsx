@@ -21,6 +21,7 @@ export default async function UstaadProfilePage({ params }: Props) {
       <ClientMessages
         namespaces={[
           'ustaad.shell',
+          'ustaad.standing',
           'ustaad.social',
           'ustaad.feed',
           'ustaad.labels',

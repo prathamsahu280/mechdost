@@ -453,7 +453,7 @@ export const supportTickets = pgTable(
     check('support_tickets_priority_valid', sql`${t.priority} in ('low','normal','high','urgent')`),
     check(
       'support_tickets_kind_valid',
-      sql`${t.kind} in ('order_issue','service_issue','refund','fitment','product_sourcing','workshop_request','account','deletion_request','labour_redo','rsa_bill_dispute','other')`,
+      sql`${t.kind} in ('order_issue','service_issue','refund','fitment','product_sourcing','workshop_request','account','deletion_request','labour_redo','rsa_bill_dispute','ustaad_appeal','other')`,
     ),
     check(
       'support_tickets_owner',

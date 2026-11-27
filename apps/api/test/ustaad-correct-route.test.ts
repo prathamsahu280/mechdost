@@ -219,6 +219,36 @@ describe('POST /v1/ustaad/correct — modes and engines', () => {
     await setSetting('ustaad.correction.default_mode', 'suggest');
   });
 
+  it('SIM-P20: in suggest mode a request asking for auto still only suggests (the author must choose)', async () => {
+    const ctx = await buildApp();
+    const m = await person(ctx);
+    const body = (await (
+      await ctx.app.request(
+        '/v1/ustaad/correct',
+        post(m.headers, { text: 'brek kaam nhi kr rha', mode: 'auto' }),
+      )
+    ).json()) as CorrectResponseView;
+    expect(body.mode).toBe('suggest');
+    // The member's own "Fix by itself" choice (where the admin lets members choose) is honoured.
+    const own = await person(ctx, { mode: 'auto' });
+    const auto = (await (
+      await ctx.app.request(
+        '/v1/ustaad/correct',
+        post(own.headers, { text: 'brek kaam nhi kr rha', mode: 'auto' }),
+      )
+    ).json()) as CorrectResponseView;
+    expect(auto.mode).toBe('auto');
+    // A request may always step down from auto to suggest.
+    await setSetting('ustaad.correction.default_mode', 'auto');
+    const ctx2 = await buildApp();
+    const m2 = await person(ctx2);
+    const down = (await (
+      await ctx2.app.request('/v1/ustaad/correct', post(m2.headers, { text: 'kr h', mode: 'suggest' }))
+    ).json()) as CorrectResponseView;
+    expect(down.mode).toBe('suggest');
+    await setSetting('ustaad.correction.default_mode', 'suggest');
+  });
+
   it("off: the member's own choice returns the text unchanged; a switched-off language too", async () => {
     const ctx = await buildApp();
     const off = await person(ctx, { mode: 'off' });

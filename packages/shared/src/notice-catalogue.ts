@@ -39,6 +39,8 @@ const quote = (p: Record<string, string>) => `/quotes/${enc(p.quoteCode ?? '')}`
 const ticket = (p: Record<string, string>) => `/account/support?ticket=${enc(p.ticketCode ?? '')}`;
 const at = (path: string) => () => path;
 const ustaadQuestion = (p: Record<string, string>) => `/ustaad/q/${enc(p.questionCode ?? '')}`;
+/** The member's standing page (SIM-P19): reason, what is limited and until when, and the one Appeal action. */
+const ustaadStanding = () => '/ustaad/me/standing';
 const ustaadJob = (p: Record<string, string>) => `/ustaad/jobs/${enc(p.jobCode ?? '')}`;
 
 const T = 'transactional' as const;
@@ -394,7 +396,7 @@ export const NOTICE_CATALOGUE = {
     entity: 'ustaad',
     audience: 'member',
     text: ['memberName'],
-    link: (p) => (p.postId ? `/ustaad/p/${enc(p.postId)}` : '/ustaad/notifications'),
+    link: (p) => (p.postId ? `/ustaad/p/${enc(p.postId)}` : '/notifications'),
   }),
   'ustaad.likes_digest': def({
     category: T,
@@ -443,7 +445,8 @@ export const NOTICE_CATALOGUE = {
     entity: 'ustaad',
     audience: 'member',
     text: ['memberName'],
-    link: at('/ustaad/me/verify'),
+    // SIM-P11/P19: /ustaad/me/verify was never built; Me holds the member's verification card.
+    link: at('/ustaad/me'),
   }),
   'ustaad.attestation_requested': def({
     category: T,
@@ -457,7 +460,7 @@ export const NOTICE_CATALOGUE = {
     entity: 'ustaad',
     audience: 'member',
     text: [],
-    link: at('/ustaad/me/verify'),
+    link: at('/ustaad/me'),
   }),
   'ustaad.level_up': def({
     category: T,
@@ -492,7 +495,8 @@ export const NOTICE_CATALOGUE = {
     entity: 'ustaad',
     audience: 'member',
     text: ['jobCode'],
-    link: at('/ustaad/jobs/mine'),
+    // The job page shows its employer the applicants (SIM-P18); `/ustaad/jobs/mine` was never a page.
+    link: ustaadJob,
   }),
   'ustaad.application_status': def({
     category: T,
@@ -506,21 +510,36 @@ export const NOTICE_CATALOGUE = {
     entity: 'ustaad',
     audience: 'member',
     text: ['reportCode'],
-    link: at('/ustaad/notifications'),
+    link: at('/notifications'),
+  }),
+  /** SIM-P26: the appeal's outcome goes to the appellant (never the reporter's report_outcome text). */
+  'ustaad.appeal_upheld': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: ['reportCode'],
+    link: ustaadStanding,
+  }),
+  'ustaad.appeal_overturned': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: ['reportCode'],
+    link: ustaadStanding,
   }),
   'ustaad.content_removed': def({
     category: T,
     entity: 'ustaad',
     audience: 'member',
     text: [],
-    link: at('/ustaad/notifications'),
+    link: ustaadStanding,
   }),
   'ustaad.strike': def({
     category: T,
     entity: 'ustaad',
     audience: 'member',
     text: [],
-    link: at('/ustaad/notifications'),
+    link: ustaadStanding,
   }),
   'ustaad.rules_reminder': def({
     category: T,

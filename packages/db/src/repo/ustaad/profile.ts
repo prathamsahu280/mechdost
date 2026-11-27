@@ -4,11 +4,7 @@
  * city, the official badge and verification never change here.
  */
 import { and, desc, eq, inArray, isNull, lt, notInArray, or } from 'drizzle-orm';
-import {
-  USTAAD_CONSENT_NOTICE_VERSION,
-  USTAAD_JOIN_CONSENTS,
-  type UstaadLevel,
-} from '@mechdost/shared/ustaad/codes';
+import { USTAAD_CONSENT_NOTICE_VERSION, type UstaadLevel } from '@mechdost/shared/ustaad/codes';
 import type {
   Choices,
   ChoicesView,
@@ -126,14 +122,36 @@ export async function setUstaadSpecialities(
   });
 }
 
-const OPTIONAL_CONSENTS = ['ustaad_directory', 'ustaad_training', 'ustaad_offers'] as const;
+const OPTIONAL_CONSENTS = [
+  'ustaad_directory',
+  'ustaad_training',
+  'ustaad_offers',
+  'ustaad_voice',
+  'ustaad_correction',
+] as const;
+const CHOICE_PURPOSES = ['ustaad_profile', ...OPTIONAL_CONSENTS] as const;
+
+/** The latest grant or withdrawal of one purpose (append-only `consents`, newest row wins); false when never asked. */
+export async function ustaadConsentGranted(
+  tx: Tx,
+  userId: string,
+  purpose: (typeof CHOICE_PURPOSES)[number],
+): Promise<boolean> {
+  const [row] = await tx
+    .select({ granted: consents.granted })
+    .from(consents)
+    .where(and(eq(consents.userId, userId), eq(consents.purpose, purpose)))
+    .orderBy(desc(consents.createdAt), desc(consents.id))
+    .limit(1);
+  return row?.granted === true;
+}
 
 /** The latest grant or withdrawal per join purpose (append-only `consents`, newest row wins). */
 async function joinConsentState(tx: Tx, userId: string): Promise<ChoicesView['consents']> {
   const rows = await tx
     .selectDistinctOn([consents.purpose], { purpose: consents.purpose, granted: consents.granted })
     .from(consents)
-    .where(and(eq(consents.userId, userId), inArray(consents.purpose, [...USTAAD_JOIN_CONSENTS])))
+    .where(and(eq(consents.userId, userId), inArray(consents.purpose, [...CHOICE_PURPOSES])))
     .orderBy(consents.purpose, desc(consents.createdAt), desc(consents.id));
   const state = new Map(rows.map((r) => [r.purpose, r.granted]));
   return {
@@ -141,6 +159,8 @@ async function joinConsentState(tx: Tx, userId: string): Promise<ChoicesView['co
     ustaad_directory: state.get('ustaad_directory') === true,
     ustaad_training: state.get('ustaad_training') === true,
     ustaad_offers: state.get('ustaad_offers') === true,
+    ustaad_voice: state.get('ustaad_voice') === true,
+    ustaad_correction: state.get('ustaad_correction') === true,
   };
 }
 

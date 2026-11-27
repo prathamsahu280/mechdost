@@ -323,3 +323,56 @@ describe('AT-UP-9 (classifier test double)', () => {
     expect(reports[0]).toMatchObject({ source: 'auto_safety', clock: 'intimate_2h' });
   });
 });
+
+describe('member standing and appeal (SIM-P19 / SIM-P24 / SIM-P27)', () => {
+  it('a banned member reads their standing and files the appeal; every other member route stays 403', async () => {
+    const who = await person();
+    const j = await call(who, 'POST', '/ustaad/join', JOIN('Mohan Dewangan'));
+    expect(j.status).toBe(201);
+    const [p] = await ctx.db
+      .insert(s.ustaadPosts)
+      .values({ authorId: j.body.id as string, cityId: raipurId, kind: 'text', body: 'Naukri hai, fees do' })
+      .returning();
+    // A fresh reporter: `viewer` spent its 20 reports a day earlier in this file.
+    const reporter = await person();
+    const rj = await call(reporter, 'POST', '/ustaad/join', JOIN('Kishore Sahu'));
+    await ctx.db
+      .update(s.ustaadMembers)
+      .set({ joinedAt: new Date(Date.now() - 90 * 86_400_000) })
+      .where(eq(s.ustaadMembers.id, rj.body.id as string));
+    const r = await report(reporter, p?.id ?? '', 'job_scam');
+    expect(r.status).toBe(201);
+    const ban = await call(cmRaipur, 'POST', `/admin/ustaad/moderation/reports/${String(r.body.code)}/act`, {
+      action: 'ban',
+      days: 3,
+      reasonCode: 'job_scam',
+      version: 1,
+    });
+    expect(ban.status).toBe(200);
+    expect((await call(who, 'GET', '/ustaad/feed')).body.error.code).toBe('USTAAD_BANNED');
+    const standing = await call(who, 'GET', '/ustaad/me/standing');
+    expect(standing.status).toBe(200);
+    expect(standing.body).toMatchObject({ status: 'banned' });
+    expect(standing.text).not.toContain(viewerMemberId);
+    expect(
+      (await call(who, 'POST', '/ustaad/me/appeals', { reportCode: r.body.code, note: 'x', extra: 1 }))
+        .status,
+    ).toBe(400);
+    const filed = await call(who, 'POST', '/ustaad/me/appeals', {
+      reportCode: r.body.code,
+      note: 'The job is real, please check the garage.',
+    });
+    expect(filed.status).toBe(201);
+    expect(String(filed.body.ticketCode)).toMatch(/^REQ-/);
+    // Not a member: the generic 404 on both.
+    expect((await call(customer, 'GET', '/ustaad/me/standing')).status).toBe(404);
+    expect(
+      (
+        await call(customer, 'POST', '/ustaad/me/appeals', {
+          reportCode: r.body.code,
+          note: 'Please check it.',
+        })
+      ).status,
+    ).toBe(404);
+  });
+});

@@ -518,6 +518,11 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
 
 - **Q-SIM-5 (action, agent F 2026-11-27):** please click account 08's "Verify your email" message (sent 12:41 IST to the test inbox), then 08 signs out and in again; until then 08 (new community manager) gets "Verify your phone and email first" and cannot decide 02's ban appeal (UPHOLD planned). Also check the 9 run emails listed in D:/mechdost-qa/ustaad-sim-2026-11-27/logs/F-notifications.md. Default meanwhile: appeal stays undecided; 02 banned to 27 Dec.
   mechanics", `/ustaad/me/verify`, employer's applicants list) before opening the network? Default: yes, next build.
+  _Update 2026-11-27 (QA batch A):_ the employer's applicants list is built (job page); the vouch and verification
+  notices now open Me. Still open: give/decline a vouch screen, "Confirm your mechanics", a verification detail page.
+- **Q-SIM-5 (2026-11-27, Content, P1):** the slur / banned-words, personal-details and blocked-sites lists are empty on
+  live (SIM-G18). Who supplies and reviews the en / hi / Hinglish list before launch? Default: staff fill them per
+  `docs/runbooks/ustaad.md` § "Word lists before launch" after the founder and counsel approve the slur list.
 
 #### Q-COD-1 … 5: cash on delivery only on request (founder ruling 2026-11-26)
 

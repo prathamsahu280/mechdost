@@ -89,6 +89,8 @@ export interface UstaadServerEventProps {
   ustaad_job_posted: { jobCode: string; role: Of<typeof JOB_ROLES> };
   ustaad_job_applied: { jobCode: string; applicationId: string };
   ustaad_application_moved: { applicationId: string; to: string };
+  /** SIM-P24: a member filed an appeal against a decision on them or their content (a support ticket). */
+  ustaad_appeal_filed: { reportId: string };
   ustaad_report_created: {
     reportCode: string;
     reason: Of<typeof REPORT_REASONS>;
@@ -182,6 +184,7 @@ export const USTAAD_SERVER_EVENTS = [
   'ustaad_job_posted',
   'ustaad_job_applied',
   'ustaad_application_moved',
+  'ustaad_appeal_filed',
   'ustaad_report_created',
   'ustaad_moderation_action',
   'ustaad_media_rejected',
@@ -228,6 +231,8 @@ export const USTAAD_CLIENT_EVENT_SCHEMAS = {
     .strict(),
   ustaad_correction_choice: z.object({ choice: z.enum(['use', 'keep', 'edit']) }).strict(),
   ustaad_data_saver: z.object({ on: z.boolean() }).strict(),
+  /** SIM-P18: the employer opened the applicants list of their job (how many were shown on the first page). */
+  ustaad_job_applicants_viewed: z.object({ count }).strict(),
   ustaad_learn_completed: z.object({ resource: z.uuid() }).strict(),
   ustaad_join_step: z
     .object({ step: z.number().int().min(1).max(5), via: z.enum(['ustaad', 'partners_apply']) })

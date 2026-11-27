@@ -1,5 +1,6 @@
-import { MeResponseDto } from '@mechdost/shared/ustaad/dto/members';
-import { JobDto } from '@mechdost/shared/ustaad/dto/local';
+import { ChoicesViewDto, MeResponseDto } from '@mechdost/shared/ustaad/dto/members';
+import { ApplicantsResponseDto, JobDto } from '@mechdost/shared/ustaad/dto/local';
+import { AppealFiledDto, StandingDto } from '@mechdost/shared/ustaad/dto/moderation';
 import { LearnViewDto, QuestionDetailDto } from '@mechdost/shared/ustaad/dto/qa';
 import {
   AnsweredResponse as Answered,
@@ -102,6 +103,17 @@ export function apiUstaadClient(locale: string): UstaadClient {
     postJob: (input) => send('/ustaad/jobs', JobDto, input),
     apply: (code, body) => send(`/ustaad/jobs/${encodeURIComponent(code)}/apply`, Applied, body),
     moveJob: (code, action) => send(`/ustaad/jobs/${encodeURIComponent(code)}/${action}`, Moved, {}),
+    choices: () => get('/ustaad/me/choices', ChoicesViewDto),
+    saveChoices: (body) => send('/ustaad/me/choices', ChoicesViewDto, body, 'PUT'),
+    standing: () => get('/ustaad/me/standing', StandingDto),
+    fileAppeal: (reportCode, note) => send('/ustaad/me/appeals', AppealFiledDto, { reportCode, note }),
+    applicants: (code, cursor) =>
+      get(
+        `/ustaad/jobs/${encodeURIComponent(code)}/applications${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`,
+        ApplicantsResponseDto,
+      ),
+    moveApplication: (id, action) =>
+      send(`/ustaad/applications/${encodeURIComponent(id)}/${action}`, Moved, {}),
     upload: async (file, meta, onProgress) => {
       const declared = await send('/ustaad/media', Declared, {
         kind: meta.kind,

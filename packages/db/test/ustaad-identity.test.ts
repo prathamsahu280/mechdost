@@ -5,7 +5,7 @@
  * (SR-10) and tutorial progress.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import {
   approveUstaadVerification,
   confirmUstaadAttestation,
@@ -474,6 +474,25 @@ describe('vouches (SR-7)', () => {
     await giveUstaadVouch(t(), { userId: p2.userId }, { id: v3.id, expectedVersion: v3.version });
     expect((await ustaadVerificationStatus(t(), { userId: vouchee.userId }))?.status).toBe('in_review');
     expect((await counters(vouchee.memberId)).recommendations).toBe(2);
+  });
+
+  it('SIM-P11: the voucher gets the ustaad.vouch_requested bell, once per request, opening a real page', async () => {
+    const voucher = await mkMember({ level: 'pakka' });
+    const asker = await mkMember({ level: 'naya' });
+    const v = await requestUstaadVouch(
+      t(),
+      { userId: asker.userId },
+      { voucherId: voucher.memberId, relation: 'known_work' },
+    );
+    const rows = await db
+      .select({ entityId: s.notifications.entityId, link: s.notifications.link })
+      .from(s.notifications)
+      .where(
+        sql`${s.notifications.userId} = ${voucher.userId}::uuid and ${s.notifications.kind} = 'ustaad.vouch_requested'`,
+      );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.entityId).toContain(v.id);
+    expect(rows[0]?.link).toMatch(/\/ustaad\/me$/);
   });
 
   it('reciprocal vouches are refused', async () => {

@@ -1,11 +1,19 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { localePath } from '@/lib/locale-path';
 import type { ApiResult } from '@/lib/orders-api';
 import { ustaadClient, type UstaadClient } from '@/lib/ustaad/client';
+import { memberGateView } from '@/lib/ustaad/standing-view';
+
+// Loaded only for a banned or limited member (rare), so the pages' first load does not grow (rule 6).
+const BannedScreen = dynamic(() => import('./standing/standing-view').then((m) => m.BannedScreen));
+const LimitedBanner = dynamic(() => import('./standing/standing-view').then((m) => m.LimitedBanner), {
+  loading: () => <div className="mx-auto mb-4 min-h-[132px] w-full max-w-2xl" aria-hidden="true" />,
+});
 
 /**
  * Shared bits of the Ustaad C + E screens: the loader hook (one client, one request at a time, reload on demand), the
@@ -189,13 +197,13 @@ export function MemberGate({ children }: { children: ReactNode }) {
   const t = useTranslations('ustaad.shell');
   const locale = useLocale();
   const { loaded } = useUstaad((c) => c.me(), 'gate-me');
-  if (loaded.state === 'loading') return <LoadingBlock />;
+  const view = memberGateView(loaded);
+  if (view === 'loading') return <LoadingBlock />;
+  // SIM-P27: a banned member sees why, until when and the appeal, never each page's "check your internet".
+  if (view === 'banned') return <BannedScreen />;
   // Not a member yet: staff previewing (member null) or a signed-in viewer the gate let in (a preview tester, or
   // anyone once the network is open) answered USTAAD_NOT_MEMBER.
-  const notMember =
-    (loaded.state === 'ok' && loaded.data.member === null) ||
-    (loaded.state === 'error' && loaded.code === 'USTAAD_NOT_MEMBER');
-  if (notMember)
+  if (view === 'join')
     return (
       <div className={`${card} mx-auto grid max-w-2xl justify-items-center gap-3 text-center`}>
         <h1 className="font-heading text-xl font-extrabold text-ink">{t('joinTitle')}</h1>
@@ -204,6 +212,14 @@ export function MemberGate({ children }: { children: ReactNode }) {
           {t('joinCta')}
         </Link>
       </div>
+    );
+  // SIM-P23: a restricted or under-review member keeps the page, under the one limited banner.
+  if (view === 'limited')
+    return (
+      <>
+        <LimitedBanner />
+        {children}
+      </>
     );
   return <>{children}</>;
 }

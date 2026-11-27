@@ -19,6 +19,7 @@ export default async function UstaadQuestionPage({ params }: Props) {
     <ClientMessages
       namespaces={[
         'ustaad.shell',
+        'ustaad.standing',
         'ustaad.qa',
         'ustaad.media',
         'ustaad.labels',

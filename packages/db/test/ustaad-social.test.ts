@@ -384,6 +384,22 @@ describe('block and mute (SR-35, § 7.9)', () => {
     expect(th?.blockedFrom).toBeNull();
   });
 
+  it('SIM-P34: a ban closes the banned member’s conversations (no message in, no request accepted)', async () => {
+    const a = await member();
+    const b = await member();
+    const c = await member();
+    await followUstaadMember(t(), b, a.memberId);
+    const conn = await requestUstaadConnection(t(), a, b.memberId);
+    await moveUstaadConnection(t(), b, conn.id, 'accept');
+    const open = await startUstaadThread(t(), a, { memberId: b.memberId, text: 'namaste bhai' });
+    const req = await startUstaadThread(t(), b, { memberId: c.memberId, text: 'kaam hai kya' });
+    await db.update(s.ustaadMembers).set({ status: 'banned' }).where(eq(s.ustaadMembers.id, b.memberId));
+    const sent = await err(sendUstaadMessage(t(), a, open.threadId, { kind: 'text', text: 'suno' }));
+    expect(sent).toMatchObject({ status: 403, code: 'USTAAD_DM_NOT_ALLOWED' });
+    const accepted = await err(moveUstaadThread(t(), c, req.threadId, 'accept'));
+    expect(accepted).toMatchObject({ status: 403, code: 'USTAAD_DM_NOT_ALLOWED' });
+  });
+
   it('mute is one row, idempotent, and listed', async () => {
     const a = await member();
     const b = await member();

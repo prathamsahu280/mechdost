@@ -16,6 +16,7 @@ export const SUPPORT_TICKET_KINDS = [
   'account',
   'labour_redo',
   'rsa_bill_dispute',
+  'ustaad_appeal',
   'deletion_request',
   'other',
 ] as const;

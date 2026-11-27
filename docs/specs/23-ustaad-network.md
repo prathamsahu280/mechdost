@@ -806,6 +806,7 @@ interface SmartCorrectionEngine {
 | `ustaad.job_application`                                                                                          | employer                       | bell/push                                             | seen                       |
 | `ustaad.application_status`                                                                                       | applicant                      | bell/push; WhatsApp UTILITY                           | —                          |
 | `ustaad.report_outcome`                                                                                           | reporter                       | bell                                                  | —                          |
+| `ustaad.appeal_upheld` / `ustaad.appeal_overturned` (SIM-P26)                                                     | appellant                      | bell                                                  | —                          |
 | `ustaad.content_removed` / `ustaad.strike` / `ustaad.rules_reminder`                                              | author/member                  | bell + email (reason in Hindi/English, appeal route)  | —                          |
 | `ustaad.invite` (old mechanic applications, § 4a)                                                                 | applicant with an account      | bell; WhatsApp/SMS when templates are live            | joined                     |
 | `ustaad.security_freeze` (SR-2)                                                                                   | member (old channels too)      | bell/push + email                                     | —                          |
@@ -1945,6 +1946,112 @@ members/{id}/relationship,connections,blocks,mutes,discover,discover/tags,discov
   the classifier); the `ustaad_grievance` ticket kind; the shared `LoadState` live-region pattern (admin-wide);
   "Show more" keeps focus on the last row; queue filters are not in the URL; the full `API-ADM-USTAAD-CONSOLE` audit
   sweep and 768 px / dark screenshots (lead's speed-up: 1440 light + Hindi only).
+
+## 21h. QA simulation fixes, batch A (2026-11-27; `docs/qa/ustaad-sim-fix-plan-2026-11-27.md`)
+
+Each fix has a regression test named after the QA id.
+
+- **SIM-P18 — the employer hears about and sees applications.** `applyToUstaadJob` now queues
+  `ustaad.job_application` to the employer inside the apply transaction, keyed on the **application** id (a second
+  applicant rings again; a repeat tap returns the existing application and rings nothing). The notice opens the job
+  page (`/ustaad/jobs/{code}`; the catalogue's old `/ustaad/jobs/mine` was never a page). New
+  `GET /v1/ustaad/jobs/{code}/applications?cursor=&limit=` (`listUstaadJobApplicants`): the job's employer only, an
+  unknown code and anyone else get the same 404; newest first, keyset cursor on (created_at to the millisecond, id);
+  each row has the applicant's name (and Hindi name), level, verified tick, status, "shared their number" and "sent a
+  voice intro" flags, never a phone number. The job page shows the employer an **Applicants** card under the job:
+  the moves the application machine allows (`applicantMoves`: seen, shortlist, not this time, hire; hire and "not this
+  time" confirmed inline), and "See card and message", which opens the member's card where the existing Message
+  button lives. Client event `ustaad_job_applicants_viewed { count }`; the moves are the existing server event
+  `ustaad_application_moved`. Tests: `ustaad-local.test.ts` "employer sees and hears about applications (SIM-P18)",
+  `ustaad-local-api.test.ts` "SIM-P18 …", `apps/web/test/ustaad-applicants-view.test.ts`.
+- **SIM-P18 security follow-up (lead's review, 2026-11-27).** The applicants list runs the same member gate as the
+  employer's moves (restricted, frozen, banned or departed employers refused) and answers 404 for a draft, held or
+  removed job as for an unknown code. It leaves out withdrawn applications (the applicant took theirs back; ruling:
+  hidden, not shown greyed), banned or departed applicants and anyone blocked either way with the employer (SR-35,
+  `ustaadNotBlockedSql`). Applying to a job whose employer is blocked either way answers 404 and rings nothing. The
+  verified tick comes from `ustaadMemberCard` (verified state and a level past `apprentice` / `ustaad_pending`), the
+  same trust signal as every other card. Tests: the four "security: …" cases in `ustaad-local.test.ts`.
+- **SIM-P11 — the voucher is asked in the bell.** `requestUstaadVouch` queues `ustaad.vouch_requested` (the asker's
+  name) to the voucher in the same transaction, keyed on the vouch row. The notice opens `/ustaad/me` (the
+  catalogue's `/ustaad/me/verify` was never built). Not done: there is still no member screen to give or decline a
+  vouch (Q-SIM-4; the API `POST /ustaad/vouches/{id}/give` exists), so the bell leads to Me, not to the request.
+- **SIM-P20 — suggest mode only suggests.** The composers call `correctForSend` (mode `auto`) on send when the member
+  did not open the suggestion, and `POST /ustaad/correct` honoured the asked mode, so suggest mode silently replaced
+  text. The route's mode is now: the member's own choice (when `correction.member_can_change` is on) or the admin
+  default; `off` wins; a request may only **step down** to `suggest`, never up to `auto`. In suggest mode the send-time
+  call therefore answers `suggest` and the composer keeps the member's words. "Fix by itself" applies only when the
+  admin default is `auto` or the member chose it (G17: the member control is in "My choices", see SIM-P10 below).
+  Test: `ustaad-correct-route.test.ts` "SIM-P20 …".
+- **SIM-P19 / audit #2 / SIM-P24 — every notice link is a page; the member's standing and appeal.** Links fixed in
+  `notice-catalogue.ts`: `ustaad.content_removed`, `ustaad.strike`, `ustaad.appeal_*` → `/ustaad/me/standing`;
+  `ustaad.report_outcome` and the reply fallback → `/notifications` (the existing notification centre);
+  `ustaad.verification_decided` and `ustaad.vouch_requested` → `/ustaad/me`; `ustaad.job_application` → the job.
+  Guard test `apps/web/test/notice-links.test.ts`: every catalogued link must match a page in the route tree (the
+  root `[...rest]` not-found catch-all does not count). New **`/ustaad/me/standing`** ("Your account standing"):
+  one summary line (blocked until a date / with no end date; limited until a date — you can read but cannot post,
+  comment, answer, message or use jobs; limited while the team checks; or all clear with a link to the community
+  rules), then each decision on the member or their content (removed, taken down on a legal order, warning,
+  limited, blocked) with the **reason as a plain label** (`ustaad.standing.reason_*`, never the code), the decision
+  date, the end date, the appeal state and **one Appeal action** (inline form, reason 10–1,000 characters, Escape and
+  Cancel close it). API: `GET /v1/ustaad/me/standing` and `POST /v1/ustaad/me/appeals {reportCode, note}` behind
+  `requireUstaadMemberAnyStanding` (banned members pass; members who left and non-members get the generic 404; rate
+  limits `memberReads` / `membershipWrites`). `ustaadMyStanding` lists the last 50 decisions (`remove`, `takedown`,
+  `warn`, `restrict`, `ban` actions on reports whose target is the member or something they wrote; one line per
+  report; never the reporter, the staff member or a staff note). `fileUstaadAppeal` (one transaction): someone else's
+  report or an unknown code → 404; a report not `actioned` → 409 `USTAAD_APPEAL_CLOSED`; otherwise a support ticket
+  of the new kind **`ustaad_appeal`** (migration `0111`, spec 09) through `createSupportTicket`, the report moves
+  `actioned → appealed` (conditional on status and version, `ustaad_events` `appealed` by the member, server event
+  `ustaad_appeal_filed { reportId }`). Staff still decide it in Admin → Ustaad → Appeals (four-eyes). The GAC line
+  (gac.gov.in) closes the decisions list. Tests: `ustaad-moderation.test.ts` "member standing and appeal …",
+  `ustaad-moderation-api.test.ts` "member standing and appeal …", `apps/web/test/ustaad-standing-view.test.ts`.
+- **SIM-P27 / SIM-P23 — banned and limited members see why, on every network page.** The API already answered
+  403 `USTAAD_BANNED`, but only the join flow understood it, so a banned member saw "check your internet" everywhere.
+  `MemberGate` (every network page, and now Me too) decides with `memberGateView`: banned (from `GET /ustaad/me`
+  `status`, or a 403 `USTAAD_BANNED`) → the **banned screen** (the standing panel titled "Your network account is
+  blocked": until when or no end date, each decision with its plain reason and the Appeal action); restricted or
+  under review (`MemberView.restrictedMode`, new field, default `none`) → the page under **one limited banner**
+  ("Until {date} you can read, but you cannot post, comment, answer, message or use jobs" / "While our team checks your
+  account …", link "See why and appeal"); not a member → the join card. Both views load on demand (`next/dynamic`)
+  so the pages' first load does not grow; the banner reserves its height while the date loads. Every gated page loads
+  the `ustaad.standing` messages. Test: `apps/web/test/ustaad-standing-view.test.ts` "SIM-P27 …". Not done: the
+  composers' own refusal texts for `USTAAD_RESTRICTED` stay as they were (the banner is the one wording).
+- **SIM-B8 — holds can be warned; scam holds say "job scam".** Admin → Ustaad → Holds offers Release, Remove and
+  **Remove and warn** (`decisionsFor(…, 'held')`). On a held item (`held`, or a job in `pending_review`) the `warn`
+  decision also takes the item down (the archive path of `remove`), writes the strike and sends one notice, the
+  strike; on visible content it stays a plain warning. An automatic hold from the caller's own fee-phrase check (a
+  scam DM) is reasoned `job_scam` (was `abuse`), and money asks in the first pass (fee phrase, UPI id, pay app, OTP)
+  map to `job_scam` (a bare phone number stays `spam`). Tests: `ustaad-console.test.ts` "SIM-B8 …",
+  `admin-ustaad-console.test.ts` "holds: …".
+- **SIM-P10 / G17 — voice consent before the first recording; "My choices" on Me.** `declareUstaadMedia` refuses an
+  `audio` upload with 403 `USTAAD_VOICE_CONSENT` until the member's latest `ustaad_voice` consent row is a grant
+  (`ustaadConsentGranted`; the API is the boundary). `PUT /ustaad/me/choices` now also takes `consents.ustaad_voice`
+  and `consents.ustaad_correction` (append-only rows, source `ustaad_choices`); `GET` returns both (default false).
+  The voice recorder asks once, before the first recording, in place of the mic ("Allow voice notes?" — what is stored
+  and who hears it, where to turn it off; **Allow and record** / **Not now**); nothing is recorded until the member
+  allows; after allowing, the member taps the mic again (announced). Me has a **My choices** card: the smart-correction
+  mode — "Suggest fixes, I choose" / **"Fix by itself"** / "Off" — when `correction.member_can_change` is on, and the
+  two consents (store and play my voice notes; send my typed text, phone numbers hidden, to the correction service,
+  which lets the LLM engine run instead of the word list). Each change saves at once. Not done: the admin "Fix by
+  itself" default still needs at least one protected word (seed gap, runbook). Tests: `ustaad-media.test.ts` "voice
+  consent (SIM-P10 …)", `ustaad-profile.test.ts` (choices shape), `apps/web/test/ustaad-voice-consent.test.ts`.
+- **SIM-P34 — a ban closes the banned member's conversations.** Derived, not stored (ruling: a ban ends by the clock,
+  an unban or an overturned appeal, and a stored `blocked` status would need restoring and could be lifted by the
+  other member): while the other member of a thread is banned or has left, `sendUstaadMessage` and accepting their
+  request answer 403 `USTAAD_DM_NOT_ALLOWED` ("This conversation is closed", the existing copy); the banned member
+  cannot reach messages at all (403 `USTAAD_BANNED`). Test: `ustaad-social.test.ts` "SIM-P34 …". Not done: the inbox
+  does not yet mark such a thread as closed before a send is tried.
+- **SIM-P26 — the appellant hears the appeal's outcome.** `decideUstaadAppeal` sent the reporter's
+  `ustaad.report_outcome` ("Your report was checked – thank you") to the appellant. New kinds `ustaad.appeal_upheld`
+  ("The decision stays") and `ustaad.appeal_overturned` ("We took the decision back"), en + hi in `notify.*`,
+  placeholder `reportCode`, tones info / success (§ 12 table). Tests: `ustaad-moderation.test.ts` "appeal: …" and
+  "SIM-P26 …".
+- **SIM-P17 — the server decides the employer.** `PostJobDto.employer` is optional and the web form no longer sends
+  one (it hard-coded `trade`, so a workshop owner got 403). `ustaadJobEmployerOptions(userId, memberWorkshopId)`
+  lists what the user may post as: every workshop they hold a grant on (the member's own linked workshop first),
+  then their verified trade account. No employer named → the first option; named → honoured only when it is in the
+  list; nothing → 403 `USTAAD_EMPLOYER_REQUIRED`. Resuming a job re-checks through the same list. Not done: a member
+  who is both a workshop owner and a trade account cannot pick the trade account in the form (the API still accepts
+  `{kind:'trade'}`); the form does not yet say which account it posts as.
 
 ## 22. Not built / later
 

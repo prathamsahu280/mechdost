@@ -20,10 +20,11 @@ import {
   ustaadMediaUsage,
   ustaadMediaVariants,
 } from '../../schema';
-import { ConflictError, NotFoundError, ValidationError } from '../errors';
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../errors';
 import type { Tx } from '../orders';
 import { rowsOf } from '../sql-rows';
 import { recordUstaadEvent } from './events';
+import { ustaadConsentGranted } from './profile';
 import { readUstaadSettingValues } from './settings';
 
 export type UstaadMediaRow = typeof ustaadMedia.$inferSelect;
@@ -114,6 +115,9 @@ export async function ustaadMediaCaps(tx: Tx, kind: UstaadMediaKind) {
  * photos and voice still work). Quota and budget are conditional increments in this transaction.
  */
 export async function declareUstaadMedia(db: Tx, input: DeclareMediaInput): Promise<UstaadMediaRow> {
+  // SIM-P10 (spec 23 § 13, DPDP purpose consent): no voice note is stored before the member allowed `ustaad_voice`.
+  if (input.kind === 'audio' && !(await ustaadConsentGranted(db, input.userId, 'ustaad_voice')))
+    throw new ForbiddenError('Allow voice notes first', 'USTAAD_VOICE_CONSENT');
   const caps = await ustaadMediaCaps(db, input.kind);
   if (input.bytes > Math.min(caps.maxBytes, input.hostMaxBytes))
     throw new ValidationError('This file is too large', 'MEDIA_TOO_LARGE', {

@@ -147,3 +147,37 @@ export const ReportDetailDto = ReportQueueItemDto.extend({
   ),
 });
 export type ReportDetail = z.infer<typeof ReportDetailDto>;
+
+// ── The member's own standing and appeal (QA 2026-11-27: SIM-P19, SIM-P24, SIM-P27) ──────────────────────────
+
+export const STANDING_ACTIONS = ['remove', 'takedown', 'warn', 'restrict', 'ban'] as const;
+export const APPEAL_STATES = ['can', 'pending', 'upheld', 'overturned'] as const;
+
+/** `GET /ustaad/me/standing`: readable by banned and restricted members; never the reporter or a staff note. */
+export const StandingDto = z.object({
+  status: z.enum(['active', 'restricted', 'banned']),
+  restrictedUntil: z.string().nullable(),
+  bannedUntil: z.string().nullable(),
+  restrictedMode: z.string(),
+  items: z.array(
+    z.object({
+      reportCode: z.string(),
+      action: z.enum(STANDING_ACTIONS),
+      reasonCode: z.string(),
+      days: z.number().int().nullable(),
+      at: z.string(),
+      endsAt: z.string().nullable(),
+      appeal: z.enum(APPEAL_STATES),
+    }),
+  ),
+});
+export type StandingView = z.infer<typeof StandingDto>;
+
+/** `POST /ustaad/me/appeals`: the member's own appeal (a support ticket of kind `ustaad_appeal`). */
+export const FileAppealDto = z
+  .object({
+    reportCode: z.string().regex(USTAAD_REPORT_CODE_RE),
+    note: z.string().trim().min(10).max(1000),
+  })
+  .strict();
+export const AppealFiledDto = z.object({ ticketCode: z.string(), reportCode: z.string() });

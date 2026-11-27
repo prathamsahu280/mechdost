@@ -15,7 +15,14 @@ export default async function UstaadNetworkPage({ searchParams }: Props) {
   const tab = parseNetworkTab((await searchParams)?.tab);
   return (
     <ClientMessages
-      namespaces={['ustaad.shell', 'ustaad.network', 'ustaad.messages', 'ustaad.labels', 'segments']}
+      namespaces={[
+        'ustaad.shell',
+        'ustaad.standing',
+        'ustaad.network',
+        'ustaad.messages',
+        'ustaad.labels',
+        'segments',
+      ]}
     >
       <MemberGate>
         <NetworkView tab={tab} />

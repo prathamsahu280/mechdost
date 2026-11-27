@@ -8,12 +8,14 @@ import { eq } from 'drizzle-orm';
 import {
   declareUstaadMedia,
   dueUstaadMediaPurges,
+  getUstaadChoices,
   joinUstaad,
   markUstaadMediaUploaded,
   markUstaadMediaVerified,
   pendingUstaadMediaOf,
   readableUstaadMedia,
   rejectUstaadMedia,
+  saveUstaadChoices,
   saveUstaadSetting,
   syncRbacCatalogue,
   type DeclareMediaInput,
@@ -89,6 +91,24 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await client.close();
+});
+
+describe('voice consent (SIM-P10, spec 23 § 13 ustaad_voice)', () => {
+  it('a voice note is refused until the member gives the ustaad_voice consent; choices record it once', async () => {
+    const voice = declare({ kind: 'audio', mime: 'audio/ogg', bytes: 50_000, durationMs: 5_000 });
+    await expect(declareUstaadMedia(t(), voice)).rejects.toMatchObject({ code: 'USTAAD_VOICE_CONSENT' });
+    const before = await getUstaadChoices(t(), f.customer);
+    expect(before.consents.ustaad_voice).toBe(false);
+    const after = await saveUstaadChoices(
+      t(),
+      { userId: f.customer },
+      { expectedVersion: before.version, consents: { ustaad_voice: true } },
+    );
+    expect(after.consents.ustaad_voice).toBe(true);
+    await expect(declareUstaadMedia(t(), voice)).resolves.toMatchObject({ kind: 'audio' });
+    const rows = await db.select().from(s.consents).where(eq(s.consents.purpose, 'ustaad_voice'));
+    expect(rows).toHaveLength(1);
+  });
 });
 
 describe('declare', () => {
@@ -186,6 +206,14 @@ describe('declare', () => {
   });
 
   it('a full network budget refuses video only (MEDIA_BUDGET_FULL), photos still work', async () => {
+    // Voice notes need the ustaad_voice consent (SIM-P10); this member has given it.
+    await db.insert(s.consents).values({
+      userId: f.other,
+      purpose: 'ustaad_voice',
+      granted: true,
+      noticeVersion: 'test',
+      source: 'test',
+    });
     await saveUstaadSetting(t(), {
       key: 'ustaad.media.network_budget_gb',
       value: 1,

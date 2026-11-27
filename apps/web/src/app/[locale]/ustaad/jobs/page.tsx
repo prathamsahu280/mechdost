@@ -16,7 +16,17 @@ export default async function UstaadJobsPage({ searchParams }: Props) {
   const raw = (await searchParams)?.role ?? '';
   const role = (JOB_ROLES as readonly string[]).includes(raw) ? (raw as JobRole) : null;
   return (
-    <ClientMessages namespaces={['ustaad.shell', 'ustaad.jobs', 'ustaad.media', 'ustaad.labels', 'segments']}>
+    <ClientMessages
+      namespaces={[
+        'ustaad.shell',
+        'ustaad.standing',
+        'ustaad.jobs',
+        'ustaad.media',
+        'ustaad.labels',
+        'ustaad.card',
+        'segments',
+      ]}
+    >
       <MemberGate>
         <JobsList role={role} />
       </MemberGate>

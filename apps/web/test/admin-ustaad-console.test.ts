@@ -92,8 +92,8 @@ describe('actions shown', () => {
     expect(decisionsFor(item, cm, 'open')).toEqual(['keep', 'remove', 'warn', 'restrict', 'ban']);
     expect(decisionsFor(item, ops, 'open')).toEqual([]);
   });
-  it('holds: release (keep) or remove only', () => {
-    expect(decisionsFor(item, cm, 'held')).toEqual(['keep', 'remove']);
+  it('holds: release (keep), remove, or warn (remove + strike, SIM-B8)', () => {
+    expect(decisionsFor(item, cm, 'held')).toEqual(['keep', 'remove', 'warn']);
   });
   it('a member report cannot be "removed"; a waiting ban blocks new decisions', () => {
     expect(decisionsFor({ ...item, targetType: 'member' }, cm, 'open')).not.toContain('remove');

@@ -11,6 +11,7 @@ import {
   applyToUstaadJob,
   assertUstaadJobsEnabled,
   getUstaadJob,
+  listUstaadJobApplicants,
   listUstaadJobs,
   moveUstaadApplication,
   moveUstaadJob,
@@ -22,6 +23,8 @@ import {
   ustaadZonesBanded,
 } from '@mechdost/db/repo';
 import {
+  ApplicantsQueryDto,
+  ApplicantsResponseDto,
   ApplicationParam,
   ApplyDto,
   JobActionParam,
@@ -138,6 +141,15 @@ const apply = createRoute({
     ...errorResponses,
   },
 });
+const applicants = createRoute({
+  method: 'get',
+  path: '/ustaad/jobs/{code}/applications',
+  tags: ['ustaad'],
+  summary: 'Employer: the applicants of my job, newest first (cursor); 404 for anyone else (SIM-P18)',
+  security: sec,
+  request: { params: JobCodeParam, query: ApplicantsQueryDto },
+  responses: { 200: json(ApplicantsResponseDto, 'Applicants'), ...errorResponses },
+});
 const moveApplication = createRoute({
   method: 'post',
   path: '/ustaad/applications/{id}/{action}',
@@ -168,6 +180,12 @@ function decodeCursor(raw: string | undefined): { createdAt: Date; id: string } 
   if (!id || Number.isNaN(d.getTime()) || !/^[0-9a-f-]{36}$/.test(id))
     throw new ApiError(400, 'BAD_CURSOR', 'Start the list again');
   return { createdAt: d, id };
+}
+
+/** The applicants cursor stays an ISO string (the repository compares it as timestamptz, never a Date param). */
+function cursorOf(raw: string | undefined): { createdAt: string; id: string } | null {
+  const c = decodeCursor(raw);
+  return c ? { createdAt: c.createdAt.toISOString(), id: c.id } : null;
 }
 
 export function ustaadLocalRoutes(deps: AppDeps) {
@@ -257,6 +275,14 @@ export function ustaadLocalRoutes(deps: AppDeps) {
     })
     .openapi(getJob, async (c) => {
       return c.json(await getUstaadJob(deps.db, member(c).memberId, c.req.valid('param').code), 200);
+    })
+    .openapi(applicants, async (c) => {
+      const q = c.req.valid('query');
+      const r = await listUstaadJobApplicants(deps.db, member(c), c.req.valid('param').code, {
+        cursor: cursorOf(q.cursor),
+        limit: q.limit,
+      });
+      return c.json({ items: r.items, next: encodeCursor(r.next) }, 200);
     })
     .openapi(postJob, async (c) => {
       return c.json(await postUstaadJob(deps.db, member(c), c.req.valid('json')), 201);

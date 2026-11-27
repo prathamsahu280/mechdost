@@ -216,6 +216,8 @@ const USTAAD_PAGES = [
   '/ustaad/q/UQ-RPR-2026-K7QM2D',
   '/ustaad/learn',
   '/ustaad/me/location',
+  // QA batch A (SIM-P19): the member's standing page (demo member is in good standing).
+  '/ustaad/me/standing',
   '/ustaad/area',
   '/ustaad/jobs',
   '/ustaad/jobs/UJ-RPR-2026-Q4MZ7A',

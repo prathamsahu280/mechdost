@@ -15,6 +15,7 @@ import {
   USTAAD_WORK_PLACES,
   USTAAD_CORRECTION_MODES,
   USTAAD_MEMBER_STATUSES,
+  USTAAD_RESTRICTED_MODES,
 } from '../codes';
 
 const name = z.string().trim().min(2).max(60);
@@ -104,6 +105,10 @@ export const ChoicesDto = z
         ustaad_directory: z.boolean().optional(),
         ustaad_training: z.boolean().optional(),
         ustaad_offers: z.boolean().optional(),
+        /** SIM-P10: store and play my voice notes (asked before the first recording). */
+        ustaad_voice: z.boolean().optional(),
+        /** G17: send my typed text, masked, to the smart-correction processor. */
+        ustaad_correction: z.boolean().optional(),
       })
       .strict()
       .optional(),
@@ -122,6 +127,8 @@ export const ChoicesViewDto = z.object({
     ustaad_directory: z.boolean(),
     ustaad_training: z.boolean(),
     ustaad_offers: z.boolean(),
+    ustaad_voice: z.boolean().default(false),
+    ustaad_correction: z.boolean().default(false),
   }),
   version: z.number().int(),
 });
@@ -139,6 +146,8 @@ export const MemberViewDto = z.object({
   track: z.enum(USTAAD_TRACKS),
   level: z.enum(USTAAD_LEVELS),
   status: z.enum(USTAAD_MEMBER_STATUSES),
+  /** SIM-P23/P27: limited while staff check (no end date); the gate shows the one limited banner. */
+  restrictedMode: z.enum(USTAAD_RESTRICTED_MODES).default('none'),
   verificationState: z.enum(USTAAD_VERIFICATION_STATES),
   cityCode: z.string(),
   areaLabel: z.string(),

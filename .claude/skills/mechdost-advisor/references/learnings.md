@@ -617,3 +617,20 @@ L-DCSIM1 · 2026-11-27 · QA planning · a sim brief said "COD only" AND "agents
 L-SIMF1 · 2026-11-27 · live QA follow-up (agent F) · (1) a staff role granted mid-run (08) was useless because the account's email was never verified — the console needs phone+email verified and a fresh token (SIM-LEAD-1) → before granting a staff role in a QA run, check `email_verified_at` and plan the inbox click + re-sign-in. (2) ffmpeg `-map_metadata -1 -fflags +bitexact` still writes moov/udta → "metadata stripped" files still hit the MP4 allowlist; verify with a box scan, not by flags. (3) when writing JSON lines by sed, never insert raw double quotes — validate the log after each edit.
 L-DCSIM2 · 2026-11-27 · live QA (personas) · A demo-store-only e2e let two P0/P1 production breaks through (rider photos never upload; shop never sees "ready for pickup"), and a role granted mid-session locked the new rider out. → Any feature with a demo seam needs at least one e2e on the real API client for its main path; QA plans should budget API-assisted fallbacks (own session, logged as GAP) so a UI break does not stop the chain. Also: rate limits count refused attempts (COD request 429 after 2 API negative checks) — run negative API checks on a spare account, not the chain's main persona; read codes from a labelled element, never with a first-4-digits regex over page text (it caught the year "2026"). · active
 L-DCSIM2 · 2026-11-27 · live QA conducting · (1) The harness may refuse production DB reads (even READ ONLY recon) — plan every "DB-read" check with an admin-screen/staff-API fallback and a WhatsApp guard that needs no DB (`GET /v1/admin/notifications/whatsapp` month counter + template rows). (2) Staff/partner accounts get the signed-out checkout branch, and the COD request limit counts refused attempts — keep a spare plain customer account per COD chain. (3) A headed recording of a staff console catches the two-step phone and one-time invite links: record staff off-camera or mask before any reveal; the clip was deleted. (4) The site's dark theme is the stored `mechdost-theme`, not prefers-color-scheme — renders must set it. · active
+
+- L-QA-A1 · 2026-11-27 · ustaad/notices · Five catalogued bell links pointed at pages that were never built
+  (`/ustaad/notifications`, `/ustaad/me/verify`, `/ustaad/jobs/mine`) and nothing checked them → every notice link
+  must match a page in the route tree; `apps/web/test/notice-links.test.ts` walks `app/[locale]` (ignoring the root
+  `[...rest]` not-found catch-all) and fails a link with no page. Add a page or repoint the link in the same change.
+- L-QA-A2 · 2026-11-27 · ustaad/api · A request field that picks a mode (`mode: 'auto'`) or an entity kind
+  (`employer.kind`) let the client choose what the server should decide (SIM-P20, SIM-P17) → the server derives modes
+  and entitlements; request fields may only narrow (step down to `suggest`, pick from the server's own list).
+- L-QA-A3 · 2026-11-27 · ustaad/moderation · A refusal code the web did not know (`USTAAD_BANNED`) fell through to
+  "check your internet" on every page → refusal states of the member gate are decided once (`memberGateView` in
+  `MemberGate`), and the routes a sanctioned member still needs (standing, appeal) get their own guard
+  (`requireUstaadMemberAnyStanding`) bound to exact paths.
+- L-QA-A4 · 2026-11-27 · tooling · `drizzle-kit generate` numbered the new migration 0106 (journal count) and
+  overwrote the existing `0106_snapshot.json` → after generating, rename the SQL to the next free number, move the
+  new snapshot to that number, `git checkout` the overwritten one, fix the journal tag, and check `prevId` chains to
+  the latest snapshot. Shell-quoted node one-liners with backticks broke file text three times → write edit scripts
+  to the scratchpad and run them with node.

@@ -20,6 +20,7 @@ export default async function UstaadTagPage({ params }: Props) {
       <ClientMessages
         namespaces={[
           'ustaad.shell',
+          'ustaad.standing',
           'ustaad.feed',
           'ustaad.labels',
           'ustaad.media',

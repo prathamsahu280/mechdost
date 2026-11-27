@@ -255,6 +255,8 @@ export function autoReportSource(signals: readonly string[]): 'auto_scam' | 'aut
 export function autoReportReason(signals: readonly string[]): UstaadReportReason {
   if (signals.includes('plate_like')) return 'privacy';
   if (signals.includes('illegal_modification')) return 'illegal_modification';
+  // Money asks (fee phrase, UPI id, pay app, OTP) are job scams; a bare phone number stays spam (SIM-B8).
+  if (signals.some((s) => ['scam_phrase', 'upi_id', 'pay_app', 'otp_ask'].includes(s))) return 'job_scam';
   if (autoReportSource(signals) === 'auto_scam') return 'spam';
   if (signals.includes('new_account_media')) return 'other';
   return 'abuse';

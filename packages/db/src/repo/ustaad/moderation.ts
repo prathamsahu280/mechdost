@@ -209,7 +209,8 @@ export async function openUstaadAutoHoldReport(
     authorId: input.authorId,
   });
   const source = input.scam ? 'auto_scam' : autoReportSource(verdict.signals);
-  const reason = autoReportReason(verdict.signals);
+  // SIM-B8: the caller's own fee-phrase check (a scam DM) is a job scam, not "abuse".
+  const reason = input.scam ? 'job_scam' : autoReportReason(verdict.signals);
   const row = await insertUstaadReport(tx, {
     target,
     reporterId: null,
@@ -748,7 +749,7 @@ export async function ustaadMediaObjectKeys(tx: Tx, mediaId: string): Promise<st
 async function notifyAuthor(
   tx: Tx,
   t: UstaadTarget,
-  kind: 'ustaad.content_removed' | 'ustaad.strike' | 'ustaad.report_outcome',
+  kind: 'ustaad.content_removed' | 'ustaad.strike' | 'ustaad.appeal_upheld' | 'ustaad.appeal_overturned',
   entityId: string,
   params: Record<string, string> = {},
 ): Promise<void> {
@@ -945,6 +946,9 @@ export async function actOnUstaadReport(
       await writeAction(tx, { ...base, action: 'remove', note: body.note ?? null });
       await notifyAuthor(tx, t, 'ustaad.content_removed', r.id);
     } else if (body.action === 'warn') {
+      // SIM-B8: a warning on a held item (a scam DM the first pass held) also takes the item down: it was never
+      // shown and must not stay in limbo. The author hears one notice: the strike.
+      if (keptStatusOf(t)) media = await removeTarget(tx, t, body.reasonCode, now);
       const actionId = await writeAction(tx, { ...base, action: 'warn', note: body.note ?? null });
       await addUstaadStrike(tx, {
         memberId: t.authorMemberId,
@@ -1225,7 +1229,14 @@ export async function decideUstaadAppeal(
       actorRole: 'staff',
       cityId: r.cityId,
     });
-    await notifyAuthor(tx, t, 'ustaad.report_outcome', r.id, { reportCode: r.code });
+    // SIM-P26: the appellant hears the outcome of their appeal (the reporter template was sent here before).
+    await notifyAuthor(
+      tx,
+      t,
+      body.outcome === 'overturned' ? 'ustaad.appeal_overturned' : 'ustaad.appeal_upheld',
+      r.id,
+      { reportCode: r.code },
+    );
     return { code: next.code, status: next.status, media };
   });
 }

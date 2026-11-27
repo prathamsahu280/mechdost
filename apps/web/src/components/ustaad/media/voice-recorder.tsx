@@ -1,9 +1,10 @@
 'use client';
 
 import { Mic, RotateCcw, Square, Trash2 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
 import { clockText, isHold, pickRecorderMime, recordedMs } from '@/lib/ustaad/media-core';
+import { grantVoiceConsent, voiceConsentState } from '@/lib/ustaad/voice-consent';
 
 export interface Recording {
   blob: Blob;
@@ -38,7 +39,12 @@ export function VoiceRecorder({
   hint: string;
 }) {
   const t = useTranslations('ustaad.media');
+  const locale = useLocale();
   const hintId = useId();
+  // SIM-P10: the ustaad_voice consent is asked once, before the first recording (the version guards the save).
+  const [ask, setAsk] = useState<{ version: number } | null>(null);
+  const [consentNote, setConsentNote] = useState<'ready' | 'failed' | null>(null);
+  const allowBtn = useRef<HTMLButtonElement>(null);
   const [state, setState] = useState<State>('idle');
   const [elapsed, setElapsed] = useState(0);
   const [note, setNote] = useState<'tooShort' | null>(null);
@@ -74,6 +80,16 @@ export function VoiceRecorder({
 
   async function start() {
     setNote(null);
+    const consent = await voiceConsentState(locale);
+    if (consent.ask && consent.version !== null) {
+      // Nothing is recorded until the member allows voice notes; a hold that is still down is let go.
+      pointerStarted.current = false;
+      cancelStart.current = false;
+      setConsentNote(null);
+      setAsk({ version: consent.version });
+      requestAnimationFrame(() => allowBtn.current?.focus());
+      return;
+    }
     const choice =
       typeof MediaRecorder === 'undefined' ? null : pickRecorderMime((m) => MediaRecorder.isTypeSupported(m));
     if (!choice || !('mediaDevices' in navigator)) {
@@ -166,7 +182,9 @@ export function VoiceRecorder({
             ? t('recStarted')
             : state === 'done' && rec
               ? t('recDone', { time: clockText(rec.durationMs) })
-              : '';
+              : consentNote === 'ready'
+                ? t('voiceConsentReady')
+                : '';
 
   return (
     <div>
@@ -174,7 +192,53 @@ export function VoiceRecorder({
       <p role="status" className="sr-only">
         {announcement}
       </p>
-      {state === 'done' && rec ? (
+      {ask ? (
+        <div
+          role="group"
+          aria-labelledby={`${hintId}-consent`}
+          className="grid gap-3 rounded-2xl border border-line-card bg-surface-alt p-4"
+        >
+          <p id={`${hintId}-consent`} className="font-heading text-base font-extrabold text-ink">
+            {t('voiceConsentH')}
+          </p>
+          <p className="text-[15px] leading-relaxed text-ink">{t('voiceConsentBody')}</p>
+          {consentNote === 'failed' ? (
+            <p className="text-sm font-bold text-error">{t('voiceConsentFailed')}</p>
+          ) : null}
+          <div className="flex flex-wrap gap-2">
+            <button
+              ref={allowBtn}
+              type="button"
+              className="press inline-flex min-h-12 items-center justify-center gap-2 rounded-button bg-accent-button px-6 text-[15px] font-bold text-white hover:bg-accent-button-hover focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+              data-track="ustaad_voice_consent_allow"
+              onClick={() => {
+                void grantVoiceConsent(locale, ask.version).then((ok) => {
+                  if (!ok) {
+                    setConsentNote('failed');
+                    return;
+                  }
+                  setAsk(null);
+                  setConsentNote('ready');
+                  requestAnimationFrame(() => mic.current?.focus());
+                });
+              }}
+            >
+              {t('voiceConsentAllow')}
+            </button>
+            <button
+              type="button"
+              className={quiet}
+              data-track="ustaad_voice_consent_later"
+              onClick={() => {
+                setAsk(null);
+                requestAnimationFrame(() => mic.current?.focus());
+              }}
+            >
+              {t('voiceConsentNotNow')}
+            </button>
+          </div>
+        </div>
+      ) : state === 'done' && rec ? (
         <div
           ref={donePanel}
           tabIndex={-1}

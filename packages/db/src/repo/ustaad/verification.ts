@@ -406,7 +406,7 @@ export async function requestUstaadVouch(
     const me = await activeMemberOfUser(tx, actor.userId);
     if (me.id === input.voucherId) throw new ValidationError('You cannot vouch for yourself', 'VOUCH_SELF');
     const [voucher] = await tx
-      .select({ id: ustaadMembers.id, status: ustaadMembers.status })
+      .select({ id: ustaadMembers.id, status: ustaadMembers.status, userId: ustaadMembers.userId })
       .from(ustaadMembers)
       .where(eq(ustaadMembers.id, input.voucherId))
       .limit(1);
@@ -424,6 +424,13 @@ export async function requestUstaadVouch(
       .onConflictDoNothing()
       .returning();
     if (!row) throw new ConflictError('You already asked this member', 'VOUCH_EXISTS');
+    // SIM-P11 (spec 23 § 12): the voucher is asked in their bell, once per request (keyed on the vouch row).
+    await notifyUstaad(tx, 'ustaad.vouch_requested', {
+      userId: voucher.userId,
+      entityId: row.id,
+      version: 1,
+      params: { memberName: me.displayName },
+    });
     return vouchView(row);
   });
 }

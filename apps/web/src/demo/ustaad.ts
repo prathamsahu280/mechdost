@@ -1,7 +1,7 @@
-import type { MemberView } from '@mechdost/shared/ustaad/dto/members';
+import type { ChoicesView, MemberView } from '@mechdost/shared/ustaad/dto/members';
 import type { AnswerView, LearnView, QuestionCard, QuestionDetail } from '@mechdost/shared/ustaad/dto/qa';
 import type { ApiResult } from '@/lib/orders-api';
-import type { Job, MyLocation, UstaadClient, Zone } from '@/lib/ustaad/client';
+import type { ApplicantView, Job, MyLocation, UstaadClient, Zone } from '@/lib/ustaad/client';
 
 /**
  * Sample data for the Ustaad C + E screens in the browser demo (the staff preview with no API; spec 23 § 5). Every
@@ -79,6 +79,7 @@ const MEMBER: MemberView = {
   lang: 'hi',
   official: false,
   founding: true,
+  restrictedMode: 'none',
   joinedAt: ago(60 * 24 * 40),
   version: 3,
 };
@@ -510,6 +511,57 @@ export function silentWav(seconds: number): string {
 export function demoUstaadClient(): UstaadClient {
   const questions = seedQuestions();
   const jobs = seedJobs();
+  let choices: ChoicesView = {
+    dmMode: 'request',
+    suggestMe: true,
+    correctionMode: null,
+    canChangeCorrection: true,
+    dataSaver: true,
+    consents: {
+      ustaad_profile: true,
+      ustaad_directory: false,
+      ustaad_training: false,
+      ustaad_offers: false,
+      ustaad_voice: false,
+      ustaad_correction: false,
+    },
+    version: 1,
+  };
+  // Sample applicants on the member's own job (SIM-P18); names are sample data like the rest of this file.
+  const applicants: ApplicantView[] = [
+    {
+      applicationId: '00000000-0000-7000-8000-0000000000a1',
+      status: 'applied',
+      sharePhone: true,
+      voiceIntro: true,
+      appliedAt: new Date(Date.now() - 3 * 3_600_000).toISOString(),
+      version: 1,
+      member: {
+        id: '00000000-0000-7000-8000-0000000000b1',
+        handle: 'suresh_verma',
+        displayName: 'Suresh Verma',
+        displayNameHi: 'सुरेश वर्मा',
+        level: 'pakka',
+        verified: true,
+      },
+    },
+    {
+      applicationId: '00000000-0000-7000-8000-0000000000a2',
+      status: 'seen',
+      sharePhone: false,
+      voiceIntro: false,
+      appliedAt: new Date(Date.now() - 26 * 3_600_000).toISOString(),
+      version: 2,
+      member: {
+        id: '00000000-0000-7000-8000-0000000000b2',
+        handle: 'mahesh_patel',
+        displayName: 'Mahesh Patel',
+        displayNameHi: 'महेश पटेल',
+        level: 'naya',
+        verified: false,
+      },
+    },
+  ];
   const learn: LearnView = structuredClone(LEARN);
   let pinned: MyLocation | null = null;
   let silent: string | null = null;
@@ -695,6 +747,42 @@ export function demoUstaadClient(): UstaadClient {
       if (!j) return fail(404, 'NOT_FOUND');
       j.status = { pause: 'paused', resume: 'open', close: 'closed', fill: 'filled' }[action];
       return ok({ status: j.status });
+    },
+    // Sample choices: voice notes are asked once in the demo too (SIM-P10).
+    choices: () => ok({ ...choices, consents: { ...choices.consents } }),
+    saveChoices: (body) => {
+      if (body.expectedVersion !== choices.version) return fail(409, 'STALE_MEMBER');
+      choices = {
+        ...choices,
+        ...(body.correctionMode === undefined ? {} : { correctionMode: body.correctionMode }),
+        consents: { ...choices.consents, ...body.consents },
+        version: choices.version + 1,
+      };
+      return ok({ ...choices });
+    },
+    // The demo member is in good standing (sample data); the banned and restricted screens are real-sign-in only.
+    standing: () =>
+      ok({
+        status: 'active' as const,
+        restrictedUntil: null,
+        bannedUntil: null,
+        restrictedMode: 'none',
+        items: [],
+      }),
+    fileAppeal: () => fail(404, 'NOT_FOUND'),
+    applicants: (code) => {
+      const j = jobs.find((x) => x.code === code && x.mine);
+      if (!j) return fail(404, 'NOT_FOUND');
+      return ok({ items: applicants.map((a) => ({ ...a })), next: null });
+    },
+    moveApplication: (id, action) => {
+      const a = applicants.find((x) => x.applicationId === id);
+      if (!a) return fail(404, 'NOT_FOUND');
+      a.status = ({ seen: 'seen', shortlist: 'shortlisted', reject: 'rejected', hire: 'hired' } as const)[
+        action
+      ];
+      a.version += 1;
+      return ok({ status: a.status });
     },
     upload: async (_file, _meta, onProgress) => {
       for (const pct of [10, 45, 80, 100]) {

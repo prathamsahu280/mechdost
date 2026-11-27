@@ -3729,7 +3729,8 @@
     "err_DELETION_BLOCKED": "The customer still has an open order, service job or refund.",
     "err_DELETION_ALREADY_CONFIRMED": "This deletion request is already confirmed.",
     "err_FORBIDDEN_DELETION": "Only an account administrator can confirm deletions.",
-    "kind_rsa_bill_dispute": "Question about a roadside bill"
+    "kind_rsa_bill_dispute": "Question about a roadside bill",
+    "kind_ustaad_appeal": "Ustaad Network appeal"
   },
   "consent": {
     "label": "Privacy choice",
@@ -4608,6 +4609,14 @@
     "staff_delivery_agent_unavailable": {
       "title": "Agent stopped mid-delivery",
       "body": "The agent carrying order {orderCode} is no longer active. Take over the delivery."
+    },
+    "ustaad_appeal_upheld": {
+      "title": "Your appeal was decided",
+      "body": "We checked your appeal on {reportCode} again. The decision stays. Open it to see why."
+    },
+    "ustaad_appeal_overturned": {
+      "title": "Your appeal was accepted",
+      "body": "We checked your appeal on {reportCode} again and took the decision back. What was removed is back."
     }
   },
   "adminNotices": {
@@ -7623,7 +7632,28 @@
       "confirmFill": "Mark this job as filled? It stops taking applications.",
       "confirmYes": "Yes, do it",
       "viewMine": "Open my job",
-      "moreLoaded": "More jobs shown below."
+      "moreLoaded": "More jobs shown below.",
+      "applicantsH": "Applicants",
+      "applicantsEmpty": "No applications yet. We will tell you when someone applies.",
+      "applicantsMore": "Show more applicants",
+      "applicantVerified": "Verified",
+      "applicantSharePhone": "Shared their number with you",
+      "applicantVoice": "Sent a voice intro",
+      "applicantMessage": "See card and message",
+      "app_seen": "Mark as seen",
+      "app_shortlist": "Shortlist",
+      "app_reject": "Not this time",
+      "app_hire": "Hire",
+      "appStatus_applied": "New",
+      "appStatus_seen": "Seen",
+      "appStatus_shortlisted": "Shortlisted",
+      "appStatus_hired": "Hired",
+      "appStatus_rejected": "Not selected",
+      "appStatus_withdrawn": "Taken back by the mechanic",
+      "appStatus_closed": "Closed with the job",
+      "confirmHire": "Hire this mechanic? Others on the shortlist stay as they are.",
+      "confirmReject": "Tell this mechanic it is not this time? This cannot be undone.",
+      "appMoved": "Application updated."
     },
     "correction": {
       "check": "Make it clearer",
@@ -8299,7 +8329,22 @@
       "listenStop": "Stop reading",
       "listenAria": "Listen: read this text aloud",
       "recName": "Record voice note",
-      "recStarted": "Recording started."
+      "recStarted": "Recording started.",
+      "voiceConsentH": "Allow voice notes?",
+      "voiceConsentBody": "MechDost stores your voice notes and plays them to the members you send them to. You can turn this off any time in My choices on Me.",
+      "voiceConsentAllow": "Allow and record",
+      "voiceConsentNotNow": "Not now",
+      "voiceConsentFailed": "That did not save. Try again.",
+      "voiceConsentReady": "Voice notes allowed. Tap the microphone to record.",
+      "choicesH": "My choices",
+      "correctionH": "Smart correction",
+      "correction_suggest": "Suggest fixes, I choose",
+      "correction_auto": "Fix by itself",
+      "correction_off": "Off",
+      "consentVoice": "Store and play my voice notes",
+      "consentCorrection": "Send my typed text, with phone numbers hidden, to the correction service for better fixes",
+      "choicesSaved": "Saved.",
+      "err_USTAAD_VOICE_CONSENT": "Allow voice notes first."
     },
     "labels": {
       "seg_ev": "EV",
@@ -8928,7 +8973,61 @@
       "td_id_hint": "The item’s full id (36 characters), from the report.",
       "td_reference_hint": "At least 3 characters.",
       "n_name_hint": "At least 2 letters.",
-      "n_too_short": "Type at least 2 letters."
+      "n_too_short": "Type at least 2 letters.",
+      "act_warn_held": "Remove and warn"
+    },
+    "standing": {
+      "title": "Your account standing",
+      "intro": "What our team decided about your account or your posts, and how to appeal.",
+      "allClear": "Your account is in good standing. Nothing was removed and there are no limits.",
+      "allClearAction": "Read the community rules",
+      "bannedTitle": "Your network account is blocked",
+      "bannedUntil": "You cannot use the Ustaad Network until {date}.",
+      "bannedForever": "You cannot use the Ustaad Network. This has no end date.",
+      "restrictedTitle": "Your account is limited",
+      "restrictedUntil": "Until {date} you can read, but you cannot post, comment, answer, message or use jobs.",
+      "restrictedReview": "While our team checks your account you can read, but you cannot post, comment, answer, message or use jobs.",
+      "seeStanding": "See why and appeal",
+      "decisionsH": "Decisions",
+      "act_remove": "Your content was removed",
+      "act_takedown": "Your content was taken down on a legal order",
+      "act_warn": "A warning on your account",
+      "act_restrict": "Your account was limited",
+      "act_ban": "Your account was blocked",
+      "reasonLabel": "Reason: {reason}",
+      "decidedOn": "Decided on {date}",
+      "endsOn": "Ends on {date}",
+      "noEnd": "No end date",
+      "reason_wrong_unsafe": "Wrong or unsafe advice",
+      "reason_illegal_modification": "Illegal modification",
+      "reason_abuse": "Abuse or bad language",
+      "reason_spam": "Spam or selling",
+      "reason_privacy": "Showed someone's private details",
+      "reason_minor": "Child safety",
+      "reason_not_work": "Not about mechanic work",
+      "reason_fake": "Fake or misleading",
+      "reason_job_scam": "Job scam or asking for money",
+      "reason_ip": "Copied someone else's work",
+      "reason_ncii_impersonation": "Nude, sexual or fake picture of a person",
+      "reason_other": "Broke the network rules",
+      "appeal": "Appeal",
+      "appealH": "Tell us why the decision is wrong",
+      "appealHelp": "A different team member checks it. We reply within 7 days.",
+      "appealNote": "Your reason",
+      "appealNeed": "Write at least 10 letters.",
+      "appealSend": "Send the appeal",
+      "appealSent": "Appeal sent. Request {code} is open; we reply in your MechDost requests.",
+      "appealPending": "Appeal sent. Waiting for the team.",
+      "appealUpheld": "Appeal checked. The decision stays.",
+      "appealOverturned": "Appeal accepted. The decision was taken back.",
+      "err_USTAAD_APPEAL_CLOSED": "This decision is already appealed or decided.",
+      "err_TICKET_DAILY_LIMIT": "You can send up to 5 requests a day. Try again tomorrow.",
+      "gac": "Not happy with the reply? You can also go to the Grievance Appellate Committee at gac.gov.in.",
+      "back": "Back to Me",
+      "loadFailed": "Your standing did not load. Try again.",
+      "retry": "Try again",
+      "cancel": "Cancel",
+      "appealSending": "Sending…"
     }
   },
   "savings": {

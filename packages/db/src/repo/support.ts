@@ -49,6 +49,9 @@ export const TICKET_KINDS = [
   'other',
 ] as const;
 export type TicketKind = (typeof TICKET_KINDS)[number];
+/** Kinds only the server opens (never offered in the support form): the Ustaad appeal (SIM-P24). */
+export const INTERNAL_TICKET_KINDS = ['ustaad_appeal'] as const;
+export type AnyTicketKind = TicketKind | (typeof INTERNAL_TICKET_KINDS)[number];
 export const DAILY_TICKET_LIMIT = 5;
 export const TICKET_BODY_MAX = 2000;
 export const RESOLVE_MS = 30 * 86_400_000;
@@ -243,7 +246,7 @@ export async function createSupportTicket(
   db: Tx,
   input: {
     userId: string;
-    kind: TicketKind;
+    kind: AnyTicketKind;
     orderCode: string | null;
     /** Required for `labour_redo` (the service job, SR-…); ignored for other kinds. */
     serviceCode?: string | null;
@@ -255,7 +258,8 @@ export async function createSupportTicket(
     now?: Date;
   },
 ): Promise<{ code: string }> {
-  if (!TICKET_KINDS.includes(input.kind)) throw new ValidationError('Unknown request type', 'TICKET_KIND');
+  if (![...TICKET_KINDS, ...INTERNAL_TICKET_KINDS].some((k) => k === input.kind))
+    throw new ValidationError('Unknown request type', 'TICKET_KIND');
   const body = cleanBody(input.body);
   return db.transaction(async (tx) => {
     // Serialise per user so two parallel requests cannot both pass the daily limit.

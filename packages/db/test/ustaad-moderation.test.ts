@@ -18,6 +18,7 @@ import {
   decideUstaadAppeal,
   ensureUser,
   executeUstaadTakedown,
+  fileUstaadAppeal,
   joinUstaad,
   listUstaadModerationQueue,
   openUstaadAppeal,
@@ -29,6 +30,7 @@ import {
   sendUstaadRulesReminders,
   setUstaadArchiveHold,
   syncRbacCatalogue,
+  ustaadMyStanding,
   ustaadReportDetail,
   type Tx,
   type UstaadStaff,
@@ -489,6 +491,45 @@ describe('decisions', () => {
     expect(
       await readableUstaadMedia(t(), { mediaId: p.mediaId ?? '', viewerMemberId: viewer.memberId }),
     ).not.toBeNull();
+    // SIM-P26: the appellant hears the appeal's outcome, never the reporter's "your report was checked".
+    const kinds = await db
+      .select({ kind: s.notifications.kind, title: s.notifications.title })
+      .from(s.notifications)
+      .where(eq(s.notifications.userId, author.userId));
+    expect(kinds.map((k) => k.kind)).toContain('ustaad.appeal_overturned');
+    expect(kinds.map((k) => k.kind)).not.toContain('ustaad.report_outcome');
+  });
+
+  it('SIM-P26: an upheld appeal tells the appellant it was upheld (en + hi texts exist)', async () => {
+    const p = await post(author);
+    const r = await createUstaadReport(t(), viewer, {
+      targetType: 'post',
+      targetId: p.id,
+      reasonCode: 'spam',
+    });
+    await actOnUstaadReport(t(), cmA, r.code, { action: 'remove', reasonCode: 'spam', version: 1 });
+    const [ticket] = await db
+      .insert(s.supportTickets)
+      .values({
+        code: 'REQ-RPR-2026-7K3Q9Y',
+        userId: author.userId,
+        kind: 'other',
+        slaAckDue: new Date(Date.now() + 86_400_000),
+        slaResolveDue: new Date(Date.now() + 7 * 86_400_000),
+      })
+      .returning();
+    let d = await ustaadReportDetail(t(), cmA, r.code);
+    await openUstaadAppeal(t(), cmA2, r.code, { ticketCode: ticket?.code ?? '', version: d.version });
+    d = await ustaadReportDetail(t(), cmA, r.code);
+    await decideUstaadAppeal(t(), cmA2, r.code, { outcome: 'upheld', version: d.version });
+    const rows = await db
+      .select({ kind: s.notifications.kind, body: s.notifications.body })
+      .from(s.notifications)
+      .where(
+        and(eq(s.notifications.userId, author.userId), eq(s.notifications.kind, 'ustaad.appeal_upheld')),
+      );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.body).not.toMatch(/thank you/i);
   });
 
   it('repeated dismissed minor reports earn a false_report strike', async () => {
@@ -924,5 +965,85 @@ describe('advisor review follow-ups', () => {
     const d = await ustaadReportDetail(t(), cmA, r.code);
     expect(d.note).toContain('[phone]');
     expect(d.note).not.toContain('98765');
+  });
+});
+
+describe('member standing and appeal (SIM-P19 / SIM-P24)', () => {
+  it('the author sees each decision with its reason code and appeal state; never the reporter', async () => {
+    const who = await member();
+    const p = await post(who);
+    const r = await createUstaadReport(t(), viewer, {
+      targetType: 'post',
+      targetId: p.id,
+      reasonCode: 'spam',
+    });
+    await actOnUstaadReport(t(), cmA, r.code, { action: 'remove', reasonCode: 'spam', version: 1 });
+    const standing = await ustaadMyStanding(t(), { userId: who.userId });
+    expect(standing.status).toBe('active');
+    expect(standing.items).toEqual([
+      expect.objectContaining({ reportCode: r.code, action: 'remove', reasonCode: 'spam', appeal: 'can' }),
+    ]);
+    expect(JSON.stringify(standing)).not.toContain(viewer.memberId);
+    expect((await ustaadMyStanding(t(), { userId: viewer.userId })).items).toEqual([]);
+  });
+
+  it('a restricted member sees the end date; filing the appeal opens one ustaad_appeal ticket', async () => {
+    const who = await member();
+    const p = await post(who);
+    const r = await createUstaadReport(t(), viewer, {
+      targetType: 'post',
+      targetId: p.id,
+      reasonCode: 'abuse',
+    });
+    await actOnUstaadReport(t(), cmA, r.code, { action: 'restrict', reasonCode: 'abuse', version: 1 });
+    const before = await ustaadMyStanding(t(), { userId: who.userId });
+    expect(before.status).toBe('restricted');
+    expect(before.restrictedUntil).not.toBeNull();
+    expect(before.items[0]?.action).toBe('restrict');
+    expect(typeof before.items[0]?.endsAt).toBe('string');
+    // Another member cannot appeal it (404, no oracle).
+    await expect(
+      fileUstaadAppeal(
+        t(),
+        { userId: viewer.userId },
+        { reportCode: r.code, note: 'This was not me at all.' },
+      ),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    const filed = await fileUstaadAppeal(
+      t(),
+      { userId: who.userId },
+      { reportCode: r.code, note: 'I only asked about brake oil.' },
+    );
+    expect(filed.ticketCode).toMatch(/^REQ-/);
+    const [ticket] = await db
+      .select()
+      .from(s.supportTickets)
+      .where(eq(s.supportTickets.code, filed.ticketCode));
+    expect(ticket?.kind).toBe('ustaad_appeal');
+    expect((await ustaadReportDetail(t(), cmA, r.code)).status).toBe('appealed');
+    expect((await ustaadMyStanding(t(), { userId: who.userId })).items[0]?.appeal).toBe('pending');
+    await expect(
+      fileUstaadAppeal(t(), { userId: who.userId }, { reportCode: r.code, note: 'Again, please check.' }),
+    ).rejects.toMatchObject({ code: 'USTAAD_APPEAL_CLOSED' });
+  });
+
+  it('a banned member can still read their standing and appeal the ban', async () => {
+    const who = await member();
+    const p = await post(who);
+    const r = await createUstaadReport(t(), viewer, {
+      targetType: 'post',
+      targetId: p.id,
+      reasonCode: 'job_scam',
+    });
+    await actOnUstaadReport(t(), cmA, r.code, { action: 'ban', days: 3, reasonCode: 'job_scam', version: 1 });
+    const standing = await ustaadMyStanding(t(), { userId: who.userId });
+    expect(standing.status).toBe('banned');
+    expect(standing.bannedUntil).not.toBeNull();
+    const filed = await fileUstaadAppeal(
+      t(),
+      { userId: who.userId },
+      { reportCode: r.code, note: 'The job was real, here is the garage.' },
+    );
+    expect(filed.ticketCode).toMatch(/^REQ-/);
   });
 });

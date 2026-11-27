@@ -212,7 +212,8 @@ export function SupportSectionApi({
               className={portalField}
             >
               {SUPPORT_TICKET_KINDS.filter(
-                (k) => (k !== 'labour_redo' || presetRedo) && k !== 'rsa_bill_dispute',
+                (k) =>
+                  (k !== 'labour_redo' || presetRedo) && k !== 'rsa_bill_dispute' && k !== 'ustaad_appeal',
               ).map((k) => (
                 <option key={k} value={k}>
                   {labels.kind(k)}

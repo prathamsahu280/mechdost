@@ -8,7 +8,17 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
 /** Post a job (spec 23 § 4 flow 11): verified employers only; the API decides. */
 export default function UstaadJobNewPage() {
   return (
-    <ClientMessages namespaces={['ustaad.shell', 'ustaad.jobs', 'ustaad.media', 'ustaad.labels', 'segments']}>
+    <ClientMessages
+      namespaces={[
+        'ustaad.shell',
+        'ustaad.standing',
+        'ustaad.jobs',
+        'ustaad.media',
+        'ustaad.labels',
+        'ustaad.card',
+        'segments',
+      ]}
+    >
       <MemberGate>
         <JobPostForm />
       </MemberGate>
