@@ -31,6 +31,12 @@ One console (concept admin shell) where the team routes work, runs operations, c
 
 Concept admin shell (`05-page-admin.png`, `admin.css` tokens) with Manrope/DM Sans; Recharts; dataviz skill rules (text labels for every KPI, no colour-only meaning); dense density dial.
 
+Side nav by role (QA 2026-11-27, SIM-B5/DC-B1): the nav lists only the sections the staff member's permissions (live
+`GET /v1/me`) can open, from `apps/web/src/lib/admin-nav-permissions.ts` (a mirror of the API route guards; the API
+still refuses every call). Opening another section's address shows one plain "not part of your role" panel, never a
+"try again" that cannot work. While the permissions load (and in the demo) every section is listed. Unsaved settings
+screens ask before an in-site link drops the edits (`useLeaveGuard`, SIM-B14).
+
 ## Rules
 
 Every mutation audited; four-eyes on refunds/payouts/commission above threshold; content publish creates a version and revalidates; settings changes take effect for new transactions only; staff scoped by city see only their cities.
