@@ -44,6 +44,7 @@ export default async function WorkshopPortalLayout({ children }: { children: Rea
             'workshopAnalytics',
             'trust',
             'roadside',
+            'partnerKit',
             'partnerWorkshop',
           ]}
         >

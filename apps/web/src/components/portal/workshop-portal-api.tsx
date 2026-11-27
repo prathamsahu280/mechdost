@@ -26,7 +26,8 @@ import {
   workshopKpis,
   type WorkshopLane,
 } from '@/lib/workshop-portal-view';
-import { KpiTile, LaneTabs, StepRail } from './workshop/_kit-shim';
+import { Hourglass, Inbox, Receipt, Wrench } from 'lucide-react';
+import { KpiTile, LaneTabs, StepRail } from '@/components/partner';
 import { track } from '@/lib/analytics';
 import { estimateSummary } from '@/lib/estimate-summary';
 import { formatDate, formatPrice } from '@/lib/format';
@@ -76,13 +77,19 @@ function useWorkshopLists() {
   return { fresh, active, done, refresh, name };
 }
 
+const KPI_ICON = {
+  new_requests: <Inbox />,
+  waiting_customer: <Hourglass />,
+  in_workshop: <Wrench />,
+  to_bill: <Receipt />,
+} as const;
 const KPI_TILES = [
   { key: 'new_requests', label: 'kpi_new_requests', href: '/partner/workshop#new-requests', tone: 'waiting' },
   {
     key: 'waiting_customer',
     label: 'kpi_waiting_customer',
     href: '/partner/workshop/jobs?lane=proposed',
-    tone: 'neutral',
+    tone: 'empty',
   },
   {
     key: 'in_workshop',
@@ -130,14 +137,14 @@ export function WorkshopTodayApi() {
               return (
                 <li key={k.key}>
                   <KpiTile
+                    portal="workshop"
+                    id={k.key}
                     href={k.href}
                     value={value}
                     label={pw(k.label)}
-                    tone={value === '0' ? 'neutral' : k.tone}
-                    needsYou={waiting ? pw('needs_you') : undefined}
-                    onClick={() => {
-                      track('partner_kpi_clicked', { portal: 'workshop', tile: k.key });
-                    }}
+                    tone={k.tone}
+                    icon={KPI_ICON[k.key]}
+                    needsYou={waiting}
                   />
                 </li>
               );
@@ -238,16 +245,17 @@ export function WorkshopJobsApi() {
         {t('jobs')}
       </h2>
       <LaneTabs
+        portal="workshop"
         label={pw('lanes_label')}
         current={lane}
+        hrefFor={(id) => `/partner/workshop/jobs?lane=${id}`}
         lanes={WORKSHOP_LANES.map((l) => {
           const count = countText(counts[l], more(l));
           return {
-            key: l,
-            href: `/partner/workshop/jobs?lane=${l}`,
+            id: l,
             label: pw(`lane_${l}`),
-            count,
-            accessibleName: pw('lane_count', { lane: pw(`lane_${l}`), count }),
+            count: loading ? null : count,
+            name: pw('lane_count', { lane: pw(`lane_${l}`), count }),
           };
         })}
       />
@@ -711,17 +719,7 @@ function JobRail({ status }: { status: ServiceRequestSummary['status'] }) {
   if (!step) return null;
   const names = JOB_STEPS.map((s) => pw(`step_${s}`));
   return (
-    <StepRail
-      label={pw('steps_label')}
-      steps={names}
-      current={step.index}
-      allDone={step.allDone}
-      caption={
-        step.allDone
-          ? pw('steps_all_done')
-          : pw('step_of', { n: step.index + 1, total: JOB_STEPS.length, name: names[step.index] ?? '' })
-      }
-    />
+    <StepRail label={pw('steps_label')} steps={names} current={step.allDone ? names.length : step.index} />
   );
 }
 

@@ -1,15 +1,15 @@
 'use client';
 
-import { useRouter, useSelectedLayoutSegment } from 'next/navigation';
+import { BriefcaseBusiness, ChartColumn, House, Wrench } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { createContext, useContext, useEffect, type ReactNode } from 'react';
-import { track } from '@/lib/analytics';
+import { PartnerFrame, type PartnerTab } from '@/components/partner';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { localePath } from '@/lib/locale-path';
-import { WORKSHOP_TABS, legacyWorkshopTarget, workshopTabFor } from '@/lib/workshop-portal-view';
+import { WORKSHOP_TABS, legacyWorkshopTarget, type WorkshopTab } from '@/lib/workshop-portal-view';
 import { PartnerGate } from '../partner-gate';
 import { PortalGuard } from '../portal-guard';
-import { PartnerTabs } from './_kit-shim';
 
 interface WorkshopAccount {
   /** Demo builds: the signed-in workshop's slug. */
@@ -26,11 +26,17 @@ const TAB_LABEL = {
   numbers: 'tab_numbers',
   profile: 'tab_workshop',
 } as const;
+const TAB_ICON: Record<WorkshopTab, ReactNode> = {
+  today: <House />,
+  jobs: <BriefcaseBusiness />,
+  numbers: <ChartColumn />,
+  profile: <Wrench />,
+};
 
 /**
- * The workshop portal frame (partner portals UI upgrade, batch B; design 2026-11-27 § 6.1): the guard, the tab bar and
- * the demo gate live in the layout and stay mounted while the tabs change (no reload feel). Old one-page anchors
- * (`#jobs-title`, `#completed-jobs`) are sent on to the tab that now holds them.
+ * The workshop portal frame (partner portals UI upgrade, batch B; design 2026-11-27 § 6.1): the guard, the partner
+ * kit's bottom tabs and side rail and the demo gate live in the layout and stay mounted while the tabs change (no
+ * reload feel). Old one-page anchors (`#jobs-title`, `#completed-jobs`) are sent on to the tab that now holds them.
  */
 export function WorkshopFrame({ children }: { children: ReactNode }) {
   const api = AUTH_MODE === 'firebase';
@@ -38,8 +44,7 @@ export function WorkshopFrame({ children }: { children: ReactNode }) {
     <PortalGuard role="workshop" path="/partner/workshop" demoNote={!api}>
       {(account) => (
         <Account.Provider value={{ slug: account.partner ?? '', api }}>
-          <div className="grid gap-6">
-            <WorkshopTabs />
+          <Frame>
             {api ? (
               children
             ) : (
@@ -47,24 +52,24 @@ export function WorkshopFrame({ children }: { children: ReactNode }) {
                 {children}
               </PartnerGate>
             )}
-          </div>
+          </Frame>
         </Account.Provider>
       )}
     </PortalGuard>
   );
 }
 
-function WorkshopTabs() {
+function Frame({ children }: { children: ReactNode }) {
   const t = useTranslations('partnerWorkshop');
   const locale = useLocale();
-  const segment = useSelectedLayoutSegment();
   const router = useRouter();
-  // The section comes from the URL (no-reload rule: the frame never takes it as a prop).
-  const current = workshopTabFor(segment ? `/partner/workshop/${segment}` : '/partner/workshop');
-
-  useEffect(() => {
-    track('partner_tab_viewed', { portal: 'workshop', tab: current });
-  }, [current]);
+  const tabs: PartnerTab[] = WORKSHOP_TABS.map((tab) => ({
+    id: tab.key,
+    href: tab.path,
+    label: t(TAB_LABEL[tab.key]),
+    icon: TAB_ICON[tab.key],
+    exact: tab.key === 'today',
+  }));
 
   useEffect(() => {
     const target = legacyWorkshopTarget(window.location.hash);
@@ -72,10 +77,14 @@ function WorkshopTabs() {
   }, [router, locale]);
 
   return (
-    <PartnerTabs
-      label={t('tabs_label')}
-      current={current}
-      tabs={WORKSHOP_TABS.map((tab) => ({ key: tab.key, href: tab.path, label: t(TAB_LABEL[tab.key]) }))}
-    />
+    <PartnerFrame
+      portal="workshop"
+      navLabel={t('tabs_label')}
+      railTitle={t('tabs_label')}
+      tabs={tabs}
+      strip={null}
+    >
+      {children}
+    </PartnerFrame>
   );
 }
