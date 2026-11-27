@@ -209,7 +209,8 @@ export async function openUstaadAutoHoldReport(
     authorId: input.authorId,
   });
   const source = input.scam ? 'auto_scam' : autoReportSource(verdict.signals);
-  const reason = autoReportReason(verdict.signals);
+  // SIM-B8: the caller's own fee-phrase check (a scam DM) is a job scam, not "abuse".
+  const reason = input.scam ? 'job_scam' : autoReportReason(verdict.signals);
   const row = await insertUstaadReport(tx, {
     target,
     reporterId: null,
@@ -945,6 +946,9 @@ export async function actOnUstaadReport(
       await writeAction(tx, { ...base, action: 'remove', note: body.note ?? null });
       await notifyAuthor(tx, t, 'ustaad.content_removed', r.id);
     } else if (body.action === 'warn') {
+      // SIM-B8: a warning on a held item (a scam DM the first pass held) also takes the item down: it was never
+      // shown and must not stay in limbo. The author hears one notice: the strike.
+      if (keptStatusOf(t)) media = await removeTarget(tx, t, body.reasonCode, now);
       const actionId = await writeAction(tx, { ...base, action: 'warn', note: body.note ?? null });
       await addUstaadStrike(tx, {
         memberId: t.authorMemberId,

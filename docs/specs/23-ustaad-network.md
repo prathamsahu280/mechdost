@@ -2015,6 +2015,13 @@ Each fix has a regression test named after the QA id.
   so the pages' first load does not grow; the banner reserves its height while the date loads. Every gated page loads
   the `ustaad.standing` messages. Test: `apps/web/test/ustaad-standing-view.test.ts` "SIM-P27 …". Not done: the
   composers' own refusal texts for `USTAAD_RESTRICTED` stay as they were (the banner is the one wording).
+- **SIM-B8 — holds can be warned; scam holds say "job scam".** Admin → Ustaad → Holds offers Release, Remove and
+  **Remove and warn** (`decisionsFor(…, 'held')`). On a held item (`held`, or a job in `pending_review`) the `warn`
+  decision also takes the item down (the archive path of `remove`), writes the strike and sends one notice, the
+  strike; on visible content it stays a plain warning. An automatic hold from the caller's own fee-phrase check (a
+  scam DM) is reasoned `job_scam` (was `abuse`), and money asks in the first pass (fee phrase, UPI id, pay app, OTP)
+  map to `job_scam` (a bare phone number stays `spam`). Tests: `ustaad-console.test.ts` "SIM-B8 …",
+  `admin-ustaad-console.test.ts` "holds: …".
 - **SIM-P26 — the appellant hears the appeal's outcome.** `decideUstaadAppeal` sent the reporter's
   `ustaad.report_outcome` ("Your report was checked – thank you") to the appellant. New kinds `ustaad.appeal_upheld`
   ("The decision stays") and `ustaad.appeal_overturned` ("We took the decision back"), en + hi in `notify.*`,

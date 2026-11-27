@@ -660,7 +660,9 @@ function DecisionForm({
     onDone();
   }
 
-  const label = (a: ModerationDecision) => (held && a === 'keep' ? c('act_release') : c(`act_${a}`));
+  // SIM-B8: on a hold, "warn" also takes the item down, so it says so.
+  const label = (a: ModerationDecision) =>
+    held && a === 'keep' ? c('act_release') : held && a === 'warn' ? c('act_warn_held') : c(`act_${a}`);
 
   return (
     <form

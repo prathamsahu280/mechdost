@@ -8958,7 +8958,8 @@
       "td_id_hint": "The item’s full id (36 characters), from the report.",
       "td_reference_hint": "At least 3 characters.",
       "n_name_hint": "At least 2 letters.",
-      "n_too_short": "Type at least 2 letters."
+      "n_too_short": "Type at least 2 letters.",
+      "act_warn_held": "Remove and warn"
     },
     "standing": {
       "title": "Your account standing",
