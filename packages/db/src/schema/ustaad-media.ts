@@ -73,6 +73,11 @@ export const ustaadMedia = pgTable(
     legalHold: text(),
     /** ≤ 400 bytes base64 WebP placeholder for images and video posters. */
     lqip: text(),
+    /** Author's typed summary of a voice note or video (≤ 200 chars; founder 2026-11-27 night, spec 23 § 10a). */
+    summary: text(),
+    /** Video only: the captions as typed ("time — text" lines or one block); WebVTT is built when read. */
+    captions: text(),
+    captionsLang: text(),
     version: version(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -105,6 +110,14 @@ export const ustaadMedia = pgTable(
     ),
     check('ustaad_media_duration', sql`${t.durationMs} is null or ${t.durationMs} between 1 and 600000`),
     check('ustaad_media_lqip_size', sql`${t.lqip} is null or octet_length(${t.lqip}) <= 400`),
+    check(
+      'ustaad_media_summary',
+      sql`${t.summary} is null or (${t.kind} in ('audio', 'video') and char_length(${t.summary}) between 1 and 200)`,
+    ),
+    check(
+      'ustaad_media_captions',
+      sql`(${t.captions} is null and ${t.captionsLang} is null) or (${t.kind} = 'video' and ${t.captionsLang} in ('hi', 'en') and char_length(${t.captions}) between 1 and 4000)`,
+    ),
   ],
 );
 

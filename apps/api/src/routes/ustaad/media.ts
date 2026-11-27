@@ -145,6 +145,9 @@ export function ustaadMediaRoutes(deps: AppDeps) {
         height: b.height ?? null,
         uploadExpiresAt: expiresAt,
         hostMaxBytes: host.maxFileBytes,
+        // Spec 23 § 10a: the author's typed text alternative, fixed once declared (screened with the content).
+        summary: b.summary ?? null,
+        captions: b.captions ?? null,
       });
       if (host.supportsMultipart && b.bytes > MEDIA_SINGLE_PUT_MAX) {
         const { uploadId } = await host.createMultipart('quarantine', row.objectKey, b.mime);

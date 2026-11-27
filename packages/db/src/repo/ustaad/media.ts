@@ -4,7 +4,7 @@
  * conditional increments (never read-then-write), the owner-only complete, the verified/rejected moves through the
  * media machine, and the read check (member, not blocked by the owner, content visible, story not expired).
  */
-import { and, eq, isNotNull, lte, ne, notInArray, or, sql, type SQL } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, lte, ne, notInArray, or, sql, type SQL } from 'drizzle-orm';
 import { ustaadMediaMachine } from '@mechdost/shared/state';
 import {
   MEDIA_BUCKET_PREFIX,
@@ -13,6 +13,7 @@ import {
   type UstaadMediaKind,
 } from '@mechdost/shared/ustaad/codes';
 import { istDateString } from '@mechdost/shared/time';
+import { buildWebVtt, type CaptionLang } from '@mechdost/shared/ustaad/media-text';
 import {
   ustaadBlocks,
   ustaadMedia,
@@ -67,6 +68,9 @@ export interface DeclareMediaInput {
   uploadExpiresAt: Date;
   /** The host's own per-file ceiling in bytes (Supabase plan limit); the smaller of it and the setting applies. */
   hostMaxBytes: number;
+  /** Author's typed summary (voice or video, ≤ 200 chars) and video captions; fixed once declared (spec 23 § 10a). */
+  summary?: string | null;
+  captions?: { lang: CaptionLang; text: string } | null;
   now?: Date;
 }
 
@@ -231,6 +235,9 @@ async function declareInTx(
         width: input.width,
         height: input.height,
         objectKey: ustaadObjectKey('quarantine', input.memberId, input.mime),
+        summary: input.summary ?? null,
+        captions: input.captions?.text ?? null,
+        captionsLang: input.captions?.lang ?? null,
         uploadExpiresAt: input.uploadExpiresAt,
         // Never completed within an hour → the purge job removes it with its object.
         purgeAfter: new Date(now.getTime() + 3_600_000),
@@ -497,4 +504,46 @@ export async function ustaadMediaVariantKey(
 export async function ustaadMediaById(tx: Tx, mediaId: string): Promise<UstaadMediaRow | null> {
   const [row] = await tx.select().from(ustaadMedia).where(eq(ustaadMedia.id, mediaId)).limit(1);
   return row ?? null;
+}
+
+export interface UstaadMediaTextInfo {
+  durationMs: number | null;
+  bytes: number;
+  summary: string | null;
+  captionsLang: CaptionLang | null;
+  /** Built from the typed captions (video only); the player turns it into a `<track kind="captions">`. */
+  captionsVtt: string | null;
+}
+
+/**
+ * Duration, size, typed summary and captions for the media on a page, in one query (no N+1). Callers pass only ids
+ * they already show (the read check happens when the file itself is fetched); unknown ids are left out.
+ */
+export async function ustaadMediaTextInfo(
+  tx: Tx,
+  ids: readonly string[],
+): Promise<Map<string, UstaadMediaTextInfo>> {
+  const out = new Map<string, UstaadMediaTextInfo>();
+  const unique = [...new Set(ids)];
+  if (unique.length === 0) return out;
+  const rows = await tx
+    .select({
+      id: ustaadMedia.id,
+      durationMs: ustaadMedia.durationMs,
+      bytes: ustaadMedia.declaredBytes,
+      summary: ustaadMedia.summary,
+      captions: ustaadMedia.captions,
+      captionsLang: ustaadMedia.captionsLang,
+    })
+    .from(ustaadMedia)
+    .where(inArray(ustaadMedia.id, unique));
+  for (const r of rows)
+    out.set(r.id, {
+      durationMs: r.durationMs,
+      bytes: r.bytes,
+      summary: r.summary,
+      captionsLang: r.captionsLang === 'hi' || r.captionsLang === 'en' ? r.captionsLang : null,
+      captionsVtt: r.captions ? buildWebVtt(r.captions, r.durationMs ?? 1000) : null,
+    });
+  return out;
 }
