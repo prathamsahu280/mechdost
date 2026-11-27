@@ -508,9 +508,9 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
 
 ### Ustaad QA simulation (2026-11-27, plan `docs/qa/ustaad-simulation-plan-2026-11-27.md`)
 
-- **Q-SIM-1:** add a third staff test account next time? Two staff accounts cannot finish a ban appeal or an unban
+- ~~**Q-SIM-1**~~ **Answered 2026-11-27 (founder): add a third staff account.** Account 08 granted community_manager (RPR); it decides appeals the other two cannot. add a third staff test account next time? Two staff accounts cannot finish a ban appeal or an unban
   (the second-approver rule needs a third person); tonight those steps stop at the expected `FOUR_EYES` refusal.
-- **Q-SIM-2:** test content is KEPT for the founder's morning review (founder 2026-11-27); afterwards keep any as
+- ~~**Q-SIM-2**~~ **Answered 2026-11-27 (founder): keep the test content.** test content is KEPT for the founder's morning review (founder 2026-11-27); afterwards keep any as
   starter content or purge all? Default: keep until the founder decides.
 - **Q-SIM-3:** after the run, leave the preview-testers list in place (for real beta mechanics later) or empty it?
   Default: the 9 test accounts stay listed until the founder decides; the QA sign-in bypass is removed regardless.
