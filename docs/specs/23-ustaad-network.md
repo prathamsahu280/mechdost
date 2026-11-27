@@ -806,8 +806,9 @@ interface SmartCorrectionEngine {
 | `ustaad.job_application`                                                                                          | employer                       | bell/push                                             | seen                       |
 | `ustaad.application_status`                                                                                       | applicant                      | bell/push; WhatsApp UTILITY                           | —                          |
 | `ustaad.report_outcome`                                                                                           | reporter                       | bell                                                  | —                          |
-| `ustaad.appeal_upheld` / `ustaad.appeal_overturned` (SIM-P26)                                                     | appellant                      | bell                                                  | —                          |
-| `ustaad.content_removed` / `ustaad.strike` / `ustaad.rules_reminder`                                              | author/member                  | bell + email (reason in Hindi/English, appeal route)  | —                          |
+| `ustaad.appeal_upheld` / `ustaad.appeal_overturned` (SIM-P26)                                                     | appellant                      | bell + email (SIM-F1)                                 | —                          |
+| `ustaad.banned` (SIM-F1/F3)                                                                                       | banned member                  | bell + email                                          | —                          |
+| `ustaad.content_removed` / `ustaad.strike` / `ustaad.rules_reminder`                                              | author/member                  | bell + email (removed, strike; reminder bell only)    | —                          |
 | `ustaad.invite` (old mechanic applications, § 4a)                                                                 | applicant with an account      | bell; WhatsApp/SMS when templates are live            | joined                     |
 | `ustaad.security_freeze` (SR-2)                                                                                   | member (old channels too)      | bell/push + email                                     | —                          |
 | `staff.ustaad_report` / `staff.ustaad_report_overdue` / `staff.ustaad_media_budget` / `staff.ustaad_verification` | community managers in the city | bell/push                                             | decided                    |
@@ -2066,6 +2067,13 @@ One commit per item, test first. Ids from `D:\mechdost-qa\ustaad-sim-2026-11-27\
   never an auth boundary (the API checks every call; a hand-set flag only reaches the client gate's own "page not
   found"). Not covered: a signed-in non-member, non-tester still gets the client gate's 200 "page not found" with the
   network rendered underneath — closing that needs a server-verified session (lead decision).
+- **SIM-F1** decisions about a member are now bell + email in the same transaction: `notifyAuthor` (moderation.ts)
+  calls `emailUstaadDecision` (`packages/db/src/repo/ustaad/notify.ts`) → `queueEmail` with the five new templates
+  `ustaad_content_removed`, `ustaad_strike`, `ustaad_banned`, `ustaad_appeal_upheld`, `ustaad_appeal_overturned`
+  (en + hi, button `/ustaad/me/standing`, verified address only, account language, Admin → Emails switch, one email
+  per decision and member). A member with `notification_preferences` email/transactional = false gets the bell only.
+  A ban now writes the new bell kind `ustaad.banned` (texts `notify.ustaad_banned` en + hi) instead of a plain strike
+  notice. No WhatsApp templates (lead). Not done: rules reminder and security-freeze emails.
 
 ## 22. Not built / later
 

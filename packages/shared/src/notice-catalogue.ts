@@ -541,6 +541,14 @@ export const NOTICE_CATALOGUE = {
     text: [],
     link: ustaadStanding,
   }),
+  /** SIM-F1/F3: a ban is told in the bell (and by email), never discovered through a refused action. */
+  'ustaad.banned': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: [],
+    link: ustaadStanding,
+  }),
   'ustaad.rules_reminder': def({
     category: T,
     entity: 'ustaad',

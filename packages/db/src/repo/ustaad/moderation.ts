@@ -68,7 +68,7 @@ import { resolveNotices, staffRecipients } from '../notices';
 import type { Tx } from '../orders';
 import type { CityScope } from '../routing';
 import { recordUstaadEvent, type UstaadEventInput } from './events';
-import { notifyUstaad } from './notify';
+import { emailUstaadDecision, notifyUstaad, type UstaadDecisionKind } from './notify';
 import { archiveUstaadContent } from './removed-archive';
 import { insertUstaadReport, notifyUstaadModerators } from './reports';
 import { readUstaadSettingValues } from './settings';
@@ -749,7 +749,7 @@ export async function ustaadMediaObjectKeys(tx: Tx, mediaId: string): Promise<st
 async function notifyAuthor(
   tx: Tx,
   t: UstaadTarget,
-  kind: 'ustaad.content_removed' | 'ustaad.strike' | 'ustaad.appeal_upheld' | 'ustaad.appeal_overturned',
+  kind: UstaadDecisionKind,
   entityId: string,
   params: Record<string, string> = {},
 ): Promise<void> {
@@ -758,7 +758,10 @@ async function notifyAuthor(
     .from(ustaadMembers)
     .where(eq(ustaadMembers.id, t.authorMemberId))
     .limit(1);
-  if (m) await notifyUstaad(tx, kind, { userId: m.userId, entityId, version: kind, params });
+  if (!m) return;
+  await notifyUstaad(tx, kind, { userId: m.userId, entityId, version: kind, params });
+  // SIM-F1: spec 23 § 12 — bell + email for decisions about the member (same transaction, outbox).
+  await emailUstaadDecision(tx, kind, { userId: m.userId, entityId, params });
 }
 
 /** Lifts the minor-report restricted mode once a community manager has decided (§ 13 "until review"). */
@@ -1056,7 +1059,8 @@ async function finishBan(
     actionId,
     staffUserId: secondActorId ?? actorId,
   });
-  await notifyAuthor(tx, t, 'ustaad.strike', r.id);
+  // SIM-F1/F3: the ban itself is told (bell + email), not only the strike row that comes with it.
+  await notifyAuthor(tx, t, 'ustaad.banned', r.id);
   const [fresh] = await tx.select().from(ustaadReports).where(eq(ustaadReports.id, r.id)).limit(1);
   if (!fresh) throw new NotFoundError('Report not found');
   const next = await moveReport(tx, fresh, 'actioned', fresh.version, {

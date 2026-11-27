@@ -100,6 +100,7 @@ export const NOTICE_PRIORITY_OF_KIND = {
   'ustaad.appeal_overturned': 'success',
   'ustaad.content_removed': 'action',
   'ustaad.strike': 'action',
+  'ustaad.banned': 'action',
   'ustaad.rules_reminder': 'info',
   'ustaad.invite': 'action',
   'ustaad.security_freeze': 'urgent',

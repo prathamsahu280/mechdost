@@ -1084,3 +1084,84 @@ describe('member standing and appeal (SIM-P19 / SIM-P24)', () => {
     expect(filed.ticketCode).toMatch(/^REQ-/);
   });
 });
+
+// SIM-F1 (live QA 2026-11-27): spec 23 § 12 promises bell + email for removals, strikes, bans and appeal outcomes;
+// the network only wrote bell rows, so a member who never opened the bell was never told.
+describe('SIM-F1: moderation decisions also email the member (outbox, en + hi, preferences)', () => {
+  const emails = async (userId: string) =>
+    (
+      await db
+        .select({ key: s.notificationOutbox.templateKey })
+        .from(s.notificationOutbox)
+        .where(
+          and(eq(s.notificationOutbox.recipientUserId, userId), eq(s.notificationOutbox.channel, 'email')),
+        )
+    ).map((r) => r.key);
+
+  it('a removal queues the content-removed email; a ban queues the ban bell and email', async () => {
+    const who = await member();
+    const p = await post(who, false);
+    const r = await createUstaadReport(t(), viewer, {
+      targetType: 'post',
+      targetId: p.id,
+      reasonCode: 'spam',
+    });
+    await actOnUstaadReport(t(), cmA, r.code, { action: 'remove', reasonCode: 'spam', version: 1 });
+    expect(await emails(who.userId)).toContain('ustaad_content_removed');
+
+    const p2 = await post(who, false);
+    const r2 = await createUstaadReport(t(), viewer, {
+      targetType: 'post',
+      targetId: p2.id,
+      reasonCode: 'abuse',
+    });
+    await actOnUstaadReport(t(), cmA, r2.code, { action: 'ban', reasonCode: 'abuse', days: 3, version: 1 });
+    expect(await emails(who.userId)).toContain('ustaad_banned');
+    const bells = await db
+      .select({ kind: s.notifications.kind })
+      .from(s.notifications)
+      .where(eq(s.notifications.userId, who.userId));
+    expect(bells.map((b) => b.kind)).toContain('ustaad.banned');
+  });
+
+  it('an appeal outcome is emailed to the appellant', async () => {
+    const who = await member();
+    const p = await post(who, false);
+    const r = await createUstaadReport(t(), viewer, {
+      targetType: 'post',
+      targetId: p.id,
+      reasonCode: 'spam',
+    });
+    await actOnUstaadReport(t(), cmA, r.code, { action: 'remove', reasonCode: 'spam', version: 1 });
+    const [ticket] = await db
+      .insert(s.supportTickets)
+      .values({
+        code: 'REQ-RPR-2026-F1APPL',
+        userId: who.userId,
+        kind: 'other',
+        slaAckDue: new Date(Date.now() + 86_400_000),
+        slaResolveDue: new Date(Date.now() + 7 * 86_400_000),
+      })
+      .returning();
+    let d = await ustaadReportDetail(t(), cmA, r.code);
+    await openUstaadAppeal(t(), cmA2, r.code, { ticketCode: ticket?.code ?? '', version: d.version });
+    d = await ustaadReportDetail(t(), cmA, r.code);
+    await decideUstaadAppeal(t(), cmA2, r.code, { outcome: 'upheld', version: d.version });
+    expect(await emails(who.userId)).toContain('ustaad_appeal_upheld');
+  });
+
+  it('a member who switched transactional email off gets the bell only', async () => {
+    const who = await member();
+    await db
+      .insert(s.notificationPreferences)
+      .values({ userId: who.userId, channel: 'email', category: 'transactional', enabled: false });
+    const p = await post(who, false);
+    const r = await createUstaadReport(t(), viewer, {
+      targetType: 'post',
+      targetId: p.id,
+      reasonCode: 'spam',
+    });
+    await actOnUstaadReport(t(), cmA, r.code, { action: 'remove', reasonCode: 'spam', version: 1 });
+    expect(await emails(who.userId)).toEqual([]);
+  });
+});

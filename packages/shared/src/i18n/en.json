@@ -4474,6 +4474,10 @@
       "title": "A strike on your account",
       "body": "Your account got a strike. Open it to see why and how to appeal."
     },
+    "ustaad_banned": {
+      "title": "Your network account is blocked",
+      "body": "Our team blocked your Ustaad Network account. Open it to see why, until when, and how to appeal."
+    },
     "ustaad_rules_reminder": {
       "title": "Network rules reminder",
       "body": "A short reminder of what you may and may not post."

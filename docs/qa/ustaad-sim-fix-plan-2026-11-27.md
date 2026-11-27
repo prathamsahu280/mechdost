@@ -80,7 +80,8 @@ answerer block) · SIM-LEAD-1 (email verification lags on other devices: "I've v
 
 ## Member-side batch B status (builder, 2026-11-27 night; details in spec 23 § 21i)
 
-| Id     | Status             | Note                                                                           |
-| ------ | ------------------ | ------------------------------------------------------------------------------ |
-| SIM-P4 | fixed              | card route takes `?lang`; web passes its locale                                |
-| SIM-B1 | fixed (signed out) | server 404 via the md-signed-in flag; signed-in non-members still client-gated |
+| Id     | Status             | Note                                                                                |
+| ------ | ------------------ | ----------------------------------------------------------------------------------- |
+| SIM-P4 | fixed              | card route takes `?lang`; web passes its locale                                     |
+| SIM-B1 | fixed (signed out) | server 404 via the md-signed-in flag; signed-in non-members still client-gated      |
+| SIM-F1 | fixed              | bell + email for removal, strike, ban, appeal outcomes; new bell kind ustaad.banned |
