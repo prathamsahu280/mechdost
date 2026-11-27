@@ -2059,6 +2059,13 @@ One commit per item, test first. Ids from `D:\mechdost-qa\ustaad-sim-2026-11-27\
 
 - **SIM-P4** `GET /v1/ustaad/me/card` takes `?lang=hi|en` like the tutorial route; the page language wins over the
   stored `member.lang`, so `/en/ustaad/me` shows English level, "Unlocks" and badge names. The web passes its locale.
+- **SIM-B1** a server-readable flag cookie `md-signed-in=1` (no identity; `apps/web/src/lib/signed-in-hint.ts`) is set
+  at sign-in, cleared at sign-out and synced once per page load from the stored session. During the staff preview in
+  API mode the Ustaad layout calls `notFound()` before rendering anything when the flag is missing, so a signed-out
+  `/ustaad/*` is the same 404 (status, title, body) as an unknown path and no `ustaad` messages are sent. The flag is
+  never an auth boundary (the API checks every call; a hand-set flag only reaches the client gate's own "page not
+  found"). Not covered: a signed-in non-member, non-tester still gets the client gate's 200 "page not found" with the
+  network rendered underneath — closing that needs a server-verified session (lead decision).
 
 ## 22. Not built / later
 
