@@ -24,6 +24,7 @@ export * from './ustaad-graph';
 export * from './ustaad-local';
 export * from './ustaad-jobs';
 export * from './ustaad-moderation';
+export * from './ustaad-saved';
 export * from './savings';
 // Usage and free-limit monitoring (founder 2026-11-26, migration 0103).
 export * from './usage';

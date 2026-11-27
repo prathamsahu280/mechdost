@@ -351,6 +351,27 @@ async function visibleAnswer(tx: Tx, viewer: MemberRow, answerId: string) {
   return a;
 }
 
+/** A question or answer the member may see, by id (Saved, spec 23 § 5); `NotFoundError` otherwise. */
+export async function assertUstaadQaVisible(
+  tx: Tx,
+  memberId: string,
+  kind: 'question' | 'answer',
+  id: string,
+): Promise<void> {
+  const viewer = await memberRow(tx, memberId);
+  if (kind === 'answer') {
+    await visibleAnswer(tx, viewer, id);
+    return;
+  }
+  const [q] = await tx
+    .select({ code: ustaadQuestions.code })
+    .from(ustaadQuestions)
+    .where(eq(ustaadQuestions.id, id))
+    .limit(1);
+  if (!q) throw new NotFoundError('Question not found');
+  await visibleQuestion(tx, viewer, q.code);
+}
+
 /**
  * "Helpful" (one per member and answer; a repeat changes nothing). Refuses `USTAAD_SELF_VOTE`. The count and the
  * author's counters move only when a vote row was inserted.

@@ -28,6 +28,8 @@ export * from './posts';
 export * from './stories';
 export * from './comments';
 export * from './reactions';
+// Saved beyond posts + collections (2026-11-28).
+export * from './saved';
 export * from './tags';
 export * from './previews';
 export * from './feed';
