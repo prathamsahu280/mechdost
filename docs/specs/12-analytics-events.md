@@ -267,7 +267,10 @@ No new event names. The screens send the catalogue's client events `ustaad_voice
 question or answer starts), `ustaad_video_played { secondsBand }` (once per Learn player, how long it actually played),
 `ustaad_data_saver { on }` (Learn's switch), `ustaad_learn_completed { resource }` (first completion seen by the
 phone) and the smart-correction events; every control also carries `data-track` (`ustaad_ask_*`, `ustaad_answer_*`,
-`ustaad_voice_*`, `ustaad_learn_*`, `ustaad_pin_*`, `ustaad_area_zone`, `ustaad_job_*`). Questions asked, answers,
+`ustaad_voice_*`, `ustaad_learn_*`, `ustaad_pin_*`, `ustaad_area_zone`, `ustaad_job_*`). **2026-11-27 night (spec 23 § 10b):**
+`ustaad_media_text_added { kind: audio|video, summary: bool, captions: bool }` when an upload declaration carries the
+author's typed summary or captions (flags only, never the text); controls `ustaad_voice_cancel`, `ustaad_voice_summary`,
+`ustaad_video_summary`, `ustaad_video_captions`. Questions asked, answers,
 votes, best answers, job posts, applications and pin confirmations are counted server-side (spec 23 § 16). Never
 text, names, phones or locations.
 

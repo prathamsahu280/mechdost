@@ -27,6 +27,7 @@ import type {
   ThreadView,
 } from '@mechdost/shared/ustaad/dto/messages';
 import { dmTextCheck, orderedPair } from '@mechdost/shared/ustaad/social-rules';
+import { ustaadMediaTextInfo, voiceInfoOf } from './media';
 import {
   auditLog,
   ustaadConnections,
@@ -606,12 +607,17 @@ export async function ustaadThreadMessages(
     .limit(PAGE + 1);
   const page = rows.slice(0, PAGE);
   const readUntil = otherSide?.lastReadAt ?? null;
+  const voices = await ustaadMediaTextInfo(
+    db,
+    page.flatMap((m) => (m.kind === 'voice' && m.mediaId ? [m.mediaId] : [])),
+  );
   const items: MessageView[] = page.map((m) => ({
     id: m.id,
     mine: m.senderId === me.id,
     kind: m.kind as MessageView['kind'],
     text: m.body,
     mediaId: m.mediaId,
+    voice: voiceInfoOf(m.mediaId ? voices.get(m.mediaId) : undefined),
     postId: m.postId,
     pending: m.heldReasonCode !== null,
     read: m.senderId === me.id && readUntil !== null && m.createdAt <= readUntil,

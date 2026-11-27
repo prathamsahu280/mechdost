@@ -9,6 +9,8 @@ import { socialClient } from '@/lib/ustaad/social-client';
 import { VoiceNote } from '../media/voice-note';
 import { UstaadIcon } from '../shell/icons';
 import { SignedImage } from './social-common';
+import { MediaTextNote } from '../media/media-text-note';
+import { playback } from '@/lib/ustaad/voice-ui';
 
 /**
  * What a post shows under its words (spec 23 § 4 flow 4, § 17 low data): a photo gallery that swipes like the apps
@@ -106,8 +108,42 @@ function band(ms: number | null): 'lt15' | '15to60' | '60to180' | 'gt180' {
   return s < 15 ? 'lt15' : s < 60 ? '15to60' : s < 180 ? '60to180' : 'gt180';
 }
 
-/** Tap to play: the cover shows the duration and the data it will use; the file is asked for only on the tap. */
+/**
+ * Tap to play: the cover shows the duration and the data it will use; the file is asked for only on the tap. The
+ * author's captions play as a `<track kind="captions">` (a blob URL from the WebVTT in the DTO, so no cross-origin
+ * fetch), and the summary or a visible "No captions" note sits under the video (spec 23 § 10a, WCAG 1.2.2).
+ */
 export function VideoTile({ video, poster }: { video: PostMediaView; poster: PostMediaView | undefined }) {
+  return (
+    <div>
+      <VideoPlayer video={video} poster={poster} />
+      <MediaTextNote summary={video.summary ?? null} captioned={Boolean(video.captionsVtt)} video />
+    </div>
+  );
+}
+
+function useCaptionsUrl(vtt: string | null | undefined): string | null {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!vtt) return;
+    const u = URL.createObjectURL(new Blob([vtt], { type: 'text/vtt' }));
+    setUrl(u);
+    return () => {
+      URL.revokeObjectURL(u);
+      setUrl(null);
+    };
+  }, [vtt]);
+  return url;
+}
+
+function VideoPlayer({ video, poster }: { video: PostMediaView; poster: PostMediaView | undefined }) {
+  const tm = useTranslations('ustaad.media');
+  const captionsUrl = useCaptionsUrl(video.captionsVtt);
+  const handle = useRef({
+    pause: () => {
+      player.current?.pause();
+    },
+  });
   const t = useTranslations('ustaad.feed');
   const locale = useLocale();
   const [url, setUrl] = useState<string | null>(null);
@@ -141,11 +177,24 @@ export function VideoTile({ video, poster }: { video: PostMediaView; poster: Pos
         playsInline
         preload="none"
         className="aspect-video w-full bg-navy"
+        onPlay={() => {
+          playback.claim(handle.current);
+        }}
         onError={() => {
           setUrl(null);
           setState('failed');
         }}
-      />
+      >
+        {captionsUrl ? (
+          <track
+            kind="captions"
+            src={captionsUrl}
+            srcLang={video.captionsLang ?? 'hi'}
+            label={tm(video.captionsLang === 'en' ? 'captionsLangEn' : 'captionsLangHi')}
+            default
+          />
+        ) : null}
+      </video>
     );
   return (
     <div className="relative">
@@ -310,7 +359,10 @@ export function PostMedia({
       {!video && images.length > 0 ? <PhotoGallery media={images} eager={eager} /> : null}
       {audio ? (
         <div className="px-4">
-          <VoiceNote mediaId={audio.mediaId} />
+          <VoiceNote
+            mediaId={audio.mediaId}
+            info={{ durationMs: audio.durationMs, bytes: audio.bytes, summary: audio.summary ?? null }}
+          />
         </div>
       ) : null}
       {doc ? <DocChip doc={doc} /> : null}

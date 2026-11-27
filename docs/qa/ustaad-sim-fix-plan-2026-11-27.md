@@ -83,3 +83,10 @@ kept), theme follows the device (decisions 2026-11-27 night), `/partners` copy n
 - Voice items without a text alternative (audit item 5): transcripts / speech-to-text or a typed summary.
 - Dock tabs (audit item 7): Home · Ask · Learn · Jobs · Me vs today's Home · Discover · Create · Learn · Me.
 - Community rules page public before the network opens.
+
+## Status updates
+
+- 2026-11-27 night — **audit #9** (recorder Cancel, "Stop", time left), **audit 12** (labelled voice card + typed
+  summary), **audit 13** (video captions track + "No captions"), **audit 16** (duration/size/progress, one player at a
+  time), **audit 2** (voice/video text alternatives): built on the voice/captions branch (spec 23 § 10b), not merged,
+  not verified live. Search over summaries not built (Q-STT-2).

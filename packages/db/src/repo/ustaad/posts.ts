@@ -10,6 +10,7 @@ import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { ustaadContentMachine } from '@mechdost/shared/state';
 import type { CreatePost, PostMediaView, PostView } from '@mechdost/shared/ustaad/dto/feed';
 import { linkDisplayHost, safeLinkUrl } from '@mechdost/shared/ustaad/links';
+import { buildWebVtt } from '@mechdost/shared/ustaad/media-text';
 import type { UstaadSettingKey } from '@mechdost/shared/ustaad/settings';
 import {
   ustaadMedia,
@@ -358,12 +359,23 @@ export async function ustaadMediaViews(
       height: ustaadMedia.height,
       bytes: ustaadMedia.declaredBytes,
       lqip: ustaadMedia.lqip,
+      summary: ustaadMedia.summary,
+      captions: ustaadMedia.captions,
+      captionsLang: ustaadMedia.captionsLang,
     })
     .from(ustaadPostMedia)
     .innerJoin(ustaadMedia, eq(ustaadMedia.id, ustaadPostMedia.mediaId))
     .where(and(inArray(ustaadPostMedia.postId, [...postIds]), eq(ustaadMedia.status, 'verified')))
     .orderBy(asc(ustaadPostMedia.position));
-  for (const { postId, ...m } of rows) out.set(postId, [...(out.get(postId) ?? []), m]);
+  for (const { postId, captions, captionsLang, ...m } of rows) {
+    // Spec 23 § 10a: the typed captions go out as WebVTT for the player's <track>.
+    const view: PostMediaView = {
+      ...m,
+      captionsLang: captionsLang === 'hi' || captionsLang === 'en' ? captionsLang : null,
+      captionsVtt: captions ? buildWebVtt(captions, m.durationMs ?? 1000) : null,
+    };
+    out.set(postId, [...(out.get(postId) ?? []), view]);
+  }
   return out;
 }
 

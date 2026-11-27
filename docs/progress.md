@@ -43,6 +43,17 @@ This file is the single source of truth for **where the build is right now**. It
 - Open: `notify.*` texts cannot use ICU plurals (plain `{name}` substitution) — worded count-neutral instead;
   `/partners/status` "पक्का" step key (SIM-P5) is outside `ustaad.*`, not changed; voice takes are not kept in drafts.
 
+## 2026-11-27 night — Ustaad voice/video text alternatives + recorder upgrade (builder, NOT merged)
+
+- Founder night entry built (spec 23 § 10b): typed summary on every voice item and video, typed captions on videos
+  (WebVTT `<track>` + visible "No captions"), screened with the content; recorder Cancel / "Stop" / 10 s time left /
+  summary field; voice notes with duration, size, progress, labelled "Voice note from <name> · 0:42", one player at
+  a time (also stops Listen). Migration **0112_ustaad_media_text** (unapplied). Q-STT-1 (auto captions research) and
+  Q-STT-2 (search over summaries) queued. Gates in the agent report; full suites for the lead after 00:30.
+- **Open follow-ups:** search over summaries (Q-STT-2); comments/stories do not show the stored summary (story videos no track / "No captions"); `dmTextCheck` does not read a voice message's summary (link in a voice summary on an unaccepted DM request passes); staff report views do not show summaries; e2e `ustaad-ce-mic.spec.ts` updated for "Stop"/Cancel but NOT run; a11y review items
+  not fixed (video `aria-describedby` to its summary, fieldset/legend + captions counter on the video form, lang on
+  summaries in the video note, `aria-valuetext` on the progress bar, "Record again" restarts nothing — same as remove).
+
 ## 2026-11-27 evening — delivery go-live blockers fixed (builder, branch `worktree-agent-adc124fa15469db75`, NOT merged)
 
 - Seven commits, test first (spec 24 § 17): DC-P11 job photos carry the job id; DC-B11 sweep audited + warns on

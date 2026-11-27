@@ -52,7 +52,9 @@ Devanagari for Hindi), light and dark themes, WCAG 2.2 AA. The demo's own colour
 
 1. **Voice notes are posted as they are (audio only). No speech-to-text at all.** Transcripts: **not planned**. Voice
    search is not built either (it would be speech-to-text). Text-to-speech "Listen" on typed posts uses the browser's
-   own `speechSynthesis` and sends nothing anywhere.
+   own `speechSynthesis` and sends nothing anywhere. **Amended 2026-11-27 (night, founder):** voice items and videos
+   get an **author-typed** summary and videos author-typed captions (§ 10b); an automatic caption/summary provider is
+   researched (Q-STT-1) but **not wired** — still no speech-to-text in the product.
 2. **Smart correction uses an LLM behind a `SmartCorrection` adapter** (default a small, cheap model: Claude Haiku
    class via the Anthropic API; alternative Google Gemini free tier), with the **rule/word-list engine as fallback**
    when no key is set, on error or on timeout (§ 11).
@@ -686,6 +688,41 @@ is the registrable domain parsed with the WHATWG URL parser, IDN in punycode (`h
 `evil.com`). Links leave through a warning page with an HMAC-signed target (no open redirect). Accounts younger than
 `mod.links_min_account_days` (7) cannot post links at all (scam control). A Web Risk / Safe Browsing check (SR-24)
 needs a key (Q-U6); until then an admin domain deny list in `ustaad_word_lists` (`link_domain`) applies.
+
+### 10b. Text alternatives for voice and video (founder 2026-11-27 night; WCAG 1.2.1 / 1.2.2; audit 2, 9, 12, 13, 16)
+
+- **Typed summary.** Every voice item (question, answer, message, comment, audio post, story) and every video may carry
+  a short summary the author types (optional, ≤ 200 characters, any language, trimmed; blank = none). **Captions** for
+  videos: the author types "0:05 — text" lines (em/en dash or hyphen; hh:mm:ss allowed) or one block shown for the
+  whole clip, and picks the language (`hi` / `en`). Stored raw (≤ 4000 characters); the WebVTT is built when read
+  (`buildWebVtt` in `packages/shared/src/ustaad/media-text.ts`: times clamped forward and inside the clip, `& < >`
+  escaped, `-->` never reaches a cue).
+- **Where it lives.** Columns `ustaad_media.summary`, `captions`, `captions_lang` (migration `0112_ustaad_media_text`;
+  CHECKs: summary 1–200 characters on audio/video only, captions 1–4000 characters with language on video only). Sent
+  with the upload declaration (`POST /v1/ustaad/media` body `summary?`, `captions? {lang, text}`; Zod strict, refused on
+  photos and PDFs) and **fixed once declared**: there is no edit route, so no later edit can skip the screen.
+- **Moderation.** `explainUstaadScreen` appends the summary and caption words (not timestamps) of the item's media to
+  its typed text, so every create path (question, answer, message, comment, post, story, job) and the auto-hold report
+  screen them with the word lists and scam checks like any typed text (a phone number in a public summary blocks, a
+  scam phrase holds).
+- **Reading.** `ustaadMediaTextInfo` (one query per page) gives duration, size and summary: `voice` on questions,
+  answers and messages; `summary`, `captionsLang`, `captionsVtt` on post media (`ustaadMediaViews`). The video plays
+  the captions as `<track kind="captions" srclang default>` from a blob URL (no cross-origin fetch; CSP `media-src`
+  allows `blob:`); with no captions a visible "No captions" note sits under the video, and the summary as a labelled
+  "Summary:" line. Voice notes show "Voice note from <name> · 0:42" (or "Your voice note · 0:42"), duration and size
+  on the play button, a progress bar while playing, and the summary under the player (linked by `aria-describedby`).
+- **Recorder upgrade.** While recording the mic button shows the word **Stop / रोको** (its name), a visible **Cancel**
+  discards the take (nothing saved; a pointer the system takes away mid-hold also discards, it used to save), the time
+  left shows from 10 s and is announced once through the one status region, and after recording an optional summary
+  field with a characters-left counter. **One player at a time:** a page-wide registry (`lib/ustaad/voice-ui.ts`)
+  pauses the previous voice note or video and stops "Listen" (`speechSynthesis`) when another starts.
+- **Analytics.** Client event `ustaad_media_text_added { kind: audio|video, summary: bool, captions: bool }` when a
+  declared upload carries text (flags only, never the text).
+- **Not built yet:** search over summaries (Discover searches people and tags only; there is no content search to add
+  them to — queued Q-STT-2); comment and story players do not show the stored summary yet (voice note without duration, size or summary line; story videos have no captions track or "No captions" note); in a request DM the link-before-accept and fee-phrase check (`dmTextCheck`) reads the typed body only, not a voice message's summary (the general screen still reads it; a link in a voice summary on an unaccepted request is not refused — follow-up); staff report detail, reported thread and removed archive show the media but not its summary;
+  automatic captions/summaries (Q-STT-1).
+- Tests: `packages/shared/test/ustaad-media-text.test.ts`, `packages/db/test/ustaad-media-text.test.ts`,
+  `apps/api/test/ustaad-media-api.test.ts` ("typed summary and captions"), `apps/web/test/ustaad-voice-ui.test.ts`.
 
 ## 11. Smart correction (`SmartCorrection` adapter, `apps/api/src/ustaad/correction/`)
 
@@ -1710,12 +1747,13 @@ new_threads | connect_requests`; one conditional upsert `n + k where n < cap`, n
   errors) and the
   Hindi crawl (`hindi-coverage.spec.ts`, ten `/hi/ustaad/*` pages).
 - **Accessibility review (2026-11-26, aria / keyboard + modal / forms + media specialists):** recorder has one name
-  ("Record voice note") with `aria-pressed`, one always-mounted live region for every outcome, focus kept across the
+  ("Record voice note"; since 2026-11-27 night its name is the visible word "Stop" while recording, no `aria-pressed`, § 10b), one always-mounted live region for every outcome, focus kept across the
   mic ↔ recorded swap, pointer cancel handled and a hold released during the permission prompt cancels the start;
   vehicle and work choices are radio groups with "Not sure"; field errors sit beside their fields (`aria-invalid` +
   `aria-describedby`); busy buttons use `aria-disabled` (focus stays); writes refresh the thread without blanking it;
   close and filled ask first; the arrow buttons place a pin without GPS (keyboard path); map container `role="group"`;
-  live regions use `empty:sr-only` (never `display: none`). Hosted videos have no captions yet (Q-U-CE7).
+  live regions use `empty:sr-only` (never `display: none`). Hosted videos have no captions yet (Q-U-CE7; member
+  videos now take typed captions, § 10b).
 - **Membership gate:** every screen is wrapped in `MemberGate` (no membership → "join" card, `ustaad.shell.join*`).
 - **Permissions-Policy:** `microphone=(self)` (decisions 2026-11-26).
 - **Low data on the pin screen:** the map (MapLibre, style, tiles) loads only once there is a pin (GPS reading, an
@@ -1809,8 +1847,8 @@ PROFILE,TEASER}` (fixtures owed, Q-U-DW3).
   schemas (`EditedText`) and the composer rules; fixed by `lib/ustaad/correction-text.ts` and
   `lib/ustaad/feed-format.ts` (source guard in `ustaad-feed-view.test.ts`). The re-measure needs the next build (the
   lead allowed one build this round), queued in progress. Storefront unchanged: `/shop` 178.6, product 178.4 KB.
-- **Accepted gaps (a11y):** member videos have no captions and voice notes no transcript (speech-to-text is ruled out,
-  § 22); the post text is the text alternative. Story captions are linked by position, not `aria-describedby`.
+- **Accepted gaps (a11y):** ~~member videos have no captions and voice notes no transcript~~ — closed 2026-11-27 by
+  the author-typed summary and captions (§ 10b); still no speech-to-text. Story captions are linked by position, not `aria-describedby`.
 - **Not built here:** messages / network / Discover (other agent), resumable video upload (Q-U-DW1), a lasting
   per-member hide (Q-U-DW2), photo avatars (no profile photo upload on the web yet), offline drafts in IndexedDB
   (§ 17), link-preview images (D1 has no og:image yet), 1440 screenshots (lead: 390 + Hindi 390 only this round).

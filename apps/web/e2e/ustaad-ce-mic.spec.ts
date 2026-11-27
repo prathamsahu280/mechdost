@@ -27,7 +27,7 @@ test('hold to talk: press, speak, let go records a note', async ({ page }) => {
   if (!box) throw new Error('mic not laid out');
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
-  await expect(page.getByRole('button', { name: 'Record voice note', pressed: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeVisible();
   await page.waitForTimeout(1500);
   await page.mouse.up();
   await expect(page.getByText(/Recorded 0:0[1-2]/).last()).toBeVisible();
@@ -42,7 +42,7 @@ test('ask by voice only: sent, opens as "Voice question", plays back; no CSP err
   await page.goto('/ustaad/ask/new');
   await page.getByRole('button', { name: 'Record voice note' }).click();
   await page.waitForTimeout(1500);
-  await page.getByRole('button', { name: 'Record voice note', pressed: true }).click();
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
   await expect(page.getByText(/Recorded 0:0[1-2]/).last()).toBeVisible();
   await page.getByRole('button', { name: 'Send question' }).click();
   await expect(page.getByText('Question sent.')).toBeVisible();
@@ -59,14 +59,24 @@ test('tap to start, tap to stop; play back, record again', async ({ page }) => {
   await page.goto('/ustaad/ask/new');
   const mic = page.getByRole('button', { name: 'Record voice note' });
   await mic.click();
-  await expect(page.getByRole('button', { name: 'Record voice note', pressed: true })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
+  // While recording the button's name is its visible word "Stop" (spec 23 § 10b; no aria-pressed).
+  await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
   await page.waitForTimeout(1500);
-  await page.getByRole('button', { name: 'Record voice note', pressed: true }).click();
+  await page.getByRole('button', { name: 'Stop', exact: true }).click();
   await expect(page.getByText(/Recorded 0:0[1-2]/).last()).toBeVisible();
   await expect(page.getByLabel('Voice note')).toBeVisible();
   await page.getByRole('button', { name: 'Record again' }).click();
   await expect(page.getByRole('button', { name: 'Record voice note' })).toBeVisible();
+});
+
+test('Cancel while recording discards the take (spec 23 § 10b, audit 9)', async ({ page }) => {
+  await signIn(page);
+  await page.goto('/ustaad/ask/new');
+  await page.getByRole('button', { name: 'Record voice note' }).click();
+  await page.waitForTimeout(1200);
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.getByText('Recording cancelled, nothing was saved').first()).toBeAttached();
+  await expect(page.getByText(/Recorded 0:0/)).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Record voice note' })).toBeFocused();
 });

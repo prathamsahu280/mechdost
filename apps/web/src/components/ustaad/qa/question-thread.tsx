@@ -131,7 +131,17 @@ export function QuestionThread({ code }: { code: string }) {
           </div>
         ) : null}
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          {q.voiceMediaId ? <VoiceNote mediaId={q.voiceMediaId} tone="dark" /> : null}
+          {q.voiceMediaId ? (
+            <VoiceNote
+              mediaId={q.voiceMediaId}
+              tone="dark"
+              info={{
+                ...q.voice,
+                fromName:
+                  locale === 'hi' ? (q.asker.displayNameHi ?? q.asker.displayName) : q.asker.displayName,
+              }}
+            />
+          ) : null}
           {readAloud !== '' ? (
             <span className="rounded-full bg-surface">
               <ListenButton text={readAloud} />
@@ -235,7 +245,15 @@ function AnswerBubble({
       ) : null}
       {a.voiceMediaId ? (
         <div className="mt-3">
-          <VoiceNote mediaId={a.voiceMediaId} />
+          <VoiceNote
+            mediaId={a.voiceMediaId}
+            info={{
+              ...a.voice,
+              mine: a.mine,
+              fromName:
+                locale === 'hi' ? (a.author.displayNameHi ?? a.author.displayName) : a.author.displayName,
+            }}
+          />
         </div>
       ) : null}
       {a.isBest && a.parts.length > 0 ? (
@@ -324,7 +342,7 @@ function AnswerComposer({ q, onPosted }: { q: QuestionDetail; onPosted: () => vo
       setProgress(0);
       const up = await client.upload(
         voice.blob,
-        { kind: 'audio', mime: voice.mime, durationMs: voice.durationMs },
+        { kind: 'audio', mime: voice.mime, durationMs: voice.durationMs, summary: voice.summary },
         setProgress,
       );
       if (!up.ok) {

@@ -73,6 +73,10 @@ export interface MediaDeclare {
   durationMs?: number;
   width?: number;
   height?: number;
+  /** Author's typed summary of a voice note or video (spec 23 § 10a). */
+  summary?: string;
+  /** Video only: typed captions ("0:05 — text" lines or one block) and their language. */
+  captions?: { lang: 'hi' | 'en'; text: string };
 }
 
 export type AskInput = Omit<AskQuestion, 'correction' | 'reach' | 'hideGarage'> & {

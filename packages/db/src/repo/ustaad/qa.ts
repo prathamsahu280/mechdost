@@ -18,6 +18,7 @@ import {
   type QuestionFilter,
 } from '@mechdost/shared/ustaad/dto/qa';
 import { ustaadPublicCode } from '@mechdost/shared/ustaad/public-code';
+import type { VoiceInfo } from '@mechdost/shared/ustaad/dto/media';
 import {
   cities,
   products,
@@ -41,6 +42,7 @@ import { ustaadScreenText, ustaadStoredOriginal } from './screen-text';
 import { notifyUstaad } from './notify';
 import { publishUstaadAnswer, publishUstaadQuestion } from './publish';
 import { readUstaadSettingValues } from './settings';
+import { ustaadMediaTextInfo, voiceInfoOf } from './media';
 
 /** Who is acting: the signed-in user and their member row (the API guard read it fresh). */
 export interface UstaadActor {
@@ -721,6 +723,12 @@ export async function ustaadQuestionDetail(
           .innerJoin(products, eq(products.id, ustaadAnswerParts.productId))
           .where(and(inArray(ustaadAnswerParts.answerId, ids), eq(products.status, 'live')));
   const s = await readUstaadSettingValues(db, ['ustaad.qa.apprentice_can_answer']);
+  // Spec 23 § 10a: duration, size and typed summary of every voice note on the page, in one query.
+  const voices = await ustaadMediaTextInfo(db, [
+    ...(q.voiceMediaId ? [q.voiceMediaId] : []),
+    ...answers.flatMap((r) => (r.a.voiceMediaId ? [r.a.voiceMediaId] : [])),
+  ]);
+  const voiceOf = (id: string | null): VoiceInfo | null => voiceInfoOf(id ? voices.get(id) : undefined);
   const list: AnswerView[] = answers
     .map((r) => ({
       id: r.a.id,
@@ -728,6 +736,7 @@ export async function ustaadQuestionDetail(
       bodyOriginal: r.a.correction === 'none' ? null : r.a.bodyOriginal,
       correction: r.a.correction,
       voiceMediaId: r.a.voiceMediaId,
+      voice: voiceOf(r.a.voiceMediaId),
       helpfulCount: r.a.helpfulCount,
       votedByMe: r.voted === true || r.voted === 't',
       isBest: q.bestAnswerId === r.a.id,
@@ -747,6 +756,7 @@ export async function ustaadQuestionDetail(
     bodyOriginal: q.correction === 'none' ? null : q.bodyOriginal,
     correction: q.correction,
     voiceMediaId: q.voiceMediaId,
+    voice: voiceOf(q.voiceMediaId),
     bestAnswerId: q.bestAnswerId,
     vehicleModel: model?.name ?? null,
     can: {

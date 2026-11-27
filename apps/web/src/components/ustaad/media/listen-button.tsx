@@ -2,7 +2,8 @@
 
 import { Square, Volume2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { playback } from '@/lib/ustaad/voice-ui';
 
 const noop = () => () => undefined;
 
@@ -20,6 +21,13 @@ export function ListenButton({ text }: { text: string }) {
     () => false,
   );
   const [speaking, setSpeaking] = useState(false);
+  // Audit 16: Listen and voice notes never talk over each other (one player at a time).
+  const handle = useRef({
+    pause: () => {
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
+    },
+  });
 
   useEffect(
     () => () => {
@@ -37,6 +45,7 @@ export function ListenButton({ text }: { text: string }) {
       setSpeaking(false);
       return;
     }
+    playback.claim(handle.current);
     synth.cancel();
     const u = new SpeechSynthesisUtterance(text);
     // Devanagari text is read in Hindi; Latin (Hinglish) with the Indian English voice.

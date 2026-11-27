@@ -2832,3 +2832,23 @@ Code: `search-trigger.tsx` (phone icon: `aria-expanded` from a `mechdost:search-
 panel positioned on the header bar, field row = the bar's 56 px so nothing shifts), `header.tsx`. Guards
 `apps/web/test/header-search-inline.test.ts`, `chrome-v4.test.ts` (updated). e2e/state-audit rows that looked for
 the phone search bar's text need a re-run by the lead (not run here).
+
+## 2026-11-27 (night) — Voice/video text alternatives and recorder upgrade: builder's rulings (spec 23 § 10b)
+
+Implements the founder's night entry above; no founder decision changed.
+
+- **Stored on the media row, fixed at declaration.** `ustaad_media.summary` (≤ 200), `captions` (≤ 4000, video only)
+  and `captions_lang` (`hi|en`), migration `0112_ustaad_media_text`. Sent with `POST /v1/ustaad/media`; there is no
+  edit route, so an edit can never skip the moderation screen. Cost if wrong: an author who wants to fix a typo
+  re-records or re-uploads (an owner-only edit route with a re-screen can come later).
+- **Screened with the content.** `explainUstaadScreen` appends the media's summary and caption words to the typed text,
+  so all create paths and the auto-hold report use the same word lists and scam checks (no separate media screen).
+- **Captions are author-typed and built into WebVTT on read** (blob URL `<track>`; no cross-origin captions file). A
+  single untimed block becomes one cue for the whole clip, as the founder asked; timed "0:05 — text" lines are the
+  synchronised form (a11y review: a single block is not synchronised captions; the hint asks for timed lines first).
+- **One player at a time** through a page registry (`lib/ustaad/voice-ui.ts`) shared by voice notes, feed videos and
+  Listen (`speechSynthesis`).
+- **Recorder:** pointer-cancel now **discards** (it saved the clip before); `aria-pressed` dropped because the button's
+  name changes to the visible word "Stop / रोको" while recording; time left announced once at 10 s.
+- **Not done in this change:** search over summaries (no content search exists; Q-STT-2), auto captions/summaries
+  (research only, Q-STT-1, nothing wired), labelled voice line in comments and stories.

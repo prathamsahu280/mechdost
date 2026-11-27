@@ -23,6 +23,12 @@ import { useDraft } from '../use-draft';
 import { VoiceRecorder, type Recording } from '../media/voice-recorder';
 import { UstaadIcon, type UstaadIconName } from '../shell/icons';
 import { useSocialAction, useSocialError } from './social-common';
+import {
+  EMPTY_VIDEO_TEXT,
+  VideoTextFields,
+  videoTextDeclare,
+  type VideoText,
+} from '../media/video-text-fields';
 
 const MAX_PHOTOS = 10;
 const MAX_TAGS = 5;
@@ -187,6 +193,7 @@ export function Composer({ story }: { story: boolean }) {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [voice, setVoice] = useState<Recording | null>(null);
   const [video, setVideo] = useState<{ file: File; durationMs: number } | null>(null);
+  const [videoText, setVideoText] = useState<VideoText>(EMPTY_VIDEO_TEXT);
   const [doc, setDoc] = useState<File | null>(null);
   const [options, setOptions] = useState(['', '']);
   const [linkUrl, setLinkUrl] = useState('');
@@ -292,6 +299,7 @@ export function Composer({ story }: { story: boolean }) {
           kind: 'audio',
           mime: voice.mime,
           durationMs: voice.durationMs,
+          ...(voice.summary ? { summary: voice.summary } : {}),
         });
         if (!id) return;
         media.push({ mediaId: id });
@@ -301,6 +309,7 @@ export function Composer({ story }: { story: boolean }) {
           kind: 'video',
           mime: video.file.type,
           durationMs: video.durationMs,
+          ...videoTextDeclare(videoText),
         });
         if (!id) return;
         media.push({ mediaId: id });
@@ -594,6 +603,7 @@ export function Composer({ story }: { story: boolean }) {
                   })}
                 </p>
               ) : null}
+              {video ? <VideoTextFields value={videoText} onChange={setVideoText} /> : null}
             </div>
           ) : null}
 

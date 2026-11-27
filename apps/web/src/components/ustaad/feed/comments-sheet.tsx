@@ -160,7 +160,7 @@ export function CommentsPanel({ post, onCount }: { post: PostView; onCount: (n: 
       ).upload(
         file.blob,
         voice && mode === 'voice'
-          ? { kind: 'audio', mime: voice.mime, durationMs: voice.durationMs }
+          ? { kind: 'audio', mime: voice.mime, durationMs: voice.durationMs, summary: voice.summary }
           : { kind: 'image', mime: photo?.mime ?? 'image/webp', width: photo?.width, height: photo?.height },
         setProgress,
       );

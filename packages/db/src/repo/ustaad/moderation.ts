@@ -46,6 +46,7 @@ import {
   type ScreenOutcome,
   type ScreenVerdict,
 } from '@mechdost/shared/ustaad/moderation';
+import { mediaTextForScreen } from '@mechdost/shared/ustaad/media-text';
 import {
   auditLog,
   cities,
@@ -116,7 +117,20 @@ export async function explainUstaadScreen(
     activeWords(tx, 'scam_phrase'),
     activeWords(tx, 'link_domain'),
   ]);
-  const signals = input.text ? screenTextSignals(input.text, { banned, scamPhrases, linkDomains }) : [];
+  // Spec 23 § 10a: the author's typed summary and video captions are screened like any typed text.
+  const mediaText =
+    input.mediaIds.length > 0
+      ? (
+          await tx
+            .select({ summary: ustaadMedia.summary, captions: ustaadMedia.captions })
+            .from(ustaadMedia)
+            .where(inArray(ustaadMedia.id, [...input.mediaIds]))
+        )
+          .map(mediaTextForScreen)
+          .filter((x): x is string => x !== null)
+      : [];
+  const text = [input.text, ...mediaText].filter((x): x is string => !!x).join('\n');
+  const signals = text ? screenTextSignals(text, { banned, scamPhrases, linkDomains }) : [];
   const [me] = await tx
     .select({ joinedAt: ustaadMembers.joinedAt })
     .from(ustaadMembers)

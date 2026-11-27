@@ -210,6 +210,33 @@ describe('Ustaad media API', () => {
     expect(long.body.error.code).toBe('MEDIA_TOO_LONG');
   });
 
+  it('a video declared with a typed summary and captions keeps both; a photo cannot carry them (spec 23 § 10a)', async () => {
+    const v = await call(owner, 'POST', '/ustaad/media', {
+      kind: 'video',
+      mime: 'video/mp4',
+      bytes: 900_000,
+      sha256: 'c'.repeat(64),
+      durationMs: 12_000,
+      summary: ' Activa brake pads, step by step ',
+      captions: { lang: 'hi', text: '0:00 — पुराने पैड निकालो\n0:06 — नए पैड लगाओ' },
+    });
+    expect(v.status).toBe(201);
+    const [row] = await ctx.db
+      .select()
+      .from(s.ustaadMedia)
+      .where(eq(s.ustaadMedia.id, v.body.mediaId as string));
+    expect(row?.summary).toBe('Activa brake pads, step by step');
+    expect(row?.captionsLang).toBe('hi');
+    const photoWithText = await call(owner, 'POST', '/ustaad/media', {
+      kind: 'image',
+      mime: 'image/jpeg',
+      bytes: 100,
+      sha256: 'a'.repeat(64),
+      summary: 'not for photos',
+    });
+    expect(photoWithText.status).toBe(400);
+  });
+
   it('non-members never reach the media routes (preview: unknown-path 404)', async () => {
     const r = await call(outsider, 'POST', '/ustaad/media', { kind: 'image' });
     expect(r.status).toBe(404);

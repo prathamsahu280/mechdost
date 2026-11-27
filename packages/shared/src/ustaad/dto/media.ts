@@ -11,6 +11,7 @@ import {
   MEDIA_VARIANTS,
   type UstaadMediaKind,
 } from '../codes';
+import { MediaCaptionsDto, MediaSummaryDto } from '../media-text';
 
 const ALL_MIMES = [...new Set(Object.values(MEDIA_MIMES).flat())] as [string, ...string[]];
 
@@ -28,9 +29,17 @@ export const DeclareMediaDto = z
     durationMs: z.number().int().min(1).max(600_000).optional(),
     width: z.number().int().min(1).max(10_000).optional(),
     height: z.number().int().min(1).max(10_000).optional(),
+    /** Author's short typed summary of a voice note or video (≤ 200 characters; founder 2026-11-27 night). */
+    summary: MediaSummaryDto.optional(),
+    /** Video only: typed captions ("time — text" lines or one block), served as WebVTT. */
+    captions: MediaCaptionsDto.optional(),
   })
   .strict()
   .superRefine((v, ctx) => {
+    if (v.summary !== undefined && v.kind !== 'audio' && v.kind !== 'video')
+      ctx.addIssue({ code: 'custom', path: ['summary'], message: 'MEDIA_TEXT_KIND' });
+    if (v.captions !== undefined && v.kind !== 'video')
+      ctx.addIssue({ code: 'custom', path: ['captions'], message: 'MEDIA_TEXT_KIND' });
     const allowed: readonly string[] = MEDIA_MIMES[v.kind];
     if (!allowed.includes(v.mime)) ctx.addIssue({ code: 'custom', path: ['mime'], message: 'MEDIA_TYPE' });
     if ((v.kind === 'video' || v.kind === 'audio') && v.durationMs === undefined)
@@ -58,6 +67,14 @@ export interface DeclaredUpload {
   multipart?: { uploadId: string; parts: number; partBytes: number };
   expiresAt: string;
 }
+
+/** What a player needs before the tap: duration, size and the author's typed summary (spec 23 § 10a). */
+export const VoiceInfoDto = z.object({
+  durationMs: z.number().int().nullable(),
+  bytes: z.number().int(),
+  summary: z.string().nullable(),
+});
+export type VoiceInfo = z.infer<typeof VoiceInfoDto>;
 
 export const isMediaKind = (v: string): v is UstaadMediaKind =>
   (MEDIA_KINDS as readonly string[]).includes(v);
