@@ -9,6 +9,7 @@ import { commonErrorKey } from '@/lib/api-error-key';
 import { track } from '@/lib/analytics';
 import { diffJson } from '@/lib/audit-diff';
 import { ACTION_CODES, ENTITY_CODES, auditLabel, type AuditDict } from '@/lib/audit-label';
+import { isUstaadAction, ustaadAuditKind } from '@/lib/ustaad-audit-labels';
 import { portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { adminCard } from './admin-ui';
 
@@ -30,6 +31,9 @@ function useAuditDict(): AuditDict {
 
 /** A code as a label in the page language; an unworded one stays as stored, in code style. */
 function CodeLabel({ code, dict }: { code: string; dict: AuditDict }) {
+  const u = useTranslations('ustaad.console');
+  // Ustaad moderation codes (`ustaad.remove`, `ustaad.verification.approved`…) read as in Admin → Ustaad (SIM-B15).
+  if (isUstaadAction(code)) return <>{u(`audit_${ustaadAuditKind(code)}`)}</>;
   const { text, known } = auditLabel(code, dict);
   return known ? <>{text}</> : <code lang="en">{text}</code>;
 }

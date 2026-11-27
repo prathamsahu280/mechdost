@@ -38,6 +38,7 @@ import {
   useErrorText,
   useFormatWhen,
 } from './console-common';
+import { ustaadAuditKind } from '@/lib/ustaad-audit-labels';
 
 type Queue = 'open' | 'held' | 'appealed';
 type ViewReason = (typeof DM_READ_REASONS)[number];
@@ -393,10 +394,7 @@ function ReportPanel({
           <ul className="space-y-1 text-sm">
             {d.actions.map((a) => (
               <li key={`${a.action}-${a.at}`}>
-                {c(
-                  `audit_${['keep', 'remove', 'warn', 'restrict', 'ban', 'unban', 'restore', 'takedown'].includes(a.action) ? a.action : 'other'}`,
-                )}{' '}
-                · <span className="text-muted">{when(a.at)}</span>
+                {c(`audit_${ustaadAuditKind(a.action)}`)} · <span className="text-muted">{when(a.at)}</span>
               </li>
             ))}
           </ul>
