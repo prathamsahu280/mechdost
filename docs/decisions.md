@@ -2810,3 +2810,19 @@ Within the QA fix plan (`docs/qa/ustaad-sim-fix-plan-2026-11-27.md`, Batch A); n
   - Q-PP-F3: the new-order sound is **on by default** (browsers still need one tap to unlock audio; the "Turn on order sound" tap is shown once).
   - Q-PP-F4: the storefront header, search and footer **stay** on partner pages.
   - Q-PP-F5: build the **rider per-day stats API now** (with batch C).
+
+## 2026-11-27 (night) — Partner portals UI upgrade: batch 0 kit, batch A part 1, batch C (builder)
+
+- Kit API is prop-driven (no `useSearchParams` inside the kit; `LaneTabs` takes `current` + `hrefFor`) so pages need
+  no Suspense boundary; the kit fires its own `partner_*` events and owns the `partnerKit` strings.
+- Sound follows Q-PP-F3 (on by default), not the design's earlier default: the AudioContext is created on mount and
+  resumed by the first tap anywhere; the button only appears while the browser still blocks audio. Never plays on the
+  first load or in a hidden tab; vibration 200 ms; the list/live region/bell remain the other signals.
+- The shop offer bar has no tread bar yet: `ShopOrder` carries `expiresAt` but not the offer start or window, so
+  `OfferTimer` shows text only there (P1: add `offeredAt` to the DTO). The rider bar uses the 15 min founder default.
+- Shop "Delivered" tile counts the first `done` page (rows have no delivery date); "Delivered today" needs a date on
+  `ShopOrder` (P1).
+- Rider stats endpoint built now (Q-PP-F5) as additive files only (new DTO module, new repo module, one route); spec
+  § 13's "no API change in v1" is superseded for this endpoint.
+- Not built in this pass (time): shop tab split and its notice-link mapping, shop BulletBar/DailyBars restyles, rider
+  job StepRail. Batch B (workshop) imports the kit.

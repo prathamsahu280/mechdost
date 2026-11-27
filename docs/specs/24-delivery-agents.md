@@ -433,6 +433,21 @@ the historical request.
 - G8 SOS / help number: the web calls the company support number (`lib/site.ts`); a per-city admin-editable number
   (like roadside's `sosPhone`) would satisfy rule 8.
 
+### Partner frame and numbers (2026-11-27 night, partner portals UI upgrade batch C)
+
+- The rider portal uses the shared `PartnerFrame` (narrow column): the status strip stays first, the tabs are a bottom
+  bar under 1024 px and a navy side rail above; the page intro left the layout (an `sr-only` h1 keeps the heading), so
+  the offer starts above the fold at 390 × 844. The online card's markup is unchanged.
+- Offer card: `OfferTimer` (15 min window for the tread bar; a longer offer starts full); new-offer sound and
+  vibration (`useNewWorkAlert('rider')`, on by default) and "Updated n min ago · Refresh".
+- History: rows grouped by IST day with "{day} · n delivered". Documents: status as a coloured badge in words.
+- Earnings: net **"Paid to you"** (`totalPaise`, corrections included) and jobs delivered as two tiles, the net per
+  payout period as money-green bars, and **delivered per day for 14 days** from the new
+  `GET /v1/agent/me/stats?days=` (Q-PP-F5): `AgentStatsQuery` (7–90, default 14) → `AgentDailyStats`
+  (`packages/shared/src/delivery/agent-stats.ts`), repo `agentDailyStats` (`packages/db/src/repo/delivery-agent-stats.ts`,
+  actor-scoped via `agentOfUser`, IST days zero-filled, `delivery_jobs_agent_status_idx`, no migration), behind the
+  existing `/agent/*` auth, per-user rate limit and `deliveries:read`. Demo client computes it from the demo jobs.
+
 ## 17. Go-live fixes from the live QA run (2026-11-27)
 
 From `D:\mechdost-qa\delivery-cod-sim-2026-11-27\logs\bugs.md`; one commit each, test first.

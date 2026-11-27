@@ -225,3 +225,20 @@ The agent portal opens with the navy `blueprint` strip (existing utility): first
 button and a white inset holding the shared `Switch` ("Take new jobs") with its state in words. Below it a 4-tab bar
 (navy current tab). Countdown pills use `bg-pill`, turning `bg-warning-bg` under a minute. Job steps: a 4-segment
 bar (`bg-accent-button` done, `bg-line` to do) with "Step n of 4". All targets 48 px. No new colours, fonts or radii.
+
+### Partner frame (2026-11-27 night, partner portals UI upgrade; decisions Q-PP-F1..F5)
+
+- **Frame:** navy `blueprint` strip first (name, state in words with a dot, Help call 48 px); under 1024 px the tabs
+  are a fixed bottom bar (52 px tiles, icon over a word, `accent-soft` current tile, like the storefront dock, which
+  is hidden on `/partner/*`); from 1024 px a `navy-sidebar` rail with `navy-sidebar-active` for the current tab. Focus
+  is never hidden under the bar (`scroll-padding-bottom` while the bar is present). Tabs are links with
+  `aria-current="page"`.
+- **Offer timer:** the countdown text in Manrope 24 px tabular, the nav chip's tread dash as a draining bar
+  (`.partner-tread`, `accent-button`; `.partner-tread-urgent`, `warning`, under a minute, with "Hurry" in words); the
+  bar is `aria-hidden` and does not ease under reduced motion.
+- **KPI tiles:** number first (28 px), label, icon chip in the admin data colour of its meaning (amber waiting, red
+  urgent, blue in progress, green done/money, grey zero); "Needs you" in words; the compact one-row chip form while
+  offers are open.
+- **Charts:** own SVG only (Q-PP-F1, no Recharts): `DailyBars` in one hue per measure and `BulletBar` (accent bar,
+  ink city-middle marker, both values written).
+- No new colour, font or radius.

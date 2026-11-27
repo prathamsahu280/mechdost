@@ -353,3 +353,17 @@ Codes, counts and booleans only; never a typed code, phone, name or address.
 Client `click` ids for every agent, shop, customer and admin delivery action (list in spec 24 § Web screens →
 Analytics) and `code_submitted {kind:'delivery'}` for pickup, delivery and return codes. No PII: ids, codes and
 paths only (the invite token is redacted). Typed events in the shared catalogue: contract gap G6.
+
+## Partner portals kit events (2026-11-27 night, partner portals UI upgrade § 10)
+
+Browser events, `packages/shared/src/partner-client-events.ts` (merged into `CLIENT_EVENT_SCHEMAS`). `portal` ∈
+`shop | workshop | rider`; ids are lower-case codes (`^[a-z][a-z0-9_]{0,39}$`), never order codes or names.
+
+| Event                         | Props                      | When                                                   |
+| ----------------------------- | -------------------------- | ------------------------------------------------------ |
+| `partner_tab_viewed`          | `portal`, `tab`            | A tab in the partner tab bar or side rail is opened    |
+| `partner_kpi_clicked`         | `portal`, `tile`           | A Today number tile is tapped                          |
+| `partner_lane_viewed`         | `portal`, `lane`           | A lane tab (order/job state) is opened                 |
+| `partner_sound_enabled`       | `portal`, `on`             | Order sound unlocked, turned off or on again           |
+| `partner_offer_alert_played`  | `portal`, `count` (1–50)   | The new-work alert fired for fresh work (visible page) |
+| `partner_chart_table_toggled` | `portal`, `chart`, `table` | A partner chart switched to its table view or back     |
