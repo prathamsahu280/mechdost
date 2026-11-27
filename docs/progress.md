@@ -14,6 +14,7 @@ This file is the single source of truth for **where the build is right now**. It
 - Left live on purpose (R2): test content, 02 banned to 27 Dec (appeal undecidable with two staff, Q-SIM-1), two
   promotions scheduled to 28 Nov 23:00, 5 hashtags, reserved name "MechDost Seva", testers list, 10's grant. The lead
   switches Turnstile back from the Cloudflare test keys and lets the QA bypass end (16:57).
+- Follow-up F (15:00–15:50, no code edits): SIM-F1 (P1) Ustaad sends no email/WhatsApp at all (spec 23 § 12 promises email for removals/strikes/freeze); SIM-F2 (P1) appeal-receipt email button dead-ends for a shop-owner member; SIM-F3 (P1) banned member keeps composers, gets network-error copy, no ban notice; SIM-F6 (P1) a video stripped with a normal tool still hits MEDIA_LOCATION (udta) — only a hand-cut file posts (HEVC 4K and H.264 both OK then), server strips photo EXIF (pass); SIM-F4 (P2) open feed never refreshes; SIM-F5 (P2) focus management/order; SIM-F7 (P2) raw segment codes in Hindi bell. Slow 3G, reduced motion, held-author view pass; NVDA not installed. Lead request (08 decides 02's appeal) BLOCKED: 08 email not verified (Q-SIM-5). Files: logs/bugs.md (SIM-F*), audit.md "Follow-up F", logs/F-notifications.md.
 - Next: fix bugs test-first (plan § 10.6); write `docs/qa/ustaad-simulation-report-2026-11-27.md` from the logs;
   founder decisions Q-SIM-1..3.
 

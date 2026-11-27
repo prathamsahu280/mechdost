@@ -515,6 +515,8 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
 - **Q-SIM-3:** after the run, leave the preview-testers list in place (for real beta mechanics later) or empty it?
   Default: the 9 test accounts stay listed until the founder decides; the QA sign-in bypass is removed regardless.
 - **Q-SIM-4:** build the four P0 member screens the plan found missing (give vouches, workshop owner's "Confirm your
+
+- **Q-SIM-5 (action, agent F 2026-11-27):** please click account 08's "Verify your email" message (sent 12:41 IST to the test inbox), then 08 signs out and in again; until then 08 (new community manager) gets "Verify your phone and email first" and cannot decide 02's ban appeal (UPHOLD planned). Also check the 9 run emails listed in D:/mechdost-qa/ustaad-sim-2026-11-27/logs/F-notifications.md. Default meanwhile: appeal stays undecided; 02 banned to 27 Dec.
   mechanics", `/ustaad/me/verify`, employer's applicants list) before opening the network? Default: yes, next build.
 
 #### Q-COD-1 … 5: cash on delivery only on request (founder ruling 2026-11-26)
