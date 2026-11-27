@@ -4106,12 +4106,12 @@
     "tpl_cod_revoked": "Cash on delivery turned off",
     "tpl_delivery_agent_invite": "Delivery agent invitation",
     "tpl_delivery_offer": "New delivery job for an agent",
-    "tpl_ustaad_content_removed": "Ustaad Network: content removed",
-    "tpl_ustaad_strike": "Ustaad Network: strike",
-    "tpl_ustaad_banned": "Ustaad Network: account blocked",
-    "tpl_ustaad_appeal_received": "Ustaad Network: appeal received",
-    "tpl_ustaad_appeal_upheld": "Ustaad Network: appeal decided, decision stays",
-    "tpl_ustaad_appeal_overturned": "Ustaad Network: appeal accepted"
+    "tpl_ustaad_content_removed": "Mechanic Network: content removed",
+    "tpl_ustaad_strike": "Mechanic Network: strike",
+    "tpl_ustaad_banned": "Mechanic Network: account blocked",
+    "tpl_ustaad_appeal_received": "Mechanic Network: appeal received",
+    "tpl_ustaad_appeal_upheld": "Mechanic Network: appeal decided, decision stays",
+    "tpl_ustaad_appeal_overturned": "Mechanic Network: appeal accepted"
   },
   "reco": {
     "title": "Goes well with this",
@@ -4482,7 +4482,7 @@
     },
     "ustaad_banned": {
       "title": "Your network account is blocked",
-      "body": "Our team blocked your Ustaad Network account. Open it to see why, until when, and how to appeal."
+      "body": "Our team blocked your Mechanic Network account. Open it to see why, until when, and how to appeal."
     },
     "ustaad_rules_reminder": {
       "title": "Network rules reminder",

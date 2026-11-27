@@ -4106,12 +4106,12 @@
     "tpl_cod_revoked": "कैश ऑन डिलीवरी बंद",
     "tpl_delivery_agent_invite": "डिलीवरी एजेंट का न्योता",
     "tpl_delivery_offer": "एजेंट के लिए नया डिलीवरी काम",
-    "tpl_ustaad_content_removed": "उस्ताद नेटवर्क: पोस्ट हटाई गई",
-    "tpl_ustaad_strike": "उस्ताद नेटवर्क: चेतावनी",
-    "tpl_ustaad_banned": "उस्ताद नेटवर्क: खाता रोका गया",
-    "tpl_ustaad_appeal_received": "उस्ताद नेटवर्क: अपील मिली",
-    "tpl_ustaad_appeal_upheld": "उस्ताद नेटवर्क: अपील पर फ़ैसला, फ़ैसला वही",
-    "tpl_ustaad_appeal_overturned": "उस्ताद नेटवर्क: अपील मान ली गई"
+    "tpl_ustaad_content_removed": "मैकेनिक नेटवर्क: पोस्ट हटाई गई",
+    "tpl_ustaad_strike": "मैकेनिक नेटवर्क: चेतावनी",
+    "tpl_ustaad_banned": "मैकेनिक नेटवर्क: खाता रोका गया",
+    "tpl_ustaad_appeal_received": "मैकेनिक नेटवर्क: अपील मिली",
+    "tpl_ustaad_appeal_upheld": "मैकेनिक नेटवर्क: अपील पर फ़ैसला, फ़ैसला वही",
+    "tpl_ustaad_appeal_overturned": "मैकेनिक नेटवर्क: अपील मान ली गई"
   },
   "reco": {
     "title": "इसके साथ अच्छा चलता है",
@@ -4482,7 +4482,7 @@
     },
     "ustaad_banned": {
       "title": "आपका नेटवर्क खाता रोका गया",
-      "body": "हमारी टीम ने आपका उस्ताद नेटवर्क खाता रोक दिया है। कारण, कब तक, और अपील का तरीका देखने के लिए खोलें।"
+      "body": "हमारी टीम ने आपका मैकेनिक नेटवर्क खाता रोक दिया है। कारण, कब तक, और अपील का तरीका देखने के लिए खोलें।"
     },
     "ustaad_rules_reminder": {
       "title": "नेटवर्क के नियम याद रखें",

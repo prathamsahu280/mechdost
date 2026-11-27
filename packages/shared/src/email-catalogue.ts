@@ -39,7 +39,7 @@ const service = (p: Record<string, string>) => `/service/${enc(p.requestCode ?? 
 const ticket = (p: Record<string, string>) => `/account/support?ticket=${enc(p.ticketCode ?? '')}`;
 const roadside = (p: Record<string, string>) => `/roadside/${enc(p.requestCode ?? '')}`;
 const partnerHome = () => '/partner/shop';
-/** Ustaad Network decisions open the member's standing page (reasons, end dates, appeal; spec 23 § 12, SIM-F1). */
+/** Mechanic Network decisions open the member's standing page (reasons, end dates, appeal; spec 23 § 12, SIM-F1). */
 const ustaadStanding = () => '/ustaad/me/standing';
 
 const T = {
@@ -1157,7 +1157,7 @@ export const EMAIL_CATALOGUE = {
       button: 'डिलीवरी पोर्टल खोलें',
     },
   }),
-  // ----- Ustaad Network moderation (spec 23 § 12, SIM-F1): bell + email; reasons are shown on the standing page ----
+  // ----- Mechanic Network moderation (spec 23 § 12, SIM-F1): bell + email; reasons are shown on the standing page ----
   ustaad_content_removed: def({
     purpose: 'updates',
     category: 'transactional',
@@ -1167,15 +1167,15 @@ export const EMAIL_CATALOGUE = {
     button: ustaadStanding,
     sample: {},
     en: {
-      subject: 'Something you posted on the Ustaad Network was removed',
+      subject: 'Something you posted on the Mechanic Network was removed',
       heading: 'Your post was removed',
-      body: 'Something you posted on the Ustaad Network broke the community rules, so our team removed it.\n\nOpen your standing page to see the reason. If you think this is a mistake, you can appeal from the same page.',
+      body: 'Something you posted on the Mechanic Network broke the community rules, so our team removed it.\n\nOpen your standing page to see the reason. If you think this is a mistake, you can appeal from the same page.',
       button: 'See why',
     },
     hi: {
-      subject: 'उस्ताद नेटवर्क पर आपकी डाली हुई चीज़ हटाई गई',
+      subject: 'मैकेनिक नेटवर्क पर आपकी डाली हुई चीज़ हटाई गई',
       heading: 'आपकी पोस्ट हटाई गई',
-      body: 'आपने उस्ताद नेटवर्क पर जो डाला था वह समुदाय के नियमों के ख़िलाफ़ था, इसलिए हमारी टीम ने उसे हटा दिया।\n\nकारण देखने के लिए अपना स्टैंडिंग पेज खोलें। अगर आपको लगता है कि यह गलती है, तो उसी पेज से अपील कर सकते हैं।',
+      body: 'आपने मैकेनिक नेटवर्क पर जो डाला था वह समुदाय के नियमों के ख़िलाफ़ था, इसलिए हमारी टीम ने उसे हटा दिया।\n\nकारण देखने के लिए अपना स्टैंडिंग पेज खोलें। अगर आपको लगता है कि यह गलती है, तो उसी पेज से अपील कर सकते हैं।',
       button: 'कारण देखें',
     },
   }),
@@ -1188,15 +1188,15 @@ export const EMAIL_CATALOGUE = {
     button: ustaadStanding,
     sample: {},
     en: {
-      subject: 'A strike on your Ustaad Network account',
+      subject: 'A strike on your Mechanic Network account',
       heading: 'Your account got a strike',
-      body: 'Our team gave your Ustaad Network account a strike for breaking the community rules. More strikes can limit or close your account.\n\nOpen your standing page to see the reason and, if you disagree, appeal.',
+      body: 'Our team gave your Mechanic Network account a strike for breaking the community rules. More strikes can limit or close your account.\n\nOpen your standing page to see the reason and, if you disagree, appeal.',
       button: 'See why',
     },
     hi: {
-      subject: 'आपके उस्ताद नेटवर्क खाते पर चेतावनी',
+      subject: 'आपके मैकेनिक नेटवर्क खाते पर चेतावनी',
       heading: 'आपके खाते को चेतावनी मिली',
-      body: 'समुदाय के नियम तोड़ने पर हमारी टीम ने आपके उस्ताद नेटवर्क खाते को चेतावनी दी है। और चेतावनियाँ मिलने पर खाता सीमित या बंद हो सकता है।\n\nकारण देखने के लिए अपना स्टैंडिंग पेज खोलें, और सहमत न हों तो अपील करें।',
+      body: 'समुदाय के नियम तोड़ने पर हमारी टीम ने आपके मैकेनिक नेटवर्क खाते को चेतावनी दी है। और चेतावनियाँ मिलने पर खाता सीमित या बंद हो सकता है।\n\nकारण देखने के लिए अपना स्टैंडिंग पेज खोलें, और सहमत न हों तो अपील करें।',
       button: 'कारण देखें',
     },
   }),
@@ -1209,15 +1209,15 @@ export const EMAIL_CATALOGUE = {
     button: ustaadStanding,
     sample: {},
     en: {
-      subject: 'Your Ustaad Network account is blocked',
+      subject: 'Your Mechanic Network account is blocked',
       heading: 'Your account is blocked for now',
-      body: 'Our team blocked your Ustaad Network account for breaking the community rules. Your MechDost account for orders and services is not affected.\n\nOpen your standing page to see the reason and the end date, and to appeal.',
+      body: 'Our team blocked your Mechanic Network account for breaking the community rules. Your MechDost account for orders and services is not affected.\n\nOpen your standing page to see the reason and the end date, and to appeal.',
       button: 'See why',
     },
     hi: {
-      subject: 'आपका उस्ताद नेटवर्क खाता रोका गया है',
+      subject: 'आपका मैकेनिक नेटवर्क खाता रोका गया है',
       heading: 'आपका खाता अभी रोका गया है',
-      body: 'समुदाय के नियम तोड़ने पर हमारी टीम ने आपका उस्ताद नेटवर्क खाता रोक दिया है। ऑर्डर और सर्विस वाला आपका MechDost खाता पहले जैसा चलता रहेगा।\n\nकारण, ख़त्म होने की तारीख़ देखने और अपील करने के लिए अपना स्टैंडिंग पेज खोलें।',
+      body: 'समुदाय के नियम तोड़ने पर हमारी टीम ने आपका मैकेनिक नेटवर्क खाता रोक दिया है। ऑर्डर और सर्विस वाला आपका MechDost खाता पहले जैसा चलता रहेगा।\n\nकारण, ख़त्म होने की तारीख़ देखने और अपील करने के लिए अपना स्टैंडिंग पेज खोलें।',
       button: 'कारण देखें',
     },
   }),
@@ -1233,13 +1233,13 @@ export const EMAIL_CATALOGUE = {
     en: {
       subject: 'We got your appeal {ticketCode}',
       heading: 'We have your appeal',
-      body: 'Your appeal {ticketCode} on an Ustaad Network decision is with our team. A different person from the one who decided will check it again, usually within a few working days.\n\nYou can follow it on your standing page.',
+      body: 'Your appeal {ticketCode} on an Mechanic Network decision is with our team. A different person from the one who decided will check it again, usually within a few working days.\n\nYou can follow it on your standing page.',
       button: 'Open your appeal',
     },
     hi: {
       subject: 'आपकी अपील {ticketCode} मिल गई',
       heading: 'हमें आपकी अपील मिल गई है',
-      body: 'उस्ताद नेटवर्क के फ़ैसले पर आपकी अपील {ticketCode} हमारी टीम के पास है। फ़ैसला लेने वाले से अलग कोई व्यक्ति इसे फिर से जाँचेगा, आमतौर पर कुछ कार्य-दिवसों में।\n\nआप इसे अपने स्टैंडिंग पेज पर देख सकते हैं।',
+      body: 'मैकेनिक नेटवर्क के फ़ैसले पर आपकी अपील {ticketCode} हमारी टीम के पास है। फ़ैसला लेने वाले से अलग कोई व्यक्ति इसे फिर से जाँचेगा, आमतौर पर कुछ कार्य-दिवसों में।\n\nआप इसे अपने स्टैंडिंग पेज पर देख सकते हैं।',
       button: 'अपील खोलें',
     },
   }),
