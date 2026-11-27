@@ -223,8 +223,8 @@ export function PreviewTestersCard() {
             }}
           />
         </div>
-        {/* Top-aligned row: the hint under the first field must not lift its input; the button drops by one label. */}
-        <button type="submit" className={`${portalPrimary} tab:mt-6`} aria-disabled={busy || undefined}>
+        {/* Top-aligned row: the hint under the first field must not lift its input; the button drops by one label + gap (28 px, measured live). */}
+        <button type="submit" className={`${portalPrimary} tab:mt-7`} aria-disabled={busy || undefined}>
           {t('add')}
         </button>
       </form>

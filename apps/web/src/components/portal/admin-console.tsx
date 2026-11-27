@@ -404,7 +404,7 @@ function AdminNav({ current }: { current: AdminSection }) {
                     <PortalNavLink
                       href={`${prefix}/admin${s === 'overview' ? '' : `/${s}`}`}
                       aria-current={s === current ? 'page' : undefined}
-                      className={`press flex min-h-11 items-center gap-2.5 rounded-pill px-4 text-sm font-bold whitespace-nowrap focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-focus nav:min-h-10 nav:rounded-button nav:px-3 ${
+                      className={`press flex min-h-11 items-center gap-2.5 rounded-pill px-4 text-sm font-bold whitespace-nowrap focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-focus nav:min-h-10 nav:rounded-button nav:px-3 nav:py-2 nav:leading-snug nav:whitespace-normal ${
                         s === current ? 'bg-accent-soft text-accent-soft-text' : 'text-ink hover:bg-pill'
                       }`}
                     >
