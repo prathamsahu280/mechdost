@@ -73,11 +73,14 @@ function effectiveMode(
   asked: 'suggest' | 'auto' | undefined,
 ): UstaadCorrectionMode {
   const def = s['ustaad.correction.default_mode'] as UstaadCorrectionMode;
-  if (!s['ustaad.correction.member_can_change']) return def;
-  const own = USTAAD_CORRECTION_MODES.find((m) => m === member.correctionMode);
+  const own = s['ustaad.correction.member_can_change']
+    ? (USTAAD_CORRECTION_MODES.find((m) => m === member.correctionMode) ?? def)
+    : def;
   // The member's own "off" wins over a mode asked for in the request.
   if (own === 'off') return 'off';
-  return asked ?? own ?? def;
+  // SIM-P20: a request may only step down (auto → suggest). Asking for auto never changes text the author did not
+  // choose to have fixed: auto needs the admin default or the member's own "Fix by itself".
+  return asked === 'suggest' ? 'suggest' : own;
 }
 
 export function ustaadCorrectRoutes(deps: AppDeps) {

@@ -1974,6 +1974,13 @@ Each fix has a regression test named after the QA id.
   name) to the voucher in the same transaction, keyed on the vouch row. The notice opens `/ustaad/me` (the
   catalogue's `/ustaad/me/verify` was never built). Not done: there is still no member screen to give or decline a
   vouch (Q-SIM-4; the API `POST /ustaad/vouches/{id}/give` exists), so the bell leads to Me, not to the request.
+- **SIM-P20 — suggest mode only suggests.** The composers call `correctForSend` (mode `auto`) on send when the member
+  did not open the suggestion, and `POST /ustaad/correct` honoured the asked mode, so suggest mode silently replaced
+  text. The route's mode is now: the member's own choice (when `correction.member_can_change` is on) or the admin
+  default; `off` wins; a request may only **step down** to `suggest`, never up to `auto`. In suggest mode the send-time
+  call therefore answers `suggest` and the composer keeps the member's words. "Fix by itself" applies only when the
+  admin default is `auto` or the member chose it (G17: the member control is in "My choices", see SIM-P10 below).
+  Test: `ustaad-correct-route.test.ts` "SIM-P20 …".
 - **SIM-P17 — the server decides the employer.** `PostJobDto.employer` is optional and the web form no longer sends
   one (it hard-coded `trade`, so a workshop owner got 403). `ustaadJobEmployerOptions(userId, memberWorkshopId)`
   lists what the user may post as: every workshop they hold a grant on (the member's own linked workshop first),
