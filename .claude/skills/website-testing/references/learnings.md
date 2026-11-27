@@ -404,3 +404,9 @@ Turbopack drops unused code per file, not per export: `demo/store.ts` imported 4
 `state/reasons.ts` (re-exported from the index): every page −4.4 KB (/shop 176.6, product 175.8, /cart 176.3) · guard
 `apps/web/test/shared-state-barrel.test.ts`. Measure locally (build + `next start` + `scripts/measure-js.mjs`, ~3 min)
 before pushing a budget fix.
+
+T-DATE2 · 2026-11-27 · db/worker (repeat of T169 → guarded) · after the deploy the Ustaad report clock failed every
+minute in production (`ERR_INVALID_ARG_TYPE`): raw JS `Date` inside `sql` templates (report clock, story expiry in
+every media read, tutorial skip/complete, message-thread cursor). PGlite accepted them, postgres-js does not · guard:
+`packages/db/src/testing.ts` `rejectDateParams` makes the test DB throw on any Date parameter, so every db/API test now
+fails the way production would (it found 18 tests over 5 sites) · fix: `${d.toISOString()}::timestamptz`.

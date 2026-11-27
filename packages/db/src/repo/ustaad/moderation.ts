@@ -1611,7 +1611,7 @@ export async function runUstaadReportClock(
       .where(
         and(
           inArray(ustaadReports.status, ['open', 'in_review']),
-          sql`${ustaadReports.createdAt} + (${ustaadReports.dueAt} - ${ustaadReports.createdAt}) / 2 <= ${now}`,
+          sql`${ustaadReports.createdAt} + (${ustaadReports.dueAt} - ${ustaadReports.createdAt}) / 2 <= ${now.toISOString()}::timestamptz`,
         ),
       )
       .orderBy(asc(ustaadReports.dueAt))

@@ -530,7 +530,9 @@ export async function listUstaadThreads(
         box,
         or(eq(ustaadThreads.requestedBy, me.id), receiverCanSee(sql`${ustaadThreads.id}`)),
         sql`not exists (select 1 from ustaad_blocks bl where (bl.member_id = ${ustaadThreads.lowId} and bl.target_id = ${ustaadThreads.highId}) or (bl.member_id = ${ustaadThreads.highId} and bl.target_id = ${ustaadThreads.lowId}))`,
-        cur ? sql`(${at}, ${ustaadThreads.id}) < (${cur.at}, ${cur.id})` : undefined,
+        cur
+          ? sql`(${at}, ${ustaadThreads.id}) < (${cur.at.toISOString()}::timestamptz, ${cur.id})`
+          : undefined,
       ),
     )
     .orderBy(desc(at), desc(ustaadThreads.id))

@@ -30,7 +30,30 @@ const extensions = { postgis, citext, pg_trgm, btree_gist };
 /** Mirror Supabase, where extension types (geography, citext) resolve through the `extensions` schema. */
 const SEARCH_PATH = 'CREATE SCHEMA IF NOT EXISTS extensions; SET search_path TO public, extensions;';
 
+/**
+ * postgres-js (production) throws `ERR_INVALID_ARG_TYPE` on a raw JS `Date` inside a `sql` template, PGlite accepts it
+ * (T169, and again 2026-11-27: the Ustaad report clock failed every minute in production). Mirror production: any Date
+ * parameter fails the query here too. Write `${d.toISOString()}::timestamptz`; typed columns convert Dates themselves.
+ */
+function hasDate(v: unknown): boolean {
+  return v instanceof Date || (Array.isArray(v) && v.some(hasDate));
+}
+
+function rejectDateParams(client: PGlite): PGlite {
+  const query = client.query.bind(client);
+  client.query = ((text: string, params?: unknown[], options?: unknown) => {
+    if (params?.some(hasDate))
+      throw new TypeError(
+        `Raw Date parameter in SQL (postgres-js rejects it in production): use \${d.toISOString()}::timestamptz
+${text}`,
+      );
+    return query(text, params, options as never);
+  }) as PGlite['query'];
+  return client;
+}
+
 function wrap(client: PGlite) {
+  rejectDateParams(client);
   return { client, db: drizzle(client, { schema, casing: 'snake_case' }) };
 }
 

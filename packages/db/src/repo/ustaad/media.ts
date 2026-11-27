@@ -396,7 +396,7 @@ export async function readableUstaadMedia(
   const open = (author: SQL) => sql`not exists (select 1 from ustaad_blocks bl
       where (bl.member_id = ${author} and bl.target_id = ${v}) or (bl.member_id = ${v} and bl.target_id = ${author}))`;
   const livePost = (p: SQL) =>
-    sql`(${p}.status = 'visible' and (${p}.kind <> 'story' or ${p}.expires_at > ${now}) and ${open(sql`${p}.author_id`)})`;
+    sql`(${p}.status = 'visible' and (${p}.kind <> 'story' or ${p}.expires_at > ${now.toISOString()}::timestamptz) and ${open(sql`${p}.author_id`)})`;
   const liveQuestion = sql`(q.status <> 'removed' and ${open(sql`q.asker_id`)})`;
   const liveAnswer = sql`(a.status = 'visible' and ${open(sql`a.author_id`)} and ${liveQuestion})`;
   const res = await tx.execute(sql`

@@ -55,7 +55,7 @@ export async function saveUstaadOnboarding(
         .update(ustaadMemberOnboarding)
         .set({
           lastCard: e.card,
-          tutorialSkippedAt: sql`coalesce(${ustaadMemberOnboarding.tutorialSkippedAt}, ${now})`,
+          tutorialSkippedAt: sql`coalesce(${ustaadMemberOnboarding.tutorialSkippedAt}, ${now.toISOString()}::timestamptz)`,
         })
         .where(where);
       break;
@@ -64,7 +64,7 @@ export async function saveUstaadOnboarding(
         .update(ustaadMemberOnboarding)
         .set({
           lastCard: e.card,
-          tutorialCompletedAt: sql`coalesce(${ustaadMemberOnboarding.tutorialCompletedAt}, ${now})`,
+          tutorialCompletedAt: sql`coalesce(${ustaadMemberOnboarding.tutorialCompletedAt}, ${now.toISOString()}::timestamptz)`,
         })
         .where(where);
       break;
