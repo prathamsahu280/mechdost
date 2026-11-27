@@ -33,6 +33,7 @@ import {
 } from '@mechdost/shared/ustaad/codes';
 import { USTAAD_CONTENT_STATUSES } from '@mechdost/shared/state';
 import { INTERNAL_PATH_SQL_FORBIDDEN, INTERNAL_PATH_SQL_RE } from '@mechdost/shared/ustaad/paths';
+import { VIDEO_PROVIDERS } from '@mechdost/shared/ustaad/video-links';
 import { createdAt, id, ts, updatedAt, version } from './_common';
 import { cities } from './geography';
 import { users, vehicleModels } from './identity';
@@ -121,6 +122,13 @@ export const ustaadPosts = pgTable(
     segmentCode: text(),
     vehicleModelId: uuid().references(() => vehicleModels.id, { onDelete: 'set null' }),
     linkUrl: text(),
+    // Video links (spec 23 § 10b): set only for a recognised video URL; the player and thumbnail URLs are rebuilt from
+    // the id. Title and author come from oEmbed and are screened with the post text.
+    videoProvider: text(),
+    videoId: text(),
+    videoStartS: integer(),
+    linkTitle: text(),
+    linkAuthor: text(),
     aiGenerated: boolean().notNull().default(false),
     status: text().notNull().default('visible'),
     heldReasonCode: text(),
@@ -148,6 +156,15 @@ export const ustaadPosts = pgTable(
     check('ustaad_posts_segment_valid', nullOrOneOf(t.segmentCode, USTAAD_SEGMENT_CODES)),
     check('ustaad_posts_story_expires', sql`(${t.kind} = 'story') = (${t.expiresAt} is not null)`),
     check('ustaad_posts_link_https', sql`${t.linkUrl} is null or ${t.linkUrl} ~ '^https?://'`),
+    check('ustaad_posts_video_provider_valid', nullOrOneOf(t.videoProvider, VIDEO_PROVIDERS)),
+    check(
+      'ustaad_posts_video_shape',
+      sql`(${t.videoProvider} is null) = (${t.videoId} is null) and (${t.videoId} is null or (${t.videoId} ~ '^[A-Za-z0-9_-]{11}$' and ${t.linkUrl} is not null)) and (${t.videoStartS} is null or (${t.videoId} is not null and ${t.videoStartS} between 0 and 43200))`,
+    ),
+    check(
+      'ustaad_posts_link_meta_len',
+      sql`(${t.linkTitle} is null or char_length(${t.linkTitle}) <= 200) and (${t.linkAuthor} is null or char_length(${t.linkAuthor}) <= 100)`,
+    ),
     check(
       'ustaad_posts_len',
       sql`(${t.body} is null or char_length(${t.body}) <= 3000) and (${t.fixSymptom} is null or char_length(${t.fixSymptom}) <= 500) and (${t.fixCause} is null or char_length(${t.fixCause}) <= 500) and (${t.fixFix} is null or char_length(${t.fixFix}) <= 500)`,
@@ -400,6 +417,8 @@ export const ustaadLinkPreviews = pgTable(
     finalHost: text(),
     title: text(),
     description: text(),
+    /** oEmbed `author_name` for video links (spec 23 § 10b). */
+    authorName: text(),
     imageMediaId: uuid().references(() => ustaadMedia.id, { onDelete: 'set null' }),
     status: text().notNull(),
     checkedAt: ts().notNull().defaultNow(),
@@ -411,7 +430,7 @@ export const ustaadLinkPreviews = pgTable(
     check('ustaad_link_previews_status_valid', oneOf(t.status, LINK_PREVIEW_STATES)),
     check(
       'ustaad_link_previews_len',
-      sql`(${t.title} is null or char_length(${t.title}) <= 200) and (${t.description} is null or char_length(${t.description}) <= 500)`,
+      sql`(${t.title} is null or char_length(${t.title}) <= 200) and (${t.description} is null or char_length(${t.description}) <= 500) and (${t.authorName} is null or char_length(${t.authorName}) <= 100)`,
     ),
   ],
 );

@@ -15,6 +15,7 @@ import { createAnthropicCorrection } from './ustaad/correction/anthropic';
 import { memoryCorrectionCache, redisCorrectionCache } from './ustaad/correction/cache';
 import { memoryFeedSnapshots, redisFeedSnapshots } from './ustaad/feed/snapshot';
 import { defaultPreviewDeps } from './ustaad/link-preview';
+import { defaultOEmbedDeps } from './ustaad/video-oembed';
 import { createGeminiCorrection } from './ustaad/correction/gemini';
 import { createFirebaseEmailActionLinks } from './auth/email-actions';
 import { createFirebaseVerifier } from './auth/firebase-verifier';
@@ -111,6 +112,7 @@ const app = createApp({
   correctionCache: redis ? redisCorrectionCache(redis) : memoryCorrectionCache(),
   feedSnapshots: redis ? redisFeedSnapshots(redis) : memoryFeedSnapshots(),
   linkPreview: defaultPreviewDeps(),
+  videoOEmbed: defaultOEmbedDeps(),
   passwordAuth: config.firebaseApiKey
     ? createFirebasePasswordAuthority({
         projectId: config.firebaseProjectId,

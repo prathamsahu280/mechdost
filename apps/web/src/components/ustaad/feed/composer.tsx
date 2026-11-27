@@ -31,6 +31,7 @@ import {
   videoTextDeclare,
   type VideoText,
 } from '../media/video-text-fields';
+import { VideoLinkComposerPreview } from '../link-embed/composer-preview';
 
 const MAX_PHOTOS = 10;
 const MAX_TAGS = 5;
@@ -812,6 +813,7 @@ export function Composer({ story }: { story: boolean }) {
                 }}
                 className={fieldClass}
               />
+              <VideoLinkComposerPreview url={linkUrl} />
             </div>
           ) : null}
 

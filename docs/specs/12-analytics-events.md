@@ -289,7 +289,9 @@ shown), `ustaad_post_liked {}` and `ustaad_post_saved {}` (only when turned on),
 saved }` (the shared Save control for posts, questions, answers, jobs and lessons, 2026-11-28; no ids),
 `ustaad_post_shared { channel }`
 (`whatsapp`; Copy link sends no event), `ustaad_story_viewed {}` (once per story seen, not one's own),
-`ustaad_video_played { secondsBand }` (feed and story videos, on tap), `ustaad_voice_played {}`, `ustaad_tag_opened {}`,
+`ustaad_video_played { secondsBand }` (feed and story videos, on tap), `ustaad_video_link_added { provider }` (a pasted
+link recognised as a video in the composer, once per video) and `ustaad_video_link_played { provider }` (the YouTube
+facade tapped; spec 23 § 10b, 2026-11-28), `ustaad_voice_played {}`, `ustaad_tag_opened {}`,
 `ustaad_promo_impression { promo, slot }`, `ustaad_promo_click { promo }` and `ustaad_promo_hidden { reason }`, plus
 the smart-correction events from the composer and comments. Controls carry `data-track` (`ustaad_post_*`,
 `ustaad_story_add`, `ustaad_header_messages`, `ustaad_rail_{network,messages,saved}`, `ustaad_teaser_*`). Posts,

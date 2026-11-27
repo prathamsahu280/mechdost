@@ -18,6 +18,7 @@ import type { CorrectionCache } from './ustaad/correction/cache';
 import type { SmartCorrectionEngine } from './ustaad/correction/engine';
 import type { FeedSnapshotStore } from './ustaad/feed/snapshot';
 import type { PreviewDeps } from './ustaad/link-preview';
+import type { OEmbedDeps } from './ustaad/video-oembed';
 import type { MediaHost } from './ustaad/media/host';
 import type { ImageSafetyClassifier } from './ustaad/safety/classifier';
 import type { UsageSources } from './usage/check';
@@ -60,6 +61,8 @@ export interface AppDeps {
   feedSnapshots?: FeedSnapshotStore;
   /** SSRF-safe link-preview fetcher (spec 23 § 10a); null/absent = no previews (tests, development). */
   linkPreview?: PreviewDeps | null;
+  /** YouTube oEmbed for video-link posts (spec 23 § 10b; fixed host only); null/absent = id-only cards. */
+  videoOEmbed?: OEmbedDeps | null;
   /** Where Usage & limits reads R2, the disk and email counts (founder 2026-11-26); absent = from `config`. */
   usageSources?: UsageSources;
 }

@@ -62,6 +62,12 @@ const RAZORPAY_SCRIPTS = ['https://checkout.razorpay.com'];
 const RAZORPAY_FRAMES = ['https://api.razorpay.com', 'https://checkout.razorpay.com'];
 const RAZORPAY_CONNECT = ['https://api.razorpay.com', 'https://lumberjack.razorpay.com'];
 const RAZORPAY_IMAGES = ['https://cdn.razorpay.com'];
+/**
+ * Video-link posts (spec 23 § 10b): the privacy-enhanced YouTube player, framed only after a tap, and its thumbnails.
+ * No YouTube script or connection is allowed on our pages; the player's own scripts run inside its frame.
+ */
+const YOUTUBE_FRAME = 'https://www.youtube-nocookie.com';
+const YOUTUBE_IMAGES = 'https://i.ytimg.com';
 
 /**
  * The Sentry ingest origin of a DSN (`https://<key>@o<n>.ingest.de.sentry.io/<id>` → `https://o<n>.ingest.de.sentry.io`),
@@ -138,8 +144,8 @@ export function contentSecurityPolicy(input: CspInput): string {
   if (input.dev) connect.push('ws:');
 
   const frame = real
-    ? [TURNSTILE, ...RECAPTCHA_FRAMES, ...RAZORPAY_FRAMES, ...(authDomain ? [authDomain] : [])]
-    : ["'none'"];
+    ? [TURNSTILE, ...RECAPTCHA_FRAMES, ...RAZORPAY_FRAMES, ...(authDomain ? [authDomain] : []), YOUTUBE_FRAME]
+    : [YOUTUBE_FRAME];
 
   const directives: [string, string[]][] = [
     ['default-src', ["'self'"]],
@@ -152,6 +158,7 @@ export function contentSecurityPolicy(input: CspInput): string {
         'data:',
         'blob:',
         ...MAP_ORIGINS,
+        YOUTUBE_IMAGES,
         ...(api ? [api] : []),
         ...(real ? RAZORPAY_IMAGES : []),
         ...media,

@@ -2979,3 +2979,20 @@ workshop | delivery`) and a snake_case key (regex, ≤ 32 chars) so batches A–
   `ustaad_item_save_toggled {kind, saved}`, new rate limit `ustaad_saves` 200/day.
 - Migration `0190_ustaad_saved_collections` (high number on purpose, journal `when` 1795900000000; the lead renumbers
   at merge).
+
+## 2026-11-28 — Ustaad: video links with an embedded player (founder request = approval)
+
+Founder 2026-11-28: "add options for people to paste other videos link like youtube links and we need an embedded
+player for those links like youtube along with preview and stuff". Decided (builder, spec 23 § 10b):
+
+- YouTube only for now, recognised by an exact-host + id allow-list; kept as post kind `link` (no new kind, no new
+  `posts.types.*` setting); stored canonical with provider / id / start and the oEmbed title and author (migration
+  `0150_ustaad_video_links`, number held high for the lead to renumber).
+- Preview from YouTube oEmbed on the fixed host only, fetched before the post so the title and author are screened
+  like post text; cached in `ustaad_link_previews` (+ `author_name`); thumbnail derived from the id on `i.ytimg.com`,
+  never taken from the oEmbed answer. No duration (oEmbed has none; no scraping).
+- Click-to-play facade; the `youtube-nocookie.com` iframe only after the tap (privacy, JS budget). CSP: `frame-src` +
+  `https://www.youtube-nocookie.com` (also in demo builds, which were `'none'`), `img-src` + `https://i.ytimg.com`;
+  `images.remotePatterns` gains `i.ytimg.com/vi/**` (the first remote image host).
+- Blocked link sites apply to both the pasted and the canonical URL; new-account link limits unchanged.
+- Hindi: "YouTube" is a brand, allowed in Latin script on `/hi` (source label allow-listed in the i18n test).

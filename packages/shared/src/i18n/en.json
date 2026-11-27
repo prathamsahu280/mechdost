@@ -9225,6 +9225,19 @@
         "part_prices": "Part prices",
         "tips": "Tips"
       }
+    },
+    "videoLink": {
+      "play": "Play video: {title}",
+      "playUntitled": "Play YouTube video",
+      "source": "YouTube",
+      "by": "by {author}",
+      "openInYouTube": "Open in YouTube",
+      "dataNote": "Plays from YouTube and uses mobile data",
+      "playerTitle": "YouTube video: {title}",
+      "playerTitleUntitled": "YouTube video",
+      "close": "Close video",
+      "recognised": "YouTube video: it will play inside the post",
+      "startsAt": "Starts at {time}"
     }
   },
   "savings": {

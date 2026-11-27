@@ -738,6 +738,59 @@ needs a key (Q-U6); until then an admin domain deny list in `ustaad_word_lists` 
 - Tests: `packages/shared/test/ustaad-media-text.test.ts`, `packages/db/test/ustaad-media-text.test.ts`,
   `apps/api/test/ustaad-media-api.test.ts` ("typed summary and captions"), `apps/web/test/ustaad-voice-ui.test.ts`.
 
+### 10b. Video links with an embedded player (founder 2026-11-28; built 2026-11-28)
+
+Founder: "add options for people to paste other videos link like youtube links and we need an embedded player for
+those links like youtube along with preview and stuff". A **link post** whose URL is a recognised video plays inside
+the post; every other link keeps the § 10a card.
+
+- **Recognised (allow-list, `packages/shared/src/ustaad/video-links.ts`):** YouTube only: hosts exactly
+  `youtube.com`, `www.`/`m.youtube.com`, `youtu.be`, `(www.)youtube-nocookie.com`; paths `/watch?v=`, `/shorts/`,
+  `/live/`, `/embed/`, `youtu.be/<id>`; id `^[A-Za-z0-9_-]{11}$`; start from `t` / `start` / `#t` (`90`, `90s`,
+  `1m30s`, `1h2m3s`, ≤ 12 h, else 0). Runs after `safeLinkUrl`, so user-info, ports and IP hosts are refused first.
+  Watch, embed, thumbnail and oEmbed URLs are **rebuilt from the id**; the raw string never reaches a fetch, a frame
+  or an image.
+- **Stored on the post** (migration `0150_ustaad_video_links`): `link_url` = canonical
+  `https://www.youtube.com/watch?v=<id>`, `video_provider` (`youtube`), `video_id`, `video_start_s`, `link_title`
+  (≤ 200), `link_author` (≤ 100); CHECKs: provider and id null together, id pattern, start 0–43200 and only with an
+  id. The thumbnail is not stored: `https://i.ytimg.com/vi/<id>/hqdefault.jpg` is derived. `ustaad_link_previews`
+  gains `author_name` (≤ 100) and caches the oEmbed answer per canonical URL hash (refreshed after 7 days).
+- **Preview (server, SSRF-safe):** `apps/api/src/ustaad/video-oembed.ts` asks only
+  `https://www.youtube.com/oembed?format=json&url=<canonical>`; redirects refused, 3 s, 64 KB, Zod on the JSON, only
+  `title` + `author_name` kept as plain text (the returned `html` and `thumbnail_url` are ignored). It runs **before**
+  the post's transaction (cache first) so the title and author are **screened with the post text**
+  (`screenUstaadContent`: hold / block like the body); a failure posts the video with the id only. The generic HTML
+  preview fetcher never runs for a video. No duration: oEmbed has none and we do not scrape.
+- **Rules kept:** `mod.links_min_account_days` and `posts.types.link` apply unchanged; the admin **Blocked link sites**
+  list is checked against **both** the pasted and the canonical URL (blocking `youtube.com` stops `youtu.be` and `m.`
+  links; blocking `youtu.be` stops the short form). URLs inside body text are never embedded.
+- **Player (`apps/web/src/components/ustaad/link-embed/`):** click-to-play facade in a reserved 16:9 box (no layout
+  shift): thumbnail through `next/image` (`images.remotePatterns` = `i.ytimg.com/vi/**` only), play button named
+  "Play video: {title}", "YouTube" source label, start time, title, "by {author}", a mobile-data note and "Open in
+  YouTube" (canonical URL, `rel="noopener noreferrer nofollow ugc"`). Only the tap mounts the
+  `https://www.youtube-nocookie.com/embed/<id>?autoplay=1&rel=0[&start=n]` iframe with a title, `allow="autoplay;
+encrypted-media; picture-in-picture; fullscreen"`, `allowfullscreen`, `loading="lazy"`,
+  `referrerpolicy="strict-origin-when-cross-origin"` and `sandbox="allow-scripts allow-same-origin allow-presentation
+allow-popups"`; no YouTube JS before the tap (JS budget unchanged). One player at a time: a `mechdost:media-play`
+  window event plus a captured native `play` event (voice notes, hosted videos) unmount the frame; it is also
+  unmounted when scrolled out of view (IntersectionObserver) or on "Close video" (focus returns to the play button).
+  Unmounting is the pause (no YouTube iframe API).
+- **Composer:** under the link field the same facade appears as soon as the pasted URL parses ("YouTube video: it will
+  play inside the post"); the title arrives after posting.
+- **CSP:** `frame-src` adds `https://www.youtube-nocookie.com` (both auth modes; demo builds were `'none'`), `img-src`
+  adds `https://i.ytimg.com`; no YouTube origin in `script-src` or `connect-src`.
+- **Analytics (client):** `ustaad_video_link_added {provider}` (composer, once per video), `ustaad_video_link_played
+{provider}` (tap). No video ids, no user ids beyond the standard pseudonymous ones.
+- **Tests:** shared `ustaad-video-links.test.ts` (36: hosts, lookalikes, user-info, 10/12-char ids, start formats,
+  built URLs); db `ustaad-video-links.test.ts` (8: canonical store, id-only fallback, screen of title and author, deny
+  list both ways, cache, CHECKs); api `ustaad-video-oembed.test.ts` (9: fixed URL, no redirects, invalid id → no
+  request, 404 / non-JSON / shape / oversize / timeout → null, clipping) and a feed API case (title on the post, cache
+  hit, no HTML preview); web `csp.test.ts` and `ustaad-link-embed.test.ts` (frame attributes, forged id refused).
+- **Not done:** video links in comments and answers (posts only); a server preview endpoint for the composer (the
+  composer shows the thumbnail only until posted); other providers (Vimeo, Instagram, Facebook); the sandbox and
+  autoplay need the lead's real-browser check; e2e and visual snapshots; the moderation screen shows the title and
+  author only as part of the held post (no separate labelled field yet).
+
 ## 11. Smart correction (`SmartCorrection` adapter, `apps/api/src/ustaad/correction/`)
 
 Modes (`correction.default_mode`: `suggest` default · `auto` · `off`; `correction.member_can_change` on). Languages
@@ -1144,18 +1197,19 @@ target}`, `ustaad_moderation_action {action, reason, clock, on_time}`, `ustaad_m
 {decision, ok}`. Client (admin, G1): `admin_ustaad_change {area, action, fields}`.
 Client: `ustaad_feed_viewed {tab}`, `ustaad_post_liked {via: button|double_tap}` (U2), `ustaad_post_saved`, U2: `ustaad_post_useful`, `ustaad_before_after_toggled {to}`, `ustaad_composer_more_opened`, `ustaad_camera_opened {source}`, `ustaad_post_shared {channel}`,
 `ustaad_story_viewed`, `ustaad_video_played {seconds_band}`, `ustaad_voice_played`, `ustaad_discover_searched
+Client: `ustaad_feed_viewed {tab}`, `ustaad_post_liked`, `ustaad_post_saved`, `ustaad_post_shared {channel}`,
+`ustaad_story_viewed`, `ustaad_video_played {seconds_band}`, `ustaad_video_link_added {provider}`, `ustaad_video_link_played
+{provider}`(§ 10b),`ustaad_voice_played`, `ustaad_discover_searched
 {results}`, `ustaad_tag_opened`, `ustaad_promo_impression {promo, slot}`, `ustaad_promo_click`, `ustaad_promo_hidden
 {reason}`, `ustaad_correction_shown {engine, mode, changes}`, `ustaad_correction_choice {choice}`, `ustaad_data_saver
 {on}`, `ustaad_learn_completed {resource}`, `ustaad_join_step {step, via: ustaad|partners_apply}`,
 `tutorial_started`, `tutorial_step {card, narration_played}`, `tutorial_completed`, `tutorial_skipped {at_card}`,
 `ustaad_coachmark_seen {target}`, `ustaad_coachmark_dismissed {target}`, `ustaad_help_replayed`. **U1 (UI upgrade
 2026-11-27):** `ustaad_shell_home_logo`, `ustaad_feed_new_pill_shown`, `ustaad_feed_new_pill_tapped`,
-`ustaad_home_more_opened`, `ustaad_home_question_tapped {position}` (catalogued; fires when the questions strip ships),
-`ustaad_story_paused`; `ustaad_tab_opened {tab}` gains `ask` and `jobs`. Metrics from day one: weeks-active members, answered within 24 h, time to
+`ustaad_home_more_opened`, `ustaad_home_question_tapped {position}`(catalogued; fires when the questions strip ships),`ustaad_story_paused`; `ustaad_tab_opened {tab}`gains`ask`and`jobs`. Metrics from day one: weeks-active members, answered within 24 h, time to
 `ustaad_coachmark_seen {target}`, `ustaad_coachmark_dismissed {target}`, `ustaad_help_replayed`. U4 (UI upgrade):
-`ustaad_level_sheet_opened {level, own}`, `ustaad_card_shared {channel}` (replaces `ustaad_post_shared` on the card),
-`ustaad_helped_note_seen {band: 1|2-5|6+}`, `ustaad_me_shortcut {to: learn|discover}`, `ustaad_job_scam_line_opened`,
-`ustaad_learn_continue_tapped` (catalogued, not fired yet), `notifications_filter {filter}`. Metrics from day one: weeks-active members, answered within 24 h, time to
+`ustaad_level_sheet_opened {level, own}`, `ustaad_card_shared {channel}`(replaces`ustaad_post_shared`on the card),`ustaad_helped_note_seen {band: 1|2-5|6+}`, `ustaad_me_shortcut {to: learn|discover}`, `ustaad_job_scam_line_opened`,
+`ustaad_learn_continue_tapped`(catalogued, not fired yet),`notifications_filter {filter}`. Metrics from day one: weeks-active members, answered within 24 h, time to
 first answer, best-answer rate, verified share, report rate per 1,000 posts, takedowns on time, bytes per session,
 mutual-follow share.
 

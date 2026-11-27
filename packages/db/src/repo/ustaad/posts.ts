@@ -11,6 +11,7 @@ import { ustaadContentMachine } from '@mechdost/shared/state';
 import type { CreatePost, PostMediaView, PostView } from '@mechdost/shared/ustaad/dto/feed';
 import { linkDisplayHost, safeLinkUrl } from '@mechdost/shared/ustaad/links';
 import { buildWebVtt } from '@mechdost/shared/ustaad/media-text';
+import { parseVideoLink, youtubeWatchUrl, type VideoProvider } from '@mechdost/shared/ustaad/video-links';
 import type { UstaadSettingKey } from '@mechdost/shared/ustaad/settings';
 import {
   ustaadMedia,
@@ -108,13 +109,26 @@ async function assertDailyCap(tx: Tx, memberId: string, perDay: number): Promise
   if ((row?.n ?? 0) >= perDay) throw new ValidationError('Daily limit reached', 'USTAAD_DAILY_CAP');
 }
 
-/** Admin deny list `link_domain` (SR-24 stand-in): the host or any parent domain on the list is refused. */
-async function assertLinkAllowed(tx: Tx, me: UstaadMemberRow, url: string, minDays: number): Promise<void> {
+/**
+ * Admin deny list `link_domain` (SR-24 stand-in): the host or any parent domain of any of the URLs is refused. A video
+ * link passes both the pasted and the canonical URL, so blocking `youtube.com` also catches `youtu.be` and the reverse.
+ */
+async function assertLinkAllowed(
+  tx: Tx,
+  me: UstaadMemberRow,
+  urls: readonly string[],
+  minDays: number,
+): Promise<void> {
   if (memberAgeDays(me) < minDays)
     throw new ForbiddenError('New accounts cannot share links yet', 'USTAAD_LINKS_LOCKED');
-  const host = new URL(url).hostname.toLowerCase();
-  const labels = host.split('.');
-  const candidates = labels.map((_, i) => labels.slice(i).join('.')).filter((h) => h.includes('.'));
+  const candidates = [
+    ...new Set(
+      urls.flatMap((url) => {
+        const labels = new URL(url).hostname.toLowerCase().split('.');
+        return labels.map((_, i) => labels.slice(i).join('.')).filter((h) => h.includes('.'));
+      }),
+    ),
+  ];
   const [hit] = await tx
     .select({ x: sql`1` })
     .from(ustaadWordLists)
@@ -134,23 +148,53 @@ export interface CreatedPost {
   status: string;
   /** The normalised link for the API to fetch a preview for after commit; null for other kinds. */
   linkUrl: string | null;
+  /** Set for a recognised video link (the API then skips the generic HTML preview). */
+  video: { provider: VideoProvider; videoId: string } | null;
   created: boolean;
 }
+
+/** Server-side extras for a post: the oEmbed title/author the API fetched for a video link (null = none or failed). */
+export interface CreatePostExtras {
+  video?: { title: string | null; author: string | null } | null;
+}
+
+const clipMeta = (v: string | null | undefined, max: number): string | null => {
+  const s = v?.trim();
+  return s ? s.slice(0, max) : null;
+};
 
 /**
  * Create a post (idempotent on `idemKey`). Refuses `USTAAD_RESTRICTED`, `USTAAD_POST_TYPE_OFF`, `USTAAD_DAILY_CAP`,
  * `USTAAD_LINKS_LOCKED`, `USTAAD_LINK_BLOCKED`, `USTAAD_MEDIA_INVALID` / `_LIMIT` / `_TOO_LONG`,
  * `USTAAD_TAG_UNKNOWN` / `_LIMIT`, `USTAAD_CONTENT_BLOCKED`.
  */
-export async function createUstaadPost(db: Tx, actor: UstaadActor, input: CreatePost): Promise<CreatedPost> {
+export async function createUstaadPost(
+  db: Tx,
+  actor: UstaadActor,
+  input: CreatePost,
+  extras: CreatePostExtras = {},
+): Promise<CreatedPost> {
   return db.transaction(async (tx) => {
     const me = await feedWriter(tx, actor.memberId, true);
     const [existing] = await tx
-      .select({ id: ustaadPosts.id, status: ustaadPosts.status, linkUrl: ustaadPosts.linkUrl })
+      .select({
+        id: ustaadPosts.id,
+        status: ustaadPosts.status,
+        linkUrl: ustaadPosts.linkUrl,
+        videoProvider: ustaadPosts.videoProvider,
+        videoId: ustaadPosts.videoId,
+      })
       .from(ustaadPosts)
       .where(and(eq(ustaadPosts.authorId, me.id), eq(ustaadPosts.idemKey, input.idemKey)))
       .limit(1);
-    if (existing) return { ...existing, created: false };
+    if (existing) {
+      const { videoProvider, videoId, ...rest } = existing;
+      const video =
+        videoProvider !== null && videoId !== null
+          ? { provider: videoProvider as VideoProvider, videoId }
+          : null;
+      return { ...rest, video, created: false };
+    }
     const s = await readUstaadSettingValues(tx, [
       TYPE_SETTING[input.kind],
       'ustaad.posts.per_day',
@@ -164,11 +208,18 @@ export async function createUstaadPost(db: Tx, actor: UstaadActor, input: Create
       throw new ValidationError('This kind of post is switched off', 'USTAAD_POST_TYPE_OFF');
     await assertDailyCap(tx, me.id, Number(s['ustaad.posts.per_day']));
     let linkUrl: string | null = null;
+    let video: ReturnType<typeof parseVideoLink> = null;
     if (input.kind === 'link') {
       linkUrl = input.linkUrl === undefined ? null : safeLinkUrl(input.linkUrl);
       if (!linkUrl) throw new ValidationError('This link cannot be posted', 'USTAAD_LINK_BLOCKED');
-      await assertLinkAllowed(tx, me, linkUrl, Number(s['ustaad.mod.links_min_account_days']));
+      // A video link is stored as its canonical watch URL (spec 23 § 10b); both forms meet the deny list.
+      video = parseVideoLink(linkUrl);
+      const pasted = linkUrl;
+      if (video) linkUrl = youtubeWatchUrl(video.videoId);
+      await assertLinkAllowed(tx, me, [pasted, linkUrl], Number(s['ustaad.mod.links_min_account_days']));
     }
+    const linkTitle = video ? clipMeta(extras.video?.title, 200) : null;
+    const linkAuthor = video ? clipMeta(extras.video?.author, 100) : null;
     const media = await ownUnusedMedia(
       tx,
       me.id,
@@ -192,7 +243,16 @@ export async function createUstaadPost(db: Tx, actor: UstaadActor, input: Create
     // (stored only when a correction was used).
     const bodyOriginal = ustaadStoredOriginal(input.bodyOriginal, input.correction);
     const text = ustaadScreenText({
-      parts: [input.body, input.fixSymptom, input.fixCause, input.fixFix, ...(input.poll?.options ?? [])],
+      // The oEmbed title and author are shown on the card, so they are screened like the member's own words.
+      parts: [
+        input.body,
+        input.fixSymptom,
+        input.fixCause,
+        input.fixFix,
+        ...(input.poll?.options ?? []),
+        linkTitle ?? undefined,
+        linkAuthor ?? undefined,
+      ],
       original: input.bodyOriginal,
       correction: input.correction,
     });
@@ -221,6 +281,11 @@ export async function createUstaadPost(db: Tx, actor: UstaadActor, input: Create
         segmentCode: input.segmentCode ?? null,
         vehicleModelId: input.vehicleModelId ?? null,
         linkUrl,
+        videoProvider: video?.provider ?? null,
+        videoId: video?.videoId ?? null,
+        videoStartS: video ? video.startS : null,
+        linkTitle,
+        linkAuthor,
         status,
         heldReasonCode: status === 'held' ? 'auto_screen' : null,
         idemKey: input.idemKey,
@@ -291,7 +356,13 @@ export async function createUstaadPost(db: Tx, actor: UstaadActor, input: Create
         authorId: me.id,
         kind: 'post',
       });
-    return { id: row.id, status: row.status, linkUrl, created: true };
+    return {
+      id: row.id,
+      status: row.status,
+      linkUrl,
+      video: video ? { provider: video.provider, videoId: video.videoId } : null,
+      created: true,
+    };
   });
 }
 
@@ -462,7 +533,23 @@ export async function ustaadPostsByIds(
       segmentCode: p.segmentCode,
       vehicleModelId: p.vehicleModelId,
       link: p.linkUrl
-        ? { url: p.linkUrl, host: linkDisplayHost(p.linkUrl), preview: previews.get(p.linkUrl) ?? null }
+        ? {
+            url: p.linkUrl,
+            host: linkDisplayHost(p.linkUrl),
+            // A video card shows the screened oEmbed title from the post row, never the generic HTML preview.
+            preview: p.videoId === null ? (previews.get(p.linkUrl) ?? null) : null,
+            ...(p.videoProvider !== null && p.videoId !== null
+              ? {
+                  video: {
+                    provider: p.videoProvider as VideoProvider,
+                    videoId: p.videoId,
+                    startS: p.videoStartS ?? 0,
+                    title: p.linkTitle,
+                    author: p.linkAuthor,
+                  },
+                }
+              : {}),
+          }
         : null,
       media: media.get(p.id) ?? [],
       poll: polls.get(p.id) ?? null,

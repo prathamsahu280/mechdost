@@ -9225,6 +9225,19 @@
         "part_prices": "पार्ट के दाम",
         "tips": "टिप्स"
       }
+    },
+    "videoLink": {
+      "play": "वीडियो चलाएँ: {title}",
+      "playUntitled": "YouTube वीडियो चलाएँ",
+      "source": "YouTube",
+      "by": "{author} का",
+      "openInYouTube": "YouTube में खोलें",
+      "dataNote": "YouTube से चलेगा और मोबाइल डेटा लगेगा",
+      "playerTitle": "YouTube वीडियो: {title}",
+      "playerTitleUntitled": "YouTube वीडियो",
+      "close": "वीडियो बंद करें",
+      "recognised": "YouTube वीडियो: पोस्ट के अंदर ही चलेगा",
+      "startsAt": "{time} से शुरू"
     }
   },
   "savings": {
