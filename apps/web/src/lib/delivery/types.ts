@@ -1,3 +1,4 @@
+import type { AgentDailyStatsDto } from '@mechdost/shared/delivery/agent-stats';
 /**
  * Types of the delivery-agent screens (spec 24), taken from the shared contract (`@mechdost/shared/delivery/api`) with
  * type-only imports: nothing of Zod reaches a page bundle from here. The clients (`agent-client.ts`,
@@ -149,6 +150,8 @@ export interface AgentClient extends Live {
   saveDocument(kind: AgentDocumentKind, number: string, mediaId: string): Promise<Result<AgentProfileView>>;
   /** Own payouts and delivered jobs (founder ruling 2026-11-26: manual payouts). */
   earnings(): Promise<Result<AgentEarningsView>>;
+  /** Own delivered jobs per IST day (Q-PP-F5, `GET /v1/agent/me/stats`). */
+  stats(days: number): Promise<Result<AgentDailyStatsDto>>;
 }
 
 /** Manual payouts (founder ruling 2026-11-26): staff record what they paid; a correction is a reversing row. */
@@ -162,6 +165,7 @@ export type AdminPayoutPageView = Out<typeof AgentPayoutPage>;
 export type PayoutInputView = Out<typeof AgentPayoutInput>;
 export type PayoutSummaryRow = Out<typeof AgentPayoutSummary>['items'][number];
 export type AgentEarningsView = Out<typeof AgentEarnings>;
+export type { AgentDailyStatsDto } from '@mechdost/shared/delivery/agent-stats';
 
 export interface ShopDeliveryClient extends Live {
   markReady(orderCode: string, version: number): Promise<Result<null>>;

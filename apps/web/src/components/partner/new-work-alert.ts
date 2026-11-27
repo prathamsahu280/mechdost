@@ -67,8 +67,9 @@ export function useNewWorkAlert(portal: PartnerPortal, ids: readonly string[] | 
 
   const audio = useCallback((): AudioContext | null => {
     if (ctxRef.current) return ctxRef.current;
-    const Ctor = (window.AudioContext ??
-      (window as unknown as { webkitAudioContext?: AudioCtor }).webkitAudioContext) as AudioCtor | undefined;
+    // Old Safari only has the prefixed constructor.
+    const w = window as unknown as { AudioContext?: AudioCtor; webkitAudioContext?: AudioCtor };
+    const Ctor = w.AudioContext ?? w.webkitAudioContext;
     if (!Ctor) return null;
     ctxRef.current = new Ctor();
     return ctxRef.current;

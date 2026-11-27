@@ -10031,5 +10031,15 @@
     "city_middle": "City middle: {value}",
     "no_city": "Not enough shops in your city to compare yet",
     "new_work": "{count, plural, one {# new item for you} other {# new items for you}}"
+  },
+  "partnerRider": {
+    "earn_total": "Paid to you",
+    "earn_jobs": "Jobs delivered",
+    "earn_total_hint": "Paid to you is every payout minus any correction, as MechDost recorded it.",
+    "earn_chart": "Paid per period",
+    "stats_chart": "Delivered per day, last {days} days",
+    "history_day": "{day} · {count, plural, one {# delivered} other {# delivered}}",
+    "online_on": "Online · new offers come here",
+    "online_off": "Offline · you get no offers"
   }
 }

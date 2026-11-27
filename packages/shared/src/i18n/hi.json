@@ -10031,5 +10031,15 @@
     "city_middle": "शहर का औसत: {value}",
     "no_city": "तुलना के लिए आपके शहर में अभी काफ़ी दुकानें नहीं हैं",
     "new_work": "{count, plural, one {आपके लिए # नया काम} other {आपके लिए # नए काम}}"
+  },
+  "partnerRider": {
+    "earn_total": "आपको मिला",
+    "earn_jobs": "पहुँचाए गए काम",
+    "earn_total_hint": "आपको मिला = हर भुगतान में से हर सुधार घटाकर, जैसा MechDost ने दर्ज किया।",
+    "earn_chart": "हर अवधि का भुगतान",
+    "stats_chart": "हर दिन पहुँचाए, पिछले {days} दिन",
+    "history_day": "{day} · {count, plural, one {# पहुँचाया} other {# पहुँचाए}}",
+    "online_on": "ऑनलाइन · नए ऑफ़र यहीं आएँगे",
+    "online_off": "ऑफ़लाइन · कोई ऑफ़र नहीं आएगा"
   }
 }

@@ -1,3 +1,4 @@
+import { AgentDailyStats } from '@mechdost/shared/delivery/agent-stats';
 import {
   AdminAgentDetail,
   AdminAgentPage,
@@ -85,6 +86,7 @@ export function apiAgentClient(locale: string): AgentClient {
         body: { kind, number, mediaId },
       }),
     earnings: () => adminApi(locale, '/agent/me/earnings', AgentEarnings),
+    stats: (days) => adminApi(locale, `/agent/me/stats?days=${String(days)}`, AgentDailyStats),
   };
 }
 

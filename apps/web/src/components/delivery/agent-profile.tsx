@@ -1,5 +1,6 @@
 'use client';
 
+import { DeliveredChart, EarningsNumbers } from './agent-earnings-summary';
 import {
   AGENT_DOCUMENT_KINDS,
   documentNumberProblem,
@@ -98,9 +99,8 @@ function Earnings() {
       <LoadGate loading={!data && !failed} error={!data && failed ? t('loadError') : null} onRetry={reload}>
         {data ? (
           <>
-            <p className="mt-1 text-[15px] font-bold text-ink">
-              {t('deliveredCount', { count: data.deliveredJobs })}
-            </p>
+            <EarningsNumbers data={data} />
+            <DeliveredChart />
             {data.payouts.length === 0 ? (
               <p className="mt-2 text-sm text-muted">{t('earningsEmpty')}</p>
             ) : (
