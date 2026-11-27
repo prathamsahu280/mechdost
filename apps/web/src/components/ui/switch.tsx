@@ -39,7 +39,7 @@ export function Switch({
       />
       <span
         aria-hidden="true"
-        className="relative h-7 w-12 shrink-0 rounded-pill bg-line transition-colors peer-checked:bg-accent-button peer-focus-visible:outline-3 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-focus after:absolute after:top-1 after:left-1 after:size-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-5 motion-reduce:transition-none motion-reduce:after:transition-none"
+        className="relative h-7 w-12 shrink-0 rounded-pill bg-input-border transition-colors peer-checked:bg-accent-button peer-focus-visible:outline-3 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-focus after:absolute after:top-1 after:left-1 after:size-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:after:translate-x-5 motion-reduce:transition-none motion-reduce:after:transition-none"
       />
       <span aria-hidden="true" className="w-8 text-xs font-bold text-muted">
         {checked ? onText : offText}

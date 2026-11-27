@@ -8,7 +8,9 @@ import { describe, expect, it } from 'vitest';
 describe('rider status strip uses theme tokens (DC-P10)', () => {
   it('no white background under theme ink text', () => {
     const src = readFileSync(new URL('../src/components/delivery/agent-portal.tsx', import.meta.url), 'utf8');
-    const classes = [...src.matchAll(/className="([^"]*)"/g)].map((m) => m[1] ?? '');
+    const classes = [...src.matchAll(/className=(?:"([^"]*)"|\{`([^`]*)`\})/g)].map(
+      (m) => m[1] ?? m[2] ?? '',
+    );
     expect(classes.filter((c) => c.includes('bg-white') && /\btext-ink\b/.test(c))).toEqual([]);
     expect(
       classes.filter((c) => c.includes('bg-surface') && /\btext-ink\b/.test(c)).length,

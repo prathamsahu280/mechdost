@@ -1,7 +1,7 @@
 'use client';
 
 import { DELIVERY_DECLINE_REASONS, type DeliveryDeclineReason } from '@mechdost/shared/delivery/codes';
-import { Bike, Phone } from 'lucide-react';
+import { Bike, Phone, Power } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
@@ -133,9 +133,22 @@ function StatusStrip() {
         </a>
       </div>
       {active ? (
-        <div className="mt-4 rounded-button bg-surface px-4 py-2 text-ink">
+        <div
+          data-online-card
+          className={`mt-4 rounded-card px-4 py-4 text-ink shadow-card ring-2 transition-colors motion-reduce:transition-none ${
+            profile.online ? 'bg-success-bg ring-success' : 'bg-surface ring-white/80'
+          }`}
+        >
           <div className="flex items-center justify-between gap-3">
-            <label htmlFor="agent-online" className="text-base font-extrabold">
+            <label htmlFor="agent-online" className="flex min-w-0 items-center gap-3 text-lg font-extrabold">
+              <span
+                aria-hidden="true"
+                className={`flex size-11 shrink-0 items-center justify-center rounded-full ${
+                  profile.online ? 'bg-success text-surface' : 'bg-pill text-ink'
+                }`}
+              >
+                <Power className="size-5" />
+              </span>
               {t('onlineLabel')}
             </label>
             <Switch
@@ -149,7 +162,7 @@ function StatusStrip() {
           </div>
           <p
             id="agent-online-state"
-            className={`text-sm font-bold ${profile.online ? 'text-success' : 'text-muted'}`}
+            className={`mt-2 text-[15px] font-bold ${profile.online ? 'text-success' : 'text-ink'}`}
           >
             {profile.online ? t('onlineOn') : t('onlineOff')}
           </p>

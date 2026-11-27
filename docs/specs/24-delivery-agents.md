@@ -457,3 +457,5 @@ From `D:\mechdost-qa\delivery-cod-sim-2026-11-27\logs\bugs.md`; one commit each,
 - **DC-P9 (P1):** the shop card picks the agent hand-over by the order's delivery mode (`shopAgentHandover`); a
   packed agent order without a job yet shows "Mark ready for pickup".
 - **DC-P10 (P2):** the rider status strip uses `bg-surface` under `text-ink` (dark theme contrast).
+
+- 2026-11-27 (founder): the rider "Take new jobs" card is a state card: green tint + outline when online, white outline on the hero when offline, power icon, 18 px label; the shared switch off-track uses `input-border` (≥ 3:1, WCAG 1.4.11) instead of `line`. Guard: `apps/web/test/delivery-online-card.test.ts`.
