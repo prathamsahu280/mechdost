@@ -1,6 +1,7 @@
 import type { ChoicesView, MemberView } from '@mechdost/shared/ustaad/dto/members';
 import type { AnswerView, LearnView, QuestionCard, QuestionDetail } from '@mechdost/shared/ustaad/dto/qa';
 import type { ApiResult } from '@/lib/orders-api';
+import { createDemoSaved } from './ustaad-saved';
 import type { ApplicantView, Job, MyLocation, UstaadClient, Zone } from '@/lib/ustaad/client';
 
 /**
@@ -124,6 +125,7 @@ function detail(card: QuestionCard, rest: Partial<QuestionDetail>): QuestionDeta
 
 function seedQuestions(): QuestionDetail[] {
   const q1: QuestionCard = {
+    id: '0193a700-0000-7000-8000-000000000001',
     code: 'UQ-RPR-2026-K7QM2D',
     title: 'Splendor Plus self start nahi ho raha, battery nayi hai',
     hasVoice: true,
@@ -155,6 +157,7 @@ function seedQuestions(): QuestionDetail[] {
     },
   );
   const q2: QuestionCard = {
+    id: '0193a700-0000-7000-8000-000000000002',
     code: 'UQ-RPR-2026-B3XN7P',
     title: 'Activa 6G pickup kam, accelerator dene pe jhatka',
     hasVoice: false,
@@ -168,6 +171,7 @@ function seedQuestions(): QuestionDetail[] {
     createdAt: ago(75),
   };
   const q3: QuestionCard = {
+    id: '0193a700-0000-7000-8000-000000000003',
     code: 'UQ-RPR-2026-T5WQ3L',
     title: 'Swift ka brake pedal neeche tak ja raha hai',
     hasVoice: false,
@@ -181,6 +185,7 @@ function seedQuestions(): QuestionDetail[] {
     createdAt: ago(22),
   };
   const q4: QuestionCard = {
+    id: '0193a700-0000-7000-8000-000000000004',
     code: 'UQ-RPR-2026-H2RV6S',
     title: null,
     hasVoice: true,
@@ -194,6 +199,7 @@ function seedQuestions(): QuestionDetail[] {
     createdAt: ago(8),
   };
   const q5: QuestionCard = {
+    id: '0193a700-0000-7000-8000-000000000005',
     code: 'UQ-RPR-2026-M4ZC5J',
     title: 'Bolero AC thanda nahi kar raha, gas bhari hai',
     hasVoice: false,
@@ -435,6 +441,7 @@ function seedJobs(): Job[] {
   return [
     {
       ...base,
+      id: '0193a800-0000-7000-8000-000000000001',
       code: 'UJ-RPR-2026-Q4MZ7A',
       roleCode: 'mechanic_2w',
       title: 'Bike mechanic chahiye, Hero aur Honda ka kaam',
@@ -451,6 +458,7 @@ function seedJobs(): Job[] {
     },
     {
       ...base,
+      id: '0193a800-0000-7000-8000-000000000002',
       code: 'UJ-RPR-2026-W2KC5D',
       roleCode: 'helper',
       title: 'Helper chahiye, seekhne wala',
@@ -466,6 +474,7 @@ function seedJobs(): Job[] {
     },
     {
       ...base,
+      id: '0193a800-0000-7000-8000-000000000003',
       code: 'UJ-RPR-2026-R7TN3H',
       roleCode: 'electrician',
       title: 'Car electrician, scanner chalana aata ho',
@@ -572,6 +581,7 @@ export function demoUstaadClient(): UstaadClient {
     return `${prefix}-RPR-2026-NEWQ${b32.charAt(seq % 32)}${b32.charAt(Math.floor(seq / 32) % 32)}`;
   };
   const card = (d: QuestionDetail): QuestionCard => ({
+    id: d.id,
     code: d.code,
     title: d.title,
     hasVoice: d.hasVoice,
@@ -585,6 +595,28 @@ export function demoUstaadClient(): UstaadClient {
     createdAt: d.createdAt,
   });
   const find = (code: string) => questions.find((q) => q.code === code);
+  const saved = createDemoSaved((kind, id) => {
+    if (kind === 'question') {
+      const q = questions.find((x) => x.id === id);
+      return q ? { text: q.title ?? q.body ?? q.code, textHi: null, code: q.code } : null;
+    }
+    if (kind === 'job') {
+      const j = jobs.find((x) => x.id === id);
+      return j ? { text: j.title, textHi: null, code: j.code } : null;
+    }
+    if (kind === 'answer') {
+      for (const q of questions) {
+        const a = q.answerList.find((x) => x.id === id);
+        if (a) return { text: a.body ?? q.title ?? q.code, textHi: null, code: q.code };
+      }
+      return null;
+    }
+    if (kind === 'lesson') {
+      const r = [...learn.courses.flatMap((c) => c.resources), ...learn.loose].find((x) => x.id === id);
+      return r ? { text: r.titleEn, textHi: r.titleHi, code: null } : null;
+    }
+    return null;
+  });
   const allResources = () => [...learn.courses.flatMap((c) => c.resources), ...learn.loose];
 
   return {
@@ -611,6 +643,7 @@ export function demoUstaadClient(): UstaadClient {
       questions.unshift(
         detail(
           {
+            id: crypto.randomUUID(),
             code,
             title: input.title ?? null,
             hasVoice: input.voiceMediaId !== undefined,
@@ -715,6 +748,7 @@ export function demoUstaadClient(): UstaadClient {
     postJob: (input) => {
       if (!input.adultAttested) return fail(422, 'USTAAD_ADULT_ATTESTATION');
       const j: Job = {
+        id: crypto.randomUUID(),
         code: nextCode('UJ'),
         roleCode: input.roleCode,
         title: input.title,
@@ -791,6 +825,13 @@ export function demoUstaadClient(): UstaadClient {
       }
       return { ok: true, data: { mediaId: crypto.randomUUID() } };
     },
+    savedList: (f) => Promise.resolve(saved.list(f)),
+    savedSummary: () => Promise.resolve(saved.summary()),
+    setSaved: (kind, id, on) => Promise.resolve(saved.setSaved(kind, id, on)),
+    createCollection: (name) => Promise.resolve(saved.create(name)),
+    renameCollection: (id, name, version) => Promise.resolve(saved.rename(id, name, version)),
+    deleteCollection: (id) => Promise.resolve(saved.remove(id)),
+    setInCollection: (id, t, on) => Promise.resolve(saved.setIn(id, t, on)),
     mediaUrl: () => ok({ url: (silent ??= silentWav(2)) }),
   };
 }

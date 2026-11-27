@@ -672,6 +672,7 @@ function cardOf(
   viewerId: string,
 ): QuestionCard {
   return {
+    id: q.id,
     code: q.code,
     title: titleOf(q.title),
     hasVoice: q.voiceMediaId !== null,

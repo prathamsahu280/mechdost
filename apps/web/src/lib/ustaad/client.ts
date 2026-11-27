@@ -11,6 +11,8 @@ import type {
   QuestionFilter,
 } from '@mechdost/shared/ustaad/dto/qa';
 import type { ApplicantView, LocationBody, PostJobBody } from '@mechdost/shared/ustaad/dto/local';
+import type { SaveCollection, SavedPage, SavedSummary } from '@mechdost/shared/ustaad/dto/saved';
+import type { UstaadSaveKind } from '@mechdost/shared/ustaad/saved';
 import { AUTH_MODE } from '../auth/mode';
 import type { ApiResult } from '../orders-api';
 import type { Banded } from './local-view';
@@ -47,6 +49,7 @@ export interface Zone {
 }
 
 export interface Job {
+  id: string;
   code: string;
   roleCode: JobRole;
   title: string;
@@ -90,6 +93,14 @@ export type PostJobInput = Omit<
   Partial<Pick<PostJobBody, 'areaLabelHi' | 'experienceMinYears' | 'segmentCodes' | 'idemKey'>>;
 export type LocationInput = Omit<LocationBody, 'landmark' | 'mockSuspected' | 'exactAudience' | 'hidden'> &
   Partial<Pick<LocationBody, 'landmark' | 'mockSuspected' | 'exactAudience' | 'hidden'>>;
+
+/** The Saved list's filters (spec 23 § 21i): all optional, `q` is the word search over the saved text. */
+export interface SavedFilter {
+  kind?: UstaadSaveKind;
+  collectionId?: string;
+  q?: string;
+  cursor?: string;
+}
 
 export interface UstaadClient {
   /** True for the browser demo: screens show the "sample data" note. */
@@ -155,6 +166,18 @@ export interface UstaadClient {
   ): Promise<ApiResult<{ mediaId: string }>>;
   /** A short-lived signed URL to play or show a media object (≤ 10 minutes). */
   mediaUrl(mediaId: string): Promise<ApiResult<{ url: string }>>;
+  /** Saved (spec 23 § 21i): my saved items of every kind, newest save first. */
+  savedList(filter: SavedFilter): Promise<ApiResult<SavedPage>>;
+  savedSummary(): Promise<ApiResult<SavedSummary>>;
+  setSaved(kind: UstaadSaveKind, id: string, on: boolean): Promise<ApiResult<{ saved: boolean }>>;
+  createCollection(name: string): Promise<ApiResult<SaveCollection>>;
+  renameCollection(id: string, name: string, version: number): Promise<ApiResult<SaveCollection>>;
+  deleteCollection(id: string): Promise<ApiResult<null>>;
+  setInCollection(
+    id: string,
+    target: { kind: UstaadSaveKind; id: string },
+    on: boolean,
+  ): Promise<ApiResult<null>>;
 }
 
 const cache = new Map<string, Promise<UstaadClient>>();

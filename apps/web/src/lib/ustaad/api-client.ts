@@ -19,6 +19,13 @@ import {
   VerifiedMediaResponse as Verified,
   ZonesResponse as Zones,
 } from '@mechdost/shared/ustaad/dto/responses';
+import {
+  NoContentDto as NoBody,
+  SaveCollectionDto,
+  SavedPageDto,
+  SavedSummaryDto,
+  SaveStateDto,
+} from '@mechdost/shared/ustaad/dto/saved';
 import { authed, type ApiResult, type Schema } from '../orders-api';
 import { baseMime } from './media-core';
 import { track } from '../analytics';
@@ -62,8 +69,13 @@ function put(
 
 export function apiUstaadClient(locale: string): UstaadClient {
   const get = <T>(path: string, schema: Schema<T>) => authed(locale, path, schema);
-  const send = <T>(path: string, schema: Schema<T>, body: unknown, method: 'POST' | 'PUT' = 'POST') =>
-    authed(locale, path, schema, { method, body });
+  const send = <T>(
+    path: string,
+    schema: Schema<T>,
+    body: unknown,
+    method: 'POST' | 'PUT' | 'PATCH' = 'POST',
+  ) => authed(locale, path, schema, { method, body });
+  const enc = encodeURIComponent;
   return {
     sample: false,
     me: () => get('/ustaad/me', MeResponseDto),
@@ -142,5 +154,26 @@ export function apiUstaadClient(locale: string): UstaadClient {
       return map(verified, () => ({ mediaId: declared.data.mediaId }));
     },
     mediaUrl: async (id) => map(await get(`/ustaad/media/${id}/url`, Signed), (d) => ({ url: d.url })),
+    savedList: (f) => {
+      const q = new URLSearchParams();
+      if (f.kind) q.set('kind', f.kind);
+      if (f.collectionId) q.set('collectionId', f.collectionId);
+      if (f.q) q.set('q', f.q);
+      if (f.cursor) q.set('cursor', f.cursor);
+      const s = q.toString();
+      return get(`/ustaad/saves${s ? `?${s}` : ''}`, SavedPageDto);
+    },
+    savedSummary: () => get('/ustaad/saves/summary', SavedSummaryDto),
+    setSaved: (kind, id, on) =>
+      authed(locale, `/ustaad/saves/${kind}/${enc(id)}`, SaveStateDto, { method: on ? 'PUT' : 'DELETE' }),
+    createCollection: (name) => send('/ustaad/save-collections', SaveCollectionDto, { name }),
+    renameCollection: (id, name, version) =>
+      send(`/ustaad/save-collections/${enc(id)}`, SaveCollectionDto, { name, version }, 'PATCH'),
+    deleteCollection: (id) =>
+      authed(locale, `/ustaad/save-collections/${enc(id)}`, NoBody, { method: 'DELETE' }),
+    setInCollection: (id, t, on) =>
+      authed(locale, `/ustaad/save-collections/${enc(id)}/items/${t.kind}/${enc(t.id)}`, NoBody, {
+        method: on ? 'PUT' : 'DELETE',
+      }),
   };
 }
