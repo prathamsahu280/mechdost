@@ -17,8 +17,10 @@ export function noticeFilterOf(raw: string | null | undefined): NoticeFilter {
   return (NOTICE_FILTERS as readonly string[]).includes(raw ?? '') ? (raw as NoticeFilter) : 'all';
 }
 
-export function passesFilter(kind: string, filter: NoticeFilter): boolean {
+/** A notice without a kind (old rows) shows under All only. */
+export function passesFilter(kind: string | null, filter: NoticeFilter): boolean {
   if (filter === 'all') return true;
+  if (!kind) return false;
   const family = kind.split('.')[0] ?? '';
   return FAMILIES[filter].includes(family);
 }

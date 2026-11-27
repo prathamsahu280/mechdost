@@ -31,6 +31,8 @@ describe('notice filter', () => {
     );
     expect(passesFilter('service.ready', 'orders')).toBe(false);
     expect(passesFilter('staff.anything', 'all')).toBe(true);
+    expect(passesFilter(null, 'all')).toBe(true);
+    expect(passesFilter(null, 'ustaad')).toBe(false);
   });
 });
 
