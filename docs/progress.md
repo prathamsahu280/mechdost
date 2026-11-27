@@ -9,6 +9,11 @@ This file is the single source of truth for **where the build is right now**. It
   (stories first, compact hero, 4 tiles + More), story rings + viewer word buttons. Spec 23 § 21i-U1 lists what is not
   done (questions strip, back arrow, header counts, story auto-advance on media end, coach-mark rule, live acceptance
   runs). Lead: merge after U2's stub commit per design § 8.0; run Lighthouse/measure-js/axe/hindi-coverage live.
+- Gates (2026-11-28 ~00:05): api `ustaad-feed-api.test.ts` 11/11 (RED seen: fresh → 404 before the route); web
+  vitest 5 files 81/81; shared `i18n.test.ts` 5/5; eslint api+db+web changed files exit 0; web tsc exit 2 only on the
+  known worktree `next-env.d.ts` image-module errors in `home/hero.tsx` (not U1 code). Not run: shared/api/db tsc,
+  e2e (`ustaad-d` story Close/Pause assertions updated; `ustaad-dm:267` "Discover" link relies on the 1440 rail),
+  measure-js, Lighthouse, axe, hindi-coverage.
 
 ## 2026-11-27 night — skills self-improvement step (docs only, uncommitted for the lead)
 
