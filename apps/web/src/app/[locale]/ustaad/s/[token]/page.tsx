@@ -6,6 +6,7 @@ import { Container } from '@/components/ui/page-intro';
 import { ShareTeaser } from '@/components/ustaad/feed/share-teaser';
 import type { Locale } from '@/i18n/routing';
 import { publishedUstaadAccess } from '@/lib/site-config-content';
+import { guardUstaadPage } from '@/lib/ustaad/page-guard';
 
 interface Props {
   params: Promise<{ locale: Locale; token: string }>;
@@ -29,6 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  * without the network's gate and shell (`UstaadPublicSwitch`); the card is fetched from the visitor's browser.
  */
 export default async function UstaadShareTeaserPage({ params }: Props) {
+  await guardUstaadPage();
   const { token } = await params;
   if (!TOKEN.test(token)) notFound();
   return (

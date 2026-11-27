@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { TutorialCards } from '@/components/ustaad/tutorial/tutorial-cards';
 import type { Locale } from '@/i18n/routing';
+import { guardUstaadPage } from '@/lib/ustaad/page-guard';
 
 interface Props {
   params: Promise<{ locale: Locale }>;
@@ -9,6 +10,7 @@ interface Props {
 
 /** `/ustaad/welcome` (spec 23 § 5, flow 15): the first-time guide, also replayed from Me › Kaise use karein. */
 export default async function UstaadWelcomePage({ params }: Props) {
+  await guardUstaadPage();
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'ustaad.tutorial' });
   return (

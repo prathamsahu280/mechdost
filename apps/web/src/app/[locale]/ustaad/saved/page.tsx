@@ -4,6 +4,7 @@ import { ClientMessages } from '@/components/ui/client-messages';
 import { MemberGate } from '@/components/ustaad/common';
 import { SavedScreen } from '@/components/ustaad/saved/saved-screen';
 import type { Locale } from '@/i18n/routing';
+import { guardUstaadPage } from '@/lib/ustaad/page-guard';
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
@@ -13,6 +14,7 @@ interface Props {
 
 /** `/ustaad/saved` (spec 23 § 5, § 21i): everything I saved, with kind and collection filters, only for me. */
 export default async function UstaadSavedPage({ params }: Props) {
+  await guardUstaadPage();
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'ustaad.saved' });
   return (

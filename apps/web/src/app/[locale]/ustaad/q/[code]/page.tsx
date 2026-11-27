@@ -4,6 +4,7 @@ import { USTAAD_QUESTION_CODE_RE } from '@mechdost/shared/ustaad/dto/qa';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { MemberGate } from '@/components/ustaad/common';
 import { QuestionThread } from '@/components/ustaad/qa/question-thread';
+import { guardUstaadPage } from '@/lib/ustaad/page-guard';
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
@@ -13,6 +14,7 @@ interface Props {
 
 /** Question thread (spec 23 § 5 `/ustaad/q/[code]`); a malformed code is a plain 404 before any request. */
 export default async function UstaadQuestionPage({ params }: Props) {
+  await guardUstaadPage();
   const { code } = await params;
   if (!USTAAD_QUESTION_CODE_RE.test(code)) notFound();
   return (

@@ -2,11 +2,13 @@ import type { Metadata } from 'next';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { MemberGate } from '@/components/ustaad/common';
 import { AskComposer } from '@/components/ustaad/qa/ask-composer';
+import { guardUstaadPage } from '@/lib/ustaad/page-guard';
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 /** The ask composer sheet (spec 23 § 5 `/ustaad/ask/new`; Home's mic opens it). Close returns to the list. */
-export default function UstaadAskNewPage() {
+export default async function UstaadAskNewPage() {
+  await guardUstaadPage();
   return (
     <ClientMessages
       namespaces={[

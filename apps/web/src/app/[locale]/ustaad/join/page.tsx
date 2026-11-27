@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { UstaadJoinFlow } from '@/components/ustaad/join/join-flow';
 import type { Locale } from '@/i18n/routing';
+import { guardUstaadPage } from '@/lib/ustaad/page-guard';
 
 interface Props {
   params: Promise<{ locale: Locale }>;
@@ -16,6 +17,7 @@ const CODE_RE = /^[A-Z0-9-]{6,40}$/;
  * the joining phone, so a code alone unlocks nothing.
  */
 export default async function UstaadJoinPage({ params, searchParams }: Props) {
+  await guardUstaadPage();
   const { locale } = await params;
   const from = (await searchParams)?.from;
   const t = await getTranslations({ locale, namespace: 'ustaad.join' });

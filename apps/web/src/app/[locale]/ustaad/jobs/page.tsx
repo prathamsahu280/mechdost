@@ -4,6 +4,7 @@ import { ClientMessages } from '@/components/ui/client-messages';
 import { MemberGate } from '@/components/ustaad/common';
 import { JobsList } from '@/components/ustaad/jobs/jobs-view';
 import type { JobRole } from '@/lib/ustaad/client';
+import { guardUstaadPage } from '@/lib/ustaad/page-guard';
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
@@ -13,6 +14,7 @@ interface Props {
 
 /** Jobs near you (spec 23 § 5 `/ustaad/jobs`); `?role=` keeps the filter in the address. */
 export default async function UstaadJobsPage({ searchParams }: Props) {
+  await guardUstaadPage();
   const raw = (await searchParams)?.role ?? '';
   const role = (JOB_ROLES as readonly string[]).includes(raw) ? (raw as JobRole) : null;
   return (

@@ -5,6 +5,7 @@ import { ClientMessages } from '@/components/ui/client-messages';
 import { MemberGate } from '@/components/ustaad/common';
 import { PostDetail } from '@/components/ustaad/feed/feed-screens';
 import type { Locale } from '@/i18n/routing';
+import { guardUstaadPage } from '@/lib/ustaad/page-guard';
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
@@ -16,6 +17,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** `/ustaad/p/[id]` (spec 23 § 5): one post with its comments. A malformed id is a 404 before any request. */
 export default async function UstaadPostPage({ params }: Props) {
+  await guardUstaadPage();
   const { locale, id } = await params;
   if (!UUID.test(id)) notFound();
   const t = await getTranslations({ locale, namespace: 'ustaad.feed' });

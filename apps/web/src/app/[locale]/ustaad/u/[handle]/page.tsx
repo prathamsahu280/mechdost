@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { MemberGate } from '@/components/ustaad/common';
 import { ProfileScreen } from '@/components/ustaad/feed/profile-screen';
+import { guardUstaadPage } from '@/lib/ustaad/page-guard';
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
@@ -14,6 +15,7 @@ const HANDLE = /^[A-Za-z0-9_]{3,24}$/;
 
 /** `/ustaad/u/[handle]` (spec 23 § 5, decision 2026-11-26 "D web"): a member's profile. Bad shapes 404 first. */
 export default async function UstaadProfilePage({ params }: Props) {
+  await guardUstaadPage();
   const { handle } = await params;
   if (!HANDLE.test(handle)) notFound();
   return (

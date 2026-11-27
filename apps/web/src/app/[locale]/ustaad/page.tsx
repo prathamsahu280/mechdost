@@ -12,6 +12,7 @@ import { CoachMark } from '@/components/ustaad/tutorial/coach-mark';
 import { UstaadGreeting } from '@/components/ustaad/shell/ustaad-gate';
 import type { Locale } from '@/i18n/routing';
 import { localePath } from '@/lib/locale-path';
+import { guardUstaadPage } from '@/lib/ustaad/page-guard';
 
 interface Props {
   params: Promise<{ locale: Locale }>;
@@ -48,6 +49,7 @@ const SHORTCUTS: readonly { key: ShortcutKey; icon: UstaadIconName; path: string
  * action); B–E fill stories, questions and the feed. Server-rendered; the greeting is the only client island.
  */
 export default async function UstaadHome({ params, searchParams }: Props) {
+  await guardUstaadPage();
   const { locale } = await params;
   const following = (await searchParams)?.tab === 'following';
   const t = await getTranslations({ locale, namespace: 'ustaad.home' });

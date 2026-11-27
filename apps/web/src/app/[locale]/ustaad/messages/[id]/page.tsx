@@ -4,6 +4,7 @@ import { ThreadIdParamDto } from '@mechdost/shared/ustaad/dto/messages';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { MemberGate } from '@/components/ustaad/common';
 import { ThreadScreen } from '@/components/ustaad/messages/thread-view';
+import { guardUstaadPage } from '@/lib/ustaad/page-guard';
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
@@ -13,6 +14,7 @@ interface Props {
 
 /** One conversation (spec 23 § 5 `/ustaad/messages/[id]`); a malformed id is a 404 before any request. */
 export default async function UstaadThreadPage({ params }: Props) {
+  await guardUstaadPage();
   const { id } = await params;
   if (!ThreadIdParamDto.safeParse({ id }).success) notFound();
   return (

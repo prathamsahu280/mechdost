@@ -2423,3 +2423,5 @@ new-posts drop (already built, timing checked), M5 stamp press when an answer is
 story progress 100 ms linear (`feed/story-viewer.tsx`); level tag metal sheen and edges on navy; lifted light mode and
 dark elevation scoped under `[data-shell-compact]`; body 16/17 at 1.6, names 16/800, card gap 10. Tests:
 `apps/web/test/ustaad-bench-{motion,tag,lift}.test.ts`, `tokens.test.ts`.
+
+- 2026-11-28 (live fix, SIM-B1 follow-up): signed out during the staff preview, `/ustaad` already answered 404 but its HTML still carried the network's messages (name, tagline, banned-screen text): Next renders a page in parallel with its layout, so the layout's `notFound()` did not stop each page's own ClientMessages. Every `/ustaad` page now awaits `guardUstaadPage()` (`apps/web/src/lib/ustaad/page-guard.ts`) first; guard test `apps/web/test/ustaad-page-guard.test.ts`. The shared CSS selectors (`[data-shell-compact]`, `[data-ustaad-dock]`) stay in the global stylesheet (styling only, no copy).

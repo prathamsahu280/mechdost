@@ -5,6 +5,7 @@ import { MyChoices } from '@/components/ustaad/card/my-choices';
 import { MemberGate } from '@/components/ustaad/common';
 import { RulesLink } from '@/components/ustaad/rules-link';
 import type { Locale } from '@/i18n/routing';
+import { guardUstaadPage } from '@/lib/ustaad/page-guard';
 
 interface Props {
   params: Promise<{ locale: Locale }>;
@@ -12,6 +13,7 @@ interface Props {
 
 /** `/ustaad/me` (spec 23 § 5): my card, stats, level ladder, badges, verification and the guide replay. */
 export default async function UstaadMePage({ params }: Props) {
+  await guardUstaadPage();
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'ustaad.card' });
   return (

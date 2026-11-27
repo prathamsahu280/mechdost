@@ -3,6 +3,7 @@ import { ClientMessages } from '@/components/ui/client-messages';
 import { MemberGate } from '@/components/ustaad/common';
 import { parseNetworkTab } from '@/components/ustaad/messages/view';
 import { NetworkView } from '@/components/ustaad/network/network-view';
+import { guardUstaadPage } from '@/lib/ustaad/page-guard';
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
@@ -12,6 +13,7 @@ interface Props {
 
 /** My network (spec 23 § 5 `/ustaad/network`): the tab lives in the address so Back and shared links keep it. */
 export default async function UstaadNetworkPage({ searchParams }: Props) {
+  await guardUstaadPage();
   const tab = parseNetworkTab((await searchParams)?.tab);
   return (
     <ClientMessages

@@ -4,6 +4,7 @@ import { MemberGate } from '@/components/ustaad/common';
 import { NewThread } from '@/components/ustaad/messages/new-thread';
 import { ThreadList } from '@/components/ustaad/messages/thread-list';
 import { normaliseHandle, parseThreadBox } from '@/components/ustaad/messages/view';
+import { guardUstaadPage } from '@/lib/ustaad/page-guard';
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
@@ -16,6 +17,7 @@ interface Props {
  * start a conversation with that member (request-only, SR-33).
  */
 export default async function UstaadMessagesPage({ searchParams }: Props) {
+  await guardUstaadPage();
   const sp = (await searchParams) ?? {};
   const to = sp.to === undefined ? undefined : normaliseHandle(sp.to);
   return (
