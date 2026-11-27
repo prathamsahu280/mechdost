@@ -2086,11 +2086,15 @@ usefulCount }`, rate rule `likes`, member gate. `PostView` gains `counts.useful`
 - **Ask (E9).** Best answer carries the stamp "पूछने वाले ने चुना / Chosen by the asker" (the article is named by
   it); "सबसे अच्छा चुनो / Choose as best" is a quiet outlined button for the asker with an inline confirm
   ("इसे सबसे अच्छा जवाब चुनें? [हाँ, चुनो] [रहने दो]"), focus to the confirm and back on "Not now".
-- **Not done in this batch:** Ask list card restyle (state chip with icon + word, vehicle title for voice-only),
-  Messages inbox/thread restyle and the `closed` flag (copy keys `ustaad.messages.{previewVoice, previewPhoto, closed,
-requestsTab}` and `ustaad.qa.{stateSolved, stateOpen}` are in the locale files, unused yet), optimistic Follow
-  (profile is U4's), the level explainer sheet (U4), similar questions (needs a spec addition), the `helpful` /
-  `before` icons (U1 owns `icons.tsx`; Useful uses `check` for now).
+- **Ask list:** state words with icons ("हल हुआ / Solved", "जवाब नहीं आया / No answer yet", answers count) and a
+  voice-only card titled by its vehicle ("Splendor · आवाज़ वाला सवाल"). **Messages:** the Pehchaan tag on inbox rows.
+- **Not done in this batch:** Messages thread restyle (sticky header/composer, media previews in inbox rows — the
+  thread DTO has no last-message kind) and the `closed` flag (keys `ustaad.messages.{previewVoice, previewPhoto,
+closed, requestsTab}` are in the locale files, unused yet), optimistic Follow (profile is U4's), the level
+  explainer sheet (U4; the tag links to `/ustaad/me#levels` and takes `onOpen`), Before/After labelled slots in the
+  composer, the stamp-press / tag-swing / like-scale motions (keyframes live in U1's `globals.css`), similar
+  questions (needs a spec addition), the `helpful` / `before` icons (U1 owns `icons.tsx`; Useful uses lucide
+  `Wrench`).
 
 ## 22. Not built / later
 
