@@ -56,9 +56,12 @@ describe('Pehchaan tag tones', () => {
     for (const level of ['apprentice', 'ustaad_pending', 'naya', 'pakka', 'bada', 'master'])
       expect(PEHCHAAN_TONES[level as keyof typeof PEHCHAAN_TONES]).toBeDefined();
     for (const tone of Object.values(PEHCHAAN_TONES)) {
-      expect(tone.bg).toMatch(/^[a-z-]+$/);
+      expect(tone.fill).toMatch(/^[a-z-]+$/);
+      expect(tone.edge).toMatch(/^[a-z-]+$/);
       expect(tone.fg).toMatch(/^[a-z-]+$|^#ffffff$/);
     }
+    // Grade lines climb with the level (bolt-head marks): 0 for Chhotu up to 4 for Master.
+    expect(Object.values(PEHCHAAN_TONES).map((t) => t.lines)).toEqual([0, 0, 1, 2, 3, 4]);
     expect(pehchaanTone('something_new')).toEqual(PEHCHAAN_TONES.apprentice);
   });
 });

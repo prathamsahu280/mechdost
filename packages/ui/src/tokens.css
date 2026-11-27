@@ -49,6 +49,11 @@
   /* WhatsApp-green text on its tint or on a surface (the solid button keeps white on --color-whatsapp). */
   --color-whatsapp-text: #167b42;
   --color-whatsapp-line: #cfe6d7;
+  /* Mechanic Network "Bench kit" (decision 2026-11-27 night, visual language § 3.2): level metals + Useful brass */
+  --color-zinc: #c3ccd7;
+  --color-brass: #e0a526;
+  --color-brass-text: #865800;
+  --color-surface-raised: #ffffff;
   --color-hero-copy: #cfd9e5;
   --color-focus: #e65325;
   --color-star: #c27803; /* rating stars: ≥3:1 on white (decision 2026-11-01) */
@@ -127,6 +132,10 @@
   --color-whatsapp-bg: #0e2419;
   --color-whatsapp-text: #7fd8a3;
   --color-whatsapp-line: #1f4a33;
+  --color-zinc: #3d4f68;
+  --color-brass: #e0a526;
+  --color-brass-text: #f2c461;
+  --color-surface-raised: #16263e;
   --color-focus: #ff8b59;
   --color-star: #f5b041;
   --shadow-card: 0 4px 16px #00000033;
@@ -169,6 +178,10 @@
     --color-whatsapp-bg: #0e2419;
     --color-whatsapp-text: #7fd8a3;
     --color-whatsapp-line: #1f4a33;
+    --color-zinc: #3d4f68;
+    --color-brass: #e0a526;
+    --color-brass-text: #f2c461;
+    --color-surface-raised: #16263e;
     --color-focus: #ff8b59;
     --color-star: #f5b041;
     --shadow-card: 0 4px 16px #00000033;

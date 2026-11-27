@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Award, ShieldAlert, ShoppingBag, ThumbsUp } from 'lucide-react';
+import { ArrowLeft, Award, BadgeCheck, ShieldAlert, ShoppingBag, ThumbsUp } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
@@ -221,7 +221,7 @@ function AnswerBubble({
       aria-labelledby={a.isBest ? stampId : undefined}
       className={`rounded-[22px] rounded-tr-md border p-4 shadow-card ${
         a.isBest
-          ? 'border-success/40 bg-success-bg'
+          ? 'border-success/40 bg-success-bg shadow-[inset_3px_0_0_var(--color-success)]'
           : a.mine
             ? 'border-accent/30 bg-accent-soft'
             : 'border-line-card bg-surface'
@@ -231,9 +231,10 @@ function AnswerBubble({
         // The stamp says who chose it (R23, RS4): the asker, never a vote count.
         <p
           id={stampId}
-          className="mb-2 inline-flex items-center gap-1.5 rounded-button border-2 border-success px-3 py-1 text-[13px] font-extrabold text-success"
+          // Bench kit stamp (visual language § 3.5/4): radius 6, 2 px border + 1 px outline 2 px out, −2°.
+          className="mb-3 ml-1 inline-flex -rotate-2 items-center gap-1.5 rounded-[6px] border-2 border-success bg-success-bg px-3 py-1 text-[13px] font-extrabold text-success outline-1 outline-offset-2 outline-success"
         >
-          <Award aria-hidden="true" className="size-4" />
+          <BadgeCheck aria-hidden="true" className="size-4" />
           {t('bestStamp')}
         </p>
       ) : null}

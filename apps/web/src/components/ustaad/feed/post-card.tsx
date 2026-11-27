@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { Wrench } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
@@ -265,9 +266,10 @@ export function PostCard({
           aria-pressed={post.usefulByMe}
           aria-label={`${String(post.counts.useful)} ${t('usefulAria')}`}
           data-track="ustaad_post_useful"
-          className={`${actionBtn} ${post.usefulByMe ? 'text-success' : 'text-ink hover:bg-pill'}`}
+          className={`${actionBtn} ${post.usefulByMe ? 'bg-brass/20 text-brass-text' : 'text-ink hover:bg-pill'}`}
         >
-          <UstaadIcon name="check" />
+          {/* Bench kit (visual language § 4): a wrench in brass for "Kaam ki baat", never the Like heart. */}
+          <Wrench aria-hidden="true" className="size-5" strokeWidth={2} />
           {/* Wraps (never clips) at 360 px: the Hindi word is longer than "Like". */}
           <span className="inline-flex flex-wrap items-center justify-center gap-x-1 text-center">
             <span className="tabular-nums">{post.counts.useful}</span>

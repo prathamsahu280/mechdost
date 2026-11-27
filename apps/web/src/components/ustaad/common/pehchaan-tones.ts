@@ -1,15 +1,56 @@
 /**
- * Pehchaan tag (level chip) colours: existing token pairs only, no new colours (decisions 2026-11-27 "Pehchaan tag
- * shape"). `apps/web/test/tokens.test.ts` checks every pair at 4.5:1 in light and dark. Class names are spelled out
- * so Tailwind finds them; the coming visual-language pass swaps colours here, in one place.
+ * Pehchaan tag (level chip) finishes — visual direction A "Bench kit" (decision 2026-11-27 night; visual language
+ * doc § 3.3): Chhotu an outline tag, Ustaad-to-verify hatched, Naya zinc, Pakka brass, Bada copper, Master ink; every
+ * tag has a 1 px edge (non-text contrast) and 0–4 grade lines, and always prints the word (colour is never the only
+ * cue). Tokens only (`zinc`, `brass`, `brass-text` added with this decision). `apps/web/test/tokens.test.ts` checks
+ * text on fill (4.5:1) and edge on surface (3:1) in light and dark. Class names are spelled out so Tailwind finds them.
  */
 export const PEHCHAAN_TONES = {
-  apprentice: { bg: 'pill', fg: 'ink', cls: 'bg-pill text-ink' },
-  ustaad_pending: { bg: 'warning-bg', fg: 'warning', cls: 'bg-warning-bg text-warning' },
-  naya: { bg: 'info-bg', fg: 'info', cls: 'bg-info-bg text-info' },
-  pakka: { bg: 'success-bg', fg: 'success', cls: 'bg-success-bg text-success' },
-  bada: { bg: 'accent-soft', fg: 'accent-soft-text', cls: 'bg-accent-soft text-accent-soft-text' },
-  master: { bg: 'navy', fg: '#ffffff', cls: 'bg-navy text-white' },
+  apprentice: {
+    fill: 'surface',
+    fg: 'ink',
+    edge: 'input-border',
+    lines: 0,
+    cls: { fill: 'bg-surface text-ink', edge: 'bg-input-border' },
+  },
+  ustaad_pending: {
+    fill: 'surface',
+    fg: 'ink',
+    edge: 'input-border',
+    lines: 0,
+    cls: {
+      fill: 'bg-surface text-ink bg-[repeating-linear-gradient(135deg,var(--color-pill)_0_4px,var(--color-surface)_4px_8px)]',
+      edge: 'bg-input-border',
+    },
+  },
+  naya: {
+    fill: 'zinc',
+    fg: 'ink',
+    edge: 'input-border',
+    lines: 1,
+    cls: { fill: 'bg-zinc text-ink', edge: 'bg-input-border' },
+  },
+  pakka: {
+    fill: 'brass',
+    fg: 'navy',
+    edge: 'brass-text',
+    lines: 2,
+    cls: { fill: 'bg-brass text-navy', edge: 'bg-brass-text' },
+  },
+  bada: {
+    fill: 'accent-button',
+    fg: '#ffffff',
+    edge: 'accent-button-hover',
+    lines: 3,
+    cls: { fill: 'bg-accent-button text-white', edge: 'bg-accent-button-hover' },
+  },
+  master: {
+    fill: 'ink',
+    fg: 'surface',
+    edge: 'accent',
+    lines: 4,
+    cls: { fill: 'bg-ink text-surface', edge: 'bg-accent' },
+  },
 } as const;
 
 export type PehchaanLevel = keyof typeof PEHCHAAN_TONES;
