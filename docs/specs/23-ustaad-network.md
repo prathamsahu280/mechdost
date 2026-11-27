@@ -2053,6 +2053,30 @@ Each fix has a regression test named after the QA id.
   who is both a workshop owner and a trade account cannot pick the trade account in the form (the API still accepts
   `{kind:'trade'}`); the form does not yet say which account it posts as.
 
+## 21i. Founder-approved improvements (2026-11-27 night, "all ranked improvements approved")
+
+From the QA audit (`D:\mechdost-qa\ustaad-sim-2026-11-27\logs\audit.md` § 3 rows 11, 15, 21 and § N4):
+
+- **One Hindi register.** Member copy uses warm आप with -ें forms everywhere (करें, लिखें, बताएँ; "आप … करते हैं");
+  no तुम/-ो forms and no gendered first person in buttons ("मेरा काम", "बाद में", "पता नहीं"). **Verification status is
+  always "वेरिफ़ाइड" / "वेरिफ़ाई करें" / "वेरिफ़िकेशन"**; "पक्का" is only the level name "पक्का उस्ताद" (and level
+  labels). Plain words: अर्ज़ी → अप्लाई/आवेदन, जमा-राशि → डिपॉज़िट, ट्रेड खाता → कारोबार खाता (en "business account"),
+  पाठ → सबक, वेतन → तनख़्वाह, कृपया dropped, member-facing सदस्य → लोग/प्रोफ़ाइल; simpler `qa.disclaimer` and
+  `feed.postedHeld` (en + hi). ICU plurals (en + hi) for `card.rule_min*`, `card.qualified`, `local.exact`,
+  `learn.lessons`. **`notify.*` texts cannot use ICU** (`fillNotice` substitutes `{name}` strings only), so count
+  notices are worded count-neutral ("Likes on your post today: {count}.").
+- **Community rules link.** `components/ustaad/rules-link.tsx` ("Read the network rules" / "नेटवर्क के नियम पढ़ें",
+  key `ustaad.shell.rulesLink`, 24 px target, → `/policies/community-rules`) on Home, Jobs (under the scam banner),
+  Me, the post report form, the message report dialog, the post composer and the held-post note (inherits the note
+  colour). Click ids `ustaad_rules_link_{home|jobs|me|report|dm_report|composer|held_note}`. Guard
+  `apps/web/test/ustaad-rules-link.test.ts`.
+- **Local drafts.** `useDraft` (`components/ustaad/use-draft.ts`, storage in `lib/ustaad/draft.ts`, keys
+  `mechdost-ustaad-draft:{post|story|question_title|question_body|dm:<threadId>}`): the post, question and message
+  composers restore unsent text after hydration, save every change, clear on a successful send, and ask before the
+  tab closes or reloads while text is in the box (`beforeunload`, only when non-empty). Every storage call is
+  try/catch: no storage = no draft, the composer still works. Text only (photos, voice and video are not kept).
+  In-app navigation is not blocked (the draft is already saved). Guard `apps/web/test/ustaad-drafts.test.ts`.
+
 ## 22. Not built / later
 
 Speech-to-text and transcripts (ruled out), voice search, auto-translation, server video/audio transcoding and the

@@ -19,6 +19,7 @@ import type { Recording } from '../media/voice-recorder';
 import { UploadProgress } from '../media/upload-progress';
 import { btnPrimary, card, fieldClass, SampleNote, useCodeLabel, useErrorText, useUstaad } from '../common';
 import { useUploadErrorText } from '../media/upload-error';
+import { useDraft } from '../use-draft';
 
 /** The recorder (MediaRecorder code) loads only when the composer opens. */
 const VoiceRecorder = dynamic(() => import('../media/voice-recorder').then((m) => m.VoiceRecorder), {
@@ -55,6 +56,9 @@ export function AskComposer() {
   const [titleError, setTitleError] = useState(false);
   const [sent, setSent] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // QA F-R14: the question survives leaving the page; cleared once it is sent.
+  const clearTitleDraft = useDraft('question_title', title, setTitle, sent === null);
+  const clearBodyDraft = useDraft('question_body', body, setBody, sent === null);
   const idem = useRef(newIdemKey());
   const titleRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
@@ -119,6 +123,8 @@ export function AskComposer() {
       setError(errorText(r.code));
       return;
     }
+    clearTitleDraft();
+    clearBodyDraft();
     setSent(r.data.code);
   }
 

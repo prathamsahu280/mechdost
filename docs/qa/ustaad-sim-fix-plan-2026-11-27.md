@@ -72,6 +72,12 @@ SIM-P6 (story and other locks known only after the upload → orphan media) · S
 post was released) · SIM-P14 (new message to a connection shows request-only rules) · SIM-P7 (Chhotu Home shows the
 answerer block) · SIM-LEAD-1 (email verification lags on other devices: "I've verified — check again").
 
+**Built 2026-11-27 night** (founder: "all ranked improvements approved"; branch `worktree-agent-ad20a0e7e99566560`,
+spec 23 § 21i): audit #11 community-rules links (Home, Jobs, Me, report forms, composer, held note), audit #15 Hindi
+register / वेरिफ़ाइड / ICU plurals (also closes SIM-P5's "पक्का" collision in the `ustaad.*` keys; the
+`/partners/status` step key itself is outside `ustaad.*`, still open), audit #21 composer drafts (text; voice take not
+kept), theme follows the device (decisions 2026-11-27 night), `/partners` copy names delivery partners (COD audit A1).
+
 ## Founder decisions needed (queued, not built)
 
 - Voice items without a text alternative (audit item 5): transcripts / speech-to-text or a typed summary.
