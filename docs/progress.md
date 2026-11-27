@@ -9,8 +9,9 @@ This file is the single source of truth for **where the build is right now**. It
   and open offers vs `now()` on the server); DC-P9 shop card keyed on delivery mode; DC-P10 rider strip on
   `bg-surface`; DC-B3/P5/P8 every delivery API error code has en+hi words (guard test) + Aadhaar checked client-side;
   DC-B7 staff photo links on the API `/v1/delivery-photos` route; DC-P4 session refreshed after invite acceptance.
-- Gates: tsc shared/db/api/web 0, eslint changed files 0, vitest web 211 files green, db delivery tests green, api
-  (see report). No e2e, no build, no push. **Next:** merge, production build + JS budget, deploy API + worker + web
+- Gates: tsc shared/db/api/web 0, eslint changed files 0, vitest web 1863/1863, api 974/974, db 1809/1809, shared
+  1066/1067 (the one failure is `tooling-hooks` commit-msg hook test, files untouched by this branch: environment of
+  the worktree, check on main). No e2e, no build, no push. **Next:** merge, production build + JS budget, deploy API + worker + web
   together (the photo URL now carries `/v1`; an old web against a new API still works, `deliveryPhotoHref` accepts
   both), then re-run D1 (photos, ready for pickup, offer expiry on the staff side) live before switching agents on.
 - Still open from the run (not in this batch): DC-P13 shop return wrong-code tries left + "Returned"/"Ready for
