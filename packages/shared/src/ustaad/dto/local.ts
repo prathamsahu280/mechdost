@@ -72,10 +72,16 @@ export const ZoneDto = z.object({
 
 export const PostJobDto = z
   .object({
-    employer: z.discriminatedUnion('kind', [
-      z.object({ kind: z.literal('workshop'), workshopId: z.uuid() }).strict(),
-      z.object({ kind: z.literal('trade') }).strict(),
-    ]),
+    /**
+     * Optional (SIM-P17): left out, the server posts as the member's employer account (their workshop first, then a
+     * verified trade account). Named, it is honoured only when the member is entitled to it.
+     */
+    employer: z
+      .discriminatedUnion('kind', [
+        z.object({ kind: z.literal('workshop'), workshopId: z.uuid() }).strict(),
+        z.object({ kind: z.literal('trade') }).strict(),
+      ])
+      .optional(),
     roleCode: z.enum(JOB_ROLES),
     title: z.string().trim().min(3).max(120),
     description: z.string().trim().min(10).max(2000),

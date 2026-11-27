@@ -75,7 +75,7 @@ export function JobPostForm() {
     const r = await (
       await ustaadClient(locale)
     ).postJob({
-      employer: { kind: 'trade' },
+      // No employer kind: the server posts as the member's own workshop or trade account (SIM-P17).
       roleCode: role,
       title: title.trim(),
       description: description.trim(),

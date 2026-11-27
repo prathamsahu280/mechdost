@@ -351,3 +351,37 @@ describe('employer sees and hears about applications (SIM-P18)', () => {
     expect(JSON.stringify([first, second])).not.toMatch(/\+91|"phone/);
   });
 });
+describe('employer kind is decided by the server (SIM-P17)', () => {
+  it('a workshop owner without a trade account posts as their workshop when no kind is sent', async () => {
+    const [w] = await db
+      .insert(s.workshops)
+      .values({
+        cityId: f.raipur,
+        slug: 'ustl-garage',
+        name: 'Garage L',
+        addressLine: 'GE Road',
+        area: 'Pandri',
+        pincode: '492001',
+        location: { lng: 81.66, lat: 21.26 },
+        vehicleTypes: ['2W'],
+        hours: { open: '09:00', close: '19:00', days: [1] },
+      })
+      .returning({ id: s.workshops.id });
+    const [role] = await db.select({ id: s.roles.id }).from(s.roles).where(eq(s.roles.key, 'workshop_owner'));
+    await db
+      .insert(s.userRoles)
+      .values({ userId: b.userId, roleId: role?.id ?? '', workshopId: w?.id ?? null });
+    const posted = await postUstaadJob(t(), b, job({ employer: undefined, title: 'Workshop helper' }));
+    expect(posted.status).toBe('open');
+    const [row] = await db
+      .select({ workshopId: s.ustaadJobs.workshopId, trade: s.ustaadJobs.tradeAccountId })
+      .from(s.ustaadJobs)
+      .where(eq(s.ustaadJobs.code, posted.code));
+    expect(row).toEqual({ workshopId: w?.id, trade: null });
+    // A workshop the member holds no grant on stays refused even when named.
+    await expectCode(
+      postUstaadJob(t(), a, job({ employer: { kind: 'workshop', workshopId: w?.id ?? '' } })),
+      'USTAAD_EMPLOYER_REQUIRED',
+    );
+  });
+});

@@ -1963,6 +1963,13 @@ Each fix has a regression test named after the QA id.
   button lives. Client event `ustaad_job_applicants_viewed { count }`; the moves are the existing server event
   `ustaad_application_moved`. Tests: `ustaad-local.test.ts` "employer sees and hears about applications (SIM-P18)",
   `ustaad-local-api.test.ts` "SIM-P18 …", `apps/web/test/ustaad-applicants-view.test.ts`.
+- **SIM-P17 — the server decides the employer.** `PostJobDto.employer` is optional and the web form no longer sends
+  one (it hard-coded `trade`, so a workshop owner got 403). `ustaadJobEmployerOptions(userId, memberWorkshopId)`
+  lists what the user may post as: every workshop they hold a grant on (the member's own linked workshop first),
+  then their verified trade account. No employer named → the first option; named → honoured only when it is in the
+  list; nothing → 403 `USTAAD_EMPLOYER_REQUIRED`. Resuming a job re-checks through the same list. Not done: a member
+  who is both a workshop owner and a trade account cannot pick the trade account in the form (the API still accepts
+  `{kind:'trade'}`); the form does not yet say which account it posts as.
 
 ## 22. Not built / later
 

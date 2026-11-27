@@ -232,6 +232,14 @@ describe('jobs', () => {
     expect((await call(employer, 'GET', `/ustaad/jobs/${code}/applications?cursor=bad`)).status).toBe(400);
   });
 
+  it('SIM-P17: the web form sends no employer kind; the server posts as the member’s trade account', async () => {
+    const { employer: _omit, ...noKind } = JOB;
+    const r = await call(employer, 'POST', '/ustaad/jobs', { ...noKind, title: 'Mechanic for 2W' });
+    expect(r.status).toBe(201);
+    // Naming a workshop the caller holds no grant on is refused: packages/db ustaad-local.test.ts (SIM-P17); the
+    // job-post rate limit is spent by this point of the file.
+  });
+
   it('jobs switched off → 404 on list, detail and apply; withdraw still works', async () => {
     const list = await call(worker, 'GET', '/ustaad/jobs');
     const code = (list.body.items as { code: string }[])[0]?.code ?? '';
