@@ -565,3 +565,15 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
 - ~~Q-DC-5~~ Lead: "everyone" COD is not switched on (open the switch, read the warning, cancel).
 - ~~Q-DC-6~~ Default kept: ≤ 10 emails, then outbox rows only.
 - ~~Q-DC-7~~ **Founder: the ₹1 Racer4 listing is his deliberate payment test price** — not a bug.
+
+### Ustaad / Mechanic Network member batch B (builder, 2026-11-27 night; spec 23 § 21i)
+
+- **Q-QB-1** Banned-words starter list (`packages/db/src/ustaad/starter-lists.ts`): founder/legal review before
+  `pnpm db:seed:ustaad-starter` runs on production. Default: run it as is; admins edit in Admin → Ustaad.
+- **Q-QB-2** A signed-in non-member, non-tester still gets the client gate's 200 "page not found" with the network
+  rendered underneath (SIM-B1 fixed only for signed-out visitors). Closing it needs a server-verified session cookie.
+  Default: leave as is during the staff preview.
+- **Q-QB-3** Moderation emails are skipped when a member switched transactional email off (the notifications skill
+  says transactional is always on). Default: skip (the bell still carries it).
+- **Q-QB-4** Video metadata rule relaxed (SIM-F6): `udta`/`meta` without location markers are accepted; needs the
+  lead's security review. Default: ship with the marker check (`©xyz`, `loci`, `location`, `gps`, case-insensitive).
