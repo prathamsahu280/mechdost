@@ -203,9 +203,9 @@ export function PostList({
         {status}
       </p>
       {items.length === 0 ? empty : null}
-      <ul className="grid gap-4">
+      <ul className="grid gap-2.5">
         {items.map((p, i) => (
-          <li key={p.id} className="grid gap-4">
+          <li key={p.id} className="grid gap-2.5">
             <PostCard
               post={p}
               eager={first && i === 0}

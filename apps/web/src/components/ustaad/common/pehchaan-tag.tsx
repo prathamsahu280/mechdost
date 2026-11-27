@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { localePath } from '@/lib/locale-path';
 import { pehchaanTone } from './pehchaan-tones';
 
@@ -14,6 +14,8 @@ import { pehchaanTone } from './pehchaan-tones';
  * sheet (U4), otherwise links to Me › levels; `interactive={false}` inside rows that are links themselves. Renders
  * nothing for an unknown level code so a new level never shows a raw key.
  */
+/** The level sheet opens this far into the 420 ms swing (visual language § 5, M2). */
+const SHEET_OPEN_MS = 260;
 const OUTER =
   'rounded-r-[7px] [clip-path:polygon(8px_0,100%_0,100%_100%,8px_100%,0_50%)] [mask:radial-gradient(circle_4px_at_11px_50%,transparent_96%,black_100%)]';
 const INNER =
@@ -36,20 +38,42 @@ export function PehchaanTag({
 }) {
   const l = useTranslations('ustaad.labels');
   const locale = useLocale();
+  const [swinging, setSwinging] = useState(false);
+  const timer = useRef<number | undefined>(undefined);
+  useEffect(
+    () => () => {
+      window.clearTimeout(timer.current);
+    },
+    [],
+  );
+  /** M2 (visual language § 5): the tag swings on its hole, and its sheet opens 260 ms in; reduced motion opens at once. */
+  function open() {
+    if (!onOpen) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      onOpen();
+      return;
+    }
+    setSwinging(true);
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(onOpen, SHEET_OPEN_MS);
+  }
   const key = `lvl_${level}` as 'lvl_naya';
   if (!l.has(key)) return null;
   const t = pehchaanTone(level);
-  const edge = tone === 'light' ? (level === 'master' ? 'bg-accent-light' : 'bg-hero-copy') : t.cls.edge;
+  // On navy cards the outline Chhotu tag turns navy with white text (visual language § 3.3), not a white chip.
+  const fill = tone === 'light' && level === 'apprentice' ? 'bg-navy text-white' : t.cls.fill;
+  const edge =
+    tone === 'light' ? (level === 'master' ? 'bg-accent-light' : 'bg-tag-edge-on-navy') : t.cls.edge;
   const body: ReactNode = (
     <span className={`inline-flex p-px ${OUTER} ${edge}`}>
       <span
-        className={`inline-flex items-center gap-1.5 pr-2.5 pl-[18px] leading-[1.45] font-bold ${size === 'md' ? 'min-h-8 text-sm' : 'min-h-6 text-xs'} ${INNER} ${t.cls.fill}`}
+        className={`inline-flex items-center gap-1.5 pr-2.5 pl-[18px] leading-[1.45] font-bold ${size === 'md' ? 'min-h-8 text-sm' : 'min-h-[26px] text-[13px] [&:lang(hi)]:min-h-7 [&:lang(hi)]:text-sm'} ${INNER} ${fill}`}
       >
         <span className="whitespace-nowrap">{l(key)}</span>
         {t.lines > 0 ? (
           <span aria-hidden="true" className="inline-flex gap-[2px]">
             {Array.from({ length: t.lines }, (_, i) => (
-              <span key={i} className="h-2.5 w-[2px] rounded-full bg-current opacity-80" />
+              <span key={i} className="h-[9px] w-[2px] rounded-full bg-current opacity-90" />
             ))}
           </span>
         ) : null}
@@ -61,10 +85,13 @@ export function PehchaanTag({
     return (
       <button
         type="button"
-        onClick={onOpen}
+        onClick={open}
+        onAnimationEnd={() => {
+          setSwinging(false);
+        }}
         data-track="ustaad_level_tag"
         data-level={level}
-        className={pehchaanTagClass}
+        className={`${pehchaanTagClass}${swinging ? ' ustaad-tag-swing' : ''}`}
       >
         {body}
       </button>

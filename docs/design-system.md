@@ -253,3 +253,29 @@ restyle. No new colours, fonts or radii.
 - **Charts:** own SVG only (Q-PP-F1, no Recharts): `DailyBars` in one hue per measure and `BulletBar` (accent bar,
   ink city-middle marker, both values written).
 - No new colour, font or radius.
+
+## Mechanic Network "Bench kit" (2026-11-28; network only, the storefront is unchanged — V9 site-wide is not approved)
+
+Source: `docs/superpowers/specs/2026-11-27-ustaad-visual-language.md` § 3.3, 3.6, 3.7, 4, 5; decisions 2026-11-28.
+
+- **Tokens added** (`packages/ui/src/tokens.css`, light + both dark blocks, contrast pairs in `apps/web/test/tokens.test.ts`):
+  level metal sheen `--color-{naya,pakka,master}-{top,bottom}` (steel, brass, blackened steel; polished steel in
+  dark), `--color-tag-edge-on-navy`, lift tones `--color-lift-{bg,sunken,track}`, `--color-navy-raised`
+  (dark `#16294a`), shadows `--shadow-lift`, `--shadow-lift-chrome-{down,up}`, `--shadow-lift-deep`
+  (light: hairline plus layered shadow; dark: a top-light inset edge, no drop shadows). Earlier: `zinc`, `brass`,
+  `brass-text`, `surface-raised`.
+- **Motion tokens:** `--ease-spring-snappy` (`linear()` spring, cubic-bezier fallback), `--duration-tap` 90 ms,
+  `--duration-sheet` 260 ms, `--duration-swing` 420 ms. Rules: CSS only, `transform` and `opacity` only, every
+  animation inside `@media (prefers-reduced-motion: no-preference)` or `motion-safe:`; 0 KB of new JS.
+- **Motion M1–M6 as built:** M1 tick (`ustaad-tick` icon spring plus `ustaad-count-in` count roll, only after a tap
+  via `data-ticked`), M2 tag swing (`ustaad-tag-swing` on the hole, sheet opens at 260 ms, no swing under reduced
+  motion), M3 dock shift (one bar, `translateX(index × 100%)`, 280 ms spring), M4 new-posts pill (220 ms drop),
+  M5 stamp press (`ustaad-stamp-press`, only when the answer became best on this screen), M6 story progress
+  (6 s, 100 ms linear transition aligned to the timer tick).
+- **Lifted surfaces** are all under `html:has([data-shell-compact])` (`globals.css`, "Bench kit lift" section): tinted
+  page, floating post cards (16 px radius, `--shadow-lift`), framed photos (12 px inset, 12 px radius,
+  `data-post-photo`), accent-soft pill behind the current dock icon, chrome on shadows not rules, navy panels
+  (`data-navy-panel`) raised in dark, story gap in the page tone, `.ustaad-seg` tinted segmented control (no segmented
+  control exists in the network yet; the class is ready).
+- **Type and spacing in the network:** body 16 (Hindi 17) at 1.6 (`data-post-body`), author names 16/800, post padding 16,
+  card gap 10, tag 26 px tall (Hindi 28 px) with 13/14 px text, grade lines 2 × 9 px at 90 %.

@@ -119,7 +119,10 @@ export default async function UstaadLayout({ children, params }: Props) {
 
   /** One compact network header (56 px, sticky): MechDost mark (back to the store), the network's name, Messages, bell. */
   const header = (
-    <header className="sticky top-0 z-30 h-14 border-b border-line bg-surface/95 backdrop-blur-[14px]">
+    <header
+      data-ustaad-header
+      className="sticky top-0 z-30 h-14 border-b border-line bg-surface/95 backdrop-blur-[14px]"
+    >
       <div className="mx-auto flex h-14 w-full max-w-[1200px] items-center gap-2 px-2 tab:px-4">
         <Link
           href={localePath('/', locale)}

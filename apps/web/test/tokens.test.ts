@@ -94,6 +94,21 @@ const TEXT_PAIRS: [fg: string, bg: string][] = [
   ...Object.values(PEHCHAAN_TONES).map((t): [string, string] => [t.fg, t.fill]),
   ['brass-text', 'surface'],
   ['brass-text', 'bg'],
+  // Metal sheen stops (decision 2026-11-28): the label must pass on both ends of every gradient
+  ['ink', 'naya-top'],
+  ['ink', 'naya-bottom'],
+  ['#101f34', 'pakka-top'],
+  ['#101f34', 'pakka-bottom'],
+  ['surface', 'master-top'],
+  ['surface', 'master-bottom'],
+  // Network lift (decision 2026-11-28): page tone, sunken well, segment track, raised navy panel
+  ['ink', 'lift-bg'],
+  ['muted', 'lift-bg'],
+  ['muted', 'lift-sunken'],
+  ['muted', 'lift-track'],
+  ['accent-soft-text', 'lift-bg'],
+  ['#ffffff', 'navy-raised'],
+  ['hero-copy', 'navy-raised'],
 ];
 
 const NON_TEXT_PAIRS: [fg: string, bg: string][] = [
@@ -115,6 +130,9 @@ const NON_TEXT_PAIRS: [fg: string, bg: string][] = [
   ['warning', 'warning-bg'],
   // Pehchaan tag edges on the page surface (visual language § 3.2: every tag has a 1 px edge)
   ...Object.values(PEHCHAAN_TONES).map((t): [string, string] => [t.edge, 'surface']),
+  ['tag-edge-on-navy', 'navy'],
+  ['tag-edge-on-navy', 'navy-raised'],
+  ['accent-light', 'navy-raised'],
 ];
 
 describe.each([

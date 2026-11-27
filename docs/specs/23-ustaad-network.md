@@ -2392,3 +2392,13 @@ ffmpeg sandbox (SR-13/14), server auto-blur and OCR (SR-19), PDF sanitiser and a
 quizzes, paid mentorship/trainers, "featured in workshop booking", public profiles for customers, roadside responder
 pool for Bada+ (spec 22 phase 2), udhaar, mechanic job cards and GST invoices, trade prices, brand advertisers, mobile
 app.
+
+## 21i-V. Visual language polish, "Bench kit" as built (2026-11-28; design `docs/superpowers/specs/2026-11-27-ustaad-visual-language.md`)
+
+Polish only; no flow, copy, data or API change. Tokens and motion tokens are listed in `docs/design-system.md` ("Mechanic
+Network Bench kit") and `docs/decisions.md` (2026-11-28). Built: M1 tick on Like and "Kaam ki baat" (`post-card.tsx`), M2
+tag swing before the level sheet (`common/pehchaan-tag.tsx`), M3 single sliding dock bar (`shell/ustaad-nav.tsx`), M4
+new-posts drop (already built, timing checked), M5 stamp press when an answer is chosen (`qa/question-thread.tsx`), M6
+story progress 100 ms linear (`feed/story-viewer.tsx`); level tag metal sheen and edges on navy; lifted light mode and
+dark elevation scoped under `[data-shell-compact]`; body 16/17 at 1.6, names 16/800, card gap 10. Tests:
+`apps/web/test/ustaad-bench-{motion,tag,lift}.test.ts`, `tokens.test.ts`.

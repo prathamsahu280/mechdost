@@ -29,6 +29,7 @@ function IdCard({ card, onLevel }: { card: MyCard; onLevel: (el: HTMLButtonEleme
   return (
     <section
       aria-label={t('cardLabel')}
+      data-navy-panel
       className="overflow-hidden rounded-card bg-navy text-white shadow-float"
     >
       <div className="flex items-center justify-between gap-3 bg-accent-button px-5 py-2.5 text-sm font-bold">

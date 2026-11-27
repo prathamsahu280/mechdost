@@ -1333,3 +1333,12 @@ Done: launcher hides on phones while a field is focused and on `data-launcher-av
 ### 2026-11-28 00:23 IST — shutdown scheduled
 
 - Founder scheduled the PC shutdown for ~05:53 IST. Pause cleanly by **05:38** with the handover written here and a phone summary sent (overrides the 05:15 default of the overnight check).
+
+## 2026-11-28 — Mechanic Network "Bench kit" polish (builder, branch `worktree-agent-a9cce9d5a232e38ff`, NOT merged, not pushed)
+
+- Built: motion M1–M6 (CSS only, reduced-motion guarded), level tag metal sheen + edges on navy + grade lines, lifted light
+  mode and dark elevation scoped to the network marker, type/spacing fixes. New tokens and contrast pairs are in
+  `tokens.css` / `tokens.test.ts`. Docs: design-system.md, decisions.md (2026-11-28), spec 23 § 21i-V.
+- Next: lead merges and compares the result with the demo in a real browser (not done here: no browser run, no build,
+  no e2e); the state-audit model has no row for `.ustaad-seg` (no segmented control exists in the network yet).
+- Open: V9 (site-wide lift) stays pending; story progress stays JS-ticked (100 ms) with a linear transition.

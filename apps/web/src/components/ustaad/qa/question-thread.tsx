@@ -109,6 +109,7 @@ export function QuestionThread({ code }: { code: string }) {
 
       <article
         aria-labelledby="ustaad-q-h"
+        data-navy-panel
         className="rounded-[22px] rounded-tl-md bg-navy p-5 text-white shadow-float"
       >
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-white/80">
@@ -219,6 +220,8 @@ function AnswerBubble({
   const locale = useLocale();
   const ago = useTimeAgo();
   const stampId = useId();
+  // M5 (visual language § 5): the stamp presses only when this answer became the best one on this screen.
+  const wasBest = useRef(a.isBest);
   // U3 (E9): "Choose as best" asks once, inline (no dialog): "Make this the best answer? [Yes, choose] [Not now]".
   const [confirming, setConfirming] = useState(false);
   const chooseRef = useRef<HTMLButtonElement>(null);
@@ -242,7 +245,7 @@ function AnswerBubble({
         <p
           id={stampId}
           // Bench kit stamp (visual language § 3.5/4): radius 6, 2 px border + 1 px outline 2 px out, −2°.
-          className="mb-3 ml-1 inline-flex -rotate-2 items-center gap-1.5 rounded-[6px] border-2 border-success bg-success-bg px-3 py-1 text-[13px] font-extrabold text-success outline-1 outline-offset-2 outline-success"
+          className={`${wasBest.current ? '' : 'ustaad-stamp-press '}mb-3 ml-1 inline-flex -rotate-2 items-center gap-1.5 rounded-[6px] border-2 border-success bg-success-bg px-3 py-1 text-[13px] font-extrabold text-success outline-1 outline-offset-2 outline-success`}
         >
           <BadgeCheck aria-hidden="true" className="size-4" />
           {t('bestStamp')}

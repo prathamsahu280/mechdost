@@ -139,7 +139,7 @@ export function StoryViewer({
             <span key={s.id} className="h-1 flex-1 overflow-hidden rounded-full bg-white/30">
               {/* transform only (no layout work per tick); reduced motion shows whole steps. */}
               <span
-                className="block h-full origin-left bg-white"
+                className="block h-full origin-left bg-white motion-safe:transition-transform motion-safe:duration-100 motion-safe:ease-linear"
                 style={{
                   transform: `scaleX(${String(
                     i < pos.story ? 1 : i > pos.story ? 0 : timed ? Math.min(1, elapsed / PHOTO_MS) : 1,
