@@ -87,6 +87,7 @@ const r = {
     tags,
     security: sec,
     summary: 'My card: counters, badges, the level ladder with qualified followers (never a phone number)',
+    request: { query: z.object({ lang: z.enum(['hi', 'en']).optional() }) },
     responses: { 200: json(MyCardDto, 'Card'), ...errorResponses },
   }),
   status: createRoute({
@@ -209,7 +210,8 @@ export function ustaadVerificationRoutes(deps: AppDeps) {
       return c.json(await ustaadTutorial(deps.db, lang), 200);
     })
     .openapi(r.card, async (c) => {
-      const lang = c.get('ustaadMember')?.lang ?? 'hi';
+      // The page language wins (SIM-P4): an /en page must not show Hindi names because the stored lang is hi.
+      const lang = c.req.valid('query').lang ?? c.get('ustaadMember')?.lang ?? 'hi';
       return c.json(await ustaadMyCard(deps.db, c.get('auth').user.id, lang), 200);
     })
     .openapi(r.status, async (c) =>

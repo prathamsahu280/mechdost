@@ -17,7 +17,7 @@ import { authed, type ApiResult } from '../orders-api';
  * Answers are checked with the shared schemas (hard rule 4). Loaded with `import()` from the client islands.
  */
 export const fetchMyCard = (locale: string): Promise<ApiResult<MyCard>> =>
-  authed(locale, '/ustaad/me/card', MyCardDto);
+  authed(locale, `/ustaad/me/card?lang=${locale === 'en' ? 'en' : 'hi'}`, MyCardDto);
 
 export const fetchTutorial = (locale: string): Promise<ApiResult<Tutorial>> =>
   authed(locale, `/ustaad/tutorial?lang=${locale === 'en' ? 'en' : 'hi'}`, TutorialDto);

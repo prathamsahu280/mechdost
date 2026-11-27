@@ -2053,6 +2053,13 @@ Each fix has a regression test named after the QA id.
   who is both a workshop owner and a trade account cannot pick the trade account in the form (the API still accepts
   `{kind:'trade'}`); the form does not yet say which account it posts as.
 
+## 21i. QA simulation fixes, member side batch B (2026-11-27 night)
+
+One commit per item, test first. Ids from `D:\mechdost-qa\ustaad-sim-2026-11-27\logs\bugs.md`.
+
+- **SIM-P4** `GET /v1/ustaad/me/card` takes `?lang=hi|en` like the tutorial route; the page language wins over the
+  stored `member.lang`, so `/en/ustaad/me` shows English level, "Unlocks" and badge names. The web passes its locale.
+
 ## 22. Not built / later
 
 Speech-to-text and transcripts (ruled out), voice search, auto-translation, server video/audio transcoding and the

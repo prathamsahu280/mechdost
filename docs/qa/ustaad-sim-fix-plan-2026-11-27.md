@@ -77,3 +77,9 @@ answerer block) · SIM-LEAD-1 (email verification lags on other devices: "I've v
 - Voice items without a text alternative (audit item 5): transcripts / speech-to-text or a typed summary.
 - Dock tabs (audit item 7): Home · Ask · Learn · Jobs · Me vs today's Home · Discover · Create · Learn · Me.
 - Community rules page public before the network opens.
+
+## Member-side batch B status (builder, 2026-11-27 night; details in spec 23 § 21i)
+
+| Id     | Status | Note                                            |
+| ------ | ------ | ----------------------------------------------- |
+| SIM-P4 | fixed  | card route takes `?lang`; web passes its locale |
