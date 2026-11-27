@@ -39,14 +39,18 @@ export function PartnerTabs({
   tabs,
   label,
   variant,
+  onUserNavigate,
 }: {
   portal: PartnerPortal;
   tabs: readonly PartnerTab[];
   label: string;
   variant: 'bar' | 'rail';
+  /** Called when the partner picks a tab (not on load, back or forward): the frame then moves focus to the heading. */
+  onUserNavigate?: () => void;
 }) {
   const current = useCurrentTab(tabs);
   const onTab = (id: string) => () => {
+    onUserNavigate?.();
     track('partner_tab_viewed', { portal, tab: id });
   };
   if (variant === 'rail') {
@@ -88,12 +92,12 @@ export function PartnerTabs({
               href={tab.href}
               onClick={onTab(tab.id)}
               aria-current={current === tab.id ? 'page' : undefined}
-              className="flex min-h-[52px] flex-col items-center justify-center gap-[3px] rounded-2xl px-0.5 text-center text-[11px] leading-tight font-bold text-muted hover:text-ink aria-[current=page]:bg-accent-soft aria-[current=page]:text-accent-soft-text focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+              className="flex min-h-[52px] flex-col items-center justify-center gap-[3px] rounded-2xl px-0.5 text-center leading-tight font-bold text-muted hover:text-ink aria-[current=page]:bg-accent-soft aria-[current=page]:text-accent-soft-text focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
             >
               <span aria-hidden="true" className="flex [&_svg]:size-5 [&_svg]:stroke-[1.9]">
                 {tab.icon}
               </span>
-              <span>{tab.label}</span>
+              <span className="partner-tab-label">{tab.label}</span>
             </LocalLink>
           </li>
         ))}
