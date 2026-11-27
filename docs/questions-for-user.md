@@ -636,3 +636,12 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
   says transactional is always on). Default: skip (the bell still carries it).
 - **Q-QB-4** Video metadata rule relaxed (SIM-F6): `udta`/`meta` without location markers are accepted; needs the
   lead's security review. Default: ship with the marker check (`©xyz`, `loci`, `location`, `gps`, case-insensitive).
+
+## 2026-11-28 night (lead)
+
+- **Q-DC-B11-LIVE** Offers that pass their deadline on the staff side (DC-B11): the worker now logs a heartbeat every
+  10 min and a `sweep_stuck` warning, and the sweep is running live (heartbeat seen 01:51, lastDue 0). The real proof
+  needs one live offer to lapse: switch `delivery.agents_enabled` on for Raipur with a 2-minute offer timeout, offer a
+  test order to rider 06, let it lapse, check the job returns to "Needs an agent", then switch everything back. Needs
+  your OK because it switches rider delivery on city-wide for ~10 minutes. Default meanwhile: not run; the heartbeat
+  and `sweep_stuck` warning will show any stall.
