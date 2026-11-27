@@ -34,6 +34,12 @@ describe('portal frames live in layouts', () => {
       frame: 'WorkshopFrame',
       source: join(srcDir, 'components', 'portal', 'workshop', 'workshop-frame.tsx'),
     },
+    // Shop portal tabs (partner portals UI upgrade, batch A, 2026-11-28): a route group, so the print slip stays out.
+    {
+      dir: join('partner', 'shop', '(portal)'),
+      frame: 'ShopFrame',
+      source: join(srcDir, 'components', 'portal', 'shop', 'shop-frame.tsx'),
+    },
   ];
 
   for (const { dir, frame, source } of portals) {
@@ -58,7 +64,8 @@ describe('portal frames live in layouts', () => {
 
     it(`${dir}: the frame reads the current section from the URL, not from a prop`, () => {
       const text = read(source);
-      expect(text).toContain('useSelectedLayoutSegment');
+      // The partner kit's frame reads the open tab from the pathname itself (`useCurrentTab`).
+      expect(text).toMatch(/useSelectedLayoutSegment|<PartnerFrame/);
     });
   }
 
@@ -83,7 +90,7 @@ const PLAIN_ANCHOR_FILES: Record<string, string> = {
     'full load on purpose: the locale proxy sets the language cookie only on a document request (bugs 2026-11-13)',
   'components/catalogue/shop-browser.tsx': 'category chip: onClick prevents default and filters client-side',
   'components/ui/button-link.tsx': 'ExternalButtonLink: WhatsApp / phone',
-  'components/portal/shop-empty.tsx': 'in-page `#id` anchor on the same screen',
+  'components/portal/shop-empty.tsx': 'in-page `#id` anchor on the same screen (portal paths use LocalLink)',
   'components/portal/admin-errors-api.tsx': 'Sentry issue link (external)',
   'components/assistant/assistant-panel.tsx': 'the `external` branch of the assistant action',
 };

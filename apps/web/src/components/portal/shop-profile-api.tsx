@@ -53,11 +53,18 @@ function Problem({ code }: { code: string }) {
 }
 
 /**
- * Shop portal header on the API (spec 07, real sign-in): the shop's name and address, last-30-day acceptance, the
+ * The blocks of the shop's own data, one set per tab (partner portals UI upgrade, 2026-11-27): `today` the paused /
+ * suspended / pending banner, `profile` My shop (availability, hours, delivery area, who delivers, photos, team),
+ * `stock` the offers to accept and the stock file, `numbers` the performance and earnings.
+ */
+export type ShopPart = 'today' | 'profile' | 'stock' | 'numbers';
+
+/**
+ * Shop portal blocks on the API (spec 07, real sign-in): the shop's name and address, last-30-day acceptance, the
  * paused / suspended banner with MechDost's reason (code in the shop's language + the note), the working hours (the
  * owner edits them; routing suggests open shops first) and where it delivers. Loaded with the portal's dynamic import.
  */
-export function ShopProfileApi() {
+export function ShopProfileApi({ part }: { part: ShopPart }) {
   const t = useTranslations('portal');
   const { load, reload } = useMyShops();
   if (load.kind === 'loading') return <div className="skeleton h-40 rounded-card" aria-hidden="true" />;
@@ -74,66 +81,47 @@ export function ShopProfileApi() {
   return (
     <>
       {load.shops.map((s) => (
-        <ShopHeader key={s.id} shop={s} onChanged={reload} />
+        <ShopHeader key={s.id} shop={s} part={part} onChanged={reload} />
       ))}
     </>
   );
 }
 
-function ShopHeader({ shop: s, onChanged }: { shop: MyShopDto; onChanged: () => Promise<void> }) {
+function ShopHeader({
+  shop: s,
+  part,
+  onChanged,
+}: {
+  shop: MyShopDto;
+  part: ShopPart;
+  onChanged: () => Promise<void>;
+}) {
   const t = useTranslations('portal');
-  const locale = useLocale();
-  const hi = locale === 'hi';
   const reason = s.standing?.reasonCode ? t(`shops_api_reason_${s.standing.reasonCode}`) : null;
+  if (part === 'today') return <ShopBanner shop={s} reason={reason} />;
+  if (part === 'stock')
+    return (
+      <div className="space-y-3">
+        {s.isOwner ? <ShopOffersApi shopId={s.id} /> : null}
+        <ShopCsvCard shopId={s.id} />
+      </div>
+    );
+  if (part === 'numbers')
+    return (
+      <div className="space-y-3">
+        {s.isOwner ? <ShopPerformanceApi shopId={s.id} /> : null}
+        <ShopStaffPerformanceLazy shopId={s.id} isOwner={s.isOwner} />
+      </div>
+    );
   return (
     <div className="space-y-3">
-      <section
-        aria-labelledby={`shop-head-${s.id}`}
-        className="blueprint rounded-card p-6 text-white shadow-card"
-      >
-        <h2 id={`shop-head-${s.id}`} className="font-heading text-2xl font-extrabold">
-          <span aria-hidden="true">🏪 </span>
-          {hi && s.nameHi ? s.nameHi : s.name}
-        </h2>
-        <p className="mt-1 text-sm text-white/80">
-          {hi && s.addressLineHi ? s.addressLineHi : s.addressLine} · {s.pincode}
-        </p>
-        <p className="mt-3 text-sm font-bold">
-          {s.offers30d.answered === 0
-            ? t('shops_api_meNoOffersYet')
-            : t('shops_api_meAccepted', { accepted: s.offers30d.accepted, answered: s.offers30d.answered })}
-          {' · '}
-          {t('shops_api_onSale', { count: s.offersOnSale })}
-        </p>
-      </section>
-
-      {s.status === 'paused' || s.status === 'suspended' ? (
-        <div
-          role="status"
-          className="rounded-card border border-warning bg-warning-bg p-4 text-sm text-warning"
-        >
-          <p className="font-extrabold">
-            {t(s.status === 'paused' ? 'shops_api_mePaused' : 'shops_api_meSuspended')}
-            {reason ? ` ${t('shops_api_meReason', { reason })}` : ''}
-          </p>
-          {s.standing?.note ? (
-            <p className="mt-1" data-user-content>
-              {s.standing.note}
-            </p>
-          ) : null}
-          <p className="mt-1">
-            {s.status === 'paused' && s.standing?.until
-              ? t('shops_api_mePausedUntil', { date: formatDate(s.standing.until, locale) })
-              : t(s.status === 'paused' ? 'shops_api_mePausedEffect' : 'shops_api_meSuspendedEffect')}
-          </p>
-        </div>
-      ) : null}
-      {s.status === 'pending' ? (
-        <p role="status" className="rounded-card bg-pill p-4 text-sm text-ink">
-          {t('shops_api_mePending')}
-        </p>
-      ) : null}
-
+      <p className="text-sm font-bold text-ink">
+        {s.offers30d.answered === 0
+          ? t('shops_api_meNoOffersYet')
+          : t('shops_api_meAccepted', { accepted: s.offers30d.accepted, answered: s.offers30d.answered })}
+        {' · '}
+        {t('shops_api_onSale', { count: s.offersOnSale })}
+      </p>
       <div className="grid gap-3 nav:grid-cols-2">
         <BusyCard shop={s} onChanged={onChanged} />
         <HoursCard shop={s} onChanged={onChanged} />
@@ -161,12 +149,39 @@ function ShopHeader({ shop: s, onChanged }: { shop: MyShopDto; onChanged: () => 
         </section>
       </div>
       <ShopDeliveryModeCard shopId={s.id} isOwner={s.isOwner} />
-      {s.isOwner ? <ShopOffersApi shopId={s.id} /> : null}
-      <ShopCsvCard shopId={s.id} />
-      {s.isOwner ? <ShopPerformanceApi shopId={s.id} /> : null}
-      <ShopStaffPerformanceLazy shopId={s.id} isOwner={s.isOwner} />
       <ShopPhotosApi shopId={s.id} />
       {s.isOwner ? <ShopTeamApi shopId={s.id} /> : null}
+    </div>
+  );
+}
+
+/** Paused / suspended with MechDost's reason (code in the shop's language + the note), or "waiting for approval". */
+function ShopBanner({ shop: s, reason }: { shop: MyShopDto; reason: string | null }) {
+  const t = useTranslations('portal');
+  const locale = useLocale();
+  if (s.status === 'pending')
+    return (
+      <p role="status" className="rounded-card bg-pill p-4 text-sm text-ink">
+        {t('shops_api_mePending')}
+      </p>
+    );
+  if (s.status !== 'paused' && s.status !== 'suspended') return null;
+  return (
+    <div role="status" className="rounded-card border border-warning bg-warning-bg p-4 text-sm text-warning">
+      <p className="font-extrabold">
+        {t(s.status === 'paused' ? 'shops_api_mePaused' : 'shops_api_meSuspended')}
+        {reason ? ` ${t('shops_api_meReason', { reason })}` : ''}
+      </p>
+      {s.standing?.note ? (
+        <p className="mt-1" data-user-content>
+          {s.standing.note}
+        </p>
+      ) : null}
+      <p className="mt-1">
+        {s.status === 'paused' && s.standing?.until
+          ? t('shops_api_mePausedUntil', { date: formatDate(s.standing.until, locale) })
+          : t(s.status === 'paused' ? 'shops_api_mePausedEffect' : 'shops_api_meSuspendedEffect')}
+      </p>
     </div>
   );
 }

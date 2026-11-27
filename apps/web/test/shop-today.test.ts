@@ -42,7 +42,7 @@ describe('shop Today counts (design 2026-11-27 § 5.2)', () => {
   it('tiles sit above the offers and every partnerShop string has Hindi', () => {
     const api = src('components/portal/shop-portal-api.tsx');
     expect(api.indexOf('<ShopTodayTiles')).toBeLessThan(api.indexOf('aria-labelledby="offered-title"'));
-    const page = src('app/[locale]/partner/shop/page.tsx');
+    const page = src('app/[locale]/partner/shop/(portal)/layout.tsx');
     expect(page).toMatch(/'partnerKit'/);
     expect(page).toMatch(/'partnerShop'/);
     const en = json('en');

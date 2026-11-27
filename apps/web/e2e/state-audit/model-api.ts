@@ -644,7 +644,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     page: 'Shop portal (/partner/shop) → Offers to accept, real sign-in',
     component:
       'Offers a shop is asked to fund: waiting, accepted, declined, many, long Hindi/English text, error; accept / decline / withdraw; nothing shown when there are none',
-    path: '/partner/shop',
+    path: '/partner/shop/stock',
     scope: 'main',
     strategy: 'pairwise',
     params: [
@@ -665,7 +665,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     page: 'Shop portal (/partner/shop), real sign-in',
     component:
       'Update stock with a file (idle, checked with problems, checked clean, file refused, applied) and, for the owner, "How your shop is doing" (30 and 90 days, with and without the city median, no data, error)',
-    path: '/partner/shop',
+    path: '/partner/shop/stock',
     scope: 'main',
     strategy: 'pairwise',
     params: [
@@ -688,7 +688,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     page: 'Shop portal (/partner/shop), real sign-in',
     component:
       'Team performance and earnings, opened from its toggle: the owner sees every person, the whole shop and the ledger by kind and IST day; a staff member only their own row; with data, nothing to show yet (one next action) and error with retry',
-    path: '/partner/shop',
+    path: '/partner/shop/numbers',
     scope: 'main',
     strategy: 'pairwise',
     params: [

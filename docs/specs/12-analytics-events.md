@@ -395,3 +395,6 @@ Browser events, `packages/shared/src/partner-client-events.ts` (merged into `CLI
 | `partner_sound_enabled`       | `portal`, `on`             | Order sound unlocked, turned off or on again           |
 | `partner_offer_alert_played`  | `portal`, `count` (1–50)   | The new-work alert fired for fresh work (visible page) |
 | `partner_chart_table_toggled` | `portal`, `chart`, `table` | A partner chart switched to its table view or back     |
+
+Shop values (2026-11-28, tab split): `tab` = `today | orders | stock | numbers | profile`; `tile` = `new | packing |
+ready | out | delivered`; `lane` = `packing | ready | out | delivered | given_up`. No new events.

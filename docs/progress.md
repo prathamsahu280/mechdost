@@ -183,6 +183,17 @@ This file is the single source of truth for **where the build is right now**. It
   (tabs, search, counts, empty state) and the "Add to collection" sheet on the ready API; Me entry line; `pnpm
 db:migrate` before deploy. tsc not run (under 1.5 GB free).
 
+## 2026-11-28 night — shop portal tabs + workshop on the real kit (builder, partner portals batch A, NOT merged)
+
+- Shop portal is five tab pages (Today, Orders, Stock & prices, Numbers, My shop) in `shop/(portal)/` with the kit's
+  `PartnerFrame`; pure helpers `lib/shop-portal-view.ts` (tabs, lanes by order state, old-anchor map, strip state) with
+  `test/shop-portal-view.test.ts` (also reads the notice catalogue). Notice links: `partner.warning` →
+  `/partner/shop/numbers`, `shop.delivery_mode_decided` → `/partner/shop/profile`. Workshop frame uses the real kit;
+  `_kit-shim.tsx` and `bulletScale` deleted. Spec 07 (§ Shop portal tabs), spec 12, decisions 2026-11-28 updated.
+- e2e/state-audit paths moved (stock, numbers); `API-SHOP-PORTAL` and `API-SHOP-TIER1` rows still span several tabs
+  (one path each): split per tab next. Checklist `docs/qa/ui-state-checklist.md` not regenerated. No e2e run.
+- Still open: shop switcher + shop name per card (API), per-row stock −/+, "Delivered today", master-detail ≥ 1024 px.
+
 ## 2026-11-27 evening — delivery go-live blockers fixed (builder, branch `worktree-agent-adc124fa15469db75`, NOT merged)
 
 - Seven commits, test first (spec 24 § 17): DC-P11 job photos carry the job id; DC-B11 sweep audited + warns on

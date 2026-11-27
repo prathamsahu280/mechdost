@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
+import { LocalLink } from '@/components/ui/local-link';
 import { portalQuiet } from './portal-styles';
 import { site } from '@/lib/site';
 
@@ -13,15 +14,21 @@ export function EmptyWithAction({
 }: {
   text: string;
   actionLabel: string;
-  /** An in-page anchor (`#id`) on this screen. */
+  /** An in-page anchor (`#id`) on this screen, or a portal path (`/partner/shop/stock`) kept without a reload. */
   href: string;
 }) {
   return (
     <div className="mt-3 flex flex-wrap items-center gap-3">
       <p className="text-sm text-muted">{text}</p>
-      <a href={href} className={portalQuiet}>
-        {actionLabel}
-      </a>
+      {href.startsWith('/') ? (
+        <LocalLink href={href} className={portalQuiet}>
+          {actionLabel}
+        </LocalLink>
+      ) : (
+        <a href={href} className={portalQuiet}>
+          {actionLabel}
+        </a>
+      )}
     </div>
   );
 }

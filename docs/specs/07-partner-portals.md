@@ -372,8 +372,11 @@ confirm/decline, "Who delivers your orders" requests) and the delivery agent por
 
 Design: `docs/superpowers/specs/2026-11-27-partner-portals-ui-upgrade-design.md` § 6 and § 13 batch B; founder
 answers 2026-11-27 (Q-PP-F1 own SVG charts, F2 split into tabs, F4 storefront header stays). Branch built against
-local stand-ins for the partner kit (`components/portal/workshop/_kit-shim.tsx`: `PartnerTabs`, `KpiTile`,
-`LaneTabs`, `StepRail`, `BulletBar`), to be swapped for `components/partner/*` on merge.
+local stand-ins for the partner kit (`_kit-shim.tsx`); **swapped for the real kit `components/partner/*`
+(2026-11-28)**: the frame is now `PartnerFrame` (bottom bar under 1024 px, side rail above, icons per tab),
+`KpiTile` has an icon chip and fires `partner_kpi_clicked` itself, `LaneTabs` takes `hrefFor` and fires
+`partner_lane_viewed`, `StepRail` shows numbered circles, `BulletBar` carries its own label, value and "City middle"
+line (the old `bulletScale` helper is gone; the kit's `bulletGeometry` replaces it).
 
 - **Frame** (`app/[locale]/partner/workshop/layout.tsx` + `components/portal/workshop/workshop-frame.tsx`): guard,
   demo partner gate, message bundles (now incl. `partnerWorkshop`) and the tab bar live in the layout and stay
@@ -407,6 +410,41 @@ local stand-ins for the partner kit (`components/portal/workshop/_kit-shim.tsx`:
 - Not built in this batch: master–detail at ≥ 1024 px, calendar agenda and its API field (P1), saved estimate line
   templates (P1), review replies (P2), state-audit row `WS-FRAME` (existing `API-WS-*` rows were pointed at the
   new tabs). Tiles count exactly the lane they open (decisions 2026-11-27 builder rulings).
+
+## Shop portal tabs (2026-11-28, partner portals UI upgrade batch A)
+
+Design: `docs/superpowers/specs/2026-11-27-partner-portals-ui-upgrade-design.md` § 5 and § 13 batch A; founder answers
+Q-PP-F2 (tabs), F3 (sound on by default), F4 (storefront header stays).
+
+- **Frame** (`app/[locale]/partner/shop/(portal)/layout.tsx` + `components/portal/shop/shop-frame.tsx`): the layout is
+  a route group so the packing slip `/partner/shop/slip/{code}` stays outside the frame. Guard, demo partner gate,
+  navy strip (shop name and state in words: Taking orders / Busy / Closed now / Paused / Suspended / Waiting for
+  approval; "{n} shops" for an owner of several), the kit's bottom tabs / side rail and the message bundles live in
+  the layout and stay mounted while tabs change. Pure helpers and tests: `lib/shop-portal-view.ts`,
+  `test/shop-portal-view.test.ts`.
+- **Tabs** (links, `aria-current="page"`, 52 px bottom tiles): **Today** `/partner/shop` · **Orders**
+  `/partner/shop/orders` · **Stock & prices** `/partner/shop/stock` · **Numbers** `/partner/shop/numbers` · **My shop**
+  `/partner/shop/profile`.
+- **Today:** push prompt, flash line, paused / suspended / pending banner, the four tiles (each links to its lane on
+  Orders; compact chips while an offer is open), New orders with `OfferTimer`, the sound button and "Updated n min
+  ago", then Orders in progress (packing slip, one next step, give up, delivery code or agent hand-over).
+- **Orders:** `LaneTabs` with counts by real order state (`shopLaneOf`): Packing (`confirmed`, `packed`, `returned`…) ·
+  Ready for pickup (agent shops only: `packed` in agent mode, `ready_for_pickup`) · Out for delivery (`shipped`,
+  `out_for_delivery`) · Delivered · Given up or cancelled. `?lane=` keeps the lane (invalid or missing: first lane with
+  work); `?order=CODE` opens one order in place with "Back to orders". Counts say "20+" when the list has another page.
+- **Stock & prices:** Your prices, Sell another product, Update stock with a file (CSV), Offers to accept: moved
+  unchanged. **Numbers:** How your shop is doing (owner; bullet bars), team or own performance and earnings (daily
+  bars), Notes from MechDost. **My shop:** Seller agreement, availability, working hours, delivery area, who delivers
+  your orders, photos, your team. Demo builds show Today, Orders, Stock and My shop from the demo store; Numbers says
+  it opens with a real sign-in.
+- **Old links:** every shop notice link in `notice-catalogue.ts` is a tab path (a test reads the catalogue): new
+  warnings open Numbers, delivery-mode decisions open My shop, the rest open Today. Stored notices keep `/partner/shop`
+  (= Today). Old one-page anchors are forwarded by the frame (`legacyShopTarget`): `#warnings`, `#shop-performance` →
+  Numbers; `#prices-title`, `#new-product-title`, `#shop-csv`, `#shop-offers` → Stock; `#shop-team`,
+  `#agreement-shop-title` → My shop; `#delivered-title` → Orders, lane Delivered.
+- **Events** (spec 12, reused): `partner_tab_viewed`, `partner_kpi_clicked`, `partner_lane_viewed` with portal `shop`.
+- Not built in this batch: shop switcher and shop name on each card (needs the shop on `ShopOrder`, P1), per-row stock
+  −/+ (P1), "Delivered today" count (needs a date on the row, P1), master–detail at ≥ 1024 px.
 
 ## Partner portals UI upgrade, batches 0 and A (2026-11-27 night; design `docs/superpowers/specs/2026-11-27-partner-portals-ui-upgrade-design.md`)
 
