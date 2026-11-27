@@ -2060,7 +2060,7 @@ From the QA audit (`D:\mechdost-qa\ustaad-sim-2026-11-27\logs\audit.md` § 3 row
 - **One Hindi register.** Member copy uses warm आप with -ें forms everywhere (करें, लिखें, बताएँ; "आप … करते हैं");
   no तुम/-ो forms and no gendered first person in buttons ("मेरा काम", "बाद में", "पता नहीं"). **Verification status is
   always "वेरिफ़ाइड" / "वेरिफ़ाई करें" / "वेरिफ़िकेशन"**; "पक्का" is only the level name "पक्का उस्ताद" (and level
-  labels). Plain words: अर्ज़ी → अप्लाई/आवेदन, जमा-राशि → डिपॉज़िट, ट्रेड खाता → कारोबार खाता (en "business account"),
+  labels). Plain words: अर्ज़ी → अप्लाई/आवेदन, जमा-राशि → डिपॉज़िट (ट्रेड खाता / "trade account" kept: it is the site's feature name),
   पाठ → सबक, वेतन → तनख़्वाह, कृपया dropped, member-facing सदस्य → लोग/प्रोफ़ाइल; simpler `qa.disclaimer` and
   `feed.postedHeld` (en + hi). ICU plurals (en + hi) for `card.rule_min*`, `card.qualified`, `local.exact`,
   `learn.lessons`. **`notify.*` texts cannot use ICU** (`fillNotice` substitutes `{name}` strings only), so count
@@ -2075,7 +2075,10 @@ From the QA audit (`D:\mechdost-qa\ustaad-sim-2026-11-27\logs\audit.md` § 3 row
   composers restore unsent text after hydration, save every change, clear on a successful send, and ask before the
   tab closes or reloads while text is in the box (`beforeunload`, only when non-empty). Every storage call is
   try/catch: no storage = no draft, the composer still works. Text only (photos, voice and video are not kept).
-  In-app navigation is not blocked (the draft is already saved). Guard `apps/web/test/ustaad-drafts.test.ts`.
+  In-app navigation is not blocked (the draft is already saved). Sign-out deletes every `mechdost-ustaad-draft:` key
+  (shared phones; `lib/auth/sign-out.ts`, `test/sign-out-clean.test.ts`). A restored post draft opens the text type;
+  a composer that stays mounted across threads swaps to the new thread's draft (or empty). Guard
+  `apps/web/test/ustaad-drafts.test.ts`.
 
 ## 22. Not built / later
 
