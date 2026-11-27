@@ -410,3 +410,14 @@ minute in production (`ERR_INVALID_ARG_TYPE`): raw JS `Date` inside `sql` templa
 every media read, tutorial skip/complete, message-thread cursor). PGlite accepted them, postgres-js does not · guard:
 `packages/db/src/testing.ts` `rejectDateParams` makes the test DB throw on any Date parameter, so every db/API test now
 fails the way production would (it found 18 tests over 5 sites) · fix: `${d.toISOString()}::timestamptz`.
+
+T-SIM-P1 · 2026-11-27 · live Ustaad simulation (agent P) · Found on mechdost.com with real accounts, not by the suites:
+employer never told about job applications and no applicants list (SIM-P18, P0); workshop owner refused by the job form
+(employer.kind always `trade`, SIM-P17); bell links `/ustaad/notifications` and `/ustaad/me/verify` 404 (SIM-P19); banned
+member sees "check your internet" errors instead of a banned screen (SIM-P27); appeal outcome sent as a "your report was
+checked" notice (SIM-P26); suggest-mode text auto-corrected on send (SIM-P20); English /ustaad/me shows Hindi level and
+badge content (SIM-P4); no vouch_requested bell (SIM-P11); video posts refused for normal files (SIM-P28) · root cause:
+not yet analysed (no code edits during the run) · guard owed: role-pair e2e for each notice (actor action → other actor's
+bell item AND its link resolves 200), employer apply→notice→applicants test, banned-member render test, locale test that
+`/en/ustaad/me` has no Devanagari outside user text. Details: D:\mechdost-qa\ustaad-sim-2026-11-27\logs\bugs.md.
+T-SIM-L1 · 2026-11-27 · admin Ustaad console (live QA run, lead) · (a) ban confirmer not visible in Audit/My actions: `writeAction` writes one audit row with the proposer as actor, confirmer only in `after.second` (SIM-B16); (b) proposer offered the appeal form, API 403 (SIM-B13, `decidedByMe`); (c) held scam DM offers only Release/Remove — no strike path (`decisionsFor` 'held' → keep/remove, SIM-B8); (d) client-side nav drops unsaved settings without the beforeunload prompt (SIM-B14); (e) same item reported twice = two queue items (SIM-B9). · not fixed yet (no code edits during the run) · guard owed: four-eyes participant matrix test (proposer/confirmer/third) for UI flags vs API; audit-per-actor assertion for ban confirm; held-scam → warn path test; settings unsaved-guard on Link navigation; report grouping by target. Details: D:\mechdost-qa\ustaad-sim-2026-11-27\logs\bugs.md (SIM-B1…B16).

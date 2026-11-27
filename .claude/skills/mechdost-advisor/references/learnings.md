@@ -599,3 +599,16 @@ L314 · 2026-11-26 · worktree tooling · the worktree guard refuses Bash lines 
   every web type with `Out<typeof Schema>` (type-only import), delete the local guesses, and add a test that parses the
   demo store's answers with the shared schemas (`delivery-contract.test.ts`): that keeps demo and API in sync. Check
   key/format rules against `Schema.safeParse`, never a copied regex. · active
+- L-SIM1 · 2026-11-27 · live QA driving · The web forms wait for a client Turnstile token before calling the API, so a
+  server-side allowlist alone never fires in automated Chromium; replacing the widget script by `context.route` with
+  `logs/_tools/ts-stub.js` (placeholder token, server decides) let the real sign-in, sign-up and join forms run. Sign-up
+  always needs an email and sends one (budget). A clip that shows a sign-in form shows the phone number: start clips
+  signed in, and trim (`imageio-ffmpeg` gives a portable ffmpeg) if a re-sign-in lands on camera. → For any live run,
+  sign every account in off-camera first, stub the widget the same way, count sign-up emails, and record only signed-in
+  screens. · active
+- L-SIM2 · 2026-11-27 · live QA / media · ffmpeg-made MP4s (udta box) and browser MediaRecorder WebMs (no Duration) are
+  both refused by the v1 media checks, so a QA run cannot post a video from generated files, and neither can most phone
+  gallery videos (SIM-P28). → Before a media chain, test one real phone recording and one gallery file on staging; do
+  not plan video steps on synthetic files. · active
+  L315 · 2026-11-27 · QA live run / staff · A server-side Turnstile bypass is never reached by UI forms that wait for a client widget token; staff accounts also need a VERIFIED email before the console opens ("Verify your phone and email first"), and a fresh ID token after the link is clicked. → For any live QA plan: (1) prove sign-in end to end in the real form at Gate 0 (stub the widget script only where the server allowlist decides), (2) create staff test accounts with a reachable inbox and verify them before the run, (3) list every seed the run assumes (hashtags, banned words, protected words) and check them at Gate 0 — tonight all were empty (SIM-G16/G17/G18). · active
+  L316 · 2026-11-27 · moderation four-eyes · Two-staff setups cannot finish a ban appeal or unban (every attempt 403, correct), and the UI offers the decide/lift forms to both participants before refusing (SIM-B13: `decidedByMe` = report.decidedBy only = confirmer). → Any "participant" check in the UI must use the same participant set as the API (proposer + confirmer + decider); and a QA plan that tests four-eyes needs a third staff account (Q-SIM-1). · active

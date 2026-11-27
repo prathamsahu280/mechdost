@@ -2,6 +2,21 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-27 afternoon — Ustaad live QA simulation run (agents L + P; founder approved)
+
+- Ran on mechdost.com (5c984283, then deca80e7 from 13:10) 12:33–14:50 IST. Lead L: Gate 0, account 10 created +
+  community_manager (RPR) granted, 7 preview testers (not 01), settings lowered with a before/after ledger and ALL
+  restored + re-read at 14:42 (agreed with P; 13/13 rows verified), staff steps of C02, C04–C05 (03 Bada, 04 Master),
+  C07-5, C08-1, C10–C14, C19, C21–C25. No code edited during the run.
+- Results: 251 steps logged; bugs and gaps in `D:/mechdost-qa/ustaad-sim-2026-11-27/logs/bugs.md` (P0 SIM-P18 jobs
+  applicants; P1 incl. SIM-B1, SIM-B8, SIM-G16–G18 and the SIM-P series). Walkthrough:
+  `D:/mechdost-qa/ustaad-sim-2026-11-27/walkthrough.html`.
+- Left live on purpose (R2): test content, 02 banned to 27 Dec (appeal undecidable with two staff, Q-SIM-1), two
+  promotions scheduled to 28 Nov 23:00, 5 hashtags, reserved name "MechDost Seva", testers list, 10's grant. The lead
+  switches Turnstile back from the Cloudflare test keys and lets the QA bypass end (16:57).
+- Next: fix bugs test-first (plan § 10.6); write `docs/qa/ustaad-simulation-report-2026-11-27.md` from the logs;
+  founder decisions Q-SIM-1..3.
+
 ## 2026-11-27 overnight (lead, founder asleep) — handover (written 04:55)
 
 **NOT deployed.** Live site still runs `f511da9e` (yesterday). Everything below is merged on `main` (GitHub) but CI is red
