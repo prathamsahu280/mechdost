@@ -163,6 +163,8 @@ const EXEMPT: Record<string, string> = {
     'status-lookup wizard (form, code, result): a visible restart button per step',
   'components/ustaad/feed/post-menu.tsx':
     'steps inside a native modal <dialog> sheet (Escape, the close button and a tap outside close it; Cancel on confirms)',
+  'components/ustaad/feed/home-more.tsx':
+    'opens the shared native modal <dialog> Sheet (Escape, its Close button and a tap outside close it; focus returns to the opener)',
   'components/ustaad/feed/comments-sheet.tsx':
     'setMode switches the comment input (text / voice / photo) inside the sheet; nothing opens in place',
   'components/portal/shop-csv-api.tsx':

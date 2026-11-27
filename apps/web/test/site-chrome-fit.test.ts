@@ -54,7 +54,10 @@ describe('assistant launcher never covers a booking form', () => {
   });
 
   it('on phones also hides while a field in main is focused, and on the roadside request form', () => {
-    const phone = /@media \(max-width: 1023\.98px\)\s*\{([^@]*?)\n\}/.exec(css)?.[1] ?? '';
+    // Every phone block (the partner kit added its own phone block earlier in the file, 2026-11-28).
+    const phone = [...css.matchAll(/@media \(max-width: 1023\.98px\)\s*\{([^@]*?)\n\}/g)]
+      .map((m) => m[1] ?? '')
+      .join('\n');
     expect(phone).toMatch(
       /html:has\(main :is\(input, select, textarea\):focus-visible\) \.assistant-launcher/,
     );

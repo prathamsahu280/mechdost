@@ -69,6 +69,7 @@ export default async function UstaadHome({ params, searchParams }: Props) {
               <ClientMessages
                 namespaces={[
                   'ustaad.feed',
+                  'ustaad.videoLink',
                   'ustaad.story',
                   'ustaad.labels',
                   'ustaad.media',
@@ -194,6 +195,7 @@ export default async function UstaadHome({ params, searchParams }: Props) {
               <ClientMessages
                 namespaces={[
                   'ustaad.feed',
+                  'ustaad.videoLink',
                   'ustaad.home',
                   'ustaad.labels',
                   'ustaad.media',

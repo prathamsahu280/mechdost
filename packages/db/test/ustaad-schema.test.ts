@@ -88,6 +88,9 @@ const SPEC_TABLES = [
   'ustaad_link_previews',
   'ustaad_pin_changes',
   'ustaad_reserved_names',
+  'ustaad_save_collection_items',
+  'ustaad_save_collections',
+  'ustaad_saved_items',
   'ustaad_preview_testers',
   // D2 (migration ustaad_social): read receipts + per-thread mute, daily caps, promotion hides
   'ustaad_thread_members',

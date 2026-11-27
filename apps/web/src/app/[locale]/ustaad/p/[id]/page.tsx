@@ -27,6 +27,8 @@ export default async function UstaadPostPage({ params }: Props) {
           'ustaad.shell',
           'ustaad.standing',
           'ustaad.feed',
+          'ustaad.videoLink',
+          'ustaad.home',
           'ustaad.labels',
           'ustaad.media',
           'ustaad.correction',

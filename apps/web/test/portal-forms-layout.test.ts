@@ -40,7 +40,11 @@ describe('focus rings (PRT-WORKSHOP-002)', () => {
     });
   }
   it('no outline-none without a focus-visible replacement (except programmatic-focus containers)', () => {
-    const allowed = ['app/[locale]/layout.tsx', 'components/site/consent-banner.tsx'];
+    const allowed = [
+      'app/[locale]/layout.tsx',
+      'components/site/consent-banner.tsx',
+      'components/ustaad/feed/feed-list.tsx', // tabIndex=-1 list that takes focus after "New posts" (WCAG 2.4.3)
+    ];
     const offenders: string[] = [];
     for (const file of files(src)) {
       const rel = file.slice(src.length + 1).replaceAll('\\', '/');

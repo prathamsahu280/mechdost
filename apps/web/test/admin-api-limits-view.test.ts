@@ -39,6 +39,8 @@ describe('API limit settings screen', () => {
       'utf8',
     );
     for (const k of KEYS) expect(src).toContain(`'${k}'`);
-    expect(src).toContain("requests: 'api_set_unit_requests'");
+    // DC-B2 (2026-11-27): the unit words moved to the shared settings view helper.
+    const view = readFileSync(new URL('../src/lib/admin-settings-view.ts', import.meta.url), 'utf8');
+    expect(view).toContain("requests: 'api_set_unit_requests'");
   });
 });

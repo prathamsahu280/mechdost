@@ -251,7 +251,10 @@ describe('posts, feed, reactions, comments', () => {
   });
 
   it('fresh: counts newer visible posts by others since a time (capped at 10; U1, SIM-F4)', async () => {
-    const since = new Date(Date.now() - 1000).toISOString();
+    // From this test's own start: earlier tests in the file (video links) post within the same second.
+    await new Promise((r) => setTimeout(r, 5));
+    const since = new Date().toISOString();
+    await new Promise((r) => setTimeout(r, 5));
     const none = await call(suresh, 'GET', `/ustaad/feed/fresh?since=${encodeURIComponent(since)}`);
     expect(none.status, none.text).toBe(200);
     expect(none.body).toEqual({ count: 0 });

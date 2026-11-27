@@ -18,6 +18,7 @@ export default async function UstaadCreatePage({ searchParams }: Props) {
         'ustaad.shell',
         'ustaad.standing',
         'ustaad.feed',
+        'ustaad.videoLink',
         'ustaad.labels',
         'ustaad.media',
         'ustaad.correction',
