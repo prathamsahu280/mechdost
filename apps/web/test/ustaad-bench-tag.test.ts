@@ -16,8 +16,10 @@ function block(selector: string): string {
   const open = tokens.indexOf('{', tokens.indexOf(selector));
   return tokens.slice(open + 1, tokens.indexOf('}', open));
 }
-const colors = (b: string) =>
-  Object.fromEntries([...b.matchAll(/--color-([a-z-]+):\s*(#[0-9a-f]{6});/g)].map((m) => [m[1], m[2]]));
+const colors = (b: string): Record<string, string> =>
+  Object.fromEntries(
+    [...b.matchAll(/--color-([a-z-]+):\s*(#[0-9a-f]{6});/g)].map((m) => [m[1], m[2]]),
+  ) as Record<string, string>;
 const light = colors(block('@theme'));
 const dark = { ...light, ...colors(block(":root[data-theme='dark']")) };
 
@@ -72,12 +74,10 @@ describe('metal sheen stops are tokens', () => {
 
 describe('edges on navy cards (tone light)', () => {
   it('a tag-edge-on-navy token clears 3:1 on navy in both themes; Master keeps its accent-light edge', () => {
-    expect(ratio(light['tag-edge-on-navy'] ?? '#000000', light['navy'] ?? '#ffffff')).toBeGreaterThanOrEqual(
-      3,
-    );
-    expect(ratio(dark['tag-edge-on-navy'] ?? '#000000', dark['navy'] ?? '#ffffff')).toBeGreaterThanOrEqual(3);
-    expect(ratio(light['accent-light'] ?? '#000000', light['navy'] ?? '#ffffff')).toBeGreaterThanOrEqual(3);
-    expect(ratio(dark['accent-light'] ?? '#000000', dark['navy'] ?? '#ffffff')).toBeGreaterThanOrEqual(3);
+    expect(ratio(light['tag-edge-on-navy'] ?? '#000000', light.navy ?? '#ffffff')).toBeGreaterThanOrEqual(3);
+    expect(ratio(dark['tag-edge-on-navy'] ?? '#000000', dark.navy ?? '#ffffff')).toBeGreaterThanOrEqual(3);
+    expect(ratio(light['accent-light'] ?? '#000000', light.navy ?? '#ffffff')).toBeGreaterThanOrEqual(3);
+    expect(ratio(dark['accent-light'] ?? '#000000', dark.navy ?? '#ffffff')).toBeGreaterThanOrEqual(3);
     expect(tag).toContain('bg-tag-edge-on-navy');
     expect(tag).toContain('bg-accent-light');
   });

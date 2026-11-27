@@ -40,7 +40,12 @@ export function PehchaanTag({
   const locale = useLocale();
   const [swinging, setSwinging] = useState(false);
   const timer = useRef<number | undefined>(undefined);
-  useEffect(() => () => window.clearTimeout(timer.current), []);
+  useEffect(
+    () => () => {
+      window.clearTimeout(timer.current);
+    },
+    [],
+  );
   /** M2 (visual language § 5): the tag swings on its hole, and its sheet opens 260 ms in; reduced motion opens at once. */
   function open() {
     if (!onOpen) return;

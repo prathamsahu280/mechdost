@@ -19,8 +19,10 @@ function block(selector: string): string {
   const open = tokens.indexOf('{', tokens.indexOf(selector));
   return tokens.slice(open + 1, tokens.indexOf('}', open));
 }
-const colors = (b: string) =>
-  Object.fromEntries([...b.matchAll(/--color-([a-z-]+):\s*(#[0-9a-f]{6});/g)].map((m) => [m[1], m[2]]));
+const colors = (b: string): Record<string, string> =>
+  Object.fromEntries(
+    [...b.matchAll(/--color-([a-z-]+):\s*(#[0-9a-f]{6});/g)].map((m) => [m[1], m[2]]),
+  ) as Record<string, string>;
 const light = colors(block('@theme'));
 const dark = { ...light, ...colors(block(":root[data-theme='dark']")) };
 function lum(hex: string) {
@@ -43,8 +45,8 @@ describe('lift tokens (light, with dark counterparts)', () => {
   it('muted and ink stay >= 4.5:1 on the new tones, both themes', () => {
     for (const theme of [light, dark])
       for (const tone of ['lift-bg', 'lift-sunken', 'lift-track']) {
-        expect(ratio(theme['muted'], theme[tone]), `muted on ${tone}`).toBeGreaterThanOrEqual(4.5);
-        expect(ratio(theme['ink'], theme[tone]), `ink on ${tone}`).toBeGreaterThanOrEqual(4.5);
+        expect(ratio(theme.muted, theme[tone]), `muted on ${tone}`).toBeGreaterThanOrEqual(4.5);
+        expect(ratio(theme.ink, theme[tone]), `ink on ${tone}`).toBeGreaterThanOrEqual(4.5);
       }
   });
   it('dark: raised navy panel (#16294a) carries white and hero copy; tag and accent edges show on it', () => {

@@ -1,4 +1,4 @@
-﻿# Decisions log
+# Decisions log
 
 Append-only. Newest at the bottom. Each entry: date, decision, reason, alternatives considered.
 
@@ -2979,3 +2979,27 @@ workshop | delivery`) and a snake_case key (regex, ≤ 32 chars) so batches A–
   `ustaad_item_save_toggled {kind, saved}`, new rate limit `ustaad_saves` 200/day.
 - Migration `0190_ustaad_saved_collections` (high number on purpose, journal `when` 1795900000000; the lead renumbers
   at merge).
+
+## 2026-11-28 — Mechanic Network "Bench kit" polish as built (tokens, motion, lifted surfaces)
+
+Context: the founder chose direction A "Bench kit" and approved V0–V8 (entry "Founder, 2026-11-28 ~00:00 IST — name and
+look"); V9 (the same lift site-wide) is NOT approved, so everything below is scoped to the network. Spec:
+`docs/superpowers/specs/2026-11-27-ustaad-visual-language.md` (§ 3.3, 3.6, 3.7, 4, 5, 7).
+
+- **New tokens** (light + both dark blocks, kept identical; each with a contrast pair in `apps/web/test/tokens.test.ts`):
+  level metal sheen `naya/pakka/master` × `top/bottom` (label ≥ 4.5:1 on both stops, light and dark), `tag-edge-on-navy`
+  `#a3b3c7` (7.75 on navy `#101f34`, 7.38 on dark navy, 6.78 on raised navy), `lift-bg #eef2f7` / `lift-sunken #f5f7fa` /
+  `lift-track #e3e9f1` (muted 5.47 / 5.73 / 5.04, ink 14.74), `navy-raised` (light = navy, dark `#16294a`: white 14.48,
+  hero copy 10.14), shadows `lift`, `lift-chrome-down`, `lift-chrome-up`, `lift-deep`. Dark counterparts of the lift tones
+  are the existing dark tones, so the scoped rules need no light/dark selector split.
+- **Motion tokens** `--ease-spring-snappy` (+ `linear()` under `@supports`), `--duration-tap/sheet/swing`; keyframes
+  `ustaad-tick`, `ustaad-count-in`, `ustaad-tag-swing`, `ustaad-stamp` (transform and opacity only, all behind
+  `prefers-reduced-motion: no-preference`; the dock bar and story progress use `motion-safe:` utilities). 0 KB of new JS:
+  the only script changes are state flags (`taps`, `swinging`, `wasBest`).
+- **Scope guard:** every lift rule begins `html:has([data-shell-compact])`; `ustaad-bench-lift.test.ts` fails on any
+  unscoped selector in that section.
+- **Deviations from the demo, on purpose:** the count roll animates only the incoming number (the old number is
+  replaced, not rolled out) to stay CSS-only without keeping two numbers in the DOM; the segmented-control CSS ships
+  as `.ustaad-seg` but the network has no segmented control yet; the dock pill is applied in dark as well (its colours
+  are an existing contrast pair).
+- Not decided here: V9 (site-wide lift) stays pending in the visual-language doc § 9.
