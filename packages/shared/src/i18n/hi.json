@@ -8712,6 +8712,13 @@
       "err_NO_VOICE": "पहले आवाज़ रिकॉर्ड करें: माइक दबाकर बोलें।",
       "err_NO_PHOTO": "पहले फ़ोटो खींचें या चुनें।",
       "previewVoice": "आवाज़",
+      "previewShared": "शेयर की गई पोस्ट",
+      "previewYou": "आप: ",
+      "unreadWord": "नया मैसेज",
+      "requestsRow": "{count, plural, one {# मैसेज अनुरोध} other {# मैसेज अनुरोध}}",
+      "today": "आज",
+      "yesterday": "कल",
+      "newIncomingNote": "{name} का नया मैसेज",
       "previewPhoto": "फ़ोटो",
       "closed": "यह बातचीत बंद है",
       "requestsTab": "अनुरोध ({count})"

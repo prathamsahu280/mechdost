@@ -9,6 +9,7 @@ import {
   CheckCheck,
   Clock,
   Flag,
+  Lock,
   MoreVertical,
   Share2,
 } from 'lucide-react';
@@ -18,7 +19,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
 import { localePath } from '@/lib/locale-path';
 import { socialClient, type MessageView, type ThreadView } from '@/lib/ustaad/messages-api';
-import { LoadFailed, LoadingBlock, SampleNote, btnPrimary, btnQuiet, card } from '../common';
+import { LoadFailed, LoadingBlock, SampleNote, btnPrimary, btnQuiet } from '../common';
 import { VoiceNote } from '../media/voice-note';
 import { Composer } from './composer';
 import { ReportDialog } from './report-dialog';
@@ -32,7 +33,15 @@ import {
   useMemberName,
   useSocial,
 } from './shared';
-import { chronological, composerMode, tickState } from './view';
+import {
+  chronological,
+  composerMode,
+  countIncoming,
+  dayWord,
+  groupByDay,
+  isClosedThread,
+  tickState,
+} from './view';
 
 /**
  * One conversation (spec 23 § 5 `/ustaad/messages/[id]`; SR-33–35), WhatsApp habit: their messages on the left,
@@ -42,6 +51,12 @@ import { chronological, composerMode, tickState } from './view';
  * only on an open conversation. "More" holds mute notices, report and block. Whenever an action replaces the focused
  * control, focus moves to the control that replaces it (accessibility review 2026-11-26).
  */
+/** The thread's own header, sticky under the 56 px network header; the composer below sticks to the bottom edge. */
+const STICKY_HEAD =
+  'sticky top-14 z-20 -mx-4 grid gap-3 border-b border-line-card bg-surface-raised px-4 py-2 tab:-mx-6 tab:px-6';
+const STICKY_FOOT =
+  'sticky bottom-0 z-20 -mx-4 border-t border-line-card bg-surface-raised px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] tab:-mx-6 tab:px-6';
+
 export function ThreadScreen({ id }: { id: string }) {
   const t = useTranslations('ustaad.messages');
   const locale = useLocale();
@@ -53,6 +68,9 @@ export function ThreadScreen({ id }: { id: string }) {
   const [olderError, setOlderError] = useState<string | null>(null);
   const [blocked, setBlocked] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  // One polite line for new messages from the other member; the region is mounted empty first (L-UCE2).
+  const [incomingCount, setIncomingCount] = useState(0);
+  const knownIds = useRef<Set<string> | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLOListElement>(null);
   const scrolled = useRef(false);
@@ -66,6 +84,15 @@ export function ThreadScreen({ id }: { id: string }) {
     seen.has(m.id) ? false : (seen.add(m.id), true),
   );
   const messages = chronological(merged);
+  const days = groupByDay(messages);
+  const nowIso = new Date().toISOString();
+  const dayLabel = (day: string) =>
+    new Intl.DateTimeFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      timeZone: 'Asia/Kolkata',
+    }).format(new Date(`${day}T12:00:00+05:30`));
 
   // Read receipt once the conversation is on screen (the other member's ticks turn to "Seen").
   useEffect(() => {
@@ -73,6 +100,26 @@ export function ThreadScreen({ id }: { id: string }) {
     readSent.current = true;
     void socialClient(locale).then((c) => c.markRead(id));
   }, [thread, id, locale]);
+  // A new message from the other member is announced once (never on first load, never for my own or older ones).
+  const otherName = useMemberName()(thread?.other ?? { displayName: '', displayNameHi: null });
+  const incoming = incomingCount > 0 ? t('newIncomingNote', { name: otherName }) : null;
+  useEffect(() => {
+    if (!data) return;
+    const ids = [...data.items, ...(older?.items ?? [])];
+    const fresh = countIncoming(knownIds.current, ids);
+    knownIds.current = new Set(ids.map((m) => m.id));
+    setIncomingCount(fresh);
+  }, [data, older]);
+  // Coming back to the tab brings in what arrived meanwhile (no polling; the thread list pings elsewhere).
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refresh();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [refresh]);
   // Like a chat: the newest message is in view on first open.
   useEffect(() => {
     if (!data || scrolled.current) return;
@@ -98,16 +145,23 @@ export function ThreadScreen({ id }: { id: string }) {
   }
 
   return (
-    <div className="mx-auto grid max-w-2xl gap-4">
-      <Link
-        href={localePath('/ustaad/messages', locale)}
-        className={backLink}
-        data-track="ustaad_thread_back"
-      >
-        <ArrowLeft aria-hidden="true" className="size-5" />
-        {t('backToMessages')}
-      </Link>
-      {thread ? null : <h1 className="sr-only">{t('title')}</h1>}
+    <div className="mx-auto grid max-w-2xl gap-3">
+      {thread ? null : (
+        <>
+          <Link
+            href={localePath('/ustaad/messages', locale)}
+            className={backLink}
+            data-track="ustaad_thread_back"
+          >
+            <ArrowLeft aria-hidden="true" className="size-5" />
+            {t('backToMessages')}
+          </Link>
+          <h1 className="sr-only">{t('title')}</h1>
+        </>
+      )}
+      <p role="status" className="sr-only">
+        {incoming ?? ''}
+      </p>
       <SampleNote show={sample} />
       {loaded.state === 'loading' ? <LoadingBlock /> : null}
       {loaded.state === 'error' ? <LoadFailed message={errorText(loaded.code)} onRetry={reload} /> : null}
@@ -130,7 +184,7 @@ export function ThreadScreen({ id }: { id: string }) {
               {next ? (
                 <button
                   type="button"
-                  className={`${btnQuiet} justify-self-center`}
+                  className={`${btnQuiet} scroll-mt-32 justify-self-center`}
                   onClick={() => void loadOlder()}
                   aria-disabled={olderBusy}
                   data-track="ustaad_thread_older"
@@ -146,11 +200,20 @@ export function ThreadScreen({ id }: { id: string }) {
                 ref={listRef}
                 tabIndex={-1}
                 aria-label={t('conversationLabel')}
-                className="grid gap-2.5 rounded-xl focus-visible:outline-3 focus-visible:outline-focus"
+                className="grid gap-4 rounded-xl py-2 focus-visible:outline-3 focus-visible:outline-focus"
               >
-                {messages.map((m) => (
-                  <li key={m.id} className={`flex ${m.mine ? 'justify-end' : 'justify-start'}`}>
-                    <Bubble m={m} />
+                {days.map((d) => (
+                  <li key={d.day} className="grid gap-2.5">
+                    <h2 className="justify-self-center rounded-full bg-pill px-3 py-1 text-xs font-bold text-muted">
+                      {dayWord(d.day, nowIso) ? t(dayWord(d.day, nowIso) ?? 'today') : dayLabel(d.day)}
+                    </h2>
+                    <ol className="grid gap-2.5">
+                      {d.items.map((m) => (
+                        <li key={m.id} className={`flex ${m.mine ? 'justify-end' : 'justify-start'}`}>
+                          <Bubble m={m} />
+                        </li>
+                      ))}
+                    </ol>
                   </li>
                 ))}
               </ol>
@@ -180,6 +243,7 @@ function ThreadHeader({
   onChanged: () => void;
 }) {
   const t = useTranslations('ustaad.messages');
+  const locale = useLocale();
   const name = useMemberName()(thread.other);
   const errorText = useDmErrorText();
   const { act, busy, error } = useAct();
@@ -230,7 +294,7 @@ function ThreadHeader({
 
   if (blocked)
     return (
-      <div className={`${card} grid gap-3`}>
+      <div className={STICKY_HEAD}>
         <h1 className="font-heading text-[16px] font-extrabold text-ink">
           <span data-user-content>{name}</span>
         </h1>
@@ -252,8 +316,16 @@ function ThreadHeader({
     );
 
   return (
-    <div className={`${card} grid gap-3`}>
-      <div className="flex items-start gap-3">
+    <div className={STICKY_HEAD}>
+      <div className="flex items-center gap-2">
+        <Link
+          href={localePath('/ustaad/messages', locale)}
+          aria-label={t('backToMessages')}
+          className="press -ml-2 inline-flex size-12 shrink-0 items-center justify-center rounded-full text-ink hover:bg-pill focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          data-track="ustaad_thread_back"
+        >
+          <ArrowLeft aria-hidden="true" className="size-6" />
+        </Link>
         <Avatar name={name} />
         <div className="min-w-0 flex-1">
           <MemberLine m={thread.other} heading />
@@ -267,17 +339,17 @@ function ThreadHeader({
             setOpen((o) => !o);
             setConfirmBlock(false);
           }}
-          className={`${btnQuiet} shrink-0 px-3`}
+          aria-label={t('more')}
+          className="press inline-flex size-12 shrink-0 items-center justify-center rounded-full text-ink hover:bg-pill focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
           data-track="ustaad_thread_more"
         >
-          <MoreVertical aria-hidden="true" className="size-5" />
-          {t('more')}
+          <MoreVertical aria-hidden="true" className="size-6" />
         </button>
       </div>
       {open ? (
         <div
           id={menuId}
-          className="grid gap-2 border-t border-line-card pt-3 sm:grid-cols-3"
+          className="grid max-h-[40vh] gap-2 overflow-auto border-t border-line-card pt-3 sm:grid-cols-3"
           onKeyDown={(e) => {
             if (e.key === 'Escape' && !reporting) {
               e.stopPropagation();
@@ -373,7 +445,19 @@ function ThreadHeader({
   );
 }
 
-function ThreadFooter({
+function ThreadFooter(props: {
+  thread: ThreadView;
+  onChanged: () => void;
+  onNote: (s: string | null) => void;
+}) {
+  return (
+    <div className={STICKY_FOOT}>
+      <FooterBody {...props} />
+    </div>
+  );
+}
+
+function FooterBody({
   thread,
   onChanged,
   onNote,
@@ -403,6 +487,18 @@ function ThreadFooter({
     onChanged();
   }
 
+  // Closed (declined or blocked): one line of words and no composer, before a send is ever tried.
+  if (isClosedThread(thread))
+    return (
+      <p
+        ref={closedRef}
+        tabIndex={-1}
+        className="flex items-center gap-2 rounded-xl bg-pill p-4 text-[15px] text-ink focus-visible:outline-3 focus-visible:outline-focus"
+      >
+        <Lock aria-hidden="true" className="size-5 shrink-0 text-muted" />
+        {t('closedNote')}
+      </p>
+    );
   if (mode === 'open')
     return (
       <Composer
@@ -427,7 +523,7 @@ function ThreadFooter({
     );
   if (mode === 'decide')
     return (
-      <div className={`${card} grid gap-3`}>
+      <div className="grid gap-3">
         <p className="text-[15px] leading-relaxed text-ink">
           {t.rich('decideNote', { who: name, name: (chunks) => <span data-user-content>{chunks}</span> })}
         </p>
@@ -455,15 +551,7 @@ function ThreadFooter({
         <LiveNote tone="error" text={error ? errorText(error) : null} />
       </div>
     );
-  return (
-    <p
-      ref={closedRef}
-      tabIndex={-1}
-      className="rounded-xl bg-pill p-4 text-[15px] text-ink focus-visible:outline-3 focus-visible:outline-focus"
-    >
-      {t('closedNote')}
-    </p>
-  );
+  return null;
 }
 
 function Bubble({ m }: { m: MessageView }) {
@@ -480,7 +568,7 @@ function Bubble({ m }: { m: MessageView }) {
     <div
       className={`grid max-w-[85%] gap-2 rounded-[20px] px-4 py-3 shadow-card sm:max-w-[75%] ${
         mine
-          ? `rounded-br-md border border-white/15 bg-navy text-white ${m.pending ? 'outline-2 outline-offset-2 outline-warning outline-dashed' : ''}`
+          ? `rounded-br-md border border-white/15 bg-navy-raised text-white ${m.pending ? 'outline-2 outline-offset-2 outline-warning outline-dashed' : ''}`
           : 'rounded-bl-md border border-line-card bg-surface text-ink'
       }`}
     >
@@ -492,7 +580,7 @@ function Bubble({ m }: { m: MessageView }) {
       {m.kind === 'post_share' && m.postId ? (
         <Link
           href={localePath(`/ustaad/p/${m.postId}`, locale)}
-          className={`inline-flex min-h-12 items-center gap-2 rounded-xl px-3 font-bold underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+          className={`inline-flex min-h-12 scroll-mt-32 scroll-mb-28 items-center gap-2 rounded-xl px-3 font-bold underline-offset-4 hover:underline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus ${
             mine ? 'bg-white/12 text-white' : 'bg-pill text-ink'
           }`}
           data-track="ustaad_thread_post_open"

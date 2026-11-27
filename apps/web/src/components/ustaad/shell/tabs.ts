@@ -24,3 +24,7 @@ export function ustaadTabFor(pathname: string): UstaadTabKey | null {
   for (const tab of USTAAD_TABS) if (tab.match.some((m) => under(here, m))) return tab.key;
   return null;
 }
+
+/** A conversation page (`/ustaad/messages/<id>`) has its own sticky composer: the dock steps aside there. */
+export const hidesDock = (pathname: string): boolean =>
+  /^\/ustaad\/messages\/[^/]+/.test(stripLocale(pathname));

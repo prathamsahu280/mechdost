@@ -8712,6 +8712,13 @@
       "err_NO_VOICE": "Record a voice note first: hold the mic and speak.",
       "err_NO_PHOTO": "Take or pick a photo first.",
       "previewVoice": "Voice",
+      "previewShared": "Shared post",
+      "previewYou": "You: ",
+      "unreadWord": "New message",
+      "requestsRow": "{count, plural, one {# message request} other {# message requests}}",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "newIncomingNote": "New message from {name}",
       "previewPhoto": "Photo",
       "closed": "This conversation is closed",
       "requestsTab": "Requests ({count})"
