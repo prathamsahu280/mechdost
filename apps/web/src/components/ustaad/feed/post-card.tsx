@@ -153,7 +153,7 @@ export function PostCard({
               href={href(`/ustaad/u/${post.author.handle}`)}
               data-track="ustaad_post_author"
               data-user-content
-              className="rounded font-bold text-ink hover:underline focus-visible:outline-3 focus-visible:outline-focus"
+              className="rounded text-base font-extrabold text-ink hover:underline focus-visible:outline-3 focus-visible:outline-focus"
             >
               {author}
             </Link>
@@ -206,12 +206,12 @@ export function PostCard({
           // U2 (E8): a tip sits in its own tinted panel with the "Tip" tag.
           <div className="mx-4 grid gap-2 rounded-2xl bg-surface-alt p-4">
             <TipTag />
-            <div className="text-[16px] leading-relaxed text-ink">
+            <div data-post-body className="text-[16px] leading-relaxed text-ink">
               <EditedText body={post.body} bodyOriginal={post.bodyOriginal} />
             </div>
           </div>
         ) : post.body ? (
-          <div className="px-4 text-[16px] leading-relaxed text-ink">
+          <div data-post-body className="px-4 text-[16px] leading-relaxed text-ink">
             <EditedText body={post.body} bodyOriginal={post.bodyOriginal} />
           </div>
         ) : null}

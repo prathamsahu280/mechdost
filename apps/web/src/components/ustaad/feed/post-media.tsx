@@ -38,7 +38,7 @@ export function PhotoGallery({ media, eager = false }: { media: PostMediaView[];
   const roleWord = (m: PostMediaView) =>
     m.role === 'before' ? t('before') : m.role === 'after' ? t('after') : null;
   return (
-    <div className="relative">
+    <div data-post-photo className="relative">
       <ul
         ref={strip}
         tabIndex={0}

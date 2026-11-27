@@ -109,6 +109,7 @@ export function QuestionThread({ code }: { code: string }) {
 
       <article
         aria-labelledby="ustaad-q-h"
+        data-navy-panel
         className="rounded-[22px] rounded-tl-md bg-navy p-5 text-white shadow-float"
       >
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-white/80">

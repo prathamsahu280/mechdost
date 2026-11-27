@@ -40,7 +40,7 @@ export interface UstaadRailLink {
 
 /** Shared class constants (the visual-language pass swaps colours and motion here, in one place). */
 const DOCK =
-  'fixed inset-x-0 bottom-0 z-40 h-[calc(64px+env(safe-area-inset-bottom))] border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] nav:hidden';
+  'fixed inset-x-0 bottom-0 z-40 h-[calc(64px+env(safe-area-inset-bottom))] border-t border-line bg-surface-raised pb-[env(safe-area-inset-bottom)] nav:hidden';
 const DOCK_TAB =
   'relative flex h-16 flex-col items-center justify-center gap-0.5 px-0.5 text-center text-[13px] leading-tight font-bold transition-colors duration-150 focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-focus [&:lang(hi)]:text-[14px]';
 const DOCK_CURRENT = 'text-ink';

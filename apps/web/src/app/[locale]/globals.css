@@ -1008,3 +1008,72 @@ html:has([data-shell-compact]):lang(hi) :is(.leading-tight, .leading-snug) {
     transform: scale(1) rotate(-2deg);
   }
 }
+
+/* Bench kit lift (network only) — visual language § 3.6 / § 3.7, founder 2026-11-28 (V0-V8 approved; the storefront
+   is NOT changed, V9 is pending). Every rule is scoped under the network marker. Light: a navy-tinted page, floating
+   post cards (hairline + layered shadow), framed photos, an accent-soft pill behind the current dock icon, a tinted
+   segmented control, chrome that floats on shadows instead of grey rules. Dark: the same tokens resolve to raised
+   navy surfaces with a top-light edge (no shadows, elevation by lightness). */
+html:has([data-shell-compact]) body {
+  background-color: var(--color-lift-bg);
+}
+html:has([data-shell-compact]) [data-post-kind] {
+  border-color: transparent;
+  border-radius: 16px;
+  box-shadow: var(--shadow-lift);
+}
+html:has([data-shell-compact]) [data-post-kind] [data-post-photo] {
+  margin-inline: 12px;
+  overflow: hidden;
+  border-radius: 12px;
+}
+html:has([data-shell-compact]) [data-post-body] {
+  font-size: 16px;
+  line-height: 1.6;
+}
+html:has([data-shell-compact]):lang(hi) [data-post-body] {
+  font-size: 17px;
+  line-height: 1.6;
+}
+html:has([data-shell-compact]) [data-ustaad-header] {
+  border-bottom-width: 0;
+  box-shadow: var(--shadow-lift-chrome-down);
+}
+html:has([data-shell-compact]) [data-ustaad-dock] {
+  border-top-width: 0;
+  box-shadow: var(--shadow-lift-chrome-up);
+}
+html:has([data-shell-compact]) [data-ustaad-dock] a[aria-current='page'] > svg {
+  box-sizing: border-box;
+  width: 44px;
+  height: 28px;
+  padding: 3px 10px;
+  border-radius: 10px;
+  background-color: var(--color-accent-soft);
+  color: var(--color-accent-soft-text);
+}
+html:has([data-shell-compact]) [data-navy-panel] {
+  background-color: var(--color-navy-raised);
+  box-shadow: var(--shadow-lift-deep);
+}
+html:has([data-shell-compact]) .story-ring {
+  box-shadow:
+    0 0 0 2px var(--color-lift-bg),
+    0 0 0 5px var(--color-accent);
+}
+html:has([data-shell-compact]) .story-ring[data-seen] {
+  box-shadow:
+    0 0 0 2px var(--color-lift-bg),
+    0 0 0 3.5px var(--color-line);
+}
+/* Segmented control (a tinted track and a white thumb with a layered shadow): the class for the network's tabs. */
+html:has([data-shell-compact]) .ustaad-seg {
+  background-color: var(--color-lift-track);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--color-navy) 7%, transparent);
+}
+html:has([data-shell-compact]) .ustaad-seg [aria-pressed='true'],
+html:has([data-shell-compact]) .ustaad-seg [aria-selected='true'] {
+  background-color: var(--color-surface-raised);
+  box-shadow: var(--shadow-lift);
+}
+/* end Bench kit lift */
