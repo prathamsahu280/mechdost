@@ -17,6 +17,7 @@
     "db:seed": "pnpm --filter @mechdost/db seed",
     "db:seed:demo": "pnpm --filter @mechdost/db seed:demo",
     "db:seed:pincodes": "pnpm --filter @mechdost/db seed:pincodes",
+    "db:seed:ustaad-starter": "pnpm --filter @mechdost/db seed:ustaad-starter",
     "db:grant-role": "pnpm --filter @mechdost/db grant-role",
     "db:ustaad:map-mechanic-applications": "pnpm --filter @mechdost/db ustaad:map-mechanic-applications",
     "wa:templates": "pnpm --filter @mechdost/api wa:templates",

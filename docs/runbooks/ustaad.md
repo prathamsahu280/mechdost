@@ -188,3 +188,18 @@ the reason in plain words, the end date and one **Appeal** action. An appeal is 
 Answer the member in the ticket; **decide the appeal itself in Admin → Ustaad → Appeals** (someone who took no part in
 the decision; four-eyes). A banned member can still read the standing page and appeal; nothing else of the network
 opens for them.
+
+## 11. Starter lists: hashtags and moderation words (SIM-P2/G16, SIM-P16/G18, 2026-11-27)
+
+The network must not go live with empty lists (live QA: no curated hashtags, and empty Banned words / Personal
+details to hide / Blocked link sites, so a common Hindi slur posted straight through).
+
+- Data: `packages/db/src/ustaad/starter-lists.ts` — 11 curated work hashtags (en + hi names, Latin and Devanagari
+  spellings as aliases), about 50 banned words (Hindi in Devanagari, Hinglish and English spellings), personal-detail
+  phrases, and short-link / Telegram / IP-logger sites.
+- Run: `pnpm db:seed:ustaad-starter --dry-run` (counts only), then `pnpm db:seed:ustaad-starter` against the database
+  in the root `.env`. It only **adds** missing rows; a tag slug or list phrase that already exists is left exactly as
+  the admin set it (also when switched off); nothing is deleted. Safe to run again.
+- After the run, staff review and edit everything in Admin → Ustaad (Feed & counts → Hashtags; Moderation → lists).
+  The banned list is a starter for founder/legal review; short, ambiguous words were left out on purpose.
+- Not a migration on purpose: test databases apply every migration, and the lists are content the admin owns.

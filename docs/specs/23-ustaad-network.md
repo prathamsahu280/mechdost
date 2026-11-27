@@ -2079,6 +2079,10 @@ One commit per item, test first. Ids from `D:\mechdost-qa\ustaad-sim-2026-11-27\
   `ticket_received` whose button `/account/support?ticket=…` showed a shop owner the portal notice. The standing page
   opens for every member whatever the account kind (it already shows the appeal state). Staff replies on an appeal
   (`ticket_reply`) still link to `/account/support` — not changed here.
+- **SIM-P2/G16 + SIM-P16/G18** starter lists as an add-only, idempotent seed (`pnpm db:seed:ustaad-starter`,
+  `packages/db/src/ustaad/starter-lists.ts`, runbook `docs/runbooks/ustaad.md` § 11): 11 curated work hashtags (en + hi,
+  aliases), Banned words (Devanagari, Hinglish, English), Personal details to hide, Blocked link sites. Existing rows
+  (any admin edit, also switched off) are never changed. **Must be run on production by the lead** (outward action).
 
 ## 22. Not built / later
 

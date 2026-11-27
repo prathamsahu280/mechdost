@@ -60,6 +60,7 @@ export default tseslint.config(
       '**/src/seed.ts',
       '**/src/seed-demo.ts',
       '**/src/seed-pincodes.ts',
+      '**/src/seed-ustaad-starter.ts',
       '**/src/grant-role.ts',
       '**/scripts/**',
     ],
