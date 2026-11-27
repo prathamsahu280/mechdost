@@ -3139,7 +3139,7 @@
     "api_set_unit_messages": "संदेश",
     "api_set_unit_percent": "%",
     "api_set_unit_tenths": "स्टार का दसवाँ हिस्सा",
-    "api_set_unit_kg": "kg",
+    "api_set_unit_kg": "किलो",
     "api_set_unit_requests": "अनुरोध प्रति मिनट",
     "api_set_api_signed_in_per_minute": "एक साइन-इन खाता वेबसाइट के सर्वर को हर मिनट कितने अनुरोध भेज सकता है (60 से 5000)। साझा वाई-फ़ाई पर भी हर व्यक्ति की गिनती अलग होती है",
     "api_set_api_guest_per_ip_per_minute": "साइन-इन किए बिना एक इंटरनेट पते से हर मिनट कितने अनुरोध हो सकते हैं (60 से 5000)",
