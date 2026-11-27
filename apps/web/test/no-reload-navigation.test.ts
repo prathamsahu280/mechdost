@@ -28,6 +28,12 @@ describe('portal frames live in layouts', () => {
       frame: 'AccountFrame',
       source: join(srcDir, 'components', 'account', 'account-area.tsx'),
     },
+    // Workshop portal tabs (partner portals UI upgrade, batch B, 2026-11-27).
+    {
+      dir: join('partner', 'workshop'),
+      frame: 'WorkshopFrame',
+      source: join(srcDir, 'components', 'portal', 'workshop', 'workshop-frame.tsx'),
+    },
   ];
 
   for (const { dir, frame, source } of portals) {

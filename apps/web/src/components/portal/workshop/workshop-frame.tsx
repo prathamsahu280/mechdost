@@ -1,11 +1,11 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter, useSelectedLayoutSegment } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { createContext, useContext, useEffect, type ReactNode } from 'react';
 import { track } from '@/lib/analytics';
 import { AUTH_MODE } from '@/lib/auth/mode';
-import { localePath, stripLocale } from '@/lib/locale-path';
+import { localePath } from '@/lib/locale-path';
 import { WORKSHOP_TABS, legacyWorkshopTarget, workshopTabFor } from '@/lib/workshop-portal-view';
 import { PartnerGate } from '../partner-gate';
 import { PortalGuard } from '../portal-guard';
@@ -57,9 +57,10 @@ export function WorkshopFrame({ children }: { children: ReactNode }) {
 function WorkshopTabs() {
   const t = useTranslations('partnerWorkshop');
   const locale = useLocale();
-  const pathname = usePathname();
+  const segment = useSelectedLayoutSegment();
   const router = useRouter();
-  const current = workshopTabFor(stripLocale(pathname));
+  // The section comes from the URL (no-reload rule: the frame never takes it as a prop).
+  const current = workshopTabFor(segment ? `/partner/workshop/${segment}` : '/partner/workshop');
 
   useEffect(() => {
     track('partner_tab_viewed', { portal: 'workshop', tab: current });
