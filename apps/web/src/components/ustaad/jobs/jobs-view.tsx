@@ -38,6 +38,7 @@ import {
   useTimeAgo,
   useUstaad,
 } from '../common';
+import { SaveControl } from '../saved/save-control';
 import { useUploadErrorText } from '../media/upload-error';
 
 const VoiceRecorder = dynamic(() => import('../media/voice-recorder').then((m) => m.VoiceRecorder), {
@@ -362,6 +363,10 @@ export function JobDetail({ code }: { code: string }) {
         </p>
         <p className="text-sm text-muted">{t('openTill', { date: formatDate(j.expiresAt, locale) })}</p>
       </article>
+
+      <div className="flex">
+        <SaveControl kind="job" id={j.id} saved={false} />
+      </div>
 
       <p
         ref={statusRef}

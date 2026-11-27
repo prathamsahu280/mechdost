@@ -24,6 +24,7 @@ export default async function UstaadJobsPage({ searchParams }: Props) {
         'ustaad.media',
         'ustaad.labels',
         'ustaad.card',
+        'ustaad.saveControl',
         'segments',
       ]}
     >

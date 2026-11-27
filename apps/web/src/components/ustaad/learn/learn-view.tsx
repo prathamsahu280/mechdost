@@ -11,6 +11,7 @@ import { ustaadClient } from '@/lib/ustaad/client';
 import { learnTowardsNaya } from '@/lib/ustaad/card';
 import { createWatchMeter, HEARTBEAT_MS } from '@/lib/ustaad/learn-meter';
 import { progressBar } from '../card/styles';
+import { SaveControl } from '../saved/save-control';
 import { Switch } from '../../ui/switch';
 import {
   btnPrimary,
@@ -334,6 +335,9 @@ function Resource({
           )}
         </div>
       ) : null}
+      <div className="flex">
+        <SaveControl kind="lesson" id={r.id} saved={false} />
+      </div>
       <p
         role="status"
         className={`text-sm font-bold empty:sr-only ${msg?.ok ? 'text-success' : 'text-error'}`}

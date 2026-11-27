@@ -25,6 +25,7 @@ export default async function UstaadQuestionPage({ params }: Props) {
         'ustaad.labels',
         'ustaad.correction',
         'segments',
+        'ustaad.saveControl',
       ]}
     >
       <MemberGate>
