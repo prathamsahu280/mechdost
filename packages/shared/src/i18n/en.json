@@ -156,7 +156,7 @@
     "partners": {
       "eyebrow": "For partners",
       "title": "Grow with MechDost.",
-      "body": "Sell automotive products, register your garage or join the mechanic network. Our team reviews every application.",
+      "body": "Sell automotive products, register your garage, join the mechanic network or deliver orders. Our team reviews every application.",
       "action": "Become a partner"
     },
     "route": {
@@ -323,7 +323,7 @@
       "eyebrow": "For partners",
       "titleLine1": "Build your business",
       "titleLine2": "with MechDost.",
-      "lead": "Join our supplier, workshop and mechanic network. Applications are saved for review; participation begins after confirmation.",
+      "lead": "Join our network of suppliers, workshops, mechanics and delivery partners. Applications are saved for review; participation begins after confirmation.",
       "sellerTitle": "Sell automotive products",
       "sellerBody": "Share your range and explore quotations.",
       "sellerAction": "Apply as a seller",
@@ -349,9 +349,9 @@
       "step2Title": "We verify",
       "step2Body": "Our team calls you and checks your documents and location.",
       "step3Title": "Set up",
-      "step3Body": "Add your products or services, hours and the PIN codes you cover.",
+      "step3Body": "Add your products or services, hours and the PIN codes you cover. Delivery partners add their vehicle and the area they ride in.",
       "step4Title": "Go live",
-      "step4Body": "Start receiving orders and service requests in {region}.",
+      "step4Body": "Start receiving orders, service requests or delivery offers in {region}.",
       "helpLine": "Questions before you apply? Call us:",
       "delivery_agentTitle": "Deliver with MechDost",
       "delivery_agentBody": "Pick up parts from nearby shops and deliver them to customers on your own vehicle.",

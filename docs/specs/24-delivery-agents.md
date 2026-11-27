@@ -302,7 +302,8 @@ picks one; demo screens reload on every demo change, API screens poll (offers 10
   (native radios), consent; Turnstile + `POST /v1/delivery-agent-applications` in real builds. No documents on this
   form (Lead's call 10). Confirmation with the `PA-…` reference and a link to the status page.
 - **Partners page** card "Deliver with MechDost" and a footer link. No pay, insurance or uniform words anywhere
-  (founder ruling 2026-11-26).
+  (founder ruling 2026-11-26). Since 2026-11-27 night (COD sim audit A1) the intro, "How joining works" steps 3–4
+  and the home partner teaser name delivery partners too (en + hi; guard `apps/web/test/partners-copy-delivery.test.ts`).
 - **Status lookup** (`/partners/status`) recognises delivery-agent references (the shared status kind includes
   `delivery_agent`, G3).
 - **Invite** — `/partners/delivery-invite/{token}` (noindex, no referrer; token redacted in analytics and in the
