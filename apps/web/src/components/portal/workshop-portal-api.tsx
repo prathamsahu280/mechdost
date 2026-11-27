@@ -201,9 +201,10 @@ export function WorkshopJobsApi() {
   const jobCode = params.get('job');
   const loading = active.loading || done.loading;
 
+  // Logged once the lists are in, so the "first lane with work" default is the lane actually shown.
   useEffect(() => {
-    if (!jobCode) track('partner_lane_viewed', { portal: 'workshop', lane });
-  }, [lane, jobCode]);
+    if (!jobCode && !loading) track('partner_lane_viewed', { portal: 'workshop', lane });
+  }, [lane, jobCode, loading]);
 
   if (jobCode) {
     const job = all.find((r) => r.code === jobCode);

@@ -5,7 +5,6 @@
  * parallel on another branch. Same names; the props below are this batch's reading of § 4 and § 13. On merge the lead
  * swaps these imports for `@/components/partner` and deletes this file. No text lives here: every word comes in props.
  */
-import type { ReactNode } from 'react';
 import { LocalLink } from '@/components/ui/local-link';
 
 const focus = 'focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus';
@@ -192,17 +191,5 @@ export function BulletBar({
       </div>
       <p className="sr-only">{medianText ? `${valueText}. ${medianText}` : valueText}</p>
     </div>
-  );
-}
-
-/** A labelled block for the tab bodies. */
-export function KitSection({ title, id, children }: { title: string; id: string; children: ReactNode }) {
-  return (
-    <section aria-labelledby={id}>
-      <h2 id={id} className="font-heading text-xl font-extrabold text-ink">
-        {title}
-      </h2>
-      {children}
-    </section>
   );
 }

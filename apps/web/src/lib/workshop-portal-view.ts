@@ -127,8 +127,9 @@ export function workshopKpis(
     countText(active.items.filter(f).length, active.more);
   return {
     new_requests: countText(fresh.count, fresh.more),
-    waiting_customer: n((r) => r.waitingForCustomer),
-    in_workshop: n((r) => lane(r) === 'in_workshop' || lane(r) === 'confirmed'),
+    // Each tile counts exactly the lane it links to (builder ruling 2026-11-27, decisions.md).
+    waiting_customer: n((r) => lane(r) === 'proposed'),
+    in_workshop: n((r) => lane(r) === 'in_workshop'),
     to_bill: n((r) => lane(r) === 'ready_bill'),
   };
 }

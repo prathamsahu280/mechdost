@@ -19,7 +19,6 @@ import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-st
 
 type Profile = WorkshopProfiles['workshops'][number];
 type TextField = 'name' | 'nameHi' | 'addressLine' | 'addressLineHi' | 'area' | 'areaHi' | 'phone';
-const hhmm = (h: number) => `${String(h).padStart(2, '0')}:00`;
 
 /**
  * The hour of a proposal (spec 06): the workshop's open hours for the chosen date with how many places are free; a full

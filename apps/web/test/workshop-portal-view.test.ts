@@ -110,13 +110,17 @@ describe('estimate totals by line state', () => {
 });
 
 describe('Today tiles', () => {
-  it('counts from the new and active lists', () => {
+  // Each tile counts exactly the lane it opens (builder ruling 2026-11-27): "Waiting for the customer" = the Proposed
+  // lane; an estimate waiting for the customer is work in the workshop; a confirmed visit has its own lane.
+  it('counts from the new and active lists, one lane per tile', () => {
     const row = (status: string, waitingForCustomer = false) => ({ status, waitingForCustomer }) as const;
     const k = workshopKpis(
       { count: 2, more: false },
       {
         items: [
           row('proposed', true),
+          row('proposed', true),
+          row('confirmed'),
           row('estimate_sent', true),
           row('in_progress'),
           row('vehicle_received'),
