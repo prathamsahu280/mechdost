@@ -6,6 +6,7 @@ import type { PostMediaView, PostView } from '@mechdost/shared/ustaad/dto/feed';
 import { track } from '@/lib/analytics';
 import { durationLabel, pollShares, sizeLabel } from '@/lib/ustaad/feed-format';
 import { socialClient } from '@/lib/ustaad/social-client';
+import { LinkEmbed } from '../link-embed/link-embed';
 import { VoiceNote } from '../media/voice-note';
 import { UstaadIcon } from '../shell/icons';
 import { SignedImage } from './social-common';
@@ -314,7 +315,11 @@ export function PostMedia({
         </div>
       ) : null}
       {doc ? <DocChip doc={doc} /> : null}
-      {post.link ? <LinkCard link={post.link} /> : null}
+      {post.link?.video ? (
+        <LinkEmbed video={post.link.video} eager={eager} />
+      ) : post.link ? (
+        <LinkCard link={post.link} />
+      ) : null}
       {post.poll ? <Poll poll={post.poll} onVote={onVote} /> : null}
     </>
   );

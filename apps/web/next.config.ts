@@ -48,7 +48,8 @@ const nextConfig: NextConfig = {
   images: {
     formats: ['image/avif', 'image/webp'],
     // Remote hosts are added explicitly (Supabase Storage) when product photos arrive; never wildcards.
-    remotePatterns: [],
+    // YouTube thumbnails of video-link posts (spec 23 § 10b): the one image path, never a wildcard host.
+    remotePatterns: [{ protocol: 'https', hostname: 'i.ytimg.com', pathname: '/vi/**' }],
     dangerouslyAllowSVG: false,
   },
   headers() {

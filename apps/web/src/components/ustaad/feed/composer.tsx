@@ -21,6 +21,7 @@ import { UploadProgress } from '../media/upload-progress';
 import { VoiceRecorder, type Recording } from '../media/voice-recorder';
 import { UstaadIcon, type UstaadIconName } from '../shell/icons';
 import { useSocialAction, useSocialError } from './social-common';
+import { VideoLinkComposerPreview } from '../link-embed/composer-preview';
 
 const MAX_PHOTOS = 10;
 const MAX_TAGS = 5;
@@ -719,6 +720,7 @@ export function Composer({ story }: { story: boolean }) {
                 }}
                 className={fieldClass}
               />
+              <VideoLinkComposerPreview url={linkUrl} />
             </div>
           ) : null}
 

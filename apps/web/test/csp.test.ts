@@ -12,7 +12,7 @@ const directive = (policy: string, name: string) =>
     .split(' ') ?? [];
 
 describe('content security policy (ruling 2026-11-09)', () => {
-  it('demo build: own origin and the map hosts only; no frames, plugins or eval', () => {
+  it('demo build: own origin and the map hosts only; no plugins or eval; the only frame is the YouTube player', () => {
     const p = contentSecurityPolicy({ dev: false, authMode: 'demo' });
     expect(directive(p, 'script-src')).toEqual(["'self'", "'unsafe-inline'"]);
     expect(directive(p, 'connect-src')).toEqual([
@@ -20,7 +20,7 @@ describe('content security policy (ruling 2026-11-09)', () => {
       'https://tiles.openfreemap.org',
       'https://server.arcgisonline.com',
     ]);
-    expect(directive(p, 'frame-src')).toEqual(["'none'"]);
+    expect(directive(p, 'frame-src')).toEqual(['https://www.youtube-nocookie.com']);
     expect(directive(p, 'object-src')).toEqual(["'none'"]);
     expect(directive(p, 'frame-ancestors')).toEqual(["'none'"]);
     expect(p).not.toContain('unsafe-eval');
@@ -112,5 +112,17 @@ describe('content security policy (ruling 2026-11-09)', () => {
     for (const source of [THEME_INIT_SCRIPT, SITE_LAYOUT_SCRIPT])
       expect(script).toContain(`'sha256-${createHash('sha256').update(source).digest('base64')}'`);
     expect(directive(p, 'object-src')).toEqual(["'none'"]);
+  });
+
+  it('video-link posts (spec 23 § 10b): the privacy-enhanced player frame and the YouTube image host only', () => {
+    for (const authMode of ['demo', 'firebase'] as const) {
+      const p = contentSecurityPolicy({ dev: false, authMode });
+      expect(directive(p, 'frame-src')).toContain('https://www.youtube-nocookie.com');
+      expect(directive(p, 'img-src')).toContain('https://i.ytimg.com');
+      // No YouTube script, connection or full-cookie player anywhere.
+      expect(directive(p, 'frame-src')).not.toContain('https://www.youtube.com');
+      expect(directive(p, 'script-src').join(' ')).not.toContain('youtube');
+      expect(directive(p, 'connect-src').join(' ')).not.toMatch(/youtube|ytimg/);
+    }
   });
 });

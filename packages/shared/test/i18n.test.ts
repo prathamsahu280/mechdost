@@ -43,6 +43,7 @@ describe('locale messages', () => {
       'ustaad.labels.work_ac', // AC: a technical token (hard rule 10)
       'ustaad.feed.share', // WhatsApp: a brand (hard rule 10)
       'ustaad.feed.officialBadge', // MechDost: the brand on official posts
+      'ustaad.videoLink.source', // YouTube: the source label of a video-link post is a brand (hard rule 10)
       'ustaad.feed.kind_document', // PDF: a file-format code
       'announcement.brand',
       'language.other',
