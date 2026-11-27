@@ -4,7 +4,7 @@ import { ArrowLeft, Award, ShieldAlert, ShoppingBag, ThumbsUp } from 'lucide-rea
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useId, useRef, useState } from 'react';
+import { useCallback, useId, useRef, useState } from 'react';
 import type { AnswerView, QuestionDetail } from '@mechdost/shared/ustaad/dto/qa';
 import { localePath } from '@/lib/locale-path';
 import { ustaadClient } from '@/lib/ustaad/client';
@@ -212,6 +212,10 @@ function AnswerBubble({
   // U3 (E9): "Choose as best" asks once, inline (no dialog): "Make this the best answer? [Yes, choose] [Not now]".
   const [confirming, setConfirming] = useState(false);
   const chooseRef = useRef<HTMLButtonElement>(null);
+  // Stable, so a parent re-render does not pull focus back to the confirm.
+  const focusOnMount = useCallback((el: HTMLButtonElement | null) => {
+    el?.focus();
+  }, []);
   return (
     <article
       aria-labelledby={a.isBest ? stampId : undefined}
@@ -312,9 +316,7 @@ function AnswerBubble({
             <button
               type="button"
               // Focus moves to the confirm the member just asked for (and back to "Choose as best" on Not now).
-              ref={(el) => {
-                el?.focus();
-              }}
+              ref={focusOnMount}
               onClick={() => {
                 setConfirming(false);
                 onBest();
