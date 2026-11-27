@@ -44,8 +44,9 @@ function find(b: Uint8Array, pattern: readonly number[], from = 0): number {
 const TOP = new Set(['ftyp', 'moov', 'mdat', 'free', 'skip', 'wide']);
 /** Container boxes we descend into and the children each may hold; every other box listed is a leaf we accept. */
 const TREE: Record<string, ReadonlySet<string>> = {
-  moov: new Set(['mvhd', 'trak']),
-  trak: new Set(['tkhd', 'edts', 'mdia']),
+  // udta / meta are accepted as a whole only after `hasLocation` finds no location data in them (SIM-F6).
+  moov: new Set(['mvhd', 'trak', 'udta', 'meta']),
+  trak: new Set(['tkhd', 'edts', 'mdia', 'udta', 'meta']),
   edts: new Set(['elst']),
   mdia: new Set(['mdhd', 'hdlr', 'minf']),
   minf: new Set(['vmhd', 'smhd', 'dinf', 'stbl']),
@@ -155,6 +156,23 @@ function tkhdDuration(b: Uint8Array, box: Box): number | null {
   return d === 0xffffffff ? null : d;
 }
 
+/**
+ * Location markers inside a metadata box (SIM-F6): the QuickTime/3GPP GPS atom `©xyz`, the 3GPP `loci` box, and the
+ * Apple `keys` names (`com.apple.quicktime.location.*`). ffmpeg's own udta (`meta > hdlr + ilst > ©too`) and other
+ * tags carry no place and pass. Fails closed for anything that names a location.
+ */
+const LOCATION_MARKERS = [
+  [0xa9, ...bytesOf('xyz')],
+  bytesOf('loci'),
+  bytesOf('location'),
+  bytesOf('gps'),
+] as const;
+function hasLocation(b: Uint8Array, box: Box): boolean {
+  // ASCII letters folded to lower case, so `Location`, `GPSLatitude` (XMP) and `LOCI` are caught too.
+  const slice = b.subarray(box.start, box.end).map((c) => (c >= 0x41 && c <= 0x5a ? c + 0x20 : c));
+  return LOCATION_MARKERS.some((m) => find(slice, m) >= 0);
+}
+
 /** Facts from the `moov` box bytes (the whole box, header included). */
 export function mp4Facts(moovBox: Uint8Array): ContainerFacts {
   const top = children(moovBox, 0, moovBox.length);
@@ -164,6 +182,11 @@ export function mp4Facts(moovBox: Uint8Array): ContainerFacts {
   if (tree === 'extra') return EXTRA;
   if (tree === 'unreadable') return UNREADABLE;
   const kids = children(moovBox, moov.start, moov.end) ?? [];
+  const metaBoxes = [
+    ...kids,
+    ...kids.filter((k) => k.type === 'trak').flatMap((t) => children(moovBox, t.start, t.end) ?? []),
+  ].filter((k) => k.type === 'udta' || k.type === 'meta');
+  if (metaBoxes.some((m) => hasLocation(moovBox, m))) return EXTRA;
   const mvhdBox = only(kids, 'mvhd');
   const mvhd = mvhdBox ? timeBox(moovBox, mvhdBox) : null;
   const traks = kids.filter((k) => k.type === 'trak');

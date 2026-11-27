@@ -7,6 +7,7 @@ import { useSyncExternalStore } from 'react';
 import { customerAllowed } from './customer-blocks';
 import type { PasswordHash } from './passwords';
 import { demoStorage } from './store';
+import { syncSignedInHint } from '@/lib/signed-in-hint';
 import type { VehicleType } from '@mechdost/shared/vehicles';
 
 export const DEMO_OTP = '123456';
@@ -244,6 +245,8 @@ export function sessionSnapshot(): DemoAccount | null {
     return cached.value;
   const value = blocked ? null : found;
   lastSession = { record, accounts, blocked, value };
+  // SIM-B1: the server-readable signed-in flag follows the session (once per page load).
+  syncSignedInHint(value !== null);
   return value;
 }
 

@@ -2860,3 +2860,22 @@ Implements the founder's night entry above; no founder decision changed.
     demo `D:\mechdost-qa\ustaad-visual-2026-11-27\demo.html`): the 4 new tokens, metal level finishes, grade lines,
     stamp best answer, motions M1–M6 and the lifted light mode for the network are approved with it (V0–V8). V9
     (site-wide light lift) is not yet decided.
+
+## 2026-11-27 — Ustaad QA batch B, member side: builder's rulings (spec 23 § 21i)
+
+- **Signed-out 404 (SIM-B1):** a flag cookie `md-signed-in=1` (no identity, `samesite=lax; secure`, one year) tells
+  the server that someone is signed in on this browser; during the staff preview in API mode the `/ustaad` layout
+  answers the real `notFound()` without it. Never an auth boundary. The `/ustaad` layout is now dynamic (reads
+  cookies). A signed-in non-member still gets the client gate's 200 "page not found" (needs a server-verified session;
+  lead decision).
+- **Moderation email (SIM-F1/F2):** removals, strikes, bans and appeal outcomes are bell + email; moderation email goes
+  only to a verified address and is skipped when the member set email/transactional off (lead's brief; the
+  notifications skill says transactional is always on — this is the one exception, chosen because the bell still
+  carries the notice). New bell kind `ustaad.banned`. Appeals get their own receipt `ustaad_appeal_received`.
+- **Video metadata (SIM-F6, changes 2026-11-26):** `udta` / `meta` inside `moov` / `trak` are allowed when they hold no
+  location (`©xyz`, `loci`, `location` key names). Top-level `uuid`/XMP and unknown boxes still refuse.
+- **Starter lists (SIM-P2/G18):** shipped as an add-only seed command (`pnpm db:seed:ustaad-starter`), not a migration,
+  because test databases apply every migration and the lists are admin-owned content. The banned list needs
+  founder/legal review.
+- **Discover search (SIM-P22):** a consonant-skeleton name key shared by TypeScript and SQL `translate()`; no index
+  yet (city-filtered scan; Meilisearch later).

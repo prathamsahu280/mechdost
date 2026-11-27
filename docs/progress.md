@@ -71,6 +71,22 @@ This file is the single source of truth for **where the build is right now**. It
   P18 (needs a ruling on spec 24 "never the shop"), P19, B4, B8, B10, B12, B13, B14, F2, F4, G1, job-photo per-open
   audit. The members card "Lift the ban" form still shows for a participant (only report detail/queue fixed, SIM-B13).
 
+## 2026-11-27 night — Ustaad member-side QA fixes, batch B (builder, branch `worktree-agent-a3f3f2442b57be050`, NOT merged)
+
+- Test first, one commit per item (spec 23 § 21i, decisions 2026-11-27 "Ustaad QA batch B"): SIM-P4 (card in the page
+  language), SIM-B1 (signed-out `/ustaad/*` = real 404 via the `md-signed-in` flag), SIM-F1 (removal / strike / ban /
+  appeal outcome = bell + email, new bell kind `ustaad.banned`), SIM-F2 (appeal receipt email opens the standing page),
+  SIM-P2/G16 + P16/G18 (starter seed `pnpm db:seed:ustaad-starter`, add-only), SIM-P22 (cross-script Discover search +
+  work words), SIM-F6/P28 (udta/meta without GPS accepted; .mov/.3gp picker; length checked before upload), SIM-LEAD-9
+  (24 px back link), SIM-LEAD-4 (no-break +91). New copy says "Mechanic Network" (founder). SIM-P29 dropped (needs a member limits endpoint).
+- Gates per item only (lead's instruction): the item's test file, tsc of the touched package, eslint on changed files,
+  prettier. No full vitest runs, no build, no e2e, no push.
+- **Lead to do:** run `pnpm db:seed:ustaad-starter` on production after the deploy (founder/legal review of the banned
+  list); update `docs/qa/qa-backlog-2026-11-27.md` (main checkout, uncommitted) from the table at the end of
+  `docs/qa/ustaad-sim-fix-plan-2026-11-27.md`.
+- Not done: see that table and the builder's report (P21/F7 bell locale, P23, P25, P30–P33, F4, F5, RT3, LEAD-1, LEAD-8
+  and the rest of the P2/P3 rows).
+
 ## 2026-11-27 evening — delivery go-live blockers fixed (builder, branch `worktree-agent-adc124fa15469db75`, NOT merged)
 
 - Seven commits, test first (spec 24 § 17): DC-P11 job photos carry the job id; DC-B11 sweep audited + warns on

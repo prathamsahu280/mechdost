@@ -7,6 +7,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { TagListItem } from '@mechdost/shared/ustaad/dto/feed';
 import { localePath } from '@/lib/locale-path';
 import { ustaadClient, type MediaDeclare } from '@/lib/ustaad/client';
+import { VIDEO_ACCEPT, videoDeclaredMime, videoLengthProblem } from '@/lib/ustaad/media-core';
 import {
   buildPostInput,
   durationLabel,
@@ -307,7 +308,7 @@ export function Composer({ story }: { story: boolean }) {
       if (wantsVideo && video) {
         const id = await upload(video.file, {
           kind: 'video',
-          mime: video.file.type,
+          mime: videoDeclaredMime(video.file.type, video.file.name) ?? 'video/mp4',
           durationMs: video.durationMs,
           ...videoTextDeclare(videoText),
         });
@@ -584,12 +585,27 @@ export function Composer({ story }: { story: boolean }) {
                 <input
                   id={ids.video}
                   type="file"
-                  accept="video/mp4,video/webm"
+                  accept={VIDEO_ACCEPT}
                   className="sr-only"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
                     if (f)
                       void videoDuration(f).then((ms) => {
+                        // SIM-F6/P28: type and length are checked here, before anything is uploaded.
+                        const problem =
+                          videoDeclaredMime(f.type, f.name) === null ? 'type' : videoLengthProblem(ms);
+                        if (problem) {
+                          setVideo(null);
+                          setError(
+                            problem === 'type'
+                              ? t('err_video_type')
+                              : problem === 'too_long'
+                                ? t('err_video_too_long')
+                                : t('err_video_unknown_length'),
+                          );
+                          return;
+                        }
+                        setError(null);
                         setVideo({ file: f, durationMs: ms });
                       });
                   }}

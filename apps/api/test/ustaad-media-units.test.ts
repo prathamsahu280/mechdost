@@ -191,14 +191,44 @@ describe('container facts (AT-UP-4, AT-UP-5; review 2026-11-26: allowlists, fail
     }
   });
 
-  it('refuses udta, meta or any unknown box inside moov and trak', () => {
+  // SIM-F6 (live QA 2026-11-27): `ffmpeg -map_metadata -1 -fflags +bitexact` still writes moov/udta/meta with an
+  // encoder tag and no location; a phone MP4 carries udta too. Only real location data refuses the file.
+  const ffmpegUdta = () =>
+    box(
+      'udta',
+      box('meta', [
+        0,
+        0,
+        0,
+        0,
+        ...box('hdlr', [...new Array<number>(8).fill(0), ...ascii('mdir'), ...new Array<number>(13).fill(0)]),
+        ...box('ilst', box('©too', box('data', [0, 0, 0, 1, 0, 0, 0, 0, ...ascii('Lavf61.7.100')]))),
+      ]),
+    );
+  it('accepts udta / meta without location (ffmpeg metadata strip, phone recordings; SIM-F6)', () => {
+    expect(mp4Facts(moov(...good(), ffmpegUdta())).problem).toBeNull();
+    expect(mp4Facts(moov(...good(), box('meta', [0, 0, 0, 0]))).problem).toBeNull();
+    expect(mp4Facts(moov(mvhd(1000, 1000), box('trak', [...tkhd(1000), ...box('udta', [])]))).problem).toBe(
+      'unreadable', // no mdia: refused for the missing track data, not for udta
+    );
+  });
+
+  it('refuses real location data: ©xyz, loci, Apple location keys; and unknown boxes inside moov', () => {
     expect(mp4Facts(moov(...good(), box('udta', box('©xyz', ascii('+21.25+081.63/'))))).problem).toBe(
       'location_atom',
     );
-    expect(mp4Facts(moov(...good(), box('meta', [0, 0, 0, 0]))).problem).toBe('location_atom');
-    expect(mp4Facts(moov(mvhd(1000, 1000), box('trak', [...tkhd(1000), ...box('udta', [])]))).problem).toBe(
+    expect(mp4Facts(moov(...good(), box('udta', box('loci', new Array<number>(20).fill(0))))).problem).toBe(
       'location_atom',
     );
+    const appleKeys = box('meta', [
+      0,
+      0,
+      0,
+      0,
+      ...box('keys', [0, 0, 0, 0, ...be32(1), ...box('mdta', ascii('com.apple.quicktime.location.ISO6709'))]),
+    ]);
+    expect(mp4Facts(moov(...good(), appleKeys)).problem).toBe('location_atom');
+    expect(mp4Facts(moov(...good(), box('zzzz', [0, 0, 0, 0]))).problem).toBe('location_atom');
   });
 
   it('refuses an mvhd that is not a direct child of moov, and durations that disagree', () => {

@@ -846,8 +846,9 @@ interface SmartCorrectionEngine {
 | `ustaad.job_application`                                                                                          | employer                       | bell/push                                             | seen                       |
 | `ustaad.application_status`                                                                                       | applicant                      | bell/push; WhatsApp UTILITY                           | —                          |
 | `ustaad.report_outcome`                                                                                           | reporter                       | bell                                                  | —                          |
-| `ustaad.appeal_upheld` / `ustaad.appeal_overturned` (SIM-P26)                                                     | appellant                      | bell                                                  | —                          |
-| `ustaad.content_removed` / `ustaad.strike` / `ustaad.rules_reminder`                                              | author/member                  | bell + email (reason in Hindi/English, appeal route)  | —                          |
+| `ustaad.appeal_upheld` / `ustaad.appeal_overturned` (SIM-P26)                                                     | appellant                      | bell + email (SIM-F1)                                 | —                          |
+| `ustaad.banned` (SIM-F1/F3)                                                                                       | banned member                  | bell + email                                          | —                          |
+| `ustaad.content_removed` / `ustaad.strike` / `ustaad.rules_reminder`                                              | author/member                  | bell + email (reminder email not built yet)           | —                          |
 | `ustaad.invite` (old mechanic applications, § 4a)                                                                 | applicant with an account      | bell; WhatsApp/SMS when templates are live            | joined                     |
 | `ustaad.security_freeze` (SR-2)                                                                                   | member (old channels too)      | bell/push + email                                     | —                          |
 | `staff.ustaad_report` / `staff.ustaad_report_overdue` / `staff.ustaad_media_budget` / `staff.ustaad_verification` | community managers in the city | bell/push                                             | decided                    |
@@ -2120,6 +2121,51 @@ From the QA audit (`D:\mechdost-qa\ustaad-sim-2026-11-27\logs\audit.md` § 3 row
   (shared phones; `lib/auth/sign-out.ts`, `test/sign-out-clean.test.ts`). A restored post draft opens the text type;
   a composer that stays mounted across threads swaps to the new thread's draft (or empty). Guard
   `apps/web/test/ustaad-drafts.test.ts`.
+
+## 21i. QA simulation fixes, member side batch B (2026-11-27 night)
+
+One commit per item, test first. Ids from `D:\mechdost-qa\ustaad-sim-2026-11-27\logs\bugs.md`.
+
+- **SIM-P4** `GET /v1/ustaad/me/card` takes `?lang=hi|en` like the tutorial route; the page language wins over the
+  stored `member.lang`, so `/en/ustaad/me` shows English level, "Unlocks" and badge names. The web passes its locale.
+- **SIM-B1** a server-readable flag cookie `md-signed-in=1` (no identity; `apps/web/src/lib/signed-in-hint.ts`) is set
+  at sign-in, cleared at sign-out and synced once per page load from the stored session. During the staff preview in
+  API mode the Ustaad layout calls `notFound()` before rendering anything when the flag is missing, so a signed-out
+  `/ustaad/*` is the same 404 (status, title, body) as an unknown path and no `ustaad` messages are sent. The flag is
+  never an auth boundary (the API checks every call; a hand-set flag only reaches the client gate's own "page not
+  found"). Not covered: a signed-in non-member, non-tester still gets the client gate's 200 "page not found" with the
+  network rendered underneath — closing that needs a server-verified session (lead decision).
+- **SIM-F1** decisions about a member are now bell + email in the same transaction: `notifyAuthor` (moderation.ts)
+  calls `emailUstaadDecision` (`packages/db/src/repo/ustaad/notify.ts`) → `queueEmail` with the five new templates
+  `ustaad_content_removed`, `ustaad_strike`, `ustaad_banned`, `ustaad_appeal_upheld`, `ustaad_appeal_overturned`
+  (en + hi, button `/ustaad/me/standing`, verified address only, account language, Admin → Emails switch, one email
+  per decision and member). A member with `notification_preferences` email/transactional = false gets the bell only.
+  A ban now writes the new bell kind `ustaad.banned` (texts `notify.ustaad_banned` en + hi) instead of a plain strike
+  notice. No WhatsApp templates (lead). Not done: rules reminder and security-freeze emails.
+- **SIM-F2** filing an appeal (`createSupportTicket` with kind `ustaad_appeal`) queues its own receipt
+  `ustaad_appeal_received` (en + hi, "We got your appeal", button `/ustaad/me/standing`) instead of the generic
+  `ticket_received` whose button `/account/support?ticket=…` showed a shop owner the portal notice. The standing page
+  opens for every member whatever the account kind (it already shows the appeal state). Staff replies on an appeal
+  (`ticket_reply`) still link to `/account/support` — not changed here.
+- **SIM-P2/G16 + SIM-P16/G18** starter lists as an add-only, idempotent seed (`pnpm db:seed:ustaad-starter`,
+  `packages/db/src/ustaad/starter-lists.ts`, runbook `docs/runbooks/ustaad.md` § 11): 11 curated work hashtags (en + hi,
+  aliases), Banned words (Devanagari, Hinglish, English), Personal details to hide, Blocked link sites. Existing rows
+  (any admin edit, also switched off) are never changed. **Must be run on production by the lead** (outward action).
+- **SIM-P22** Discover search works across scripts and on work words (`packages/shared/src/ustaad/search.ts`): a name
+  key (consonant skeleton in one Latin alphabet; vowels, matras, h/ह, virama, nukta dropped; v/w, f/फ → p, श/ष/स → s,
+  ड़ → r, anusvara → n) is computed for the query in TypeScript and for `display_name` / `display_name_hi` in SQL with
+  `translate()` from the same map, so "Ramesh" finds "रमेश वर्मा" and "सुरेश" finds "Suresh Sahu". Query words found in
+  `USTAAD_WORK_WORDS` (en + hi + common spellings: wiring/बिजली → electrical, scanner/स्कैनर → diagnostics …) also match
+  members with that work or vehicle code. Keys shorter than two consonants do not use the key match. The key match is a
+  scan within the city filter (no index; fine at launch size, revisit with Meilisearch).
+- **SIM-F6 / SIM-P28** (changes the 2026-11-26 "any udta refuses" allowlist rule): `udta` and `meta` are allowed
+  inside `moov` and `trak` when they carry no location — `hasLocation` in `apps/api/src/ustaad/media/duration.ts`
+  refuses `©xyz`, `loci` and any `location` key name (`com.apple.quicktime.location.*`). ffmpeg's own
+  `udta/meta/ilst/©too` after `-map_metadata -1` and ordinary phone tags pass; top-level `uuid`/XMP and unknown boxes
+  still refuse. The composer picker accepts `.mov`, `.3gp`, `.3g2`, `.m4v` (declared as `video/mp4`; the API checks the
+  real container) and stops before any upload when the length cannot be read (MediaRecorder WebM with no Duration →
+  "We could not read how long this video is") or is over the 300 s hard cap; the setting's own limit is still checked
+  by the API at media create (before the bytes go up). Not done: in-app video recording; server remux (v2).
 
 ## 22. Not built / later
 

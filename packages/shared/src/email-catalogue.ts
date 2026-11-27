@@ -39,6 +39,8 @@ const service = (p: Record<string, string>) => `/service/${enc(p.requestCode ?? 
 const ticket = (p: Record<string, string>) => `/account/support?ticket=${enc(p.ticketCode ?? '')}`;
 const roadside = (p: Record<string, string>) => `/roadside/${enc(p.requestCode ?? '')}`;
 const partnerHome = () => '/partner/shop';
+/** Mechanic Network decisions open the member's standing page (reasons, end dates, appeal; spec 23 § 12, SIM-F1). */
+const ustaadStanding = () => '/ustaad/me/standing';
 
 const T = {
   customer: 'customer',
@@ -1153,6 +1155,134 @@ export const EMAIL_CATALOGUE = {
       heading: 'एक डिलीवरी काम आपका इंतज़ार कर रहा है',
       body: 'ऑर्डर {orderCode} आपको दिया गया है। अपना डिलीवरी पोर्टल खोलें और {minutes} मिनट में स्वीकार या मना करें।',
       button: 'डिलीवरी पोर्टल खोलें',
+    },
+  }),
+  // ----- Mechanic Network moderation (spec 23 § 12, SIM-F1): bell + email; reasons are shown on the standing page ----
+  ustaad_content_removed: def({
+    purpose: 'updates',
+    category: 'transactional',
+    audience: T.customer,
+    text: [],
+    params: [],
+    button: ustaadStanding,
+    sample: {},
+    en: {
+      subject: 'Something you posted on the Mechanic Network was removed',
+      heading: 'Your post was removed',
+      body: 'Something you posted on the Mechanic Network broke the community rules, so our team removed it.\n\nOpen your standing page to see the reason. If you think this is a mistake, you can appeal from the same page.',
+      button: 'See why',
+    },
+    hi: {
+      subject: 'मैकेनिक नेटवर्क पर आपकी डाली हुई चीज़ हटाई गई',
+      heading: 'आपकी पोस्ट हटाई गई',
+      body: 'आपने मैकेनिक नेटवर्क पर जो डाला था वह समुदाय के नियमों के ख़िलाफ़ था, इसलिए हमारी टीम ने उसे हटा दिया।\n\nकारण देखने के लिए अपना स्टैंडिंग पेज खोलें। अगर आपको लगता है कि यह गलती है, तो उसी पेज से अपील कर सकते हैं।',
+      button: 'कारण देखें',
+    },
+  }),
+  ustaad_strike: def({
+    purpose: 'updates',
+    category: 'transactional',
+    audience: T.customer,
+    text: [],
+    params: [],
+    button: ustaadStanding,
+    sample: {},
+    en: {
+      subject: 'A strike on your Mechanic Network account',
+      heading: 'Your account got a strike',
+      body: 'Our team gave your Mechanic Network account a strike for breaking the community rules. More strikes can limit or close your account.\n\nOpen your standing page to see the reason and, if you disagree, appeal.',
+      button: 'See why',
+    },
+    hi: {
+      subject: 'आपके मैकेनिक नेटवर्क खाते पर चेतावनी',
+      heading: 'आपके खाते को चेतावनी मिली',
+      body: 'समुदाय के नियम तोड़ने पर हमारी टीम ने आपके मैकेनिक नेटवर्क खाते को चेतावनी दी है। और चेतावनियाँ मिलने पर खाता सीमित या बंद हो सकता है।\n\nकारण देखने के लिए अपना स्टैंडिंग पेज खोलें, और सहमत न हों तो अपील करें।',
+      button: 'कारण देखें',
+    },
+  }),
+  ustaad_banned: def({
+    purpose: 'updates',
+    category: 'transactional',
+    audience: T.customer,
+    text: [],
+    params: [],
+    button: ustaadStanding,
+    sample: {},
+    en: {
+      subject: 'Your Mechanic Network account is blocked',
+      heading: 'Your account is blocked for now',
+      body: 'Our team blocked your Mechanic Network account for breaking the community rules. Your MechDost account for orders and services is not affected.\n\nOpen your standing page to see the reason and the end date, and to appeal.',
+      button: 'See why',
+    },
+    hi: {
+      subject: 'आपका मैकेनिक नेटवर्क खाता रोका गया है',
+      heading: 'आपका खाता अभी रोका गया है',
+      body: 'समुदाय के नियम तोड़ने पर हमारी टीम ने आपका मैकेनिक नेटवर्क खाता रोक दिया है। ऑर्डर और सर्विस वाला आपका MechDost खाता पहले जैसा चलता रहेगा।\n\nकारण, ख़त्म होने की तारीख़ देखने और अपील करने के लिए अपना स्टैंडिंग पेज खोलें।',
+      button: 'कारण देखें',
+    },
+  }),
+  /** SIM-F2: the appeal receipt opens the standing page (every account kind can), not /account/support. */
+  ustaad_appeal_received: def({
+    purpose: 'support',
+    category: 'transactional',
+    audience: T.customer,
+    text: ['ticketCode'],
+    params: ['ticketCode'],
+    button: ustaadStanding,
+    sample: { ticketCode: 'REQ-RPR-2026-5H8W1V' },
+    en: {
+      subject: 'We got your appeal {ticketCode}',
+      heading: 'We have your appeal',
+      body: 'Your appeal {ticketCode} on an Mechanic Network decision is with our team. A different person from the one who decided will check it again, usually within a few working days.\n\nYou can follow it on your standing page.',
+      button: 'Open your appeal',
+    },
+    hi: {
+      subject: 'आपकी अपील {ticketCode} मिल गई',
+      heading: 'हमें आपकी अपील मिल गई है',
+      body: 'मैकेनिक नेटवर्क के फ़ैसले पर आपकी अपील {ticketCode} हमारी टीम के पास है। फ़ैसला लेने वाले से अलग कोई व्यक्ति इसे फिर से जाँचेगा, आमतौर पर कुछ कार्य-दिवसों में।\n\nआप इसे अपने स्टैंडिंग पेज पर देख सकते हैं।',
+      button: 'अपील खोलें',
+    },
+  }),
+  ustaad_appeal_upheld: def({
+    purpose: 'updates',
+    category: 'transactional',
+    audience: T.customer,
+    text: ['reportCode'],
+    params: ['reportCode'],
+    button: ustaadStanding,
+    sample: { reportCode: 'UR-RPR-2026-G3ZBUV' },
+    en: {
+      subject: 'Your appeal on {reportCode} was decided',
+      heading: 'The decision stays',
+      body: 'A different person on our team checked your appeal on {reportCode} again. The decision stays.\n\nOpen your standing page to see the reason.',
+      button: 'See the decision',
+    },
+    hi: {
+      subject: '{reportCode} पर आपकी अपील का फ़ैसला हो गया',
+      heading: 'फ़ैसला वही रहेगा',
+      body: 'हमारी टीम के एक दूसरे व्यक्ति ने {reportCode} पर आपकी अपील फिर से जाँची। फ़ैसला वही रहेगा।\n\nकारण देखने के लिए अपना स्टैंडिंग पेज खोलें।',
+      button: 'फ़ैसला देखें',
+    },
+  }),
+  ustaad_appeal_overturned: def({
+    purpose: 'updates',
+    category: 'transactional',
+    audience: T.customer,
+    text: ['reportCode'],
+    params: ['reportCode'],
+    button: ustaadStanding,
+    sample: { reportCode: 'UR-RPR-2026-G3ZBUV' },
+    en: {
+      subject: 'Your appeal on {reportCode} was accepted',
+      heading: 'We took the decision back',
+      body: 'A different person on our team checked your appeal on {reportCode} again and took the decision back. What was removed is back.',
+      button: 'Open your standing',
+    },
+    hi: {
+      subject: '{reportCode} पर आपकी अपील मान ली गई',
+      heading: 'हमने फ़ैसला वापस ले लिया',
+      body: 'हमारी टीम के एक दूसरे व्यक्ति ने {reportCode} पर आपकी अपील फिर से जाँची और फ़ैसला वापस ले लिया। जो हटाया गया था वह वापस आ गया है।',
+      button: 'अपना स्टैंडिंग खोलें',
     },
   }),
 } as const satisfies Record<string, EmailTemplateDef>;

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { ButtonLink } from '@/components/ui/button-link';
@@ -10,7 +11,9 @@ import { UstaadGate } from '@/components/ustaad/shell/ustaad-gate';
 import { UstaadNav, type UstaadTab } from '@/components/ustaad/shell/ustaad-nav';
 import { UstaadPublicSwitch } from '@/components/ustaad/shell/public-switch';
 import type { Locale } from '@/i18n/routing';
+import { DATA_MODE } from '@/lib/data-mode';
 import { localePath } from '@/lib/locale-path';
+import { SIGNED_IN_HINT, ustaadHiddenOnServer } from '@/lib/signed-in-hint';
 import { publishedUstaadAccess } from '@/lib/site-config-content';
 
 /** Mechanics only: never indexed, never in the sitemap (spec 23 § 13). */
@@ -39,6 +42,8 @@ export default async function UstaadLayout({ children, params }: Props) {
   const { locale } = await params;
   const access = await publishedUstaadAccess();
   if (access === 'off') notFound();
+  // SIM-B1: signed out during the staff preview → the real 404 (status, title, body), nothing of the network rendered.
+  if (ustaadHiddenOnServer(access, (await cookies()).get(SIGNED_IN_HINT)?.value, DATA_MODE)) notFound();
   const [t, nf] = await Promise.all([
     getTranslations({ locale, namespace: 'ustaad.shell' }),
     getTranslations({ locale, namespace: 'pages.notFound' }),

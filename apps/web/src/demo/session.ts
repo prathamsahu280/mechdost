@@ -21,6 +21,7 @@ import { customerAllowed } from './customer-blocks';
 import { onboardedSellerApplications, shopSlugForApplication } from './shops';
 import { demoRoleFor, type RealMe } from '@/lib/auth/real-account';
 import { demoStorage } from './store';
+import { writeSignedInHint } from '@/lib/signed-in-hint';
 import {
   ACCOUNTS,
   accountsSnapshot,
@@ -70,6 +71,7 @@ function linkApplicantShop(accountId: string) {
 function startSession(accountId: string) {
   linkApplicantShop(accountId);
   demoStorage.write(SESSION, [{ accountId, signedInAt: new Date().toISOString() }]);
+  writeSignedInHint(true);
 }
 
 // ── Password sign-in (decision 2026-11-01): phone OTP once at sign-up, then phone or email + password ────────
@@ -262,6 +264,7 @@ export function adoptRealAccount(me: RealMe): DemoAccount {
 
 export function signOut() {
   demoStorage.write(SESSION, []);
+  writeSignedInHint(false);
 }
 
 /** Where each role lands after signing in. */

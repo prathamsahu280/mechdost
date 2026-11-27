@@ -27,6 +27,7 @@
     "seed": "tsx src/seed.ts",
     "seed:demo": "tsx src/seed-demo.ts",
     "seed:pincodes": "tsx src/seed-pincodes.ts",
+    "seed:ustaad-starter": "tsx src/seed-ustaad-starter.ts",
     "grant-role": "tsx src/grant-role.ts",
     "ustaad:map-mechanic-applications": "tsx src/ustaad/map-mechanic-applications.ts",
     "typecheck": "tsc -p tsconfig.json",

@@ -186,6 +186,14 @@ describe('member onboarding and verification', () => {
     expect(JSON.stringify(r.body)).not.toContain('+91');
   });
 
+  it('my card follows the page language (?lang), not the stored member language (SIM-P4)', async () => {
+    const en = await call(mechanic, 'GET', '/ustaad/me/card?lang=en');
+    expect(en.status).toBe(200);
+    expect((en.body.ladder as { name: string }[])[0]?.name).toBe('Naya Ustaad');
+    const hi = await call(mechanic, 'GET', '/ustaad/me/card?lang=hi');
+    expect((hi.body.ladder as { name: string }[])[0]?.name).toBe('नया उस्ताद');
+  });
+
   it('reject needs a note for "other"', async () => {
     const r = await call(
       cmRaipur,
