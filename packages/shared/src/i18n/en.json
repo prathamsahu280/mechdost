@@ -10041,5 +10041,13 @@
     "history_day": "{day} · {count, plural, one {# delivered} other {# delivered}}",
     "online_on": "Online · new offers come here",
     "online_off": "Offline · you get no offers"
+  },
+  "partnerShop": {
+    "tiles_label": "Today at a glance",
+    "kpi_new": "New",
+    "kpi_packing": "Packing",
+    "kpi_out": "Out for delivery",
+    "kpi_ready": "Ready for pickup",
+    "kpi_delivered": "Delivered"
   }
 }

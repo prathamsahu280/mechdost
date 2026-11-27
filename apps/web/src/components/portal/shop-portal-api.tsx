@@ -27,6 +27,8 @@ import { useNow } from './use-now';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 import { OfferTimer, OrderSoundButton, UpdatedAgo, useNewWorkAlert } from '@/components/partner';
 import { liveOffers, stepFlashKey } from '@/lib/shop-tier1';
+import { shopTodayCounts } from '@/lib/shop-today';
+import { ShopTodayTiles } from './shop-today-tiles';
 import { DeliveryLocked, EmptyWithAction } from './shop-empty';
 import { FlashNote, useFlash, type Flash } from './shop-flash';
 import { GiveUpOrder } from './shop-give-up';
@@ -97,6 +99,18 @@ export function ShopOrdersApi() {
       <ShopProfileApi />
 
       <ShopAgreementApi />
+
+      <ShopTodayTiles
+        loading={offers.loading || active.loading || done.loading}
+        agentMode={active.items.some((o) => o.deliveryMode === 'agent')}
+        counts={shopTodayCounts({
+          offers: openOffers.length,
+          active: active.items,
+          activeMore: Boolean(active.next),
+          done: done.items,
+          doneMore: Boolean(done.next),
+        })}
+      />
 
       <section aria-labelledby="offered-title">
         <h2 id="offered-title" className="font-heading text-xl font-extrabold text-ink">

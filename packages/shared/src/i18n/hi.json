@@ -10041,5 +10041,13 @@
     "history_day": "{day} · {count, plural, one {# पहुँचाया} other {# पहुँचाए}}",
     "online_on": "ऑनलाइन · नए ऑफ़र यहीं आएँगे",
     "online_off": "ऑफ़लाइन · कोई ऑफ़र नहीं आएगा"
+  },
+  "partnerShop": {
+    "tiles_label": "आज एक नज़र में",
+    "kpi_new": "नए",
+    "kpi_packing": "पैक हो रहे",
+    "kpi_out": "डिलीवरी पर निकले",
+    "kpi_ready": "उठाने के लिए तैयार",
+    "kpi_delivered": "पहुँचाए"
   }
 }

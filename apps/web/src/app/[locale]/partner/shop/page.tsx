@@ -44,6 +44,7 @@ export default async function PartnerPage() {
             'delivery',
             // Partner kit (design 2026-11-27): offer timer, order sound, updated line.
             'partnerKit',
+            'partnerShop',
           ]}
         >
           <ShopPortal />
