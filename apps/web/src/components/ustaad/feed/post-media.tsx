@@ -5,9 +5,11 @@ import { useEffect, useRef, useState } from 'react';
 import type { PostMediaView, PostView } from '@mechdost/shared/ustaad/dto/feed';
 import { track } from '@/lib/analytics';
 import { durationLabel, pollShares, sizeLabel } from '@/lib/ustaad/feed-format';
+import { isDoubleTap } from '@/lib/ustaad/reactions';
 import { socialClient } from '@/lib/ustaad/social-client';
 import { VoiceNote } from '../media/voice-note';
 import { UstaadIcon } from '../shell/icons';
+import { BeforeAfter } from './before-after';
 import { SignedImage } from './social-common';
 
 /**
@@ -294,20 +296,55 @@ function Poll({ poll, onVote }: { poll: NonNullable<PostView['poll']>; onVote: (
 export function PostMedia({
   post,
   onVote,
+  onDoubleTap,
   eager = false,
 }: {
   post: PostView;
   onVote: (optionId: string) => void;
+  /** U2 (E12): two taps on a photo within 250 ms; the card decides (it only ever likes). */
+  onDoubleTap?: () => void;
   eager?: boolean;
 }) {
   const images = post.media.filter((m) => m.kind === 'image');
   const audio = post.media.find((m) => m.kind === 'audio');
   const video = post.media.find((m) => m.kind === 'video');
   const doc = post.media.find((m) => m.kind === 'document');
+  const before = images.find((m) => m.role === 'before');
+  const after = images.find((m) => m.role === 'after');
+  const lastTap = useRef<number | null>(null);
+  const photos =
+    post.template === 'before_after' && before && after ? (
+      <BeforeAfter before={before} after={after} eager={eager} />
+    ) : (
+      <PhotoGallery media={images} eager={eager} />
+    );
   return (
     <>
       {video ? <VideoTile video={video} poster={images[0]} /> : null}
-      {!video && images.length > 0 ? <PhotoGallery media={images} eager={eager} /> : null}
+      {!video && images.length > 0 ? (
+        // Double tap = like (button stays the equivalent, 2.5.7); taps still reach the strip and its buttons.
+        <div
+          className="touch-manipulation"
+          onPointerUp={(e) => {
+            if (
+              !onDoubleTap ||
+              e.pointerType === 'mouse' ||
+              (e.target as HTMLElement).closest('button,input,label')
+            )
+              return;
+            const now = e.timeStamp;
+            if (isDoubleTap(lastTap.current, now)) {
+              lastTap.current = null;
+              onDoubleTap();
+            } else lastTap.current = now;
+          }}
+          onDoubleClick={(e) => {
+            if (onDoubleTap && !(e.target as HTMLElement).closest('button,input,label')) onDoubleTap();
+          }}
+        >
+          {photos}
+        </div>
+      ) : null}
       {audio ? (
         <div className="px-4">
           <VoiceNote mediaId={audio.mediaId} />
