@@ -105,6 +105,16 @@ export function wrongCodeLeft(code: string): number | null {
   return m ? Number(m[1]) : null;
 }
 
+/**
+ * The API answers a wrong code as `WRONG_CODE` with `details.attemptsLeft`; fold the count into the code
+ * (`WRONG_CODE:<n>`, the demo's shape) so `wrongCodeLeft` can say how many tries are left (DC-P13).
+ */
+export function foldAttemptsLeft(code: string, details: unknown): string {
+  if (code !== 'WRONG_CODE' || typeof details !== 'object' || details === null) return code;
+  const left = 'attemptsLeft' in details ? details.attemptsLeft : undefined;
+  return typeof left === 'number' ? `WRONG_CODE:${String(left)}` : code;
+}
+
 /** +91 and the 10 digits of an Indian mobile number (with or without +91 and spaces), for a `tel:` link. */
 export function telNumber(phone: string): string {
   return `+91${phone.replace(/\D/g, '').replace(/^91(?=\d{10}$)/, '')}`;

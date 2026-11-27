@@ -28,10 +28,21 @@ export function itemTitle(item: { title: string; titleHi: string | null }, local
 /** Label key in the `order` namespace for a sub-order status the shop sees (the demo's `stage_*` texts). */
 export function shopStageKey(
   status: string,
-): 'stage_confirmed' | 'stage_packed' | 'stage_shipped' | 'stage_delivered' {
+):
+  | 'stage_confirmed'
+  | 'stage_packed'
+  | 'stage_ready_for_pickup'
+  | 'stage_shipped'
+  | 'stage_delivered'
+  | 'stage_returned' {
   switch (status) {
     case 'packed':
       return 'stage_packed';
+    // Agent-delivered sub-orders (spec 24; DC-P13 / DC-P9 follow-up): never fall back to "Confirmed".
+    case 'ready_for_pickup':
+      return 'stage_ready_for_pickup';
+    case 'returned':
+      return 'stage_returned';
     case 'shipped':
     case 'out_for_delivery':
       return 'stage_shipped';

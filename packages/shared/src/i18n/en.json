@@ -772,6 +772,8 @@
     "stage_routing": "Confirming availability",
     "stage_confirmed": "Confirmed — will be shipped",
     "stage_packed": "Packed",
+    "stage_returned": "Returned to you",
+    "stage_ready_for_pickup": "Ready for pickup — a delivery partner will collect it",
     "stage_shipped": "Out for delivery",
     "stage_delivered": "Delivered",
     "detail_placed": "We received your order.",

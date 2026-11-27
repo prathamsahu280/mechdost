@@ -772,6 +772,8 @@
     "stage_routing": "उपलब्धता जाँची जा रही है",
     "stage_confirmed": "पक्का — जल्द भेजा जाएगा",
     "stage_packed": "पैक हुआ",
+    "stage_returned": "आपके पास वापस आ गया",
+    "stage_ready_for_pickup": "पिकअप के लिए तैयार — डिलीवरी पार्टनर लेने आएगा",
     "stage_shipped": "डिलीवरी के लिए निकला",
     "stage_delivered": "डिलीवर हुआ",
     "detail_placed": "हमें आपका ऑर्डर मिल गया।",
