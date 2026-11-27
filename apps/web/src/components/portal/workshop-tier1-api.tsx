@@ -13,6 +13,7 @@ import { adminApi } from '@/lib/admin-api';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import { hourHasStarted, rupeesToPaise } from '@/lib/service-views';
+import { hourChip } from '@/lib/workshop-portal-view';
 import { Tier1Error } from '../workshops/tier1-error';
 import { portalCard, portalField, portalPrimary, portalQuiet } from './portal-styles';
 
@@ -38,6 +39,7 @@ export function HourPickerApi({
   describedBy?: string;
 }) {
   const t = useTranslations('workshopTier1');
+  const pw = useTranslations('partnerWorkshop');
   const locale = useLocale();
   const [state, setState] = useState<
     | { kind: 'loading' }
@@ -67,32 +69,43 @@ export function HourPickerApi({
   const slots = state.kind === 'ready' ? state.slots.filter((s) => !hourHasStarted(date, s.hour, now)) : [];
 
   return (
-    <div>
-      <label htmlFor={id} className="text-xs font-bold text-muted">
-        {t('hourLabel')}
-      </label>
-      <select
-        id={id}
-        name="hour"
-        defaultValue=""
-        aria-invalid={invalid ? true : undefined}
-        aria-describedby={describedBy}
-        className={portalField}
-      >
-        <option value="">{state.kind === 'loading' ? t('hoursLoading') : t('hourChoose')}</option>
-        {slots.map((s) => (
-          <option key={s.hour} value={s.hour} disabled={s.free <= 0}>
-            {s.free <= 0
-              ? t('hourFull', { time: hhmm(s.hour) })
-              : t('hourOption', { time: hhmm(s.hour), free: s.free })}
-          </option>
-        ))}
-      </select>
+    // Hour chips (partner portals UI upgrade, design 2026-11-27 § 6.2): radio buttons named `hour` (the form reads
+    // FormData as before), 48 px, each with its free places in words; a full hour is shown and cannot be picked.
+    <fieldset
+      id={id}
+      tabIndex={-1}
+      aria-invalid={invalid ? true : undefined}
+      aria-describedby={describedBy}
+      className="col-span-2 min-w-0"
+    >
+      <legend className="text-xs font-bold text-muted">{t('hourLabel')}</legend>
+      {state.kind === 'loading' ? <p className="mt-1 text-xs text-muted">{t('hoursLoading')}</p> : null}
+      <div className="mt-1 flex flex-wrap gap-2">
+        {slots.map((s) => {
+          const chip = hourChip(s);
+          return (
+            <label
+              key={s.hour}
+              className={`flex min-h-12 min-w-20 flex-col items-center justify-center rounded-button border px-3 text-center leading-tight ${
+                chip.full
+                  ? 'cursor-not-allowed border-line-card bg-pill text-muted'
+                  : `cursor-pointer border-line-card bg-surface text-ink has-[:checked]:border-accent-button has-[:checked]:bg-accent-soft has-[:checked]:text-accent-soft-text has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus ${invalid ? 'border-error' : ''}`
+              }`}
+            >
+              <input type="radio" name="hour" value={s.hour} disabled={chip.full} className="sr-only" />
+              <span className="text-sm font-extrabold tabular-nums">{chip.time}</span>
+              <span className="text-xs">
+                {chip.full ? pw('hour_full') : pw('hour_free', { n: chip.free })}
+              </span>
+            </label>
+          );
+        })}
+      </div>
       {state.kind === 'ready' && slots.length === 0 ? (
         <p className="mt-1 text-xs font-bold text-error">{t('noHours')}</p>
       ) : null}
       {state.kind === 'error' ? <Tier1Error code={state.code} /> : null}
-    </div>
+    </fieldset>
   );
 }
 
@@ -141,6 +154,7 @@ export function MyWorkshopApi() {
 
 function WorkshopEditor({ w, onSaved }: { w: Profile; onSaved: () => Promise<void> }) {
   const t = useTranslations('workshopTier1');
+  const pw = useTranslations('partnerWorkshop');
   const locale = useLocale();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -349,11 +363,27 @@ function WorkshopEditor({ w, onSaved }: { w: Profile; onSaved: () => Promise<voi
           <p className="text-xs text-muted">{t('menuHint')}</p>
           <ul className="space-y-3">
             {w.menu.map((m) => (
-              <li key={m.key} className="rounded-tile bg-pill p-3">
-                <label className="flex min-h-11 items-center gap-2 text-sm font-bold text-ink">
-                  <input type="checkbox" name={`on-${m.key}`} defaultChecked={m.active} className="size-6" />
-                  <span data-user-content>{locale === 'hi' && m.titleHi ? m.titleHi : m.title}</span>
-                </label>
+              <li key={m.key} className="rounded-tile border border-line-card bg-surface p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label className="flex min-h-11 min-w-0 items-center gap-2 text-sm font-bold text-ink">
+                    <input
+                      type="checkbox"
+                      name={`on-${m.key}`}
+                      defaultChecked={m.active}
+                      className="size-6"
+                    />
+                    <span data-user-content>{locale === 'hi' && m.titleHi ? m.titleHi : m.title}</span>
+                  </label>
+                  <span className="text-sm font-bold tabular-nums text-ink">
+                    {`${formatPrice(m.lowPaise)}–${formatPrice(m.highPaise)}`}
+                  </span>
+                </div>
+                {m.titleHi ? null : (
+                  // Hard rule 10: a menu line without its Hindi name is flagged in words, never a blocker on saving.
+                  <span className="mt-1 inline-flex rounded-pill bg-warning-bg px-2.5 py-0.5 text-xs font-extrabold text-warning">
+                    {pw('hindi_missing')}
+                  </span>
+                )}
                 <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <label htmlFor={id(`low-${m.key}`)} className="text-xs font-bold text-muted">
@@ -383,7 +413,6 @@ function WorkshopEditor({ w, onSaved }: { w: Profile; onSaved: () => Promise<voi
                   </div>
                 </div>
                 {!m.active ? <p className="mt-1 text-xs text-muted">{t('menuOff')}</p> : null}
-                <p className="sr-only">{`${formatPrice(m.lowPaise)} – ${formatPrice(m.highPaise)}`}</p>
               </li>
             ))}
           </ul>
