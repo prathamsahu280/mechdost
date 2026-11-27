@@ -2067,7 +2067,7 @@ usefulCount }`, rate rule `likes`, member gate. `PostView` gains `counts.useful`
   reads `kind = 'like'` rows only. Tests: `packages/db/test/ustaad-feed.test.ts` ("Useful" case),
   `apps/api/test/ustaad-feed-api.test.ts` (route + role leak rows).
 - **Pehchaan tag (E6).** `components/ustaad/common/pehchaan-tag.tsx` (`PehchaanTag {level, size, onOpen?, tone}`,
-  `MemberName`) — key-tag shape, colours from `pehchaan-tones.ts` (existing token pairs; contrast in
+  `MemberName`) — "Bench kit" key tag (clip-path point + hole, 1 px edge, metal finishes, 0–4 grade lines; tokens `zinc`, `brass`, `brass-text`, `surface-raised` added), colours in `pehchaan-tones.ts` (contrast in
   `apps/web/test/tokens.test.ts`). Opens `onOpen` (U4's level sheet) or links to `/ustaad/me#levels`. Used in
   `AuthorLine` (Ask list/thread), the post card header and the Messages member line. Profile and Discover chips are
   U4's files (not changed here).
