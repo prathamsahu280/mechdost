@@ -545,3 +545,16 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
 - **Q-DLV-W3 (2026-11-27, delivery web, Decision):** manual payouts are recorded by staff with
   `delivery_agents:manage`. Should finance (role `finance`) record them instead, with ops only reading?
   **Default meanwhile:** whoever the backend's payout routes allow (the screen hides nothing by role).
+
+#### Delivery + COD live simulation (plan `docs/qa/delivery-cod-simulation-plan-2026-11-27.md`) — answered 2026-11-27 15:10
+
+- ~~Q-DC-1~~ **Founder: yes** — the agent chains use account 01's four paid test orders of 2026-11-16, routed only to Sharma
+  Auto Parts (test shop, owner account 02). No refund is ever approved.
+- ~~Q-DC-2~~ Moot for the run: refunds are only read, never approved (plan F4).
+- ~~Q-DC-3~~ **Founder: switch the four order WhatsApp templates (en + hi) off for the run** and back on right after
+  (Firebase test numbers may belong to strangers on WhatsApp). Email still sends.
+- ~~Q-DC-4~~ Lead: the API already runs the Cloudflare always-pass test secret (since 12:3x), so sign-ins keep working
+  after the bypass ends at 16:57; the real keys are restored when the run ends.
+- ~~Q-DC-5~~ Lead: "everyone" COD is not switched on (open the switch, read the warning, cancel).
+- ~~Q-DC-6~~ Default kept: ≤ 10 emails, then outbox rows only.
+- ~~Q-DC-7~~ **Founder: the ₹1 Racer4 listing is his deliberate payment test price** — not a bug.
