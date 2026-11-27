@@ -8074,6 +8074,7 @@
       "err_type": "Enter a valid value.",
       "err_range": "Use a number from {min} to {max}.",
       "invalid": "Fix the highlighted settings first.",
+      "leave_unsaved": "You have unsaved changes. Leave this page and lose them?",
       "bar_label": "Unsaved network settings",
       "bar_dirty": "{count, plural, one {# unsaved change} other {# unsaved changes}}",
       "bar_discard": "Discard",

@@ -259,6 +259,14 @@ export function riskOf(change: Change): UstaadRisk | null {
 export type UstaadAdminMessage = keyof (typeof messagesEn)['ustaad']['admin'];
 export const adminMessage = (id: string): UstaadAdminMessage => id as UstaadAdminMessage;
 
+/** The save bar's message: "Fix the highlighted settings first" goes away once nothing is highlighted (SIM-B2). */
+export function barStatus<S extends { fixFirst?: boolean } | null>(
+  status: S,
+  problemCount: number,
+): S | null {
+  return status?.fixFirst === true && problemCount === 0 ? null : status;
+}
+
 /** The section named by `?sec=` (unknown or missing = the first). */
 export function sectionFromQuery(value: string | null): UstaadAdminSection {
   return USTAAD_ADMIN_SECTIONS.find((s) => s === value) ?? 'general';
