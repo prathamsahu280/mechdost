@@ -23,8 +23,8 @@ describe('settings units (DC-B2)', () => {
   });
 
   it('has an en and hi word for every unit label, and "count" shows no word', () => {
-    const enS = (en as Record<string, Record<string, string>>).portal ?? {};
-    const hiS = (hi as Record<string, Record<string, string>>).portal ?? {};
+    const enS = (en as unknown as Record<string, Record<string, string>>).portal ?? {};
+    const hiS = (hi as unknown as Record<string, Record<string, string>>).portal ?? {};
     for (const [unit, key] of Object.entries(UNIT_LABEL_KEY)) {
       if (key === null) {
         expect(unit).toBe('count');
