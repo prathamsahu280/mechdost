@@ -664,3 +664,13 @@ found) → take the inbox from the DB user row (the inbox tag), never from memor
 runs
 L319 · 2026-11-27 · ui/research · CLAUDE.md lists Recharts and shadcn registries in the stack, but neither is installed (no lockfile entry, no components.json); registry items that fit partner UIs pull Radix/Base UI/dnd-kit/motion → check the lockfile before a design names a library, prefer zero-dependency registry items as copied patterns, and ask the founder before adding a chart library. Play Store listing galleries (curl the details page, take play-lh image URLs) give reference screenshots without a browser; Swiggy/Zomato partner apps share the "timer inside the button" look, so treat it as their signature, not a pattern to copy.
 L324 · 2026-11-27 · ui/perf/design · Ustaad UI upgrade design: (1) a ranked, cached feed snapshot cannot drive a "new posts" signal by comparing the first id — it needs a cheap "fresh count since" read; (2) hiding site chrome after a client gate admits the viewer creates a post-hydration shift — decide it in the server HTML by path (layout marker + `html:has()`); (3) store-listing screenshots are marketing art, so a visual study also needs primary-source UI images (company blog posts) and must declare what it could not capture → check these three in every feed/shell/visual-study task.
+L325 · 2026-11-27 · ustaad/web · A chip made interactive (Pehchaan tag → link to levels) was dropped into a shared
+author line that also renders inside whole-card links (Ask list) — a nested link. → Shared name/label components
+default to static inside rows that are links; only surfaces that are not themselves interactive get the button/link
+variant (prop `interactive`).
+L326 · 2026-11-27 · tooling · Python `open(p,'w')` on Windows wrote CRLF into TS files and the pre-commit prettier
+check refused the commit → edit scripts open files with `newline=''` (read and write), or run prettier --write before
+staging.
+L327 · 2026-11-27 · ustaad/db · Adding a second reaction kind to a table keyed (post, member, kind): every "liked by
+me" read that selected rows without `kind = 'like'` would have shown Useful as Like → when a kind column gains a value,
+grep every read of the table (camelCase and raw SQL) and filter by kind in the same change.
