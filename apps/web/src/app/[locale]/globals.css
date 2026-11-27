@@ -890,29 +890,10 @@ html:has([data-shell-compact]) {
     0 0 0 3.5px var(--color-line);
 }
 
-/* Story progress: one segment per story, filled with a transform (no layout work); a pause keeps its place. Under
-   reduced motion the bar shows steps only (done segments full) and nothing advances by itself. */
-.story-progress-fill {
-  transform-origin: left;
-  transform: scaleX(0);
-}
-.story-progress-fill[data-done] {
-  transform: scaleX(1);
-}
+/* "See new posts" pill: slides down 8 px and fades in (220 ms); appears instantly under reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
-  .story-progress-fill[data-running] {
-    animation: story-progress var(--story-ms, 6000ms) linear forwards;
-  }
-  .story-progress-fill[data-running][data-paused] {
-    animation-play-state: paused;
-  }
   .new-posts-pill {
     animation: new-posts-in var(--duration-base) var(--ease-out-soft) both;
-  }
-}
-@keyframes story-progress {
-  to {
-    transform: scaleX(1);
   }
 }
 @keyframes new-posts-in {

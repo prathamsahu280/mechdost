@@ -71,16 +71,24 @@ export function StoryRow() {
                 }}
                 className={ringBtn}
               >
+                {/* U1 ring (design § 3.3): unseen = accent stroke + surface gap, seen = thin line stroke. */}
                 <span
-                  className={`flex size-[68px] items-center justify-center rounded-full p-[3px] ${r.allSeen ? 'bg-line-card' : 'bg-accent'}`}
+                  className="story-ring mt-[5px] flex size-[60px] items-center justify-center"
+                  data-seen={r.allSeen ? '' : undefined}
                 >
-                  <span className="flex size-full items-center justify-center rounded-full bg-surface p-[2px]">
-                    <Avatar name={who} id={r.author.id} size={56} />
-                  </span>
+                  <Avatar name={who} id={r.author.id} size={60} />
                 </span>
-                <span data-user-content={r.mine ? undefined : true} className="line-clamp-1 w-full">
+                <span
+                  data-user-content={r.mine ? undefined : true}
+                  className="mt-1 w-full truncate py-0.5 leading-normal"
+                >
                   {r.mine ? t('yourStory') : who.split(' ')[0]}
                 </span>
+                {/* State is never colour alone: a dot under unseen names and "new" in the accessible name. */}
+                <span
+                  aria-hidden="true"
+                  className={`size-1.5 rounded-full ${r.allSeen ? 'bg-transparent' : 'bg-accent'}`}
+                />
                 <span className="sr-only">
                   {`, ${r.mine ? '' : `${who}, `}${r.allSeen ? t('storySeenMark') : t('storyNewMark')}`}
                 </span>
