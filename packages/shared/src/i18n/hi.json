@@ -8329,7 +8329,22 @@
       "listenStop": "पढ़ना रोको",
       "listenAria": "सुनो: यह लिखा हुआ पढ़कर सुनाओ",
       "recName": "आवाज़ रिकॉर्ड करो",
-      "recStarted": "रिकॉर्डिंग शुरू हुई।"
+      "recStarted": "रिकॉर्डिंग शुरू हुई।",
+      "voiceConsentH": "आवाज़ वाले संदेश की इजाज़त दें?",
+      "voiceConsentBody": "MechDost आपके आवाज़ वाले संदेश रखेगा और जिन सदस्यों को आप भेजेंगे उन्हें सुनाएगा। आप इसे कभी भी मेरा पेज पर 'मेरी पसंद' में बंद कर सकते हैं।",
+      "voiceConsentAllow": "इजाज़त दें और रिकॉर्ड करें",
+      "voiceConsentNotNow": "अभी नहीं",
+      "voiceConsentFailed": "यह सेव नहीं हुआ। फिर कोशिश करें।",
+      "voiceConsentReady": "आवाज़ वाले संदेश की इजाज़त मिल गई। रिकॉर्ड करने के लिए माइक दबाएँ।",
+      "choicesH": "मेरी पसंद",
+      "correctionH": "स्मार्ट सुधार",
+      "correction_suggest": "सुधार सुझाओ, मैं चुनूँगा",
+      "correction_auto": "अपने आप सुधारो",
+      "correction_off": "बंद",
+      "consentVoice": "मेरे आवाज़ वाले संदेश रखो और सुनाओ",
+      "consentCorrection": "बेहतर सुधार के लिए मेरा लिखा हुआ, फ़ोन नंबर छिपाकर, सुधार सेवा को भेजो",
+      "choicesSaved": "सेव हो गया।",
+      "err_USTAAD_VOICE_CONSENT": "पहले आवाज़ वाले संदेश की इजाज़त दें।"
     },
     "labels": {
       "seg_ev": "EV",

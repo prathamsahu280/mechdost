@@ -105,6 +105,10 @@ export const ChoicesDto = z
         ustaad_directory: z.boolean().optional(),
         ustaad_training: z.boolean().optional(),
         ustaad_offers: z.boolean().optional(),
+        /** SIM-P10: store and play my voice notes (asked before the first recording). */
+        ustaad_voice: z.boolean().optional(),
+        /** G17: send my typed text, masked, to the smart-correction processor. */
+        ustaad_correction: z.boolean().optional(),
       })
       .strict()
       .optional(),
@@ -123,6 +127,8 @@ export const ChoicesViewDto = z.object({
     ustaad_directory: z.boolean(),
     ustaad_training: z.boolean(),
     ustaad_offers: z.boolean(),
+    ustaad_voice: z.boolean().default(false),
+    ustaad_correction: z.boolean().default(false),
   }),
   version: z.number().int(),
 });

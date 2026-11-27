@@ -2022,6 +2022,18 @@ Each fix has a regression test named after the QA id.
   scam DM) is reasoned `job_scam` (was `abuse`), and money asks in the first pass (fee phrase, UPI id, pay app, OTP)
   map to `job_scam` (a bare phone number stays `spam`). Tests: `ustaad-console.test.ts` "SIM-B8 …",
   `admin-ustaad-console.test.ts` "holds: …".
+- **SIM-P10 / G17 — voice consent before the first recording; "My choices" on Me.** `declareUstaadMedia` refuses an
+  `audio` upload with 403 `USTAAD_VOICE_CONSENT` until the member's latest `ustaad_voice` consent row is a grant
+  (`ustaadConsentGranted`; the API is the boundary). `PUT /ustaad/me/choices` now also takes `consents.ustaad_voice`
+  and `consents.ustaad_correction` (append-only rows, source `ustaad_choices`); `GET` returns both (default false).
+  The voice recorder asks once, before the first recording, in place of the mic ("Allow voice notes?" — what is stored
+  and who hears it, where to turn it off; **Allow and record** / **Not now**); nothing is recorded until the member
+  allows; after allowing, the member taps the mic again (announced). Me has a **My choices** card: the smart-correction
+  mode — "Suggest fixes, I choose" / **"Fix by itself"** / "Off" — when `correction.member_can_change` is on, and the
+  two consents (store and play my voice notes; send my typed text, phone numbers hidden, to the correction service,
+  which lets the LLM engine run instead of the word list). Each change saves at once. Not done: the admin "Fix by
+  itself" default still needs at least one protected word (seed gap, runbook). Tests: `ustaad-media.test.ts` "voice
+  consent (SIM-P10 …)", `ustaad-profile.test.ts` (choices shape), `apps/web/test/ustaad-voice-consent.test.ts`.
 - **SIM-P26 — the appellant hears the appeal's outcome.** `decideUstaadAppeal` sent the reporter's
   `ustaad.report_outcome` ("Your report was checked – thank you") to the appellant. New kinds `ustaad.appeal_upheld`
   ("The decision stays") and `ustaad.appeal_overturned` ("We took the decision back"), en + hi in `notify.*`,

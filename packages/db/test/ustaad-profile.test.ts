@@ -243,6 +243,9 @@ describe('PUT /ustaad/me/choices', () => {
       ustaad_directory: false,
       ustaad_training: true,
       ustaad_offers: false,
+      // SIM-P10 / G17: asked later (voice before the first recording; correction in My choices).
+      ustaad_voice: false,
+      ustaad_correction: false,
     });
     const c1 = await saveUstaadChoices(
       t(),
@@ -261,6 +264,9 @@ describe('PUT /ustaad/me/choices', () => {
       ustaad_directory: true,
       ustaad_training: false,
       ustaad_offers: false,
+      // SIM-P10 / G17: asked later (voice before the first recording; correction in My choices).
+      ustaad_voice: false,
+      ustaad_correction: false,
     });
     const rows = await db.select().from(s.consents).where(eq(s.consents.userId, f.customer));
     expect(rows.filter((r) => r.source === 'ustaad_choices')).toHaveLength(2);

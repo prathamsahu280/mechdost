@@ -1,5 +1,5 @@
 import type { JOB_ROLES } from '@mechdost/shared/ustaad/codes';
-import type { MemberView } from '@mechdost/shared/ustaad/dto/members';
+import type { Choices, ChoicesView, MemberView } from '@mechdost/shared/ustaad/dto/members';
 import type { StandingView } from '@mechdost/shared/ustaad/dto/moderation';
 import type {
   AnswerInput,
@@ -123,6 +123,9 @@ export interface UstaadClient {
     code: string,
     action: 'pause' | 'resume' | 'close' | 'fill',
   ): Promise<ApiResult<{ status: string }>>;
+  /** My choices and consents (SIM-P10 voice consent, G17 smart-correction mode). */
+  choices(): Promise<ApiResult<ChoicesView>>;
+  saveChoices(body: Choices): Promise<ApiResult<ChoicesView>>;
   /** My standing (SIM-P19/P27): readable while banned or restricted. */
   standing(): Promise<ApiResult<StandingView>>;
   /** Appeal one decision (a support ticket of kind ustaad_appeal). */

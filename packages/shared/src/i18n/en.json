@@ -8329,7 +8329,22 @@
       "listenStop": "Stop reading",
       "listenAria": "Listen: read this text aloud",
       "recName": "Record voice note",
-      "recStarted": "Recording started."
+      "recStarted": "Recording started.",
+      "voiceConsentH": "Allow voice notes?",
+      "voiceConsentBody": "MechDost stores your voice notes and plays them to the members you send them to. You can turn this off any time in My choices on Me.",
+      "voiceConsentAllow": "Allow and record",
+      "voiceConsentNotNow": "Not now",
+      "voiceConsentFailed": "That did not save. Try again.",
+      "voiceConsentReady": "Voice notes allowed. Tap the microphone to record.",
+      "choicesH": "My choices",
+      "correctionH": "Smart correction",
+      "correction_suggest": "Suggest fixes, I choose",
+      "correction_auto": "Fix by itself",
+      "correction_off": "Off",
+      "consentVoice": "Store and play my voice notes",
+      "consentCorrection": "Send my typed text, with phone numbers hidden, to the correction service for better fixes",
+      "choicesSaved": "Saved.",
+      "err_USTAAD_VOICE_CONSENT": "Allow voice notes first."
     },
     "labels": {
       "seg_ev": "EV",

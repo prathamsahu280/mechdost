@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { ClientMessages } from '@/components/ui/client-messages';
 import { MyCardScreen } from '@/components/ustaad/card/my-card';
+import { MyChoices } from '@/components/ustaad/card/my-choices';
 import { MemberGate } from '@/components/ustaad/common';
 import type { Locale } from '@/i18n/routing';
 
@@ -18,9 +19,13 @@ export default async function UstaadMePage({ params }: Props) {
         {t('title')}
       </h1>
       {/* SIM-P27: a banned member sees the banned screen here too (reason, end date, appeal). */}
-      <ClientMessages namespaces={['ustaad.card', 'ustaad.join', 'ustaad.shell', 'ustaad.standing']}>
+      <ClientMessages
+        namespaces={['ustaad.card', 'ustaad.join', 'ustaad.shell', 'ustaad.standing', 'ustaad.media']}
+      >
         <MemberGate>
           <MyCardScreen />
+          {/* G17 / SIM-P10: smart-correction mode and the in-network consents. */}
+          <MyChoices />
         </MemberGate>
       </ClientMessages>
     </div>
