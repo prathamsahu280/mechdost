@@ -4,22 +4,25 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { stripLocale } from '@/lib/locale-path';
+import { ustaadTabFor, type UstaadTabKey } from './tabs';
 
 export interface UstaadTab {
-  key: 'home' | 'discover' | 'create' | 'learn' | 'me';
+  key: UstaadTabKey;
   /** Localised href (`/hi/ustaad/…` in Hindi). */
   href: string;
-  /** Canonical path used to decide the current tab. */
+  /** Canonical path (kept for the rail and tests). */
   path: string;
   label: string;
   /** Accessible name when it differs from the label ("Create a post"). */
   ariaLabel?: string;
   icon: ReactNode;
+  /** The filled icon shown while the tab is current (state is never colour alone). */
+  iconCurrent: ReactNode;
 }
 
 /**
- * Whether a tab's canonical path is the page being shown, in either language: the locale prefix (`/hi`, internal
- * `/en`) is stripped first — the Hindi dock never marked its tab when only `/en` was removed (QA 2026-11-27).
+ * Whether a canonical path is the page being shown, in either language: the locale prefix (`/hi`, internal `/en`) is
+ * stripped first — the Hindi dock never marked its tab when only `/en` was removed (QA 2026-11-27).
  */
 export function isCurrentUstaadTab(pathname: string, path: string): boolean {
   const here = stripLocale(pathname);
@@ -27,13 +30,7 @@ export function isCurrentUstaadTab(pathname: string, path: string): boolean {
   return here === path || here.startsWith(`${path}/`);
 }
 
-/**
- * The network's own navigation (spec 23 § 5): a dock of five tabs under 1024 px (Home · Discover · Create · Learn · Me,
- * Create raised in the middle, like the apps mechanics already use) and a left rail above. One tab bar per screen: the
- * site's dock hides itself inside `/ustaad` (`isPortalPath`). Labels and icons come from the server (no i18n runtime
- * here); the current tab carries `aria-current="page"`; every target is at least 52 px tall.
- */
-/** Rail-only entries under the five tabs (My network, Messages, Saved); on phones they live on Home and the header. */
+/** Rail-only entries under the five tabs (Discover, Learn, My network, Messages, Saved). */
 export interface UstaadRailLink {
   key: string;
   href: string;
@@ -41,6 +38,27 @@ export interface UstaadRailLink {
   icon: ReactNode;
 }
 
+/** Shared class constants (the visual-language pass swaps colours and motion here, in one place). */
+const DOCK =
+  'fixed inset-x-0 bottom-0 z-40 h-[calc(64px+env(safe-area-inset-bottom))] border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] nav:hidden';
+const DOCK_TAB =
+  'relative flex h-16 flex-col items-center justify-center gap-0.5 px-0.5 text-center text-[13px] leading-tight font-bold transition-colors duration-150 focus-visible:outline-3 focus-visible:-outline-offset-3 focus-visible:outline-focus [&:lang(hi)]:text-[14px]';
+const DOCK_CURRENT = 'text-ink';
+const DOCK_IDLE = 'text-muted hover:text-ink';
+/** The 3 px accent bar on the current tab (accent on surface ≥ 3:1). */
+const DOCK_BAR = 'absolute inset-x-3 top-0 h-[3px] rounded-b-full bg-accent';
+const CREATE_DISC =
+  'flex size-10 items-center justify-center rounded-full bg-accent-button text-white shadow-card group-hover:bg-accent-button-hover';
+const RAIL_ITEM =
+  'press flex min-h-12 items-center gap-3 rounded-button px-4 text-[15px] font-bold transition-colors duration-150 focus-visible:outline-3 focus-visible:outline-focus';
+
+/**
+ * The network's navigation (spec 23 § 5; UI upgrade U1, design § 3.0; founder Q-UI-1): a full-width dock of five tabs
+ * under 1024 px — Home · Ask · + Create · Jobs · Me — with a word under every icon (13 px, Hindi 14 px), the current
+ * tab marked by a filled icon, ink text and a 3 px accent bar, and exactly one `aria-current`; a left rail above
+ * 1024 px with the same tabs plus Discover, Learn, My network, Messages and Saved. Labels and icons come from the
+ * server (no i18n runtime here). The dock hides while a text field has focus on phones (globals.css).
+ */
 export function UstaadNav({
   tabs,
   extras = [],
@@ -51,41 +69,31 @@ export function UstaadNav({
   label: string;
 }) {
   const pathname = usePathname();
+  const currentTab = ustaadTabFor(pathname);
   return (
     <>
-      <nav
-        aria-label={label}
-        data-ustaad-dock
-        className="fixed inset-x-2.5 bottom-[calc(10px+env(safe-area-inset-bottom))] z-40 mx-auto max-w-xl rounded-[22px] bg-surface/95 p-1.5 shadow-float backdrop-blur-[16px] nav:hidden"
-      >
-        <ul className="grid grid-cols-5 items-end gap-0.5">
+      <nav aria-label={label} data-ustaad-dock className={DOCK}>
+        <ul className="mx-auto grid h-16 max-w-xl grid-cols-5">
           {tabs.map((tab) => {
-            const current = isCurrentUstaadTab(pathname, tab.path);
-            if (tab.key === 'create')
-              return (
-                <li key={tab.key} className="flex justify-center">
-                  <Link
-                    href={tab.href}
-                    aria-label={tab.ariaLabel ?? tab.label}
-                    aria-current={current ? 'page' : undefined}
-                    data-track="ustaad_tab_create"
-                    className="press -mt-6 flex size-[60px] items-center justify-center rounded-full bg-accent-button text-white shadow-float ring-4 ring-surface hover:bg-accent-button-hover"
-                  >
-                    {tab.icon}
-                  </Link>
-                </li>
-              );
+            const current = currentTab === tab.key;
+            const create = tab.key === 'create';
             return (
               <li key={tab.key}>
                 <Link
                   href={tab.href}
+                  aria-label={create ? (tab.ariaLabel ?? tab.label) : undefined}
                   aria-current={current ? 'page' : undefined}
                   data-track={`ustaad_tab_${tab.key}`}
-                  className={`flex min-h-[54px] flex-col items-center justify-center gap-[3px] rounded-2xl px-0.5 text-center text-[11.5px] leading-tight font-bold transition-colors duration-200 ${
-                    current ? 'bg-accent-soft text-accent-soft-text' : 'text-muted hover:text-ink'
-                  }`}
+                  className={`group ${DOCK_TAB} ${current ? DOCK_CURRENT : DOCK_IDLE}`}
                 >
-                  {tab.icon}
+                  {current ? <span aria-hidden="true" className={DOCK_BAR} /> : null}
+                  {create ? (
+                    <span className={CREATE_DISC}>{tab.icon}</span>
+                  ) : current ? (
+                    tab.iconCurrent
+                  ) : (
+                    tab.icon
+                  )}
                   <span>{tab.label}</span>
                 </Link>
               </li>
@@ -94,9 +102,9 @@ export function UstaadNav({
         </ul>
       </nav>
       <nav aria-label={label} className="hidden nav:block">
-        <ul className="sticky top-24 grid gap-1">
+        <ul className="sticky top-20 grid gap-1">
           {tabs.map((tab) => {
-            const current = isCurrentUstaadTab(pathname, tab.path);
+            const current = currentTab === tab.key;
             const create = tab.key === 'create';
             return (
               <li key={tab.key}>
@@ -104,15 +112,15 @@ export function UstaadNav({
                   href={tab.href}
                   aria-current={current ? 'page' : undefined}
                   data-track={`ustaad_rail_${tab.key}`}
-                  className={`press flex min-h-12 items-center gap-3 rounded-button px-4 text-[15px] font-bold transition-colors duration-200 ${
+                  className={`${RAIL_ITEM} ${
                     create
-                      ? 'mt-2 bg-accent-button text-white hover:bg-accent-button-hover'
+                      ? 'my-2 bg-accent-button text-white hover:bg-accent-button-hover'
                       : current
                         ? 'bg-accent-soft text-accent-soft-text'
                         : 'text-ink hover:bg-pill'
                   }`}
                 >
-                  {tab.icon}
+                  {current && !create ? tab.iconCurrent : tab.icon}
                   <span>{create ? (tab.ariaLabel ?? tab.label) : tab.label}</span>
                 </Link>
               </li>
@@ -120,16 +128,14 @@ export function UstaadNav({
           })}
           {extras.length > 0 ? <li aria-hidden="true" className="my-2 border-t border-line" /> : null}
           {extras.map((x) => {
-            const current = isCurrentUstaadTab(pathname, `/ustaad/${x.key}`);
+            const current = currentTab === null && isCurrentUstaadTab(pathname, `/ustaad/${x.key}`);
             return (
               <li key={x.key}>
                 <Link
                   href={x.href}
                   aria-current={current ? 'page' : undefined}
                   data-track={`ustaad_rail_${x.key}`}
-                  className={`press flex min-h-12 items-center gap-3 rounded-button px-4 text-[15px] font-bold transition-colors duration-200 focus-visible:outline-3 focus-visible:outline-focus ${
-                    current ? 'bg-accent-soft text-accent-soft-text' : 'text-ink hover:bg-pill'
-                  }`}
+                  className={`${RAIL_ITEM} ${current ? 'bg-accent-soft text-accent-soft-text' : 'text-ink hover:bg-pill'}`}
                 >
                   {x.icon}
                   <span>{x.label}</span>

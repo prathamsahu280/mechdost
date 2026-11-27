@@ -3,12 +3,15 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
+import { BRAND_LOGO, BRAND_LOGO_SIZE } from '@/components/site/header';
 import { ButtonLink } from '@/components/ui/button-link';
 import { Container, EmptyState } from '@/components/ui/page-intro';
+import { NeutralFrame } from '@/components/ustaad/common/shape-skeleton';
 import { UstaadIcon } from '@/components/ustaad/shell/icons';
-import { UstaadGate } from '@/components/ustaad/shell/ustaad-gate';
+import { RouteShape, UstaadGate } from '@/components/ustaad/shell/ustaad-gate';
 import { UstaadNav, type UstaadTab } from '@/components/ustaad/shell/ustaad-nav';
 import { UstaadPublicSwitch } from '@/components/ustaad/shell/public-switch';
+import { USTAAD_TABS } from '@/components/ustaad/shell/tabs';
 import type { Locale } from '@/i18n/routing';
 import { localePath } from '@/lib/locale-path';
 import { publishedUstaadAccess } from '@/lib/site-config-content';
@@ -21,36 +24,41 @@ interface Props {
   params: Promise<{ locale: Locale }>;
 }
 
-const TABS = [
-  { key: 'home', path: '/ustaad' },
-  { key: 'discover', path: '/ustaad/discover' },
-  { key: 'create', path: '/ustaad/create' },
-  { key: 'learn', path: '/ustaad/learn' },
-  { key: 'me', path: '/ustaad/me' },
-] as const;
+/** Header buttons: one class constant so the visual-language pass changes them in one place. */
+const HEADER_BTN =
+  'press inline-flex size-12 items-center justify-center rounded-full text-ink hover:bg-pill focus-visible:outline-3 focus-visible:outline-focus';
 
 /**
- * The Ustaad Network shell (spec 23 § 5; plan task A3): its own header, a dock of five tabs under 1024 px and a left
- * rail above, shared by every `/ustaad` page so moving between tabs never feels like a reload. The site's own dock
- * hides itself here (one tab bar per screen). Access (`ustaad.access`): `off` → a real 404; otherwise the client gate
- * shows the network to whom it may (staff during the preview) and the site's "page not found" to everyone else.
+ * The Ustaad Network shell (spec 23 § 5; UI upgrade U1, design § 3.0 / § 7). Inside `/ustaad` the storefront strip,
+ * site header and phone parts search step aside **in the server HTML** (the name-free `data-shell-compact` marker +
+ * `html:has()` in globals.css), and one 56 px network header takes their place; the dock (Home · Ask · + Create · Jobs
+ * · Me, founder Q-UI-1) sits under 1024 px and a rail above. Access (`ustaad.access`): `off` → a real 404; `open` →
+ * header and dock are server-rendered (they hold no member data) and the gate wraps only the content column, showing
+ * the page's shape skeleton until it knows the viewer; `staff_preview` → the gate shows a neutral frame with the final
+ * geometry and no network words until it knows the viewer, then the shell for staff and testers and the site's "page
+ * not found" for everyone else. Either way nothing below moves when the gate answers (CLS < 0.05).
  */
 export default async function UstaadLayout({ children, params }: Props) {
   const { locale } = await params;
   const access = await publishedUstaadAccess();
   if (access === 'off') notFound();
-  const [t, nf] = await Promise.all([
+  const [t, nf, common] = await Promise.all([
     getTranslations({ locale, namespace: 'ustaad.shell' }),
     getTranslations({ locale, namespace: 'pages.notFound' }),
+    getTranslations({ locale, namespace: 'common' }),
   ]);
-  const tabs: UstaadTab[] = TABS.map((tab) => ({
-    key: tab.key,
-    path: tab.path,
-    href: localePath(tab.path, locale),
-    label: t(`tab_${tab.key}`),
-    ...(tab.key === 'create' ? { ariaLabel: t('tab_create_aria') } : {}),
-    icon: <UstaadIcon name={tab.key} size={tab.key === 'create' ? 28 : 22} />,
-  }));
+  const tabs: UstaadTab[] = USTAAD_TABS.map((tab) => {
+    const icon = tab.key === 'ask' ? 'ask' : tab.key;
+    return {
+      key: tab.key,
+      path: tab.path,
+      href: localePath(tab.path, locale),
+      label: t(`tab_${tab.key}`),
+      ...(tab.key === 'create' ? { ariaLabel: t('tab_create_aria') } : {}),
+      icon: <UstaadIcon name={icon} size={tab.key === 'create' ? 24 : 22} />,
+      iconCurrent: <UstaadIcon name={icon} size={22} filled />,
+    };
+  });
 
   const notFoundView = (
     <Container className="py-16">
@@ -90,61 +98,101 @@ export default async function UstaadLayout({ children, params }: Props) {
   const preview = (
     <p
       role="note"
-      className="mx-auto mb-4 w-full max-w-2xl rounded-2xl border border-line-card bg-surface-alt px-4 py-3 text-sm leading-relaxed text-ink"
+      className="mx-auto mt-6 w-full max-w-2xl rounded-2xl border border-line-card bg-surface-alt px-4 py-3 text-sm leading-relaxed text-ink"
     >
       <strong className="font-extrabold">{t('previewTitle')}: </strong>
       {t('previewBody')}
     </p>
   );
 
-  const extras = (['network', 'messages', 'saved'] as const).map((key) => ({
+  const extras = (['discover', 'learn', 'network', 'messages', 'saved'] as const).map((key) => ({
     key,
     href: localePath(`/ustaad/${key}`, locale),
     label: t(key),
     icon: <UstaadIcon name={key === 'messages' ? 'message' : key} size={22} />,
   }));
 
+  /** One compact network header (56 px, sticky): MechDost mark (back to the store), the network's name, Messages, bell. */
+  const header = (
+    <header className="sticky top-0 z-30 h-14 border-b border-line bg-surface/95 backdrop-blur-[14px]">
+      <div className="mx-auto flex h-14 w-full max-w-[1200px] items-center gap-2 px-2 tab:px-4">
+        <Link
+          href={localePath('/', locale)}
+          aria-label={t('home_logo_aria')}
+          data-track="ustaad_shell_home_logo"
+          className="inline-flex min-h-12 shrink-0 items-center rounded-button px-2 focus-visible:outline-3 focus-visible:outline-focus"
+        >
+          <img
+            src={BRAND_LOGO.light}
+            alt={common('brand')}
+            {...BRAND_LOGO_SIZE}
+            decoding="async"
+            className="brand-logo-light h-[22px] w-auto"
+          />
+          <img
+            src={BRAND_LOGO.dark}
+            alt={common('brand')}
+            {...BRAND_LOGO_SIZE}
+            decoding="async"
+            className="brand-logo-dark h-[22px] w-auto"
+          />
+        </Link>
+        <span aria-hidden="true" className="h-6 w-px shrink-0 bg-line" />
+        <p className="min-w-0 flex-1 truncate font-heading text-[17px] leading-normal font-extrabold text-ink">
+          {t('brand')}
+        </p>
+        <Link
+          href={localePath('/ustaad/messages', locale)}
+          aria-label={t('messages')}
+          data-track="ustaad_header_messages"
+          className={HEADER_BTN}
+        >
+          <UstaadIcon name="message" />
+        </Link>
+        <Link
+          href={localePath('/notifications', locale)}
+          aria-label={t('bell')}
+          data-track="ustaad_bell"
+          className={HEADER_BTN}
+        >
+          <UstaadIcon name="bell" />
+        </Link>
+      </div>
+    </header>
+  );
+
+  const shell = (content: ReactNode) => (
+    <>
+      {header}
+      <div className="mx-auto w-full max-w-[1200px] px-4 pt-4 pb-8 tab:px-6 nav:grid nav:grid-cols-[220px_minmax(0,1fr)] nav:gap-10 nav:pt-8 nav:pb-14">
+        {/* One navigation: the dock (fixed, under 1024 px) and the rail (this column, above). */}
+        <div>
+          <UstaadNav tabs={tabs} extras={extras} label={t('navLabel')} />
+        </div>
+        <div className="min-h-[calc(100dvh-56px-64px)] min-w-0">{content}</div>
+      </div>
+    </>
+  );
+  const gate = (placeholder: ReactNode, content: ReactNode) => (
+    <UstaadGate
+      locale={locale}
+      access={access}
+      notFound={notFoundView}
+      signIn={signIn}
+      preview={preview}
+      placeholder={placeholder}
+    >
+      {content}
+    </UstaadGate>
+  );
+
   return (
     <UstaadPublicSwitch open={children} enabled={access === 'open'}>
-      <UstaadGate locale={locale} access={access} notFound={notFoundView} signIn={signIn} preview={preview}>
-        <div className="mx-auto w-full max-w-[1200px] px-4 pt-4 pb-32 tab:px-6 nav:grid nav:grid-cols-[220px_minmax(0,1fr)] nav:gap-10 nav:pt-8 nav:pb-14">
-          {/* One navigation: the dock (fixed, under 1024 px) and the rail (this column, above). */}
-          <div>
-            <p className="mb-5 hidden px-4 nav:block">
-              <span className="block font-heading text-lg font-extrabold text-ink">{t('brand')}</span>
-              <span className="block text-sm text-muted">{t('tagline')}</span>
-            </p>
-            <UstaadNav tabs={tabs} extras={extras} label={t('navLabel')} />
-          </div>
-          <div className="min-w-0">
-            <header className="mb-4 flex items-center justify-between gap-3 nav:hidden">
-              <p>
-                <span className="block font-heading text-lg font-extrabold text-ink">{t('brand')}</span>
-                <span className="block text-[13px] text-muted">{t('tagline')}</span>
-              </p>
-              <span className="flex gap-2">
-                <Link
-                  href={localePath('/ustaad/messages', locale)}
-                  aria-label={t('messages')}
-                  data-track="ustaad_header_messages"
-                  className="press inline-flex size-12 items-center justify-center rounded-full bg-surface text-ink shadow-card focus-visible:outline-3 focus-visible:outline-focus"
-                >
-                  <UstaadIcon name="message" />
-                </Link>
-                <Link
-                  href={localePath('/notifications', locale)}
-                  aria-label={t('bell')}
-                  data-track="ustaad_bell"
-                  className="press inline-flex size-12 items-center justify-center rounded-full bg-surface text-ink shadow-card focus-visible:outline-3 focus-visible:outline-focus"
-                >
-                  <UstaadIcon name="bell" />
-                </Link>
-              </span>
-            </header>
-            {children}
-          </div>
-        </div>
-      </UstaadGate>
+      <div data-ustaad-shell>
+        {/* Name-free marker: storefront chrome steps aside in the server HTML (globals.css), no shift after load. */}
+        <span data-shell-compact hidden />
+        {access === 'open' ? shell(gate(<RouteShape />, children)) : gate(<NeutralFrame />, shell(children))}
+      </div>
     </UstaadPublicSwitch>
   );
 }

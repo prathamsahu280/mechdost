@@ -833,3 +833,95 @@ body:has([data-compare-tray]) main {
 html[data-signing-out] main {
   visibility: hidden;
 }
+
+/*
+ * Ustaad Network shell (UI upgrade U1, design § 3.0 / § 7.7). The network's layout renders a name-free marker
+ * (`[data-shell-compact]`) in the server HTML, so the storefront strip, site header and phone parts search step aside
+ * before first paint (no shift after hydration); the network's own 56 px header is sticky at the top instead.
+ * The dock (64 px) hides while a text field has focus on phones (audit #18 / F-R17), and the scroll padding follows
+ * the network header and the dock so focus is never hidden under either (WCAG 2.2 2.4.11).
+ */
+html:has([data-shell-compact]) [data-site-chrome] {
+  display: none;
+}
+html:has([data-shell-compact]) {
+  scroll-padding-top: 72px;
+  scroll-padding-bottom: calc(96px + env(safe-area-inset-bottom));
+}
+@media (max-width: 1023.98px) {
+  html:has([data-shell-compact]):has(main :is(input, textarea):focus) [data-ustaad-dock] {
+    display: none;
+  }
+}
+@media (min-width: 1024px) {
+  html:has([data-shell-compact]) {
+    scroll-padding-bottom: 2rem;
+  }
+}
+
+/* Hindi member pages: small text gets taller lines (audit: Devanagari line-height 1.25 clipped matras). */
+[data-ustaad-shell]:lang(hi) :is(p, li, a, button, label) {
+  line-height: 1.5;
+}
+
+/* Late skeleton: shape boxes appear only after 300 ms, so a fast load never flashes them (design § 7.3). */
+.skeleton-late {
+  animation: skeleton-late-in 1ms linear 300ms both;
+}
+@keyframes skeleton-late-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Story ring (design § 3.3): unseen = 3 px accent stroke with a 2 px surface gap; seen = 1.5 px line stroke. */
+.story-ring {
+  border-radius: 9999px;
+  box-shadow:
+    0 0 0 2px var(--color-surface),
+    0 0 0 5px var(--color-accent);
+}
+.story-ring[data-seen] {
+  box-shadow:
+    0 0 0 2px var(--color-surface),
+    0 0 0 3.5px var(--color-line);
+}
+
+/* Story progress: one segment per story, filled with a transform (no layout work); a pause keeps its place. Under
+   reduced motion the bar shows steps only (done segments full) and nothing advances by itself. */
+.story-progress-fill {
+  transform-origin: left;
+  transform: scaleX(0);
+}
+.story-progress-fill[data-done] {
+  transform: scaleX(1);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .story-progress-fill[data-running] {
+    animation: story-progress var(--story-ms, 6000ms) linear forwards;
+  }
+  .story-progress-fill[data-running][data-paused] {
+    animation-play-state: paused;
+  }
+  .new-posts-pill {
+    animation: new-posts-in var(--duration-base) var(--ease-out-soft) both;
+  }
+}
+@keyframes story-progress {
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes new-posts-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

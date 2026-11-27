@@ -1,6 +1,9 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
+import { ShapeSkeleton, shapeForPath } from '@/components/ustaad/common/shape-skeleton';
+import { canonicalPath } from '@/lib/locale-path';
 import { ustaadAccessDecision } from '@mechdost/shared/ustaad/access';
 import type { UstaadAccessMode } from '@mechdost/shared/ustaad/codes';
 import { useSession } from '@/demo/session';
@@ -48,6 +51,7 @@ export function UstaadGate({
   notFound,
   signIn,
   preview,
+  placeholder,
   children,
 }: {
   /** From the layout: the gate renders outside the next-intl provider during static prerender. */
@@ -56,6 +60,12 @@ export function UstaadGate({
   notFound: ReactNode;
   signIn: ReactNode;
   preview: ReactNode;
+  /**
+   * What shows until the answer is known (UI upgrade U1, design § 7.1): the neutral frame (final geometry, no network
+   * words) during the staff preview, or the page's shape skeleton inside the server-rendered shell when open. Either
+   * way the swap replaces equal-height boxes, so nothing below moves (CLS).
+   */
+  placeholder: ReactNode;
   children: ReactNode;
 }) {
   const hydrated = useHydrated();
@@ -63,17 +73,22 @@ export function UstaadGate({
   const staff = session?.role === 'admin';
   const probe = hydrated && access === 'staff_preview' && session !== null && !staff;
   const tester = useTesterProbe(probe, session?.id ?? null, locale);
-  if (!hydrated || tester === null)
-    return <div className="skeleton mx-auto mt-10 h-96 w-full max-w-2xl rounded-card" aria-hidden="true" />;
+  if (!hydrated || tester === null) return placeholder;
   const decision = ustaadAccessDecision(access, { signedIn: session !== null, staff, tester });
   if (decision === 'hidden') return notFound;
   if (decision === 'sign_in') return signIn;
   return (
     <>
-      {access === 'staff_preview' && staff ? preview : null}
       {children}
+      {/* After the page, not above it: the staff note never pushes the frame down (CLS, U1). */}
+      {access === 'staff_preview' && staff ? preview : null}
     </>
   );
+}
+
+/** The current page's loading shape (server-rendered with the path, so the first paint already has it). */
+export function RouteShape() {
+  return <ShapeSkeleton variant={shapeForPath(canonicalPath(usePathname()))} />;
 }
 
 /** "Namaste, Ramesh": the signed-in name (user content), or a plain greeting. */
