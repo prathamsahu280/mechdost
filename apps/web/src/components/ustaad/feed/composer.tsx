@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { TagListItem } from '@mechdost/shared/ustaad/dto/feed';
+import { track } from '@/lib/analytics';
 import { localePath } from '@/lib/locale-path';
 import { ustaadClient, type MediaDeclare } from '@/lib/ustaad/client';
 import {
@@ -31,10 +32,17 @@ const SINGLE_PUT_BYTES = 16 * 1024 * 1024;
 type Choice =
   'voice' | 'photo' | 'video' | 'text' | 'poll' | 'link' | 'document' | 'fix_log' | 'tip' | 'before_after';
 
+/** U2 (E14): three big tiles first (Speak, Take photo, Video), the other kinds under "More" — same 10 choices. */
+const BIG_TILES: readonly {
+  choice: Choice;
+  icon: UstaadIconName;
+  label: 'tileVoice' | 'tileCamera' | 'tileVideo';
+}[] = [
+  { choice: 'voice', icon: 'mic', label: 'tileVoice' },
+  { choice: 'photo', icon: 'photo', label: 'tileCamera' },
+  { choice: 'video', icon: 'video', label: 'tileVideo' },
+];
 const KIND_TILES: readonly { choice: Choice; icon: UstaadIconName }[] = [
-  { choice: 'voice', icon: 'mic' },
-  { choice: 'photo', icon: 'photo' },
-  { choice: 'video', icon: 'video' },
   { choice: 'text', icon: 'comment' },
   { choice: 'poll', icon: 'poll' },
   { choice: 'link', icon: 'link' },
@@ -201,7 +209,15 @@ export function Composer({ story }: { story: boolean }) {
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const doneRef = useRef<HTMLDivElement>(null);
-  const ids = { body: useId(), photos: useId(), video: useId(), doc: useId(), link: useId(), err: useId() };
+  const ids = {
+    body: useId(),
+    photos: useId(),
+    camera: useId(),
+    video: useId(),
+    doc: useId(),
+    link: useId(),
+    err: useId(),
+  };
 
   useEffect(() => {
     heading.current?.focus();
@@ -370,7 +386,7 @@ export function Composer({ story }: { story: boolean }) {
     }
   }
 
-  const tile = (c: Choice, icon: UstaadIconName, label: string) => (
+  const tile = (c: Choice, icon: UstaadIconName, label: string, big = false) => (
     <button
       key={c}
       type="button"
@@ -380,9 +396,9 @@ export function Composer({ story }: { story: boolean }) {
         setError(null);
         if (c === 'before_after') setPhotos((xs) => xs.slice(0, 2));
       }}
-      className={`press flex min-h-[84px] flex-col items-center justify-center gap-1.5 rounded-2xl border px-2 text-center text-[14px] font-bold focus-visible:outline-3 focus-visible:outline-focus ${choice === c ? 'border-accent bg-accent-soft text-accent-soft-text' : 'border-line-card bg-surface text-ink hover:border-accent'}`}
+      className={`press flex flex-col items-center justify-center gap-1.5 rounded-2xl border px-2 text-center font-bold focus-visible:outline-3 focus-visible:outline-focus ${big ? 'min-h-24 text-[15px]' : 'min-h-[84px] text-[14px]'} ${choice === c ? 'border-accent bg-accent-soft text-accent-soft-text' : 'border-line-card bg-surface text-ink hover:border-accent'}`}
     >
-      <UstaadIcon name={icon} size={26} />
+      <UstaadIcon name={icon} size={big ? 32 : 26} />
       {label}
     </button>
   );
@@ -463,15 +479,30 @@ export function Composer({ story }: { story: boolean }) {
             <>
               <fieldset className="grid gap-2">
                 <legend className="font-heading text-base font-extrabold text-ink">{t('kindTitle')}</legend>
-                <div className="grid grid-cols-3 gap-2 min-[520px]:grid-cols-4">
-                  {KIND_TILES.map((k) => tile(k.choice, k.icon, t(`kind_${k.choice as 'voice'}`)))}
+                <div className="grid grid-cols-3 gap-2">
+                  {BIG_TILES.map((k) => tile(k.choice, k.icon, t(k.label), true))}
                 </div>
               </fieldset>
               <fieldset className="grid gap-2">
-                <legend className="font-heading text-base font-extrabold text-ink">{t('quickTitle')}</legend>
+                <legend className="font-heading text-base font-extrabold text-ink">{t('workWays')}</legend>
                 <div className="grid grid-cols-3 gap-2">
                   {QUICK.map((k) => tile(k.choice, k.icon, t(`tpl_${k.choice as 'tip'}`)))}
                 </div>
+                <details
+                  className="group"
+                  open={KIND_TILES.some((k) => k.choice === choice)}
+                  onToggle={(e) => {
+                    if (e.currentTarget.open) track('ustaad_composer_more_opened', {});
+                  }}
+                >
+                  <summary className="press inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg text-sm font-bold text-ink focus-visible:outline-3 focus-visible:outline-focus">
+                    <UstaadIcon name="more" size={18} />
+                    {t('moreWays')}
+                  </summary>
+                  <div className="mt-2 grid grid-cols-2 gap-2 motion-safe:transition-opacity motion-safe:duration-150 min-[520px]:grid-cols-4">
+                    {KIND_TILES.map((k) => tile(k.choice, k.icon, t(`kind_${k.choice as 'voice'}`)))}
+                  </div>
+                </details>
                 <Link
                   href={localePath('/ustaad/ask/new', locale)}
                   className="mt-1 inline-flex min-h-11 items-center gap-1.5 rounded-lg text-sm font-bold text-accent-soft-text hover:underline focus-visible:outline-3 focus-visible:outline-focus"
@@ -535,21 +566,45 @@ export function Composer({ story }: { story: boolean }) {
                 </ul>
               ) : null}
               {photos.length < maxPhotos ? (
-                <label htmlFor={ids.photos} className={`${btnQuiet} file-pick cursor-pointer`}>
-                  <UstaadIcon name="photo" />
-                  {t('addPhoto')}
-                  <input
-                    id={ids.photos}
-                    type="file"
-                    accept="image/*"
-                    multiple={maxPhotos > 1}
-                    className="sr-only"
-                    onChange={(e) => {
-                      void addPhotos(e.target.files);
-                      e.target.value = '';
-                    }}
-                  />
-                </label>
+                // U2 (E14): Camera opens the back camera on a phone (`capture`); Gallery picks saved photos.
+                <div className="grid grid-cols-2 gap-2">
+                  <label htmlFor={ids.camera} className={`${btnQuiet} file-pick cursor-pointer`}>
+                    <UstaadIcon name="photo" />
+                    {t('camera')}
+                    <input
+                      id={ids.camera}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="sr-only"
+                      onClick={() => {
+                        track('ustaad_camera_opened', { source: 'camera' });
+                      }}
+                      onChange={(e) => {
+                        void addPhotos(e.target.files);
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                  <label htmlFor={ids.photos} className={`${btnQuiet} file-pick cursor-pointer`}>
+                    <UstaadIcon name="saved" />
+                    {t('gallery')}
+                    <input
+                      id={ids.photos}
+                      type="file"
+                      accept="image/*"
+                      multiple={maxPhotos > 1}
+                      className="sr-only"
+                      onClick={() => {
+                        track('ustaad_camera_opened', { source: 'gallery' });
+                      }}
+                      onChange={(e) => {
+                        void addPhotos(e.target.files);
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                </div>
               ) : null}
             </div>
           ) : null}
