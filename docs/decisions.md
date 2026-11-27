@@ -2813,12 +2813,16 @@ Within the QA fix plan (`docs/qa/ustaad-sim-fix-plan-2026-11-27.md`, Batch A); n
 
 ## 2026-11-27 (night) — Ustaad UI upgrade U2/U3: Pehchaan tag shape, "Useful" reaction rules
 
-- **Pehchaan tag shape (E6, design doc § 1.4):** the level chip is a key tag — flat left edge with a 6 px radius, pill
-  right end, a punched-hole dot on the left — the network's one bold shape. **No new colours:** each level maps to an
-  existing token pair (Chhotu `pill/ink`, Ustaad to verify `warning-bg/warning`, Naya `info-bg/info`, Pakka
-  `success-bg/success`, Bada `accent-soft/accent-soft-text`, Master `navy/white`), kept in one file
-  (`components/ustaad/common/pehchaan-tones.ts`) so the coming visual-language pass swaps them in one place; every
-  pair is in the tokens contrast test (≥ 4.5:1, light and dark). Cost if wrong: one file.
+- **Pehchaan tag as built to the chosen "Bench kit" direction (E6; visual language doc § 3.2–3.5):** key-tag
+  `clip-path` shape (8 px point, 6 px punched hole, 7 px right corners), 1 px edge on every tag, metal finishes
+  (Chhotu outline, to-verify hatched, Naya zinc, Pakka brass, Bada copper = `accent-button`, Master ink) and 0–4 grade
+  lines; the word is always printed. The four approved tokens `zinc`, `brass`, `brass-text`, `surface-raised` are
+  added to `packages/ui/src/tokens.css` (light + both dark blocks) in this batch; level pairs live in one file
+  (`components/ustaad/common/pehchaan-tones.ts`) and are in the tokens contrast test (text on fill 4.5:1, edge on
+  surface 3:1). The on-navy edge uses the existing `hero-copy` token instead of the doc's `#a3b3c7` (no extra
+  colour). Best-answer stamp: radius 6, 2 px border + 1 px outline, −2°, badge-check; the stamp-press motion (M5)
+  and the tag swing (M2) need keyframes in `globals.css` (U1's file) and are left to the polish pass. Useful uses a
+  brass wrench, pressed state brass 20 % + `brass-text`.
 - **"Kaam ki baat / Useful" (founder Q-UI-3):** a second reaction row kind (`useful`) with its own counter. The count
   is always shown (not behind `feed.show_like_counts`), never adds Izzat or level progress (gaming risk), and sends no
   notice (likes already have the daily digest). Ranking (`feed-score.ts`) does **not** use it yet — a later tuning
