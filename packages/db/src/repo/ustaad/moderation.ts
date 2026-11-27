@@ -360,6 +360,11 @@ export async function listUstaadModerationQueue(
     tx,
     page.map(({ r }) => r.id),
   );
+  const tookPart = await reportsActedOnBy(
+    tx,
+    staff.userId,
+    page.map(({ r }) => r.id),
+  );
   return {
     items: page.map(({ r, cityCode }) => ({
       code: r.code,
@@ -378,11 +383,33 @@ export async function listUstaadModerationQueue(
       banWaiting: proposals.get(r.id)?.kind === 'ban_proposed',
       proposedByMe:
         proposals.get(r.id)?.kind === 'ban_proposed' && proposals.get(r.id)?.actorId === staff.userId,
-      decidedByMe: r.decidedBy === staff.userId,
+      decidedByMe: r.decidedBy === staff.userId || tookPart.has(r.id),
     })),
     nextCursor:
       rows.length > 20 && last ? encodeCursor({ rank: last.rank, due: last.r.dueAt, id: last.r.id }) : null,
   };
+}
+
+/** Reports of a queue page on which this staff member took an action, as actor or second approver (SIM-B13). */
+async function reportsActedOnBy(
+  tx: Tx,
+  staffUserId: string,
+  reportIds: readonly string[],
+): Promise<Set<string>> {
+  if (reportIds.length === 0) return new Set();
+  const rows = await tx
+    .selectDistinct({ reportId: ustaadModerationActions.reportId })
+    .from(ustaadModerationActions)
+    .where(
+      and(
+        inArray(ustaadModerationActions.reportId, [...reportIds]),
+        or(
+          eq(ustaadModerationActions.actorId, staffUserId),
+          eq(ustaadModerationActions.secondActorId, staffUserId),
+        ),
+      ),
+    );
+  return new Set(rows.flatMap((r) => (r.reportId ? [r.reportId] : [])));
 }
 
 /** The latest ban proposal / confirmation / withdrawal event per report (four-eyes flags for a queue page). */
@@ -483,7 +510,10 @@ export async function ustaadReportDetail(
       : null,
     banWaiting: pending !== null,
     proposedByMe: pending?.actorId === staff.userId,
-    decidedByMe: r.decidedBy === staff.userId,
+    // SIM-B13: anyone who took part (decider, ban proposer or second approver) is a participant, as the API checks.
+    decidedByMe:
+      r.decidedBy === staff.userId ||
+      actions.some((a) => a.actorId === staff.userId || a.secondActorId === staff.userId),
     actions: actions.map((a) => ({
       action: a.action,
       reasonCode: a.reasonCode,
@@ -579,6 +609,19 @@ async function writeAction(
     },
     reason: input.reasonCode,
   });
+  // Four-eyes (SIM-B16): the second approver gets an audit row of their own, so the audit log and their
+  // My actions prove who confirmed, not only the proposer's row.
+  if (input.secondActorId)
+    await tx.insert(auditLog).values({
+      actorUserId: input.secondActorId,
+      actorRole: 'staff',
+      action: `ustaad.${input.action}_confirmed`,
+      entity: `ustaad_${input.target.type}`,
+      entityId: input.target.id,
+      before: { status: input.target.status },
+      after: { report: input.report?.code ?? null, days: input.days ?? null, proposer: input.actorId },
+      reason: input.reasonCode,
+    });
   const onTime = input.report ? input.now.getTime() <= input.report.dueAt.getTime() : null;
   await recordServerEventFor(tx, input, onTime);
   return a.id;

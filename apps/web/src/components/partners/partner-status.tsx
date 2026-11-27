@@ -62,7 +62,7 @@ function Result({ view, onAgain }: { view: ApplicationStatusView; onAgain: () =>
           label={t(`statusKind_${view.kind}`)}
           steps={steps}
           current={rejected ? 2 : current}
-          currentLabel={t(`stage_${view.stage}`)}
+          currentLabel={t('statusCurrent')}
         />
       </div>
       <button type="button" onClick={onAgain} className={`${quiet} mt-5`}>

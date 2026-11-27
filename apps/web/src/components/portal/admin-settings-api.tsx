@@ -11,7 +11,14 @@ import {
 } from '@mechdost/shared/admin-config-api';
 import { SETTING_KEYS, isGlobalOnly, isSettingKey, type SettingKey } from '@mechdost/shared/settings';
 import { adminApi } from '@/lib/admin-api';
-import { fromInput, isNullable, settingBounds, settingUnit, toInput } from '@/lib/admin-settings-view';
+import {
+  fromInput,
+  isNullable,
+  settingBounds,
+  settingUnit,
+  toInput,
+  UNIT_LABEL_KEY,
+} from '@/lib/admin-settings-view';
 import { categoryOfKey, riskOfChange } from '@/lib/admin-settings-registry';
 import { commonErrorKey, type CommonErrorKey } from '@/lib/api-error-key';
 import { track } from '@/lib/analytics';
@@ -119,17 +126,6 @@ const SETTING_LABEL = {
   'delivery.max_load_three_wheeler_kg': 'api_set_delivery_max_load_three_wheeler_kg',
   'delivery.max_load_goods_vehicle_kg': 'api_set_delivery_max_load_goods_vehicle_kg',
 } as const satisfies Record<SettingKey, string>;
-
-const UNIT_LABEL = {
-  rupees: 'api_set_unit_rupees',
-  minutes: 'api_set_unit_minutes',
-  days: 'api_set_unit_days',
-  units: 'api_set_unit_units',
-  count: 'api_set_unit_count',
-  requests: 'api_set_unit_requests',
-  bp: 'coins_api_unit_bp',
-  coins: 'coins_api_unit_coins',
-} as const;
 
 /** One-line help per setting key (messages in `adminSettings`; explicit literals keep next-intl's key checking). */
 const SETTING_HELP = {
@@ -335,6 +331,12 @@ export function SettingsApi() {
     setDraft(Object.fromEntries(known.map((r) => [r.key, toInput(r.key, scoped(r, city))])));
   }
 
+  function unitWord(unit: ReturnType<typeof settingUnit>): string | undefined {
+    if (unit === 'rupees' || unit === 'switch') return undefined;
+    const key = UNIT_LABEL_KEY[unit];
+    return key === null ? undefined : t(key);
+  }
+
   const items: SettingItem[] = known.map((row) => {
     const key = row.key;
     const unit = settingUnit(key);
@@ -370,7 +372,7 @@ export function SettingsApi() {
       help: a(SETTING_HELP[key]),
       kind: unit === 'switch' ? 'switch' : 'number',
       prefix: unit === 'rupees' ? '₹' : undefined,
-      unit: unit === 'rupees' || unit === 'switch' ? undefined : t(UNIT_LABEL[unit]),
+      unit: unitWord(unit),
       value,
       saved,
       placeholder: isNullable(key) ? t('api_set_none') : undefined,

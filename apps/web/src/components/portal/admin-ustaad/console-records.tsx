@@ -30,24 +30,10 @@ import {
   useErrorText,
   useFormatWhen,
 } from './console-common';
+import { ustaadAuditKind } from '@/lib/ustaad-audit-labels';
 
 type Status = { tone: 'ok' | 'error'; text: string } | null;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const AUDITED = [
-  'keep',
-  'remove',
-  'warn',
-  'restrict',
-  'ban',
-  'ban_proposed',
-  'unban',
-  'unban_proposed',
-  'restore',
-  'takedown',
-  'dm_read',
-  'media_view',
-  'attest_owner_phone_read',
-];
 
 /** Takedowns and legal holds (spec 23 § 13; SR-39): the legal list, the evidence vault counts, the takedown form. */
 export function LegalSection({ caps, headId }: { caps: ConsoleCaps; headId: string }) {
@@ -472,12 +458,9 @@ export function AuditSection({ headId }: { headId: string }) {
       ) : (
         <ul className={`${adminCard} divide-y divide-line !py-1`}>
           {rows.map((r) => {
-            const key = r.action.replace(/^ustaad\./, '');
             return (
               <li key={r.id} className="flex flex-wrap items-baseline justify-between gap-2 py-2 text-sm">
-                <span className="font-bold text-ink">
-                  {c(`audit_${AUDITED.includes(key) ? key : 'other'}`)}
-                </span>
+                <span className="font-bold text-ink">{c(`audit_${ustaadAuditKind(r.action)}`)}</span>
                 <span className="text-muted">
                   {r.reportCode ? `${r.reportCode} · ` : ''}
                   {when(r.at)}

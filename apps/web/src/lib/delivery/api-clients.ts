@@ -19,6 +19,7 @@ import {
   ShopDeliveryModeView,
 } from '@mechdost/shared/delivery/api';
 import { adminApi, type ResponseSchema } from '../admin-api';
+import { foldAttemptsLeft } from './view';
 import type {
   AdminDeliveryClient,
   AgentApplicationView,
@@ -142,8 +143,10 @@ export function apiShopDeliveryClient(locale: string): ShopDeliveryClient {
     sample: false,
     markReady: async (code, version) =>
       ok(await post(`/shop/orders/${enc(code)}/advance`, Empty, { to: 'ready_for_pickup', version })),
-    returnReceived: (code, returnCode) =>
-      post(`/shop/orders/${enc(code)}/return-received`, Empty, { returnCode }),
+    returnReceived: async (code, returnCode) => {
+      const r = await post(`/shop/orders/${enc(code)}/return-received`, Empty, { returnCode });
+      return r.ok ? r : { ok: false, status: r.status, code: foldAttemptsLeft(r.code, r.details) };
+    },
     confirmSwitch: (code, id, version) =>
       post(`/shop/orders/${enc(code)}/delivery-switch/${enc(id)}/confirm`, Empty, { version }),
     declineSwitch: (code, id, reasonCode, note, version) =>

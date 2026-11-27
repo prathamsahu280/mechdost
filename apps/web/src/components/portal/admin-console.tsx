@@ -45,6 +45,8 @@ import {
 } from 'lucide-react';
 import { useState, type ReactNode, type SyntheticEvent } from 'react';
 import { useCenterCurrent } from '@/lib/use-center-current';
+import { sectionsFor } from '@/lib/admin-nav-permissions';
+import { useAdminPermissions } from '@/lib/use-admin-permissions';
 import { useRevealSection } from '@/lib/reveal-section';
 import { findProduct } from '@/demo/catalogue';
 import { restoreCoinsForOrder } from '@/demo/coins';
@@ -337,15 +339,33 @@ export function AdminFrame({ children }: { children: ReactNode }) {
   const section = useAdminSection();
   useRevealSection(section);
   const path = `/admin${section === 'overview' ? '' : `/${section}`}`;
+  const permissions = useAdminPermissions();
+  const allowed = sectionsFor(ADMIN_SECTIONS, permissions);
   return (
     <PortalGuard role="admin" path={path}>
       {() => (
         <div className="grid gap-6 nav:grid-cols-[220px_minmax(0,1fr)] nav:items-start">
-          <AdminNav current={section} />
-          {children}
+          <AdminNav current={section} sections={allowed} />
+          {allowed.includes(section) ? children : <NoSectionAccess />}
         </div>
       )}
     </PortalGuard>
+  );
+}
+
+/** A section outside the person's role says so once, instead of a "try again" that can never work (DC-B1). */
+function NoSectionAccess() {
+  const t = useTranslations('portal');
+  return (
+    <section
+      aria-labelledby="admin-no-access"
+      className="rounded-card border border-line-card bg-surface p-6 shadow-card"
+    >
+      <h1 id="admin-no-access" className="font-heading text-lg font-extrabold text-ink">
+        {t('noAccessTitle')}
+      </h1>
+      <p className="mt-2 text-sm text-muted">{t('noAccessBody')}</p>
+    </section>
   );
 }
 
@@ -370,11 +390,11 @@ function usePrefix() {
  * (nothing inside a section scrolls in a box, and the settings categories do not stick). On phones it is a sideways
  * strip that scrolls away with the page. `data-scroll="sidebar"` marks the one allowed scroller for the UI audit.
  */
-function AdminNav({ current }: { current: AdminSection }) {
+function AdminNav({ current, sections }: { current: AdminSection; sections: readonly AdminSection[] }) {
   const bar = useCenterCurrent<HTMLElement>(current);
   const t = useTranslations('portal');
   const prefix = usePrefix();
-  const groups = groupAdminSections(ADMIN_SECTIONS);
+  const groups = groupAdminSections(sections);
   return (
     <nav
       ref={bar}

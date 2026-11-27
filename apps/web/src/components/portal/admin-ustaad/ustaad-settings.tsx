@@ -22,6 +22,7 @@ import {
   USTAAD_ADMIN_SECTIONS,
   VIDEO_REASONS,
   adminMessage,
+  barStatus,
   changesOf,
   fieldProblems,
   flatKey,
@@ -38,6 +39,7 @@ import {
 } from '@/lib/admin-ustaad-view';
 import { commonErrorKey, type CommonErrorKey } from '@/lib/api-error-key';
 import { track } from '@/lib/analytics';
+import { useLeaveGuard } from '@/lib/use-leave-guard';
 import { ConfirmDialog } from '../admin-settings-workbench';
 import { LoadState } from '../admin-site-api';
 import { StatusBadge, adminCard } from '../admin-ui';
@@ -47,7 +49,7 @@ import { PreviewTestersCard } from './preview-testers';
 import { UstaadSectionTables } from './ustaad-tables';
 
 type Row = UstaadSettingsList['settings'][number];
-type Status = { tone: 'ok' | 'error'; text: string } | null;
+type Status = { tone: 'ok' | 'error'; text: string; fixFirst?: boolean } | null;
 
 const ACCESS_MODES = ['off', 'staff_preview', 'open'] as const;
 
@@ -88,7 +90,7 @@ export function AdminUstaadApi({
     else setOwnSection(s);
   };
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState<Status>(null);
+  const [rawStatus, setStatus] = useState<Status>(null);
   const [serverProblem, setServerProblem] = useState<{ key: string; code: string } | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [pendingFocus, setPendingFocus] = useState<string | null>(null);
@@ -114,14 +116,14 @@ export function AdminUstaadApi({
 
   // "Saved." stays a few seconds, an error until the next edit; then the bar goes away.
   useEffect(() => {
-    if (status?.tone !== 'ok') return;
+    if (rawStatus?.tone !== 'ok') return;
     const timer = window.setTimeout(() => {
       setStatus(null);
     }, 5000);
     return () => {
       window.clearTimeout(timer);
     };
-  }, [status]);
+  }, [rawStatus]);
 
   // `?sec=promo` opens that section (a refresh or a shared link keeps the place).
   // A controlled screen gets its section from the console instead.
@@ -143,6 +145,7 @@ export function AdminUstaadApi({
       }),
     [rows, draft, data, reason, protectedWords],
   );
+  const status = barStatus(rawStatus, Object.keys(problems).length);
   const risky = changes.filter((c) => riskOf(c) !== null);
   const askReason = needsVideoReason(changes);
 
@@ -157,6 +160,8 @@ export function AdminUstaadApi({
       window.removeEventListener('beforeunload', warn);
     };
   }, [changes.length]);
+  // A side-nav or other in-site link is a client-side navigation: ask too (SIM-B14).
+  useLeaveGuard(changes.length > 0, t('leave_unsaved'));
 
   function pick(id: UstaadAdminSection, via: 'list' | 'select') {
     setSection(id);
@@ -197,7 +202,7 @@ export function AdminUstaadApi({
     if (changes.length === 0 || busy) return;
     const first = Object.keys(problems)[0];
     if (first) {
-      setStatus({ tone: 'error', text: t('invalid') });
+      setStatus({ tone: 'error', text: t('invalid'), fixFirst: true });
       const key = first as UstaadSettingKey;
       const where = key === ACCESS_KEY ? null : keysOfSectionOf(key);
       if (where) setSection(where);

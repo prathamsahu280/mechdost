@@ -27,6 +27,7 @@ import {
   useErrorText,
   useFormatWhen,
 } from './console-common';
+import { ustaadAuditKind } from '@/lib/ustaad-audit-labels';
 
 type Status = { tone: 'ok' | 'error'; text: string } | null;
 
@@ -236,10 +237,8 @@ function MemberPanel({ memberId, caps }: { memberId: string; caps: ConsoleCaps }
           <ul className="space-y-1 text-sm">
             {m.history.map((h) => (
               <li key={`${h.action}-${h.at}`}>
-                {c(
-                  `audit_${['keep', 'remove', 'warn', 'restrict', 'ban', 'unban', 'restore', 'takedown'].includes(h.action) ? h.action : 'other'}`,
-                )}{' '}
-                · {c(`target_${h.targetType}`)} · <span className="text-muted">{when(h.at)}</span>
+                {c(`audit_${ustaadAuditKind(h.action)}`)} · {c(`target_${h.targetType}`)} ·{' '}
+                <span className="text-muted">{when(h.at)}</span>
                 {h.reportCode ? <span className="text-xs text-muted"> · {h.reportCode}</span> : null}
               </li>
             ))}

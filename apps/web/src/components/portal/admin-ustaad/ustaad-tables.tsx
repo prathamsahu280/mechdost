@@ -11,6 +11,7 @@ import {
   emptyForm,
   formFromRow,
   formProblems,
+  shownProblems,
   type TableField,
   type TableForm,
   type TableRow,
@@ -74,6 +75,9 @@ function EditableTable({
   const [form, setForm] = useState<TableForm>({});
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null);
+  // SIM-B7: fields the person has left, and whether Save was pressed (errors show only after either).
+  const [touched, setTouched] = useState<ReadonlySet<string>>(new Set());
+  const [submitted, setSubmitted] = useState(false);
   const [merging, setMerging] = useState<{ id: string; into: string } | null>(null);
   // Where the keyboard goes after the next render (the form's first field on open, the heading on close).
   const [pendingFocus, setPendingFocus] = useState<string | null>(null);
@@ -99,10 +103,13 @@ function EditableTable({
   const label = (field: TableField) => t(adminMessage(`f_${field.label ?? field.name}`));
   const fieldById = (name: string) => config.fields.find((f) => f.name === name);
   const problems = editing ? formProblems(config.fields, form) : {};
+  const visibleProblems = shownProblems(problems, touched, submitted);
 
   function open(row: TableRow | null) {
     setMessage(null);
     setMerging(null);
+    setTouched(new Set());
+    setSubmitted(false);
     if (row) {
       setEditing(String(row[config.idField]));
       setForm(formFromRow(config.fields, row));
@@ -146,10 +153,13 @@ function EditableTable({
       return;
     }
     setMessage({ tone: 'error', text: t(adminMessage(tableErrorMessage(res.code, res.details))) });
+    // SIM-B3: a refused save is said next to the Save button (inside the open form), with the keyboard there.
+    if (editing !== null) setPendingFocus(`${baseId}-form-error`);
     if (res.status === 409) await load();
   }
 
   function submit() {
+    setSubmitted(true);
     if (Object.keys(problems).length > 0) {
       setMessage({ tone: 'error', text: t('t_err_invalid') });
       const first = config.fields.find((f) => problems[f.name]);
@@ -227,7 +237,7 @@ function EditableTable({
         ) : null}
       </div>
 
-      {message ? (
+      {message && (editing === null || message.tone === 'ok') ? (
         <p
           role={message.tone === 'error' ? 'alert' : 'status'}
           className={`text-sm font-bold ${message.tone === 'error' ? 'text-error' : 'text-success'}`}
@@ -477,11 +487,17 @@ function EditableTable({
           <div className="grid gap-3 tab:grid-cols-2">
             {config.fields.map((f) => {
               const id = `${baseId}-${f.name}`;
-              const problem = problems[f.name];
+              const problem = visibleProblems[f.name];
               const errId = `${id}-error`;
               const lang = f.name.endsWith('En') ? 'en' : f.name.endsWith('Hi') ? 'hi' : undefined;
               return (
-                <div key={f.name} className={f.kind === 'text' && f.max > 120 ? 'tab:col-span-2' : ''}>
+                <div
+                  key={f.name}
+                  className={f.kind === 'text' && f.max > 120 ? 'tab:col-span-2' : ''}
+                  onBlur={() => {
+                    if (!touched.has(f.name)) setTouched(new Set([...touched, f.name]));
+                  }}
+                >
                   {f.kind === 'bool' ? (
                     <label className="flex min-h-11 items-center gap-3 text-sm font-bold text-ink">
                       <input
@@ -556,6 +572,16 @@ function EditableTable({
               );
             })}
           </div>
+          {message?.tone === 'error' ? (
+            <p
+              id={`${baseId}-form-error`}
+              role="alert"
+              tabIndex={-1}
+              className="text-sm font-bold text-error"
+            >
+              {message.text}
+            </p>
+          ) : null}
           <div className="flex flex-wrap gap-2">
             <button type="submit" disabled={busy} className={portalPrimary}>
               {busy ? t('t_saving') : t('t_save')}

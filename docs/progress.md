@@ -54,6 +54,23 @@ This file is the single source of truth for **where the build is right now**. It
   not fixed (video `aria-describedby` to its summary, fieldset/legend + captions counter on the video form, lang on
   summaries in the video note, `aria-valuetext` on the progress bar, "Record again" restarts nothing — same as remove).
 
+## 2026-11-27 night — QA backlog: Ustaad admin console + delivery/COD fixes (builder, branch `worktree-agent-adc1a9a8bdadad3ab`, NOT merged)
+
+- Test-first, one commit per item or pair (backlog Status flipped in `docs/qa/qa-backlog-2026-11-27.md`): DC-B2 units
+  per setting (percent, tenths, hours, kg; counts no word); DC-P13 return-code tries left + "Ready for pickup" /
+  "Returned to you" shop labels; DC-P1 status timeline "Current step"; SIM-B5 + DC-B1 admin nav filtered by the
+  `/v1/me` permissions (`lib/admin-nav-permissions.ts`, mirror of the API guards) + a plain no-access panel;
+  SIM-B16 + SIM-B13 four-eyes: second approver gets its own `audit_log` row (`ustaad.<action>_confirmed`), proposer and
+  approver count as participants (`decidedByMe`); SIM-B6 + SIM-B15 Ustaad audit codes in words in My actions and
+  Admin → Audit log, Ustaad entities in the entity filter; SIM-B7 + SIM-B3 table forms (errors after blur/Save, refused
+  save next to Save with focus); SIM-B2 + SIM-B14 settings bar alert clears when fixed, in-site links ask before
+  dropping edits (`lib/use-leave-guard.ts`); DC-B6 COD queue masks phones for every role (spec 13 "lists").
+- Gates per item (lead's 2026-11-27 night instruction): the touched test file green, tsc web/db 0, eslint changed files
+  0, prettier. Full package vitest runs, e2e and build NOT run (lead runs them). No migration.
+- **Not done (still open):** SIM-B4, B9, B10, B11, B12, G14, LEAD-5, LEAD-7; DC-P2, P3, P6, P7, P12, P14, P15, P16, P17,
+  P18 (needs a ruling on spec 24 "never the shop"), P19, B4, B8, B10, B12, B13, B14, F2, F4, G1, job-photo per-open
+  audit. The members card "Lift the ban" form still shows for a participant (only report detail/queue fixed, SIM-B13).
+
 ## 2026-11-27 evening — delivery go-live blockers fixed (builder, branch `worktree-agent-adc124fa15469db75`, NOT merged)
 
 - Seven commits, test first (spec 24 § 17): DC-P11 job photos carry the job id; DC-B11 sweep audited + warns on

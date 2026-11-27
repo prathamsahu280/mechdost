@@ -50,7 +50,7 @@ const newUser = async () =>
   (
     await db
       .insert(s.users)
-      .values({ firebaseUid: `fb-cod-${String(++n)}` })
+      .values({ firebaseUid: `fb-cod-${String(++n)}`, phone: `+9198000${String(n).padStart(5, '0')}` })
       .returning()
   )[0]!.id;
 const key = () => `cod-key-${String(++n).padStart(10, '0')}`;
@@ -316,6 +316,9 @@ describe('requests and decisions', () => {
       limit: 50,
     });
     expect(shown.items.some((i) => i.id === r.id)).toBe(true);
+    // DC-B6 (spec 13): the queue is a staff list, so phones stay masked even for a role that may read PII.
+    const pii = await listCodRequests(t(), { scope: ALL, status: 'pending', limit: 50, canReadPii: true });
+    for (const i of pii.items) expect(i.customerPhone ?? '').not.toMatch(/\d{6}/);
   });
 
   it('staff cannot decide their own request', async () => {

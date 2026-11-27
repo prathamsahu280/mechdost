@@ -120,6 +120,9 @@ all cities): moderation and verification. Permissions:
 Four-eyes (spec 13 pattern): a **strike above `mod.four_eyes_from`** (default: any ban ≥ 7 days), a **level
 demotion**, and every **appeal** need a second staff member (decider ≠ original actor; 403 `FOUR_EYES`). Staff never
 moderate their own content (403 `SELF_MODERATION`).
+The second approver gets an `audit_log` row of their own (`ustaad.<action>_confirmed`, e.g. `ustaad.ban_confirmed`),
+so Admin → Audit log and their My actions show who confirmed; the console treats the proposer, the approver and the
+decider all as participants (`decidedByMe`) and does not offer them the appeal form (QA 2026-11-27, SIM-B13/B16).
 
 **`community_manager` limits (SR-38):** city scoped (a city-A manager gets 404 on city-B queues and members), staff 2FA
 always (spec 01 two-step), **no `customers:read_pii`, no `exports:run`**, phone numbers masked everywhere. Message
