@@ -2879,3 +2879,17 @@ Implements the founder's night entry above; no founder decision changed.
   founder/legal review.
 - **Discover search (SIM-P22):** a consonant-skeleton name key shared by TypeScript and SQL `translate()`; no index
   yet (city-filtered scan; Meilisearch later).
+
+## 2026-11-27 (night) — Ustaad UI upgrade U1: builder's rulings (design § 8.1)
+
+- **Dock** follows founder Q-UI-1 (Home · Ask · + Create · Jobs · Me); the current tab is computed once by
+  `ustaadTabFor` (Ask also owns `/ustaad/q/*`; Discover, Learn and Messages have no dock tab — the rail and the Home
+  "More" sheet reach them). Analytics `ustaad_tab_opened.tab` gains `ask`, `jobs` (old values kept for history).
+- **Chrome hiding by CSS marker**, not by a client path check: the storefront strip, header and phone search carry
+  `data-site-chrome`; the Ustaad layout's hidden marker hides them before first paint. Footer stays (the full-height
+  content column keeps it out of the first viewport).
+- **Staff preview note moves below the page** (it used to sit above and pushed the frame down after hydration).
+- **"New posts" `since` = when the list was loaded**, not the newest item's time: the ranked snapshot is built at
+  load, so anything newer than that moment is genuinely new to the member; own posts never count.
+- **Story tap zones leave the tab order**; the visible word buttons (Previous, Pause/Play, Next, Close) are the
+  keyboard and screen-reader path.

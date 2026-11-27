@@ -6959,7 +6959,13 @@
       "messages": "Messages",
       "network": "My network",
       "saved": "Saved",
-      "rulesLink": "Read the network rules"
+      "rulesLink": "Read the network rules",
+      "home_logo_aria": "MechDost home",
+      "tab_ask": "Ask",
+      "tab_jobs": "Jobs",
+      "discover": "Discover",
+      "learn": "Learn",
+      "unread": "{count} new"
     },
     "home": {
       "title": "Ustaad Network home",
@@ -6991,7 +6997,16 @@
       "feedEmptyBody": "Be the first: show a job you fixed today.",
       "feedEmptyCta": "Show your work",
       "pinTitle": "Pin your garage",
-      "pinBody": "Others see only your area, never the exact spot, unless you choose."
+      "pinBody": "Others see only your area, never the exact spot, unless you choose.",
+      "heroAction": "Ask by voice",
+      "more": "More",
+      "moreTitle": "More in the network",
+      "moreClose": "Close",
+      "sc_discover": "Discover",
+      "waitingTitle": "Waiting for your answer",
+      "answerNow": "Answer",
+      "newPosts": "See new posts",
+      "newPostsSr": "New posts are here"
     },
     "notifications": {
       "title": "Network notifications",
@@ -9121,6 +9136,14 @@
       "retry": "Try again",
       "cancel": "Cancel",
       "appealSending": "Sending…"
+    },
+    "story": {
+      "new": "new",
+      "prev": "Previous",
+      "next": "Next",
+      "pause": "Pause",
+      "play": "Play",
+      "close": "Close"
     }
   },
   "savings": {

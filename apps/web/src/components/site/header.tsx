@@ -62,7 +62,7 @@ export function AnnouncementBar({ region }: { region: string }) {
   const locale = useLocale();
   return (
     // A labelled landmark, so every piece of page content sits in one (axe `region`).
-    <aside aria-label={t('label')} className="bg-navy px-[5%] py-2.5 text-center text-white">
+    <aside aria-label={t('label')} data-site-chrome className="bg-navy px-[5%] py-2.5 text-center text-white">
       <p className="eyebrow flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[8px] tracking-[1px] tab:text-[10px] tab:tracking-[1.8px]">
         <span className="font-extrabold">{t('brand')}</span>
         <span className="inline-flex items-center gap-1.5">
@@ -199,7 +199,10 @@ export function Header({
   const searchIcon = <Search aria-hidden="true" size={18} strokeWidth={1.9} />;
   return (
     <>
-      <header className="sticky top-0 z-30 h-[66px] px-2.5 pt-2.5 tab:px-5 nav:h-[78px] nav:pt-3.5">
+      <header
+        data-site-chrome
+        className="sticky top-0 z-30 h-[66px] px-2.5 pt-2.5 tab:px-5 nav:h-[78px] nav:pt-3.5"
+      >
         <div className="header-bar relative mx-auto flex h-14 max-w-[1320px] items-center gap-2 rounded-[18px] bg-surface/80 pr-1.5 pl-3 shadow-float backdrop-blur-[14px] backdrop-saturate-150 nav:h-16 nav:gap-3.5 nav:rounded-[20px] nav:pr-2.5 nav:pl-4">
           <BrandMark />
           <NavLinks label={t('label')} items={navItems} />

@@ -41,7 +41,24 @@ export type UstaadIconName =
   | 'poll'
   | 'hash'
   | 'copy'
-  | 'users';
+  | 'users'
+  | 'ask'
+  | 'before'
+  | 'after'
+  | 'fixlog'
+  | 'tip'
+  | 'camera'
+  | 'gallery'
+  | 'speed'
+  | 'stopSquare'
+  | 'cancel'
+  | 'helpful'
+  | 'bestStamp'
+  | 'shield'
+  | 'progress'
+  | 'prev'
+  | 'next'
+  | 'tag';
 
 const PATHS: Record<UstaadIconName, ReactNode> = {
   heart: (
@@ -189,6 +206,83 @@ const PATHS: Record<UstaadIconName, ReactNode> = {
     <>
       <path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z" />
       <path d="M10 20.5a2 2 0 0 0 4 0" />
+    </>
+  ),
+  // U1 (2026-11-27 UI upgrade § 8.0): shared names for U1–U4; drawn on the same 24 px grid.
+  ask: (
+    <>
+      <path d="M4 6.5A1.5 1.5 0 0 1 5.5 5h13A1.5 1.5 0 0 1 20 6.5v9a1.5 1.5 0 0 1-1.5 1.5H9l-5 3.5z" />
+      <path d="M10 9.3a2 2 0 1 1 2.6 1.9c-.4.2-.6.5-.6 1v.3M12 14.2v.1" />
+    </>
+  ),
+  before: (
+    <>
+      <rect x="3.5" y="5" width="17" height="14" rx="2" />
+      <path d="M12 5v14M7 10.5l1.5 1.5L7 13.5" />
+    </>
+  ),
+  after: (
+    <>
+      <rect x="3.5" y="5" width="17" height="14" rx="2" />
+      <path d="M12 5v14M15 12.5l1.5 1.5 2.5-3" />
+    </>
+  ),
+  fixlog: <path d="M6 4.5h12v15H6zM9 9h6M9 12.5h6M9 16h4" />,
+  tip: (
+    <>
+      <path d="M9 17.5h6M10 20.5h4" />
+      <path d="M12 3.5a5.5 5.5 0 0 0-3.2 10c.5.4.7 1 .7 1.6v.4h5v-.4c0-.6.2-1.2.7-1.6A5.5 5.5 0 0 0 12 3.5z" />
+    </>
+  ),
+  camera: (
+    <>
+      <path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2.3l1.5-2h5.4l1.5 2h2.3A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z" />
+      <circle cx="12" cy="13" r="3.3" />
+    </>
+  ),
+  gallery: (
+    <>
+      <rect x="3.5" y="5.5" width="13" height="13" rx="1.5" />
+      <path d="M19.5 8.5v11a1 1 0 0 1-1 1h-11M3.5 15.5l3.5-3.5 3 3 2-2 4.5 4.5" />
+    </>
+  ),
+  speed: (
+    <>
+      <path d="M4.5 17a8 8 0 1 1 15 0" />
+      <path d="m12 14 3.5-4" />
+    </>
+  ),
+  stopSquare: <rect x="6.5" y="6.5" width="11" height="11" rx="1.5" />,
+  cancel: (
+    <>
+      <circle cx="12" cy="12" r="8" />
+      <path d="m9 9 6 6M15 9l-6 6" />
+    </>
+  ),
+  helpful: (
+    <>
+      <path d="M7.5 10.5v9h-3v-9zM7.5 10.5 11 4.5c1.2 0 2 .9 2 2v3h5a1.5 1.5 0 0 1 1.5 1.8l-1.3 6.5a1.5 1.5 0 0 1-1.5 1.2H7.5" />
+    </>
+  ),
+  bestStamp: (
+    <>
+      <circle cx="12" cy="10" r="5.5" />
+      <path d="m9.5 10 1.8 1.8 3.2-3.3M8.5 14.5l-1.5 6 5-2.5 5 2.5-1.5-6" />
+    </>
+  ),
+  shield: (
+    <>
+      <path d="M12 3.5 5 6v5.5c0 4.2 3 7.6 7 9 4-1.4 7-4.8 7-9V6z" />
+      <path d="m9 12 2.2 2.2L15.5 10" />
+    </>
+  ),
+  progress: <path d="M4.5 12h15M4.5 12h8" />,
+  prev: <path d="M6 5.5v13M18 5.5 9 12l9 6.5z" />,
+  next: <path d="M18 5.5v13M6 5.5l9 6.5-9 6.5z" />,
+  tag: (
+    <>
+      <path d="M4 4.5h7.5l8.5 8.5-7 7-8.5-8.5z" />
+      <circle cx="8.5" cy="9" r="1.3" />
     </>
   ),
 };

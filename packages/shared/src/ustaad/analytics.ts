@@ -321,5 +321,18 @@ export const USTAAD_CLIENT_EVENT_SCHEMAS = {
     })
     .strict(),
   /** Shell navigation (A): which bottom tab was opened. */
-  ustaad_tab_opened: z.object({ tab: z.enum(['home', 'discover', 'create', 'learn', 'me']) }).strict(),
+  ustaad_tab_opened: z
+    .object({ tab: z.enum(['home', 'ask', 'create', 'jobs', 'me', 'discover', 'learn']) })
+    .strict(),
+  /** UI upgrade U1 (design § 3.0, § 3.1, § 3.3): MechDost mark in the network header (back to the store). */
+  ustaad_shell_home_logo: z.object({}).strict(),
+  /** "See new posts" pill shown (once per check that found posts) and tapped. */
+  ustaad_feed_new_pill_shown: z.object({}).strict(),
+  ustaad_feed_new_pill_tapped: z.object({}).strict(),
+  /** Home "More" sheet opened (the shortcuts beyond the first four). */
+  ustaad_home_more_opened: z.object({}).strict(),
+  /** A card in "Waiting for your answer" opened; position is 0-based. */
+  ustaad_home_question_tapped: z.object({ position: z.number().int().min(0).max(50) }).strict(),
+  /** Story viewer paused (button, or press and hold). */
+  ustaad_story_paused: z.object({}).strict(),
 } as const;

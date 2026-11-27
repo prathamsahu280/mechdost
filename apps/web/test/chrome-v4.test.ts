@@ -142,7 +142,9 @@ describe('header, nav and dock structure', () => {
   });
 
   it('keeps the sticky header landmark the UI state audit targets, with a fixed outer height', () => {
-    expect(header).toMatch(/<header className="sticky top-0 z-30 h-\[66px\][^"]*nav:h-\[78px\]/);
+    expect(header).toMatch(
+      /<header\s+(?:data-site-chrome\s+)?className="sticky top-0 z-30 h-\[66px\][^"]*nav:h-\[78px\]/,
+    );
   });
 
   it('marks the current page (aria-current, the white chip with the tread) in the nav and the dock', () => {

@@ -686,3 +686,11 @@ L-QB-1 · 2026-11-27 · ustaad/privacy · A client-side gate can never answer a 
 L-QB-2 · 2026-11-27 · ustaad/seed · Seeding curated content (tags, word lists) in a migration breaks every test that inserts the same slugs (PGlite applies all migrations) → admin-owned starter content ships as an add-only seed command with ON CONFLICT DO NOTHING, run by the lead on prod.
 L-QB-3 · 2026-11-27 · search/i18n · Cross-script name search without a stored romanised column: one fold map used by both TS (query) and SQL `translate()` (columns) keeps the two sides identical; test both directions (Latin→Devanagari and back).
 L-QB-4 · 2026-11-27 · tooling · The brief named `docs/qa/qa-backlog-2026-11-27.md`, which exists only uncommitted in the main checkout (not in the worktree) → record item status in the committed fix plan and hand the backlog update to the lead.
+
+- L-U1a · 2026-11-27 · worktree/tooling · A builder worktree was created from an older commit than the design doc it
+  had to build (main had moved) and had no node_modules → `git merge --ff-only main` first, then
+  `pnpm install --frozen-lockfile --offline` (3.5 min) before any test; compound shell commands (heredocs that write
+  files, `cd` + `cat >>`) are refused by the worktree guard → write files with Write/Edit or a script in the scratchpad.
+- L-U1b · 2026-11-27 · ui/cls · A client gate that renders one fixed-height skeleton and then the whole shell shifts
+  everything below (CLS 0.8). → The placeholder must have the shell's final geometry (header, full-height column,
+  dock area), and any note shown only to some viewers goes **after** the page, never above it.

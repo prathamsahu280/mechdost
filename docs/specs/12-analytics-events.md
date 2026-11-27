@@ -290,6 +290,13 @@ the smart-correction events from the composer and comments. Controls carry `data
 stories, comments, follows, connections, blocks, mutes and reports are counted server-side (spec 23 § 16). Never
 text, names, phones, tokens or locations; the teaser path is redacted to `/ustaad/s/:token` (`redactPath`).
 
+**2026-11-27 (UI upgrade U1, spec 23 § 21i-U1):** `ustaad_shell_home_logo {}` (MechDost mark in the network header),
+`ustaad_feed_new_pill_shown {}` (once per check that found posts), `ustaad_feed_new_pill_tapped {}`,
+`ustaad_home_more_opened {}`, `ustaad_home_question_tapped { position }` (catalogued for the questions strip, not sent
+yet), `ustaad_story_paused {}`; `ustaad_tab_opened.tab` now also takes `ask` and `jobs` (dock Home · Ask · Create ·
+Jobs · Me). New `data-track` names: `ustaad_tab_{ask,jobs}`, `ustaad_rail_{discover,learn}`, `ustaad_shortcut_discover`,
+`ustaad_feed_new_pill`.
+
 ## Ustaad messages, My network and Discover screens (2026-11-26, spec 23 § 21g)
 
 No new event names. Discover sends the catalogue's client events `ustaad_discover_searched { results }` (once per

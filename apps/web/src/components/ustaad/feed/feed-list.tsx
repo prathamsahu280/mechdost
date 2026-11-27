@@ -9,6 +9,7 @@ import { PROMOTION_HIDE_REASONS } from '@mechdost/shared/ustaad/codes';
 import { track } from '@/lib/analytics';
 import { localePath } from '@/lib/locale-path';
 import { feedExpired } from '@/lib/ustaad/feed-format';
+import { FRESH_POLL_MS, recallScroll, rememberScroll, shouldPollFresh } from '@/lib/ustaad/home-feed';
 import type { ApiResult } from '@/lib/orders-api';
 import type { SocialClient } from '@/lib/ustaad/social-client';
 import { btnPrimary, btnQuiet, card, LoadFailed, LoadingBlock, SampleNote } from '../common';
@@ -270,13 +271,132 @@ export function HomeFeed({ tab }: { tab: FeedTab }) {
         </Link>
       </div>
     );
+  const fresh = useFreshPosts(tab);
+  useTabScrollMemory(tab);
+  const list = useRef<HTMLDivElement>(null);
   return (
-    <PostList
-      listKey={`feed-${tab}`}
-      load={(c, cursor) => c.feed(tab, cursor)}
-      empty={empty}
-      promo={tab === 'for_you'}
-      first
-    />
+    <>
+      <NewPostsPill
+        count={fresh.count}
+        onShow={() => {
+          fresh.show();
+          // The pill unmounts: focus goes to the reloading list, never to the page body (WCAG 2.4.3).
+          list.current?.focus({ preventScroll: true });
+        }}
+      />
+      <div ref={list} tabIndex={-1} className="outline-none">
+        <PostList
+          key={fresh.generation}
+          listKey={`feed-${tab}-${String(fresh.generation)}`}
+          load={(c, cursor) => c.feed(tab, cursor)}
+          empty={empty}
+          promo={tab === 'for_you'}
+          first
+        />
+      </div>
+    </>
   );
+}
+
+/**
+ * "See new posts" (UI upgrade U1, design § 3.1; closes SIM-F4 "an open Home never refreshes"): every 90 s while the
+ * page is visible and data saver is off, ask how many feed posts arrived since this list was loaded. A tap scrolls to
+ * the top and loads page 1 again (a new snapshot). The pill floats (fixed), so nothing in the page moves.
+ */
+function useFreshPosts(tab: FeedTab) {
+  const client = useSocialAction();
+  const [count, setCount] = useState(0);
+  const [generation, setGeneration] = useState(0);
+  const since = useRef(new Date().toISOString());
+  useEffect(() => {
+    since.current = new Date().toISOString();
+    setCount(0);
+    const saveData =
+      (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
+    let live = true;
+    const check = async () => {
+      if (!shouldPollFresh({ hidden: document.hidden, saveData })) return;
+      const r = await (await client()).fresh(tab, since.current);
+      if (live && r.ok) setCount(r.data.count);
+    };
+    const id = window.setInterval(() => void check().catch(() => undefined), FRESH_POLL_MS);
+    return () => {
+      live = false;
+      window.clearInterval(id);
+    };
+  }, [tab, generation, client]);
+  const show = () => {
+    track('ustaad_feed_new_pill_tapped', {});
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+    setGeneration((g) => g + 1);
+  };
+  return { count, generation, show };
+}
+
+function NewPostsPill({ count, onShow }: { count: number; onShow: () => void }) {
+  const t = useTranslations('ustaad.home');
+  const shown = useRef(false);
+  useEffect(() => {
+    if (count > 0 && !shown.current) {
+      shown.current = true;
+      track('ustaad_feed_new_pill_shown', {});
+    }
+    if (count === 0) shown.current = false;
+  }, [count]);
+  return (
+    <>
+      {/* Mounted empty first, so the announcement is heard when the text arrives (learning L-B2). */}
+      <p role="status" className="sr-only">
+        {count > 0 ? t('newPostsSr') : ''}
+      </p>
+      {count > 0 ? (
+        <div className="pointer-events-none fixed inset-x-0 top-[68px] z-30 flex justify-center">
+          <button type="button" onClick={onShow} data-track="ustaad_feed_new_pill" className={NEW_POSTS_PILL}>
+            <UstaadIcon name="chevronLeft" size={18} />
+            {t('newPosts')}
+          </button>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+/** One class constant for the pill (the visual-language pass restyles it here). Arrow icon rotated to point up. */
+const NEW_POSTS_PILL =
+  'new-posts-pill press pointer-events-auto inline-flex min-h-11 items-center gap-1.5 rounded-pill bg-navy px-4 text-[14px] font-bold text-white shadow-float focus-visible:outline-3 focus-visible:outline-focus [&>svg]:rotate-90';
+
+/** Each feed tab keeps its scroll position for the session (no reload feel when switching tabs). */
+function useTabScrollMemory(tab: FeedTab) {
+  const previous = useRef<FeedTab | null>(null);
+  useEffect(() => {
+    const store = safeSession();
+    if (!store) return;
+    // Only a switch between the two tabs restores a place; a fresh visit to Home starts at the top.
+    const switched = previous.current !== null && previous.current !== tab;
+    previous.current = tab;
+    const y = switched ? recallScroll(store, tab) : 0;
+    let frame = 0;
+    if (y > 0) {
+      // Wait (≤ 3 s) until the list is tall enough, so the target is not clamped to a short loading page.
+      const until = performance.now() + 3_000;
+      const tryRestore = () => {
+        if (document.documentElement.scrollHeight >= y + window.innerHeight) window.scrollTo({ top: y });
+        else if (performance.now() < until) frame = requestAnimationFrame(tryRestore);
+      };
+      frame = requestAnimationFrame(tryRestore);
+    }
+    return () => {
+      cancelAnimationFrame(frame);
+      rememberScroll(store, tab, window.scrollY);
+    };
+  }, [tab]);
+}
+
+function safeSession(): Storage | null {
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
 }

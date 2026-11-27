@@ -24,7 +24,6 @@ export function StoryRow() {
   const [open, setOpen] = useState<number | null>(null);
   const opener = useRef<HTMLButtonElement | null>(null);
   const rings = loaded.state === 'ok' ? loaded.data : [];
-  const hasMine = rings.some((r) => r.mine);
   const ringBtn =
     'press flex w-[76px] flex-col items-center gap-1.5 rounded-2xl text-center text-[13px] font-bold text-ink focus-visible:outline-3 focus-visible:outline-focus';
 
@@ -39,8 +38,9 @@ export function StoryRow() {
 
   return (
     <>
-      <ul className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none]">
-        {!hasMine ? (
+      {/* Fixed row height (U1, CLS): rings, names and the "new" dot fit in 120 px; "Add story" stays inside the row. */}
+      <ul className="flex h-[120px] gap-3 overflow-x-auto overflow-y-hidden pt-1 [scrollbar-width:none]">
+        {loaded.state !== 'loading' ? (
           <li>
             <Link
               href={localePath('/ustaad/create?story=1', locale)}
@@ -71,16 +71,24 @@ export function StoryRow() {
                 }}
                 className={ringBtn}
               >
+                {/* U1 ring (design § 3.3): unseen = accent stroke + surface gap, seen = thin line stroke. */}
                 <span
-                  className={`flex size-[68px] items-center justify-center rounded-full p-[3px] ${r.allSeen ? 'bg-line-card' : 'bg-accent'}`}
+                  className="story-ring mt-[5px] flex size-[60px] items-center justify-center"
+                  data-seen={r.allSeen ? '' : undefined}
                 >
-                  <span className="flex size-full items-center justify-center rounded-full bg-surface p-[2px]">
-                    <Avatar name={who} id={r.author.id} size={56} />
-                  </span>
+                  <Avatar name={who} id={r.author.id} size={60} />
                 </span>
-                <span data-user-content={r.mine ? undefined : true} className="line-clamp-1 w-full">
+                <span
+                  data-user-content={r.mine ? undefined : true}
+                  className="mt-1 w-full truncate py-0.5 leading-normal"
+                >
                   {r.mine ? t('yourStory') : who.split(' ')[0]}
                 </span>
+                {/* State is never colour alone: a dot under unseen names and "new" in the accessible name. */}
+                <span
+                  aria-hidden="true"
+                  className={`size-1.5 rounded-full ${r.allSeen ? 'bg-transparent' : 'bg-accent'}`}
+                />
                 <span className="sr-only">
                   {`, ${r.mine ? '' : `${who}, `}${r.allSeen ? t('storySeenMark') : t('storyNewMark')}`}
                 </span>
@@ -92,15 +100,6 @@ export function StoryRow() {
           <li className="flex items-center text-sm text-muted">{t('storiesEmpty')}</li>
         ) : null}
       </ul>
-      {hasMine ? (
-        <Link
-          href={localePath('/ustaad/create?story=1', locale)}
-          className="mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-lg text-sm font-bold text-accent-soft-text hover:underline focus-visible:outline-3 focus-visible:outline-focus"
-        >
-          <UstaadIcon name="plus" size={18} />
-          {t('addStory')}
-        </Link>
-      ) : null}
       {open !== null ? (
         <StoryViewer
           rings={rings}

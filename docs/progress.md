@@ -2,6 +2,19 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-27 night — Ustaad UI upgrade U1 (builder, branch `worktree-agent-af3e09158b62176e9`, NOT merged)
+
+- Built: shell (compact chrome by CSS marker, 56 px network header, dock Home·Ask·Create·Jobs·Me, neutral frame +
+  shape skeletons), `GET /v1/ustaad/feed/fresh` + "See new posts" pill (SIM-F4), per-tab scroll memory, calmer Home
+  (stories first, compact hero, 4 tiles + More), story rings + viewer word buttons. Spec 23 § 21i-U1 lists what is not
+  done (questions strip, back arrow, header counts, story auto-advance on media end, coach-mark rule, live acceptance
+  runs). Lead: merge after U2's stub commit per design § 8.0; run Lighthouse/measure-js/axe/hindi-coverage live.
+- Gates (2026-11-28 ~00:05): api `ustaad-feed-api.test.ts` 11/11 (RED seen: fresh → 404 before the route); web
+  vitest 5 files 81/81; shared `i18n.test.ts` 5/5; eslint api+db+web changed files exit 0; web tsc exit 2 only on the
+  known worktree `next-env.d.ts` image-module errors in `home/hero.tsx` (not U1 code). Not run: shared/api/db tsc,
+  e2e (`ustaad-d` story Close/Pause assertions updated; `ustaad-dm:267` "Discover" link relies on the 1440 rail),
+  measure-js, Lighthouse, axe, hindi-coverage.
+
 ## 2026-11-27 night — skills self-improvement step (docs only, uncommitted for the lead)
 
 - Promoted every lesson seen twice from the 2026-11-26/27 learnings: advisor `checklist.md` (UI focus-on-swap,

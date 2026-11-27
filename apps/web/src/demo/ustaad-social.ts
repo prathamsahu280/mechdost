@@ -494,6 +494,8 @@ export function demoSocialClient(): SocialClient {
       );
       return ok({ items: list, nextCursor: null });
     },
+    // The sample feed never changes on its own: no "new posts" pill in the demo.
+    fresh: () => ok({ count: 0 }),
     post: (id) => {
       const p = findPost(id);
       return p ? ok(p) : fail(404, 'NOT_FOUND');

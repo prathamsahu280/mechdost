@@ -135,6 +135,7 @@ beforeAll(async () => {
 const ROUTES: [string, string, unknown?][] = [
   ['GET', '/ustaad/feed'],
   ['GET', '/ustaad/feed?tab=following'],
+  ['GET', '/ustaad/feed/fresh?since=2026-11-27T00:00:00.000Z'],
   ['POST', '/ustaad/posts', { nonsense: true }],
   ['GET', `/ustaad/posts/${randomUUID()}`],
   ['DELETE', `/ustaad/posts/${randomUUID()}`],
@@ -232,6 +233,35 @@ describe('posts, feed, reactions, comments', () => {
     expect((detail.body.tags as { slug: string }[])[0]?.slug).toBe('battery');
     const savedList = await call(suresh, 'GET', '/ustaad/saved');
     expect((savedList.body.items as { id: string }[]).map((x) => x.id)).toEqual([id]);
+  });
+
+  it('fresh: counts newer visible posts by others since a time (capped at 10; U1, SIM-F4)', async () => {
+    const since = new Date(Date.now() - 1000).toISOString();
+    const none = await call(suresh, 'GET', `/ustaad/feed/fresh?since=${encodeURIComponent(since)}`);
+    expect(none.status, none.text).toBe(200);
+    expect(none.body).toEqual({ count: 0 });
+    for (let i = 0; i < 2; i += 1) {
+      const r = await call(ramesh, 'POST', '/ustaad/posts', {
+        kind: 'text',
+        body: `Naya ${String(i)}`,
+        idemKey: k(),
+      });
+      expect(r.status, r.text).toBe(201);
+    }
+    const two = await call(suresh, 'GET', `/ustaad/feed/fresh?since=${encodeURIComponent(since)}`);
+    expect(two.body).toEqual({ count: 2 });
+    // My own posts never announce themselves to me.
+    const own = await call(ramesh, 'GET', `/ustaad/feed/fresh?since=${encodeURIComponent(since)}`);
+    expect(own.body).toEqual({ count: 0 });
+    // Following: Suresh follows nobody yet.
+    const following = await call(
+      suresh,
+      'GET',
+      `/ustaad/feed/fresh?tab=following&since=${encodeURIComponent(since)}`,
+    );
+    expect(following.body).toEqual({ count: 0 });
+    expect((await call(suresh, 'GET', '/ustaad/feed/fresh?since=yesterday')).status).toBe(400);
+    expect((await call(suresh, 'GET', '/ustaad/feed/fresh')).status).toBe(400);
   });
 
   it('Following shows only followed authors', async () => {

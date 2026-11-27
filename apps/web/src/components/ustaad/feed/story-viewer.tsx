@@ -7,6 +7,7 @@ import type { StoryRing } from '@mechdost/shared/ustaad/dto/feed';
 import { track } from '@/lib/analytics';
 import { localePath } from '@/lib/locale-path';
 import { nextStory, type StoryPos } from '@/lib/ustaad/feed-format';
+import { STORY_PHOTO_MS, storyAdvance } from '@/lib/ustaad/story-advance';
 import { useTimeAgo } from '../common';
 import { VoiceNote } from '../media/voice-note';
 import { UstaadIcon } from '../shell/icons';
@@ -14,7 +15,11 @@ import { VideoTile } from './post-media';
 import { SignedImage, useMemberName, useSocialAction } from './social-common';
 
 /** A photo story stays this long before the next one (paused while held, or with the Pause button). */
-const PHOTO_MS = 6000;
+const PHOTO_MS = STORY_PHOTO_MS;
+
+/** Visible control buttons (U1, design § 3.3): word + icon, 48 px; one constant for the visual-language pass. */
+const STORY_BTN =
+  'press inline-flex min-h-12 items-center justify-center gap-1.5 rounded-pill bg-white/15 px-3 text-[14px] font-bold text-white focus-visible:outline-3 focus-visible:outline-white';
 
 /**
  * Full-screen story viewer (spec 23 § 4 flow 6): tap the right side for the next story, the left for the previous,
@@ -34,14 +39,16 @@ export function StoryViewer({
   onSeen: (ring: number, story: number) => void;
 }) {
   const t = useTranslations('ustaad.feed');
+  const st = useTranslations('ustaad.story');
   const locale = useLocale();
   const timeAgo = useTimeAgo();
   const name = useMemberName();
   const client = useSocialAction();
   const dialog = useRef<HTMLDialogElement>(null);
   const [pos, setPos] = useState<StoryPos>({ ring: start, story: 0 });
-  // Reduced motion: stories wait for Next instead of moving on by themselves.
-  const [paused, setPaused] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  // Reduced motion: stories wait for Next instead of moving on by themselves (WCAG 2.2.2).
+  const [reduced] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const [paused, setPaused] = useState(false);
   const [held, setHeld] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const touchY = useRef<number | null>(null);
@@ -49,7 +56,12 @@ export function StoryViewer({
   const ring = rings[pos.ring];
   const story = ring?.stories[pos.story];
   const kind = story?.media[0]?.kind ?? 'image';
-  const timed = kind === 'image';
+  const timed =
+    storyAdvance(kind === 'image' ? 'photo' : kind === 'audio' ? 'voice' : 'video', reduced) === 'timer';
+  const togglePause = () => {
+    if (!paused) track('ustaad_story_paused', {});
+    setPaused((p) => !p);
+  };
 
   useEffect(() => {
     const d = dialog.current;
@@ -125,15 +137,13 @@ export function StoryViewer({
         <div className="flex gap-1 px-3 pt-3" aria-hidden="true">
           {ring.stories.map((s, i) => (
             <span key={s.id} className="h-1 flex-1 overflow-hidden rounded-full bg-white/30">
+              {/* transform only (no layout work per tick); reduced motion shows whole steps. */}
               <span
-                className="block h-full bg-white"
+                className="block h-full origin-left bg-white"
                 style={{
-                  width:
-                    i < pos.story
-                      ? '100%'
-                      : i > pos.story
-                        ? '0%'
-                        : `${String(timed ? Math.min(100, (elapsed / PHOTO_MS) * 100) : 100)}%`,
+                  transform: `scaleX(${String(
+                    i < pos.story ? 1 : i > pos.story ? 0 : timed ? Math.min(1, elapsed / PHOTO_MS) : 1,
+                  )})`,
                 }}
               />
             </span>
@@ -149,26 +159,9 @@ export function StoryViewer({
               {t('storyCount', { n: pos.story + 1, total: ring.stories.length })}
             </p>
           </div>
-          {timed ? (
-            <button
-              type="button"
-              onClick={() => {
-                setPaused((p) => !p);
-              }}
-              aria-pressed={paused}
-              aria-label={t('storyPause')}
-              className="press inline-flex size-12 items-center justify-center rounded-full bg-white/15 focus-visible:outline-3 focus-visible:outline-white"
-            >
-              <UstaadIcon name={paused ? 'play' : 'pause'} />
-            </button>
-          ) : null}
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t('storyClose')}
-            className="press inline-flex size-12 items-center justify-center rounded-full bg-white/15 focus-visible:outline-3 focus-visible:outline-white"
-          >
-            <UstaadIcon name="close" />
+          <button type="button" onClick={onClose} className={STORY_BTN}>
+            <UstaadIcon name="close" size={20} />
+            {st('close')}
           </button>
         </header>
 
@@ -214,25 +207,71 @@ export function StoryViewer({
             onClick={() => {
               step(-1);
             }}
-            aria-label={t('storyPrev')}
-            className="absolute inset-y-0 left-0 w-1/3 focus-visible:outline-3 focus-visible:-outline-offset-4 focus-visible:outline-white"
+            aria-hidden="true"
+            tabIndex={-1}
+            className="absolute inset-y-0 left-0 w-1/3"
           />
           <button
             type="button"
             onClick={() => {
               step(1);
             }}
-            aria-label={t('storyNext')}
-            className="absolute inset-y-0 right-0 w-1/3 focus-visible:outline-3 focus-visible:-outline-offset-4 focus-visible:outline-white"
+            aria-hidden="true"
+            tabIndex={-1}
+            className="absolute inset-y-0 right-0 w-1/3"
           />
         </div>
 
-        <footer className="grid gap-2 px-4 pt-2 pb-[calc(16px+env(safe-area-inset-bottom))]">
+        {/* The timer waits while a control or the caption has keyboard focus (WCAG 2.2.1). */}
+        <footer
+          onFocus={(e) => {
+            // Keyboard focus only: a tap on Play or Next must not freeze the timer.
+            if (e.target.matches(':focus-visible')) setHeld(true);
+          }}
+          onBlur={() => {
+            setHeld(false);
+          }}
+          className="grid gap-2 bg-navy/90 px-4 pt-2 pb-[calc(16px+env(safe-area-inset-bottom))]"
+        >
           {story.body ? (
             <p data-user-content className="text-[16px] leading-relaxed">
               {story.body}
             </p>
           ) : null}
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                step(-1);
+              }}
+              aria-label={t('storyPrev')}
+              className={STORY_BTN}
+            >
+              <UstaadIcon name="prev" size={20} />
+              {st('prev')}
+            </button>
+            {/* Always mounted (focus never drops when a voice/video story comes next); the label says the action. */}
+            <button
+              type="button"
+              onClick={timed ? togglePause : undefined}
+              aria-disabled={timed ? undefined : true}
+              className={`${STORY_BTN} aria-disabled:opacity-50`}
+            >
+              <UstaadIcon name={paused ? 'play' : 'pause'} size={20} />
+              {paused ? st('play') : st('pause')}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                step(1);
+              }}
+              aria-label={t('storyNext')}
+              className={STORY_BTN}
+            >
+              {st('next')}
+              <UstaadIcon name="next" size={20} />
+            </button>
+          </div>
           {ring.mine && story.seenBy !== null ? (
             <p className="text-sm font-bold text-white/85">{t('seenBy', { count: story.seenBy })}</p>
           ) : null}
