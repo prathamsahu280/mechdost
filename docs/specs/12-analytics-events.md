@@ -275,7 +275,9 @@ applicants list of their job (rows on the first page). Moves on an application s
 ## Ustaad feed and social screens (2026-11-26, spec 23 § 21g)
 
 No new event names: the feed web screens send the catalogue's client events `ustaad_feed_viewed { tab }` (once per tab
-shown), `ustaad_post_liked {}` and `ustaad_post_saved {}` (only when turned on), `ustaad_post_shared { channel }`
+shown), `ustaad_post_liked {}` and `ustaad_post_saved {}` (only when turned on), `ustaad_item_save_toggled { kind,
+saved }` (the shared Save control for posts, questions, answers, jobs and lessons, 2026-11-28; no ids),
+`ustaad_post_shared { channel }`
 (`whatsapp`; Copy link sends no event), `ustaad_story_viewed {}` (once per story seen, not one's own),
 `ustaad_video_played { secondsBand }` (feed and story videos, on tap), `ustaad_voice_played {}`, `ustaad_tag_opened {}`,
 `ustaad_promo_impression { promo, slot }`, `ustaad_promo_click { promo }` and `ustaad_promo_hidden { reason }`, plus

@@ -2779,3 +2779,17 @@ Within the QA fix plan (`docs/qa/ustaad-sim-fix-plan-2026-11-27.md`, Batch A); n
 - New audit action `delivery_job.offer_expired` (actor `system`) on each worker expiry; the worker logs
   `delivery_offers_not_expired` (warn) when due offers neither expired nor failed. DC-B11 (production cause still to
   be confirmed on the server).
+
+## 2026-11-28 — Mechanic Network: Saved for every kind + collections (builder; spec 23 § 21i)
+
+- Saving extends to questions, answers, jobs and Learn lessons (`ustaad_saved_items`); posts keep `ustaad_saves` so
+  counters, ranking and the existing routes do not change. Targets are polymorphic (kind + id, no FK); every read joins
+  the live row and drops removed, out-of-reach or blocked items.
+- Members get private named collections (Instagram/Facebook pattern, research in
+  `docs/superpowers/specs/2026-11-28-mechanic-network-saved-design.md`): max 20, names unique ignoring case, an item
+  may sit in several, unsave removes it from all of them, deleting a collection keeps the saves. Limit and suggested
+  names are code constants until the founder decides (Q234).
+- One shared `SaveControl` for every kind (aria-pressed + the visible word), new client event
+  `ustaad_item_save_toggled {kind, saved}`, new rate limit `ustaad_saves` 200/day.
+- Migration `0190_ustaad_saved_collections` (high number on purpose, journal `when` 1795900000000; the lead renumbers
+  at merge).
