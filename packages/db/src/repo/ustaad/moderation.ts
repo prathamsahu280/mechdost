@@ -748,7 +748,7 @@ export async function ustaadMediaObjectKeys(tx: Tx, mediaId: string): Promise<st
 async function notifyAuthor(
   tx: Tx,
   t: UstaadTarget,
-  kind: 'ustaad.content_removed' | 'ustaad.strike' | 'ustaad.report_outcome',
+  kind: 'ustaad.content_removed' | 'ustaad.strike' | 'ustaad.appeal_upheld' | 'ustaad.appeal_overturned',
   entityId: string,
   params: Record<string, string> = {},
 ): Promise<void> {
@@ -1225,7 +1225,14 @@ export async function decideUstaadAppeal(
       actorRole: 'staff',
       cityId: r.cityId,
     });
-    await notifyAuthor(tx, t, 'ustaad.report_outcome', r.id, { reportCode: r.code });
+    // SIM-P26: the appellant hears the outcome of their appeal (the reporter template was sent here before).
+    await notifyAuthor(
+      tx,
+      t,
+      body.outcome === 'overturned' ? 'ustaad.appeal_overturned' : 'ustaad.appeal_upheld',
+      r.id,
+      { reportCode: r.code },
+    );
     return { code: next.code, status: next.status, media };
   });
 }

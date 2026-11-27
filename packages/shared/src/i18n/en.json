@@ -4608,6 +4608,14 @@
     "staff_delivery_agent_unavailable": {
       "title": "Agent stopped mid-delivery",
       "body": "The agent carrying order {orderCode} is no longer active. Take over the delivery."
+    },
+    "ustaad_appeal_upheld": {
+      "title": "Your appeal was decided",
+      "body": "We checked your appeal on {reportCode} again. The decision stays. Open it to see why."
+    },
+    "ustaad_appeal_overturned": {
+      "title": "Your appeal was accepted",
+      "body": "We checked your appeal on {reportCode} again and took the decision back. What was removed is back."
     }
   },
   "adminNotices": {

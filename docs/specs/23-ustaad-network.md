@@ -806,6 +806,7 @@ interface SmartCorrectionEngine {
 | `ustaad.job_application`                                                                                          | employer                       | bell/push                                             | seen                       |
 | `ustaad.application_status`                                                                                       | applicant                      | bell/push; WhatsApp UTILITY                           | —                          |
 | `ustaad.report_outcome`                                                                                           | reporter                       | bell                                                  | —                          |
+| `ustaad.appeal_upheld` / `ustaad.appeal_overturned` (SIM-P26)                                                     | appellant                      | bell                                                  | —                          |
 | `ustaad.content_removed` / `ustaad.strike` / `ustaad.rules_reminder`                                              | author/member                  | bell + email (reason in Hindi/English, appeal route)  | —                          |
 | `ustaad.invite` (old mechanic applications, § 4a)                                                                 | applicant with an account      | bell; WhatsApp/SMS when templates are live            | joined                     |
 | `ustaad.security_freeze` (SR-2)                                                                                   | member (old channels too)      | bell/push + email                                     | —                          |
@@ -1981,6 +1982,11 @@ Each fix has a regression test named after the QA id.
   call therefore answers `suggest` and the composer keeps the member's words. "Fix by itself" applies only when the
   admin default is `auto` or the member chose it (G17: the member control is in "My choices", see SIM-P10 below).
   Test: `ustaad-correct-route.test.ts` "SIM-P20 …".
+- **SIM-P26 — the appellant hears the appeal's outcome.** `decideUstaadAppeal` sent the reporter's
+  `ustaad.report_outcome` ("Your report was checked – thank you") to the appellant. New kinds `ustaad.appeal_upheld`
+  ("The decision stays") and `ustaad.appeal_overturned` ("We took the decision back"), en + hi in `notify.*`,
+  placeholder `reportCode`, tones info / success (§ 12 table). Tests: `ustaad-moderation.test.ts` "appeal: …" and
+  "SIM-P26 …".
 - **SIM-P17 — the server decides the employer.** `PostJobDto.employer` is optional and the web form no longer sends
   one (it hard-coded `trade`, so a workshop owner got 403). `ustaadJobEmployerOptions(userId, memberWorkshopId)`
   lists what the user may post as: every workshop they hold a grant on (the member's own linked workshop first),

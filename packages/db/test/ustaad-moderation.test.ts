@@ -489,6 +489,45 @@ describe('decisions', () => {
     expect(
       await readableUstaadMedia(t(), { mediaId: p.mediaId ?? '', viewerMemberId: viewer.memberId }),
     ).not.toBeNull();
+    // SIM-P26: the appellant hears the appeal's outcome, never the reporter's "your report was checked".
+    const kinds = await db
+      .select({ kind: s.notifications.kind, title: s.notifications.title })
+      .from(s.notifications)
+      .where(eq(s.notifications.userId, author.userId));
+    expect(kinds.map((k) => k.kind)).toContain('ustaad.appeal_overturned');
+    expect(kinds.map((k) => k.kind)).not.toContain('ustaad.report_outcome');
+  });
+
+  it('SIM-P26: an upheld appeal tells the appellant it was upheld (en + hi texts exist)', async () => {
+    const p = await post(author);
+    const r = await createUstaadReport(t(), viewer, {
+      targetType: 'post',
+      targetId: p.id,
+      reasonCode: 'spam',
+    });
+    await actOnUstaadReport(t(), cmA, r.code, { action: 'remove', reasonCode: 'spam', version: 1 });
+    const [ticket] = await db
+      .insert(s.supportTickets)
+      .values({
+        code: 'REQ-RPR-2026-7K3Q9Y',
+        userId: author.userId,
+        kind: 'other',
+        slaAckDue: new Date(Date.now() + 86_400_000),
+        slaResolveDue: new Date(Date.now() + 7 * 86_400_000),
+      })
+      .returning();
+    let d = await ustaadReportDetail(t(), cmA, r.code);
+    await openUstaadAppeal(t(), cmA2, r.code, { ticketCode: ticket?.code ?? '', version: d.version });
+    d = await ustaadReportDetail(t(), cmA, r.code);
+    await decideUstaadAppeal(t(), cmA2, r.code, { outcome: 'upheld', version: d.version });
+    const rows = await db
+      .select({ kind: s.notifications.kind, body: s.notifications.body })
+      .from(s.notifications)
+      .where(
+        and(eq(s.notifications.userId, author.userId), eq(s.notifications.kind, 'ustaad.appeal_upheld')),
+      );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.body).not.toMatch(/thank you/i);
   });
 
   it('repeated dismissed minor reports earn a false_report strike', async () => {

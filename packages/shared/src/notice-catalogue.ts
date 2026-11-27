@@ -510,6 +510,21 @@ export const NOTICE_CATALOGUE = {
     text: ['reportCode'],
     link: at('/ustaad/notifications'),
   }),
+  /** SIM-P26: the appeal's outcome goes to the appellant (never the reporter's report_outcome text). */
+  'ustaad.appeal_upheld': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: ['reportCode'],
+    link: at('/ustaad/me'),
+  }),
+  'ustaad.appeal_overturned': def({
+    category: T,
+    entity: 'ustaad',
+    audience: 'member',
+    text: ['reportCode'],
+    link: at('/ustaad/me'),
+  }),
   'ustaad.content_removed': def({
     category: T,
     entity: 'ustaad',
