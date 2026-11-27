@@ -290,3 +290,10 @@ export type CommentView = z.infer<typeof CommentViewDto>;
 
 export const TagListItemDto = TagViewDto.extend({ followed: z.boolean() });
 export type TagListItem = z.infer<typeof TagListItemDto>;
+
+/** `GET /ustaad/feed/fresh`: "new posts" since the newest item the member has (UI upgrade U1, design § 3.1). */
+export const FeedFreshQueryDto = z
+  .object({ tab: z.enum(FEED_TABS).default('for_you'), since: z.iso.datetime({ offset: true }) })
+  .strict();
+export const FeedFreshDto = z.object({ count: z.number().int().min(0).max(10) });
+export type FeedFresh = z.infer<typeof FeedFreshDto>;

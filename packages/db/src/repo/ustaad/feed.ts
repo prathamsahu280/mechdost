@@ -8,7 +8,7 @@
  * Both leave out stories, held posts, muted and blocked authors and authors who are not shown (left, banned,
  * restricted). No trending tab, no promotions here (workstream D part 2).
  */
-import { and, desc, eq, lt, or, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, lt, ne, or, sql } from 'drizzle-orm';
 import type { FeedPage } from '@mechdost/shared/ustaad/dto/feed';
 import { FEED_SNAPSHOT_MAX, rankFeed } from '@mechdost/shared/ustaad/feed-score';
 import { ustaadPostCounters, ustaadPosts } from '../../schema';
@@ -127,4 +127,46 @@ export async function listUstaadFollowingFeed(
     ),
     nextCursor: rows.length > page.limit && last ? encodeCursor({ k: last.k, id: last.id }) : null,
   };
+}
+
+/** The most a "new posts" check reports: the pill only needs "some". */
+export const FEED_FRESH_MAX = 10;
+
+/**
+ * "New posts" for the Home pill (UI upgrade U1, design § 3.1; closes SIM-F4): how many feed candidates for this tab
+ * arrived after `since` (the newest item the member already has), capped at {@link FEED_FRESH_MAX}. Same candidate
+ * rules as the tabs above (visible, not a story, not blocked or muted, author shown; For you = mine-city, followed or
+ * matching tag; Following = followed authors), never my own posts. A bounded `limit` read on the
+ * `(city_id, status, created_at)` index; no ranking, no snapshot.
+ */
+export async function countUstaadFreshFeed(
+  db: Tx,
+  actor: UstaadActor,
+  q: { tab: 'for_you' | 'following'; since: Date },
+): Promise<number> {
+  const me = await feedMember(db, actor.memberId);
+  const p = ustaadPosts;
+  const followed = sql<boolean>`exists (select 1 from ustaad_follows fo
+      where fo.follower_id = ${me.id} and fo.followee_id = ${p.authorId})`;
+  const tagMatch = sql<boolean>`(exists (select 1 from ustaad_post_tags pt
+        join ustaad_tag_follows tf on tf.tag_id = pt.tag_id and tf.member_id = ${me.id}
+        where pt.post_id = ${p.id})
+      or exists (select 1 from ustaad_member_specialities sp
+        where sp.member_id = ${me.id} and sp.code = ${p.segmentCode}))`;
+  const rows = await db
+    .select({ id: p.id })
+    .from(p)
+    .where(
+      and(
+        eq(p.status, 'visible'),
+        sql`${p.kind} <> 'story'`,
+        gt(p.createdAt, q.since),
+        ne(p.authorId, me.id),
+        postVisibleTo(me.id),
+        notMuted(me.id),
+        q.tab === 'following' ? followed : or(eq(p.cityId, me.cityId), followed, tagMatch),
+      ),
+    )
+    .limit(FEED_FRESH_MAX);
+  return rows.length;
 }

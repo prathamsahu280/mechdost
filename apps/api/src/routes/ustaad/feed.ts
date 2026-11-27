@@ -10,6 +10,7 @@ import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
 import {
   commentOnUstaadPost,
+  countUstaadFreshFeed,
   createUstaadPost,
   createUstaadStory,
   deleteUstaadComment,
@@ -43,6 +44,8 @@ import {
   CommentViewDto,
   CreatePostDto,
   CreateStoryDto,
+  FeedFreshDto,
+  FeedFreshQueryDto,
   FeedPageDto,
   FeedQueryDto,
   PageQueryDto,
@@ -89,6 +92,16 @@ const feed = createRoute({
   security: sec,
   request: { query: FeedQueryDto },
   responses: { 200: json(FeedPageDto, 'Feed page'), ...errorResponses },
+});
+const fresh = createRoute({
+  method: 'get',
+  path: '/ustaad/feed/fresh',
+  tags: ['ustaad'],
+  summary:
+    'New posts since a time for the Home "See new posts" pill (count, capped at 10; same candidate rules)',
+  security: sec,
+  request: { query: FeedFreshQueryDto },
+  responses: { 200: json(FeedFreshDto, 'How many new posts'), ...errorResponses },
 });
 const createPost = createRoute({
   method: 'post',
@@ -314,6 +327,7 @@ export function ustaadFeedRoutes(deps: AppDeps) {
     rateLimit(deps.rateLimiter, rule, userKey);
   for (const path of [
     '/ustaad/feed',
+    '/ustaad/feed/fresh',
     '/ustaad/posts',
     '/ustaad/posts/*',
     '/ustaad/comments/*',
@@ -331,6 +345,7 @@ export function ustaadFeedRoutes(deps: AppDeps) {
     'GET',
     [
       '/ustaad/feed',
+      '/ustaad/feed/fresh',
       '/ustaad/posts/*',
       '/ustaad/saved',
       '/ustaad/stories',
@@ -385,6 +400,11 @@ export function ustaadFeedRoutes(deps: AppDeps) {
           ? await listUstaadFollowingFeed(deps.db, actor(c), q)
           : await forYouPage(deps.db, snapshots, actor(c), q);
       return c.json(page, 200);
+    })
+    .openapi(fresh, async (c) => {
+      const q = c.req.valid('query');
+      const count = await countUstaadFreshFeed(deps.db, actor(c), { tab: q.tab, since: new Date(q.since) });
+      return c.json({ count }, 200);
     })
     .openapi(createPost, async (c) => {
       const p = await createUstaadPost(deps.db, actor(c), c.req.valid('json')).catch(asRateLimited);

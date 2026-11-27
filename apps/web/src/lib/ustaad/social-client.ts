@@ -54,6 +54,8 @@ export interface SocialClient {
   /** True for the browser demo: screens show the "sample data" note. */
   readonly sample: boolean;
   feed(tab: FeedTab, cursor: string | null): Promise<ApiResult<FeedPage>>;
+  /** "See new posts" (U1): how many feed candidates arrived after `since` (ISO), capped at 10. */
+  fresh(tab: FeedTab, since: string): Promise<ApiResult<{ count: number }>>;
   post(id: string): Promise<ApiResult<PostView>>;
   createPost(input: PostInput): Promise<ApiResult<{ id: string; status: string }>>;
   deletePost(id: string): Promise<ApiResult<{ status: string }>>;
