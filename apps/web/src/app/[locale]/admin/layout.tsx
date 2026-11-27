@@ -19,6 +19,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         <ClientMessages
           namespaces={[
             'portal',
+            // Admin → Workshops analytics renders the partner kit (bullet bars, updated line; 2026-11-28).
+            'partnerKit',
             'roadside',
             // Admin → Delivery (spec 24) and the delivery timeline on order details.
             'deliveryAdmin',
