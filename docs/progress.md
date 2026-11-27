@@ -2,6 +2,24 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-28 — Mechanic Network voice-note player controls (builder, branch `worktree-agent-ac8603ad33b5accc6`, NOT merged)
+
+- Founder 2026-11-28: "make the audio player better too like adding click to go ahead in the audio time". After the
+  first tap the voice note shows a 30-bar CSS waveform that is a keyboard slider (tap/drag seek with the time shown
+  while dragging, ←/→ ±5 s, Home/End, value text "0:12 of 0:42" en/hi), elapsed / total, back/forward 10 s (48 px),
+  a speed chip 1× → 1.5× → 2× remembered in `localStorage` (try/catch, read after the tap). Events
+  `ustaad_voice_seeked { via, seconds }` and `ustaad_voice_speed_changed { rate }` (spec 12; named in the
+  `ustaad_voice_*` family instead of the brief's `voice_note_*`). Spec 23 § 10b "Player controls".
+- A11y review (aria-specialist via accessibility-lead) fixes applied: slider value announced on seeks and every 10 s
+  (not every timeupdate), unplayed bars `muted` for 3:1, speed/skip results in the one status region, focus to the
+  play button if the controls unmount on failure, slider described by the "Voice note from …" label.
+- Gates: `apps/web/test/ustaad-voice-seek.test.ts` + `ustaad-voice-ui.test.ts` 25/25 (RED 14/14 first), eslint 0 on
+  changed files, prettier, web tsc. No build/e2e/browser (lead's brief). **Follow-ups:** real-browser check of drag on
+  touch and of WebM notes whose duration is Infinity until played through (controls appear only once a duration is
+  known; comments/stories pass no `durationMs`); state-audit rows for the player not added; pre-existing failure in
+  `packages/shared/test/i18n.test.ts` (`portal.api_set_unit_kg` has no Devanagari; not from this branch);
+  PageUp/PageDown steps optional.
+
 ## 2026-11-27 night — skills self-improvement step (docs only, uncommitted for the lead)
 
 - Promoted every lesson seen twice from the 2026-11-26/27 learnings: advisor `checklist.md` (UI focus-on-swap,
