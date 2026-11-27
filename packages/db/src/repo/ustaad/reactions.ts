@@ -134,6 +134,87 @@ export async function unlikeUstaadPost(
   });
 }
 
+async function usefulCount(tx: Tx, postId: string): Promise<number> {
+  const [c] = await tx
+    .select({ useful: ustaadPostCounters.useful })
+    .from(ustaadPostCounters)
+    .where(eq(ustaadPostCounters.postId, postId))
+    .limit(1);
+  return c?.useful ?? 0;
+}
+
+/**
+ * "Kaam ki baat / Useful" (founder Q-UI-3, 2026-11-27): a second reaction beside Like, same row shape
+ * (`ustaad_reactions.kind = 'useful'`) and the same once-only counter rule. The count is always shown (it is a
+ * quality signal, not popularity), it never touches Izzat or levels and it sends no notice (no extra noise).
+ */
+export async function markUstaadPostUseful(
+  db: Tx,
+  actor: UstaadActor,
+  postId: string,
+): Promise<{ useful: true; usefulCount: number }> {
+  return db.transaction(async (tx) => {
+    const me = await feedWriter(tx, actor.memberId);
+    const post = await visibleUstaadPost(tx, me.id, postId, { live: true });
+    const inserted = await tx
+      .insert(ustaadReactions)
+      .values({ postId: post.id, memberId: me.id, kind: 'useful' })
+      .onConflictDoNothing()
+      .returning({ postId: ustaadReactions.postId });
+    if (inserted.length === 0) return { useful: true, usefulCount: await usefulCount(tx, post.id) };
+    const [c] = await tx
+      .update(ustaadPostCounters)
+      .set({ useful: sql`${ustaadPostCounters.useful} + 1` })
+      .where(eq(ustaadPostCounters.postId, post.id))
+      .returning({ useful: ustaadPostCounters.useful });
+    await recordUstaadEvent(tx, {
+      entityType: 'post',
+      entityId: post.id,
+      kind: 'marked_useful',
+      actorId: actor.userId,
+      actorRole: 'member',
+      cityId: post.cityId,
+    });
+    return { useful: true, usefulCount: c?.useful ?? 0 };
+  });
+}
+
+export async function unmarkUstaadPostUseful(
+  db: Tx,
+  actor: UstaadActor,
+  postId: string,
+): Promise<{ useful: false; usefulCount: number }> {
+  return db.transaction(async (tx) => {
+    const me = await feedMember(tx, actor.memberId);
+    const post = await visibleUstaadPost(tx, me.id, postId);
+    const deleted = await tx
+      .delete(ustaadReactions)
+      .where(
+        and(
+          eq(ustaadReactions.postId, post.id),
+          eq(ustaadReactions.memberId, me.id),
+          eq(ustaadReactions.kind, 'useful'),
+        ),
+      )
+      .returning({ postId: ustaadReactions.postId });
+    if (deleted.length === 0) return { useful: false, usefulCount: await usefulCount(tx, post.id) };
+    const [c] = await tx
+      .update(ustaadPostCounters)
+      .set({ useful: sql`${ustaadPostCounters.useful} - 1` })
+      .where(and(eq(ustaadPostCounters.postId, post.id), sql`${ustaadPostCounters.useful} > 0`))
+      .returning({ useful: ustaadPostCounters.useful });
+    await recordUstaadEvent(tx, {
+      entityType: 'post',
+      entityId: post.id,
+      kind: 'unmarked_useful',
+      actorId: actor.userId,
+      actorRole: 'member',
+      cityId: post.cityId,
+    });
+    return { useful: false, usefulCount: c?.useful ?? (await usefulCount(tx, post.id)) };
+  });
+}
+
 export async function saveUstaadPost(db: Tx, actor: UstaadActor, postId: string): Promise<{ saved: true }> {
   return db.transaction(async (tx) => {
     const me = await feedMember(tx, actor.memberId);

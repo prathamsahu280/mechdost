@@ -259,7 +259,7 @@ export const ustaadReactions = pgTable(
   (t) => [
     primaryKey({ columns: [t.postId, t.memberId, t.kind] }),
     index().on(t.memberId, t.createdAt),
-    check('ustaad_reactions_kind_valid', oneOf(t.kind, ['like'])),
+    check('ustaad_reactions_kind_valid', oneOf(t.kind, ['like', 'useful'])),
   ],
 );
 
@@ -332,6 +332,8 @@ export const ustaadPostCounters = pgTable(
       .primaryKey()
       .references(() => ustaadPosts.id, { onDelete: 'cascade' }),
     likes: integer().notNull().default(0),
+    /** "Kaam ki baat / Useful" reactions (founder Q-UI-3, 2026-11-27); shown always, never Izzat. */
+    useful: integer().notNull().default(0),
     comments: integer().notNull().default(0),
     saves: integer().notNull().default(0),
     shares: integer().notNull().default(0),
@@ -341,7 +343,7 @@ export const ustaadPostCounters = pgTable(
   (t) => [
     check(
       'ustaad_post_counters_non_negative',
-      sql`${t.likes} >= 0 and ${t.comments} >= 0 and ${t.saves} >= 0 and ${t.shares} >= 0 and ${t.views} >= 0`,
+      sql`${t.likes} >= 0 and ${t.useful} >= 0 and ${t.comments} >= 0 and ${t.saves} >= 0 and ${t.shares} >= 0 and ${t.views} >= 0`,
     ),
   ],
 );

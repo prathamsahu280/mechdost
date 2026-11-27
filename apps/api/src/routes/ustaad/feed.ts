@@ -16,6 +16,7 @@ import {
   deleteUstaadPost,
   followUstaadTag,
   likeUstaadPost,
+  markUstaadPostUseful,
   listUstaadComments,
   listUstaadFollowingFeed,
   listUstaadSaved,
@@ -28,6 +29,7 @@ import {
   suggestUstaadTag,
   unfollowUstaadTag,
   unlikeUstaadPost,
+  unmarkUstaadPostUseful,
   unsaveUstaadPost,
   ustaadLinkPreviewNeeded,
   ustaadPostDetail,
@@ -74,6 +76,7 @@ const Token = z.object({ token: z.string().regex(SHARE_TOKEN_RE) });
 const sec = [{ bearerAuth: [] }];
 const Created = z.object({ id: z.uuid(), status: z.string() });
 const LikeState = z.object({ liked: z.boolean(), likes: z.number().int().nullable() });
+const UsefulState = z.object({ useful: z.boolean(), usefulCount: z.number().int() });
 const CommentPage = z.object({ items: z.array(CommentViewDto), nextCursor: z.string().nullable() });
 const TagPage = z.object({
   tag: TagListItemDto,
@@ -138,6 +141,24 @@ const unlike = createRoute({
   security: sec,
   request: { params: Id },
   responses: { 200: json(LikeState, 'Unliked'), ...errorResponses },
+});
+const useful = createRoute({
+  method: 'post',
+  path: '/ustaad/posts/{id}/useful',
+  tags: ['ustaad'],
+  summary: '"Kaam ki baat / Useful" reaction (count always shown; never affects levels; no notice)',
+  security: sec,
+  request: { params: Id },
+  responses: { 200: json(UsefulState, 'Marked useful'), ...errorResponses },
+});
+const unuseful = createRoute({
+  method: 'delete',
+  path: '/ustaad/posts/{id}/useful',
+  tags: ['ustaad'],
+  summary: 'Remove the Useful reaction',
+  security: sec,
+  request: { params: Id },
+  responses: { 200: json(UsefulState, 'Unmarked'), ...errorResponses },
 });
 const save = createRoute({
   method: 'post',
@@ -343,6 +364,7 @@ export function ustaadFeedRoutes(deps: AppDeps) {
   app.on('POST', '/ustaad/posts', limit(USTAAD_RATE_RULES.posts));
   app.on('DELETE', '/ustaad/posts/:id', limit(USTAAD_RATE_RULES.membershipWrites));
   app.on(['POST', 'DELETE'], '/ustaad/posts/:id/like', limit(USTAAD_RATE_RULES.likes));
+  app.on(['POST', 'DELETE'], '/ustaad/posts/:id/useful', limit(USTAAD_RATE_RULES.likes));
   app.on(['POST', 'DELETE'], '/ustaad/posts/:id/save', limit(USTAAD_RATE_RULES.likes));
   app.on('POST', '/ustaad/posts/:id/share', limit(USTAAD_RATE_RULES.membershipWrites));
   app.on('POST', '/ustaad/posts/:id/comments', limit(USTAAD_RATE_RULES.comments));
@@ -400,6 +422,12 @@ export function ustaadFeedRoutes(deps: AppDeps) {
     .openapi(like, async (c) => c.json(await likeUstaadPost(deps.db, actor(c), c.req.valid('param').id), 200))
     .openapi(unlike, async (c) =>
       c.json(await unlikeUstaadPost(deps.db, actor(c), c.req.valid('param').id), 200),
+    )
+    .openapi(useful, async (c) =>
+      c.json(await markUstaadPostUseful(deps.db, actor(c), c.req.valid('param').id), 200),
+    )
+    .openapi(unuseful, async (c) =>
+      c.json(await unmarkUstaadPostUseful(deps.db, actor(c), c.req.valid('param').id), 200),
     )
     .openapi(save, async (c) => c.json(await saveUstaadPost(deps.db, actor(c), c.req.valid('param').id), 200))
     .openapi(unsave, async (c) =>

@@ -26,6 +26,7 @@ import {
   listUstaadFollowingFeed,
   listUstaadSaved,
   listUstaadStories,
+  markUstaadPostUseful,
   searchUstaadTags,
   readableUstaadMedia,
   saveUstaadLinkPreview,
@@ -33,6 +34,7 @@ import {
   shareUstaadPost,
   syncRbacCatalogue,
   unlikeUstaadPost,
+  unmarkUstaadPostUseful,
   unsaveUstaadPost,
   ustaadForYouIds,
   ustaadLinkPreviewNeeded,
@@ -477,6 +479,38 @@ describe('likes, saves, shares, polls', () => {
     await setSetting('ustaad.feed.show_like_counts', false);
     expect((await likeUstaadPost(t(), mohan, p.id)).likes).toBeNull();
     expect((await ustaadPostDetail(t(), suresh, p.id)).counts.likes).toBeNull();
+  });
+
+  it('"Useful" (Kaam ki baat) is its own reaction: counted once, never on likes, never Izzat, no notice', async () => {
+    const p = await post(ramesh);
+    expect(await markUstaadPostUseful(t(), suresh, p.id)).toEqual({ useful: true, usefulCount: 1 });
+    expect(await markUstaadPostUseful(t(), suresh, p.id)).toEqual({ useful: true, usefulCount: 1 });
+    await likeUstaadPost(t(), suresh, p.id);
+    const view = await ustaadPostDetail(t(), suresh, p.id);
+    expect(view.likedByMe).toBe(true);
+    expect(view.usefulByMe).toBe(true);
+    expect(view.counts.useful).toBe(1);
+    expect(view.counts.likes).toBe(1);
+    await unlikeUstaadPost(t(), suresh, p.id);
+    const afterUnlike = await ustaadPostDetail(t(), suresh, p.id);
+    expect(afterUnlike.likedByMe).toBe(false);
+    expect(afterUnlike.usefulByMe).toBe(true);
+    expect(await unmarkUstaadPostUseful(t(), suresh, p.id)).toEqual({ useful: false, usefulCount: 0 });
+    expect(await unmarkUstaadPostUseful(t(), suresh, p.id)).toEqual({ useful: false, usefulCount: 0 });
+    const izzat = await db
+      .select()
+      .from(s.ustaadIzzatLedger)
+      .where(eq(s.ustaadIzzatLedger.memberId, ramesh.memberId));
+    expect(izzat).toHaveLength(0);
+    const events = await db
+      .select()
+      .from(s.ustaadEvents)
+      .where(and(eq(s.ustaadEvents.entityId, p.id), eq(s.ustaadEvents.kind, 'marked_useful')));
+    expect(events).toHaveLength(1);
+    const r = await member({ restrictedMode: 'review' });
+    await expect(markUstaadPostUseful(t(), r, p.id)).rejects.toMatchObject({
+      code: 'USTAAD_RESTRICTED',
+    });
   });
 
   it('save / unsave are idempotent and the Saved list shows saved posts newest first', async () => {

@@ -140,6 +140,8 @@ const ROUTES: [string, string, unknown?][] = [
   ['DELETE', `/ustaad/posts/${randomUUID()}`],
   ['POST', `/ustaad/posts/${randomUUID()}/like`],
   ['DELETE', `/ustaad/posts/${randomUUID()}/like`],
+  ['POST', `/ustaad/posts/${randomUUID()}/useful`],
+  ['DELETE', `/ustaad/posts/${randomUUID()}/useful`],
   ['POST', `/ustaad/posts/${randomUUID()}/save`],
   ['DELETE', `/ustaad/posts/${randomUUID()}/save`],
   ['POST', `/ustaad/posts/${randomUUID()}/share`, {}],
@@ -223,12 +225,14 @@ describe('posts, feed, reactions, comments', () => {
     const liked = await call(suresh, 'POST', `/ustaad/posts/${id}/like`);
     expect(liked.body).toEqual({ liked: true, likes: 1 });
     expect((await call(suresh, 'POST', `/ustaad/posts/${id}/save`)).body).toEqual({ saved: true });
+    const useful = await call(suresh, 'POST', `/ustaad/posts/${id}/useful`);
+    expect(useful.body).toEqual({ useful: true, usefulCount: 1 });
     const c = await call(suresh, 'POST', `/ustaad/posts/${id}/comments`, { body: 'Sahi baat', idemKey: k() });
     expect(c.status, c.text).toBe(201);
     const list = await call(ramesh, 'GET', `/ustaad/posts/${id}/comments`);
     expect((list.body.items as unknown[]).length).toBe(1);
     const detail = await call(ramesh, 'GET', `/ustaad/posts/${id}`);
-    expect(detail.body.counts).toEqual({ likes: 1, comments: 1, saves: 1 });
+    expect(detail.body.counts).toEqual({ likes: 1, useful: 1, comments: 1, saves: 1 });
     expect((detail.body.tags as { slug: string }[])[0]?.slug).toBe('battery');
     const savedList = await call(suresh, 'GET', '/ustaad/saved');
     expect((savedList.body.items as { id: string }[]).map((x) => x.id)).toEqual([id]);
