@@ -1592,7 +1592,7 @@
     "errPassword_personal": "Don't use your name, phone number or email in your password.",
     "errConfirm": "The passwords don't match.",
     "staffTitle": "Two-step verification",
-    "staffLead": "Staff accounts also need the code we sent to +91 {phone}.",
+    "staffLead": "Staff accounts also need the code we sent to +91 {phone}.",
     "forgotTitle": "Reset your password",
     "forgotLead": "Choose how you want to reset it.",
     "forgotByPhone": "Send a code to my phone",
