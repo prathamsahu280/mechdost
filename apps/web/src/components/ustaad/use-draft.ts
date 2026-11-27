@@ -17,12 +17,12 @@ export function useDraft(
 ): () => void {
   const skipSave = useRef(false);
 
+  // On open and on every key change (another message thread in the same mounted composer) the box shows that key's
+  // draft, or nothing: text typed for one thread never lands under another's key. The save below is skipped once, as it
+  // still sees the old text in this commit. `restore` must be stable (a state setter or a useCallback).
   useEffect(() => {
-    const draft = readDraft(key);
-    if (draft) {
-      skipSave.current = true; // the save below would see the empty box before the restored text lands
-      restore(draft);
-    }
+    skipSave.current = true; // the save below would see the old box before the restored text lands
+    restore(readDraft(key));
   }, [key, restore]);
 
   useEffect(() => {

@@ -85,6 +85,14 @@ describe('the three composers use the draft hook', () => {
     expect(h).toContain('saveDraft(');
     expect(h).toContain('clearDraft(');
   });
+  it('switching thread replaces the text with that thread’s draft (even none), so text never moves between threads', () => {
+    expect(src('use-draft.ts')).toMatch(/skipSave\.current = true;[^\n]*\n\s*restore\(readDraft\(key\)\);/);
+  });
+  it('a restored post draft opens the text type, so the member sees it', () => {
+    expect(src('feed/composer.tsx')).toMatch(
+      /const restoreDraft = useCallback\([\s\S]{0,200}setChoice\(\(c\) => c \?\? 'text'\)/,
+    );
+  });
   it.each([
     ['post composer', 'feed/composer.tsx', /useDraft\(story \? 'story' : 'post'/],
     ['question composer', 'qa/ask-composer.tsx', /useDraft\('question_body'/],

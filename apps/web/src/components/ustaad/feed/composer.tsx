@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { TagListItem } from '@mechdost/shared/ustaad/dto/feed';
 import { localePath } from '@/lib/locale-path';
 import { ustaadClient, type MediaDeclare } from '@/lib/ustaad/client';
@@ -200,7 +200,13 @@ export function Composer({ story }: { story: boolean }) {
   const [done, setDone] = useState<{ id: string; held: boolean } | null>(null);
   const [sample, setSample] = useState(false);
   // QA F-R14: the text survives leaving the page; cleared once the post is sent.
-  const clearPostDraft = useDraft(story ? 'story' : 'post', body, setBody, done === null);
+  // A restored draft opens the text type (the body field only shows once a type is picked).
+  const restoreDraft = useCallback((d: string) => {
+    if (!d) return;
+    setBody(d);
+    setChoice((c) => c ?? 'text');
+  }, []);
+  const clearPostDraft = useDraft(story ? 'story' : 'post', body, restoreDraft, done === null);
   const idem = useRef(`p${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
