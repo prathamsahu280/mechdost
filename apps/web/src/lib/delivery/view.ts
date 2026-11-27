@@ -3,6 +3,7 @@
  * contract's error codes (`delivery.errors.*`). Zod-free and React-free, unit-tested in `test/delivery-view.test.ts`.
  */
 import type { DeliveryJobStatus } from '@mechdost/shared/delivery/codes';
+import type { ShopOrderDeliveryView } from './types';
 
 /** Under a minute left: the countdown turns to the warning colour and is announced once. */
 const URGENT_S = 60;
@@ -94,4 +95,34 @@ export function nextPayoutKey(current: string, succeeded: boolean): string {
 /** The contract keeps ratings in tenths of a star (`ratingAvgX10`: 43 = 4.3); screens show stars. */
 export function ratingFromX10(avgX10: number | null): number | null {
   return avgX10 === null ? null : avgX10 / 10;
+}
+
+/** Sub-order statuses where an agent-delivered order shows the agent hand-over instead of the shop's own steps. */
+export const AGENT_HANDOVER_STATUSES: readonly string[] = ['packed', 'ready_for_pickup', 'out_for_delivery'];
+
+/**
+ * The agent hand-over view of one shop sub-order, or null for the shop's own delivery steps. Keyed on the order's
+ * delivery mode: a packed agent order has no job yet (`delivery: null`) and must still offer "Mark ready for pickup",
+ * never the shop's "Mark out for delivery" (DC-P9, QA 2026-11-27).
+ */
+export function shopAgentHandover(order: {
+  status: string;
+  deliveryMode?: 'agent' | 'shop' | null | undefined;
+  delivery?: ShopOrderDeliveryView | null | undefined;
+}): ShopOrderDeliveryView | null {
+  const delivery = order.delivery ?? null;
+  const mode = order.deliveryMode ?? delivery?.mode ?? null;
+  if (mode !== 'agent' || !AGENT_HANDOVER_STATUSES.includes(order.status)) return null;
+  return (
+    delivery ?? {
+      mode: 'agent',
+      pickupCode: null,
+      pickupLocked: false,
+      jobStatus: null,
+      agentFirstName: null,
+      vehicleType: null,
+      returning: false,
+      switchRequest: null,
+    }
+  );
 }

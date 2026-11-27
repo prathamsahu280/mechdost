@@ -19,9 +19,6 @@ import { BigCode, CallSupport, CodeEntry, ReasonFields, reasonProblem } from './
 import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
 import { useStatusLine } from './status-line';
 
-/** Order statuses where the agent hand-over replaces the shop's own delivery buttons (agent-mode sub-orders). */
-export const AGENT_HANDOVER_STATUSES: readonly string[] = ['packed', 'ready_for_pickup', 'out_for_delivery'];
-
 /**
  * The agent part of one shop order card (spec 24, Lead's calls 3, 9): "Mark ready for pickup" (from packed), the pickup
  * code while an agent is on the way (with the agent's first name and vehicle), the return code entry when a parcel

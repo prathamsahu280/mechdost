@@ -37,7 +37,8 @@ import { ShopWarningsApi } from './shop-warnings-api';
 import { PushPromptSlot } from '../notices/push-prompt-slot';
 import { useNoticeRefresh } from '../notices/use-notice-refresh';
 import { useApiList } from './use-api-list';
-import { AGENT_HANDOVER_STATUSES, ShopDeliveryPanel } from '../delivery/shop-delivery';
+import { ShopDeliveryPanel } from '../delivery/shop-delivery';
+import { shopAgentHandover } from '@/lib/delivery/view';
 
 const OFFER_POLL_MS = 30_000;
 
@@ -444,12 +445,9 @@ function ActiveOrder({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const action = nextShopAction(order.status);
-  // Agent-delivered sub-order (spec 24): from packed on, the agent hand-over replaces the shop's own delivery steps.
-  const delivery = order.delivery ?? null;
-  const agentHandover =
-    delivery !== null &&
-    (order.deliveryMode ?? delivery.mode) === 'agent' &&
-    AGENT_HANDOVER_STATUSES.includes(order.status);
+  // Agent-delivered sub-order (spec 24): from packed on, the agent hand-over replaces the shop's own delivery steps,
+  // keyed on the delivery mode (no job yet at packed: DC-P9).
+  const delivery = shopAgentHandover(order);
 
   // A ref, not only state: two presses in the same frame both see `busy === false` (QA 2026-11-16, bug 12).
   // "Out for delivery" from "packed" is one request (`handOver`: the API does hand-over + out for delivery; pass 4).
@@ -507,7 +505,7 @@ function ActiveOrder({
             <ApiError code={error} />
           </div>
         ) : null}
-        {agentHandover ? (
+        {delivery ? (
           <ShopDeliveryPanel
             orderCode={order.code}
             orderVersion={order.version}
