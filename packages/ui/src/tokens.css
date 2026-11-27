@@ -85,7 +85,12 @@
 
   /* Motion (ui-ux-pro-max: shared tokens, duration by context; all disabled under prefers-reduced-motion) */
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Bench kit spring (visual language § 5): one small overshoot; replaced by linear() below where supported */
+  --ease-spring-snappy: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-tap: 90ms;
   --duration-fast: 150ms;
+  --duration-sheet: 260ms;
+  --duration-swing: 420ms;
   --duration-base: 220ms;
   --duration-slow: 420ms;
 
@@ -93,6 +98,23 @@
      nav at 1024px — four links + language + account + cart do not fit tablet widths (decision 2026-10-31). */
   --breakpoint-tab: 760px;
   --breakpoint-nav: 1024px;
+}
+
+@supports (transition-timing-function: linear(0, 1)) {
+  :root {
+    --ease-spring-snappy: linear(
+      0,
+      0.12 4%,
+      0.44 11%,
+      0.86 20%,
+      1.05 28%,
+      1.08 33%,
+      1.04 42%,
+      1 52%,
+      0.995 64%,
+      1
+    );
+  }
 }
 
 /*

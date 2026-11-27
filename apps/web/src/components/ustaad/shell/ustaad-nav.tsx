@@ -46,7 +46,10 @@ const DOCK_TAB =
 const DOCK_CURRENT = 'text-ink';
 const DOCK_IDLE = 'text-muted hover:text-ink';
 /** The 3 px accent bar on the current tab (accent on surface ≥ 3:1). */
-const DOCK_BAR = 'absolute inset-x-3 top-0 h-[3px] rounded-b-full bg-accent';
+const DOCK_BAR = 'block h-[3px] rounded-b-full bg-accent';
+/** The track the bar slides in: one tab wide, moved by `translateX(index × 100%)` (280 ms spring, motion-safe only). */
+const DOCK_BAR_SLOT =
+  'pointer-events-none absolute top-0 left-0 px-3 motion-safe:transition-transform motion-safe:duration-[280ms] motion-safe:ease-spring-snappy';
 const CREATE_DISC =
   'flex size-10 items-center justify-center rounded-full bg-accent-button text-white shadow-card group-hover:bg-accent-button-hover';
 const RAIL_ITEM =
@@ -70,36 +73,49 @@ export function UstaadNav({
 }) {
   const pathname = usePathname();
   const currentTab = ustaadTabFor(pathname);
+  const barIndex = tabs.findIndex((t) => t.key === currentTab);
   return (
     <>
       <nav aria-label={label} data-ustaad-dock className={DOCK}>
-        <ul className="mx-auto grid h-16 max-w-xl grid-cols-5">
-          {tabs.map((tab) => {
-            const current = currentTab === tab.key;
-            const create = tab.key === 'create';
-            return (
-              <li key={tab.key}>
-                <Link
-                  href={tab.href}
-                  aria-label={create ? (tab.ariaLabel ?? tab.label) : undefined}
-                  aria-current={current ? 'page' : undefined}
-                  data-track={`ustaad_tab_${tab.key}`}
-                  className={`group ${DOCK_TAB} ${current ? DOCK_CURRENT : DOCK_IDLE}`}
-                >
-                  {current ? <span aria-hidden="true" className={DOCK_BAR} /> : null}
-                  {create ? (
-                    <span className={CREATE_DISC}>{tab.icon}</span>
-                  ) : current ? (
-                    tab.iconCurrent
-                  ) : (
-                    tab.icon
-                  )}
-                  <span>{tab.label}</span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="relative mx-auto h-16 max-w-xl">
+          {/* M3 dock shift (visual language § 5): one bar that slides to the current tab (compositor-only). */}
+          <span
+            aria-hidden="true"
+            className={`${DOCK_BAR_SLOT} ${barIndex < 0 ? 'opacity-0' : ''}`}
+            style={{
+              width: `${String(100 / tabs.length)}%`,
+              transform: `translateX(${String(Math.max(barIndex, 0) * 100)}%)`,
+            }}
+          >
+            <span className={DOCK_BAR} />
+          </span>
+          <ul className="grid h-16 grid-cols-5">
+            {tabs.map((tab) => {
+              const current = currentTab === tab.key;
+              const create = tab.key === 'create';
+              return (
+                <li key={tab.key}>
+                  <Link
+                    href={tab.href}
+                    aria-label={create ? (tab.ariaLabel ?? tab.label) : undefined}
+                    aria-current={current ? 'page' : undefined}
+                    data-track={`ustaad_tab_${tab.key}`}
+                    className={`group ${DOCK_TAB} ${current ? DOCK_CURRENT : DOCK_IDLE}`}
+                  >
+                    {create ? (
+                      <span className={CREATE_DISC}>{tab.icon}</span>
+                    ) : current ? (
+                      tab.iconCurrent
+                    ) : (
+                      tab.icon
+                    )}
+                    <span>{tab.label}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       </nav>
       <nav aria-label={label} className="hidden nav:block">
         <ul className="sticky top-20 grid gap-1">

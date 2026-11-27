@@ -935,3 +935,76 @@ html:has([data-shell-compact]):lang(hi) :is(.leading-tight, .leading-snug) {
     transform: translateY(0);
   }
 }
+
+/*
+ * Bench kit motion (visual language § 5; founder 2026-11-28): CSS only, transform and opacity only, and every
+ * animation lives inside the no-preference block (reduced motion gets the end state at once, no keyframes).
+ * M1 tick: the Like / "Kaam ki baat" icon springs .7 to 1 and the new count rolls in, only after a tap
+ * (`[data-ticked]` is set by the click, so nothing animates on first paint).
+ * M2 tag swing: the level tag swings on its hole (-9, 5, -2, 0 degrees) before its sheet opens at 260 ms.
+ * M5 stamp press: the best-answer stamp lands (1.35 to 1, -8 to -2 degrees) when an answer is chosen on this screen.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  [data-ticked] .ustaad-tick {
+    animation: ustaad-tick 260ms var(--ease-spring-snappy) both;
+  }
+  [data-ticked] .ustaad-count-in {
+    animation: ustaad-count-in 180ms var(--ease-out-soft) both;
+  }
+  .ustaad-tag-swing {
+    transform-origin: 7px 50%;
+    animation: ustaad-tag-swing var(--duration-swing) var(--ease-out-soft);
+  }
+  .ustaad-stamp-press {
+    animation: ustaad-stamp 240ms var(--ease-out-soft) both;
+  }
+}
+@keyframes ustaad-tick {
+  from {
+    transform: scale(0.7);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+@keyframes ustaad-count-in {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes ustaad-tag-swing {
+  0% {
+    transform: rotate(0);
+  }
+  25% {
+    transform: rotate(-9deg);
+  }
+  55% {
+    transform: rotate(5deg);
+  }
+  80% {
+    transform: rotate(-2deg);
+  }
+  100% {
+    transform: rotate(0);
+  }
+}
+@keyframes ustaad-stamp {
+  0% {
+    opacity: 0;
+    transform: scale(1.35) rotate(-8deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.97) rotate(-1.5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(-2deg);
+  }
+}

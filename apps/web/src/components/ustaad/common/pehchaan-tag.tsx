@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { localePath } from '@/lib/locale-path';
 import { pehchaanTone } from './pehchaan-tones';
 
@@ -14,6 +14,8 @@ import { pehchaanTone } from './pehchaan-tones';
  * sheet (U4), otherwise links to Me › levels; `interactive={false}` inside rows that are links themselves. Renders
  * nothing for an unknown level code so a new level never shows a raw key.
  */
+/** The level sheet opens this far into the 420 ms swing (visual language § 5, M2). */
+const SHEET_OPEN_MS = 260;
 const OUTER =
   'rounded-r-[7px] [clip-path:polygon(8px_0,100%_0,100%_100%,8px_100%,0_50%)] [mask:radial-gradient(circle_4px_at_11px_50%,transparent_96%,black_100%)]';
 const INNER =
@@ -36,6 +38,20 @@ export function PehchaanTag({
 }) {
   const l = useTranslations('ustaad.labels');
   const locale = useLocale();
+  const [swinging, setSwinging] = useState(false);
+  const timer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+  /** M2 (visual language § 5): the tag swings on its hole, and its sheet opens 260 ms in; reduced motion opens at once. */
+  function open() {
+    if (!onOpen) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      onOpen();
+      return;
+    }
+    setSwinging(true);
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(onOpen, SHEET_OPEN_MS);
+  }
   const key = `lvl_${level}` as 'lvl_naya';
   if (!l.has(key)) return null;
   const t = pehchaanTone(level);
@@ -61,10 +77,13 @@ export function PehchaanTag({
     return (
       <button
         type="button"
-        onClick={onOpen}
+        onClick={open}
+        onAnimationEnd={() => {
+          setSwinging(false);
+        }}
         data-track="ustaad_level_tag"
         data-level={level}
-        className={pehchaanTagClass}
+        className={`${pehchaanTagClass}${swinging ? ' ustaad-tag-swing' : ''}`}
       >
         {body}
       </button>

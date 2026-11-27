@@ -62,6 +62,9 @@ export function PostCard({
   const [status, setStatus] = useState('');
   const [comments, setComments] = useState(openComments);
   const [menu, setMenu] = useState(false);
+  // M1 tick (visual language § 5): counts taps per reaction so the icon springs and the count rolls only after a tap,
+  // never on first paint; the number is the React key that restarts the CSS animation (0 KB of motion JS).
+  const [taps, setTaps] = useState({ like: 0, useful: 0 });
   const busy = useRef(false);
   const moreRef = useRef<HTMLButtonElement>(null);
   const commentRef = useRef<HTMLButtonElement>(null);
@@ -77,6 +80,7 @@ export function PostCard({
     busy.current = true;
     const before = post;
     const next = toggleReaction(post, kind, on);
+    if (kind !== 'save') setTaps((n) => ({ ...n, [kind]: n[kind] + 1 }));
     onChange(next);
     const c = await client();
     const r =
@@ -253,11 +257,20 @@ export function PostCard({
           onClick={() => void like()}
           aria-pressed={post.likedByMe}
           data-track="ustaad_post_like"
+          data-ticked={taps.like > 0 ? '' : undefined}
           className={`${actionBtn} ${post.likedByMe ? 'text-accent-soft-text' : 'text-ink hover:bg-pill'}`}
         >
-          <UstaadIcon name="heart" filled={post.likedByMe} />
+          <span key={`i${String(taps.like)}`} className="ustaad-tick inline-flex">
+            <UstaadIcon name="heart" filled={post.likedByMe} />
+          </span>
           <span className="inline-flex items-center gap-1 whitespace-nowrap">
-            {post.counts.likes !== null ? <span className="tabular-nums">{post.counts.likes}</span> : null}
+            {post.counts.likes !== null ? (
+              <span className="inline-flex h-[1.5em] overflow-hidden">
+                <span key={`c${String(taps.like)}`} className="ustaad-count-in tabular-nums">
+                  {post.counts.likes}
+                </span>
+              </span>
+            ) : null}
             <span>{t('like')}</span>
           </span>
         </button>
@@ -267,13 +280,20 @@ export function PostCard({
           aria-pressed={post.usefulByMe}
           aria-label={`${String(post.counts.useful)} ${t('usefulAria')}`}
           data-track="ustaad_post_useful"
+          data-ticked={taps.useful > 0 ? '' : undefined}
           className={`${actionBtn} ${post.usefulByMe ? 'bg-brass/20 text-brass-text' : 'text-ink hover:bg-pill'}`}
         >
           {/* Bench kit (visual language § 4): a wrench in brass for "Kaam ki baat", never the Like heart. */}
-          <Wrench aria-hidden="true" className="size-5" strokeWidth={2} />
+          <span key={`i${String(taps.useful)}`} className="ustaad-tick inline-flex">
+            <Wrench aria-hidden="true" className="size-5" strokeWidth={2} />
+          </span>
           {/* Wraps (never clips) at 360 px: the Hindi word is longer than "Like". */}
           <span className="inline-flex flex-wrap items-center justify-center gap-x-1 text-center">
-            <span className="tabular-nums">{post.counts.useful}</span>
+            <span className="inline-flex h-[1.5em] overflow-hidden">
+              <span key={`c${String(taps.useful)}`} className="ustaad-count-in tabular-nums">
+                {post.counts.useful}
+              </span>
+            </span>
             <span>{t('useful')}</span>
           </span>
         </button>
