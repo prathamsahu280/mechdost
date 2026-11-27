@@ -1970,6 +1970,10 @@ Each fix has a regression test named after the QA id.
   `ustaadNotBlockedSql`). Applying to a job whose employer is blocked either way answers 404 and rings nothing. The
   verified tick comes from `ustaadMemberCard` (verified state and a level past `apprentice` / `ustaad_pending`), the
   same trust signal as every other card. Tests: the four "security: …" cases in `ustaad-local.test.ts`.
+- **SIM-P11 — the voucher is asked in the bell.** `requestUstaadVouch` queues `ustaad.vouch_requested` (the asker's
+  name) to the voucher in the same transaction, keyed on the vouch row. The notice opens `/ustaad/me` (the
+  catalogue's `/ustaad/me/verify` was never built). Not done: there is still no member screen to give or decline a
+  vouch (Q-SIM-4; the API `POST /ustaad/vouches/{id}/give` exists), so the bell leads to Me, not to the request.
 - **SIM-P17 — the server decides the employer.** `PostJobDto.employer` is optional and the web form no longer sends
   one (it hard-coded `trade`, so a workshop owner got 403). `ustaadJobEmployerOptions(userId, memberWorkshopId)`
   lists what the user may post as: every workshop they hold a grant on (the member's own linked workshop first),

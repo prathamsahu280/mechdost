@@ -443,7 +443,8 @@ export const NOTICE_CATALOGUE = {
     entity: 'ustaad',
     audience: 'member',
     text: ['memberName'],
-    link: at('/ustaad/me/verify'),
+    // SIM-P11/P19: /ustaad/me/verify was never built; Me holds the member's verification card.
+    link: at('/ustaad/me'),
   }),
   'ustaad.attestation_requested': def({
     category: T,
