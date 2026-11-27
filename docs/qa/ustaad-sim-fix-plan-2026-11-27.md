@@ -85,3 +85,4 @@ answerer block) · SIM-LEAD-1 (email verification lags on other devices: "I've v
 | SIM-P4 | fixed              | card route takes `?lang`; web passes its locale                                     |
 | SIM-B1 | fixed (signed out) | server 404 via the md-signed-in flag; signed-in non-members still client-gated      |
 | SIM-F1 | fixed              | bell + email for removal, strike, ban, appeal outcomes; new bell kind ustaad.banned |
+| SIM-F2 | fixed              | appeal receipt email ustaad_appeal_received opens /ustaad/me/standing               |

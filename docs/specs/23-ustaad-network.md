@@ -2074,6 +2074,11 @@ One commit per item, test first. Ids from `D:\mechdost-qa\ustaad-sim-2026-11-27\
   per decision and member). A member with `notification_preferences` email/transactional = false gets the bell only.
   A ban now writes the new bell kind `ustaad.banned` (texts `notify.ustaad_banned` en + hi) instead of a plain strike
   notice. No WhatsApp templates (lead). Not done: rules reminder and security-freeze emails.
+- **SIM-F2** filing an appeal (`createSupportTicket` with kind `ustaad_appeal`) queues its own receipt
+  `ustaad_appeal_received` (en + hi, "We got your appeal", button `/ustaad/me/standing`) instead of the generic
+  `ticket_received` whose button `/account/support?ticket=…` showed a shop owner the portal notice. The standing page
+  opens for every member whatever the account kind (it already shows the appeal state). Staff replies on an appeal
+  (`ticket_reply`) still link to `/account/support` — not changed here.
 
 ## 22. Not built / later
 

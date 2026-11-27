@@ -22,6 +22,7 @@ import {
   users,
 } from '../schema';
 import { queueTicketEmail } from './email-events';
+import { queueEmail } from './email-notifications';
 import { resolveTicketReplyNotices } from './notice-events';
 import { queueStaffNotice, resolveNotices } from './notices';
 import { ConflictError, NotFoundError, ValidationError } from './errors';
@@ -396,14 +397,24 @@ export async function createSupportTicket(
       entityId: ticket.id,
       after: { code: ticket.code, kind: input.kind, channel: 'web', order: Boolean(orderId) },
     });
-    // Email confirmation (spec 10), same transaction.
-    await queueTicketEmail(tx, {
-      template: 'ticket_received',
-      entityId: ticket.id,
-      version: 1,
-      userId: input.userId,
-      ticketCode: ticket.code,
-    });
+    // Email confirmation (spec 10), same transaction. An Ustaad appeal gets its own receipt that opens the member's
+    // standing page: /account/support is not usable by every account kind (shop owners see a portal notice; SIM-F2).
+    if (input.kind === 'ustaad_appeal')
+      await queueEmail(tx, {
+        template: 'ustaad_appeal_received',
+        entityId: ticket.id,
+        version: 1,
+        userId: input.userId,
+        payload: { ticketCode: ticket.code },
+      });
+    else
+      await queueTicketEmail(tx, {
+        template: 'ticket_received',
+        entityId: ticket.id,
+        version: 1,
+        userId: input.userId,
+        ticketCode: ticket.code,
+      });
     // Support staff of the order's city (or all-city staff when there is no order) see it in their bell.
     await queueStaffNotice(tx, {
       kind: 'staff.new_ticket',

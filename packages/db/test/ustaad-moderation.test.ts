@@ -35,6 +35,7 @@ import {
   type Tx,
   type UstaadStaff,
 } from '../src/repo';
+import { EMAIL_TEMPLATES } from '@mechdost/shared/email-templates';
 import * as s from '../src/schema';
 import { createTestDb, type TestDb } from '../src/testing';
 import { seedServiceFixture, type Fixture } from './service-fixture';
@@ -1163,5 +1164,36 @@ describe('SIM-F1: moderation decisions also email the member (outbox, en + hi, p
     });
     await actOnUstaadReport(t(), cmA, r.code, { action: 'remove', reasonCode: 'spam', version: 1 });
     expect(await emails(who.userId)).toEqual([]);
+  });
+});
+
+// SIM-F2 (live QA 2026-11-27): the "We got your request" email of an appeal opened /account/support?ticket=…, which a
+// shop-owner member cannot use (portal notice, no request). The appeal receipt is its own email and opens the
+// member's standing page (appeal state + decision), which every member can open whatever their account kind.
+describe('SIM-F2: the appeal receipt email opens the standing page', () => {
+  it('filing an appeal queues ustaad_appeal_received (not the generic ticket_received)', async () => {
+    const who = await member();
+    const p = await post(who, false);
+    const r = await createUstaadReport(t(), viewer, {
+      targetType: 'post',
+      targetId: p.id,
+      reasonCode: 'spam',
+    });
+    await actOnUstaadReport(t(), cmA, r.code, { action: 'remove', reasonCode: 'spam', version: 1 });
+    await fileUstaadAppeal(
+      t(),
+      { userId: who.userId },
+      { reportCode: r.code, note: 'It was a real job post.' },
+    );
+    const rows = await db
+      .select({ key: s.notificationOutbox.templateKey, payload: s.notificationOutbox.payload })
+      .from(s.notificationOutbox)
+      .where(
+        and(eq(s.notificationOutbox.recipientUserId, who.userId), eq(s.notificationOutbox.channel, 'email')),
+      );
+    const keys = rows.map((x) => x.key);
+    expect(keys).toContain('ustaad_appeal_received');
+    expect(keys).not.toContain('ticket_received');
+    expect(EMAIL_TEMPLATES.ustaad_appeal_received.button?.({})).toBe('/ustaad/me/standing');
   });
 });
