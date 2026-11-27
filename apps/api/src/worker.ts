@@ -91,8 +91,11 @@ const { db, sql } = createDb(config.databaseUrl, { max: 2, transactionPooler: tr
  * statement_timeout plus an app deadline, so a slow or locked query falls back to the safe default text instead of
  * holding a mail for the 120 s server timeout (incident 2026-11-16, SQLSTATE 57014).
  */
+// Live 2026-11-28: the mail lookups shared the 2-connection sweep pool and waited behind ~9 interval sweeps until their
+// deadlines, so the bill mails (most lookups) failed every retry with send_timeout. They get their own small pool.
+const mailLookups = createDb(config.databaseUrl, { max: 2, transactionPooler: true });
 const bounded = <T>(ms: number, name: string, fn: (tx: Tx) => Promise<T>): Promise<T> =>
-  withDeadline(ms + 2_000, name, () => withStatementTimeout(db, ms, fn));
+  withDeadline(ms + 2_000, name, () => withStatementTimeout(mailLookups.db, ms, fn));
 const publisher: LivePublisher =
   config.live.transport === 'rtdb' && config.live.databaseUrl
     ? createRtdbPublisher({
@@ -831,6 +834,7 @@ function shutdown(signal: string) {
       Promise.all([
         sql.end({ timeout: 5 }),
         notifyConn.sql.end({ timeout: 5 }),
+        mailLookups.sql.end({ timeout: 5 }),
         listener?.end(),
         sentry.flush(),
       ]),

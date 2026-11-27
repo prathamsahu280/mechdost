@@ -156,3 +156,29 @@ describe('bill attachment loader', () => {
     expect(await make()(row('order_confirmed'), 'en')).toBeNull();
   });
 });
+
+// Live 2026-11-28: every `order_delivered` mail failed 6 times with send_timeout — the PDF lookups waited on a busy
+// worker pool and the attachment alone used up the 30 s send deadline. A slow PDF must cost the attachment, never the mail.
+describe('a slow bill PDF never stops the mail', () => {
+  it('sends without the attachment when the PDF takes longer than its own budget', async () => {
+    const resend = fakeResend();
+    const logs: string[] = [];
+    setLogSink((line) => logs.push(line));
+    const adapter = createEmailAdapter(
+      { apiKey: KEY, domain: 'mechdost.com', webBaseUrl: 'https://mechdost.com' },
+      {
+        fetchImpl: resend.fetchImpl,
+        attachmentBudgetMs: 50,
+        loadAttachment: () => new Promise(() => undefined), // never settles
+      },
+    );
+    const started = Date.now();
+    await adapter.send(row('order_delivered'));
+    expect(Date.now() - started).toBeLessThan(2_000);
+    expect(resend.calls).toHaveLength(1);
+    expect(resend.calls[0]?.body.attachments).toBeUndefined();
+    expect(logs.some((l) => l.includes('email_attachment_skipped') && l.includes('PhaseTimeoutError'))).toBe(
+      true,
+    );
+  });
+});

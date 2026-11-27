@@ -11,6 +11,7 @@ import {
 } from '@mechdost/shared/email-templates';
 import type { OutboxRow } from '@mechdost/db/repo';
 import { log, safeError } from '../logger';
+import { withDeadline } from './deadline';
 import { ChannelError, type ChannelAdapter } from './dispatcher';
 import type { EmailAttachment } from './pdf/attachment';
 
@@ -37,6 +38,9 @@ export type TrustLineLoader = (locale: 'en' | 'hi') => Promise<string | null>;
 
 export type OverrideLoader = (key: string, locale: 'en' | 'hi') => Promise<EmailOverride | null>;
 
+/** Default time the bill PDF may take before the mail goes without it (see `attachmentBudgetMs`). */
+export const ATTACHMENT_BUDGET_MS = 8_000;
+
 export function createEmailAdapter(
   cfg: EmailConfig,
   opts: {
@@ -51,6 +55,12 @@ export function createEmailAdapter(
      * Null, too big or a failure means the mail goes without it.
      */
     loadAttachment?: (row: OutboxRow, locale: 'en' | 'hi') => Promise<EmailAttachment | null>;
+    /**
+     * The most the bill PDF may take (lookups + render) before the mail goes without it. Live 2026-11-28: the lookups
+     * waited on a busy worker pool and the attachment alone used up the 30 s send deadline, so `order_delivered` failed
+     * every retry. Default 8 s keeps the whole send well inside `SEND_DEADLINE_MS`.
+     */
+    attachmentBudgetMs?: number;
   } = {},
 ): ChannelAdapter {
   const fetchImpl = opts.fetchImpl ?? fetch;
@@ -58,7 +68,10 @@ export function createEmailAdapter(
   async function billAttachment(row: OutboxRow, locale: 'en' | 'hi'): Promise<EmailAttachment | null> {
     if (!opts.loadAttachment || !isBillAttachmentTemplate(row.templateKey)) return null;
     try {
-      const found = await opts.loadAttachment(row, locale);
+      const load = opts.loadAttachment;
+      const found = await withDeadline(opts.attachmentBudgetMs ?? ATTACHMENT_BUDGET_MS, 'attachment', () =>
+        load(row, locale),
+      );
       if (!found) return null;
       if (found.content.length > BILL_PDF_MAX_BYTES) {
         log('warn', 'email_attachment_skipped', {

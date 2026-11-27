@@ -315,3 +315,5 @@ job), `staff.delivery_low_rating`.
   (`partner_delivery_offer`: order code and minutes). See `docs/runbooks/whatsapp-templates.md`.
 - Notices queue in the same transaction as the move (outbox); actionable staff notices resolve when the queue item is
   handled (2026-11-23 rule).
+
+- 2026-11-28 (live fix): the bill PDF on bill emails has its own 8 s budget (`attachmentBudgetMs`); past it the mail goes without the attachment (`email_attachment_skipped`, PhaseTimeoutError). The worker's mail lookups use their own 2-connection pool, not the sweep pool. Cause: every `order_delivered` mail failed 6 retries with `send_timeout` on 2026-11-27 because the lookups queued behind the sweeps. Test: `apps/api/test/email-attachments.test.ts` (never-settling PDF).
