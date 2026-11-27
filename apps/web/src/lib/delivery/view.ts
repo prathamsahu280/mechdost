@@ -144,6 +144,19 @@ export function ratingFromX10(avgX10: number | null): number | null {
   return avgX10 === null ? null : avgX10 / 10;
 }
 
+/**
+ * A staff photo link (rider document or job photo) on the API origin: the API answers its signed image route as a path
+ * (`/v1/delivery-photos/{id}/large?e=…&s=…`); a relative link opened the website's 404 page (DC-B7, QA 2026-11-27).
+ * Null when the web has no API base (demo build).
+ */
+export function deliveryPhotoHref(url: string, apiBase: string): string | null {
+  if (/^https?:\/\//.test(url)) return url;
+  const base = apiBase.replace(/\/$/, '');
+  if (!base) return null;
+  const path = url.startsWith('/v1/') ? url : `/v1${url.startsWith('/') ? '' : '/'}${url}`;
+  return `${base}${path}`;
+}
+
 /** Sub-order statuses where an agent-delivered order shows the agent hand-over instead of the shop's own steps. */
 export const AGENT_HANDOVER_STATUSES: readonly string[] = ['packed', 'ready_for_pickup', 'out_for_delivery'];
 
