@@ -2,7 +2,7 @@
 
 import { DELIVERY_DECLINE_REASONS, type DeliveryDeclineReason } from '@mechdost/shared/delivery/codes';
 import { Bike, Phone, Power } from 'lucide-react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
@@ -10,8 +10,17 @@ import { PortalGuard } from '@/components/portal/portal-guard';
 import { useNow } from '@/components/portal/use-now';
 import { Switch } from '@/components/ui/switch';
 import { LocalLink } from '@/components/ui/local-link';
+import {
+  OfferTimer,
+  OrderSoundButton,
+  PartnerFrame,
+  UpdatedAgo,
+  useNewWorkAlert,
+} from '@/components/partner';
 import { track } from '@/lib/analytics';
 import { localePath } from '@/lib/locale-path';
+import { groupByIstDay } from '@/lib/delivery/agent-stats-view';
+import { useRiderTabs } from './rider-tabs';
 import { site } from '@/lib/site';
 import { useAgentClient, useLiveReload } from '@/lib/delivery/use-delivery-client';
 import type { AgentClient, AgentJobCardView, AgentJobsView, AgentProfileView } from '@/lib/delivery/types';
@@ -20,6 +29,8 @@ import { useDeliveryErrorText } from './error-text';
 import { LoadGate, ReasonFields, bigPrimary, bigQuiet, reasonProblem, useStatusLine } from './parts';
 
 const POLL_MS = 20_000;
+/** The offer window (founder ruling: 15 min by default) for the timer bar; a longer offer just starts full. */
+const OFFER_WINDOW_MS = 15 * 60_000;
 const card = 'rounded-card border border-line-card bg-surface p-4 shadow-card';
 
 interface AgentCtx {
@@ -73,12 +84,10 @@ function AgentProvider({ children }: { children: ReactNode }) {
     >
       {client && profile ? (
         <Ctx.Provider value={{ client, profile, reloadProfile, errorText }}>
-          <div className="mx-auto grid max-w-xl gap-5">
-            <StatusStrip />
-            <AgentTabs />
+          <RiderFrame>
             {client.sample ? <p className="text-xs text-muted">{t('sample')}</p> : null}
             {children}
-          </div>
+          </RiderFrame>
         </Ctx.Provider>
       ) : null}
     </LoadGate>
@@ -186,37 +195,24 @@ function StatusStrip() {
   );
 }
 
-const TABS = [
-  { id: 'offers', href: '/partner/delivery' },
-  { id: 'jobs', href: '/partner/delivery/jobs' },
-  { id: 'history', href: '/partner/delivery/history' },
-  { id: 'profile', href: '/partner/delivery/profile' },
-] as const;
-
-function AgentTabs() {
+/**
+ * The partner frame (design 2026-11-27 § 7): the status strip on top, the tabs in a bottom bar on a phone and a side
+ * rail on a computer; one centred phone-width column for the work.
+ */
+function RiderFrame({ children }: { children: ReactNode }) {
   const t = useTranslations('deliveryAgent');
-  const locale = useLocale();
-  const pathname = usePathname();
-  const current = (href: string) => {
-    const full = localePath(href, locale);
-    return href === '/partner/delivery' ? pathname === full : pathname.startsWith(full);
-  };
+  const tabs = useRiderTabs();
   return (
-    <nav aria-label={t('navLabel')}>
-      <ul className="grid grid-cols-4 gap-1 rounded-button border border-line-card bg-surface p-1">
-        {TABS.map((tab) => (
-          <li key={tab.id}>
-            <LocalLink
-              href={tab.href}
-              aria-current={current(tab.href) ? 'page' : undefined}
-              className="press flex min-h-12 items-center justify-center rounded-button px-1 text-center text-sm font-bold text-ink hover:bg-pill aria-[current=page]:bg-navy aria-[current=page]:text-white focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
-            >
-              {t(`tab_${tab.id}`)}
-            </LocalLink>
-          </li>
-        ))}
-      </ul>
-    </nav>
+    <PartnerFrame
+      portal="rider"
+      navLabel={t('navLabel')}
+      railTitle={t('title')}
+      tabs={tabs}
+      strip={<StatusStrip />}
+      narrow
+    >
+      {children}
+    </PartnerFrame>
   );
 }
 
@@ -226,18 +222,20 @@ function useAgentJobs(view: AgentJobsView) {
   const t = useTranslations('deliveryAgent');
   const [items, setItems] = useState<AgentJobCardView[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loadedAt, setLoadedAt] = useState<number | null>(null);
   const client = ctx?.client ?? null;
   const reload = useCallback(() => {
     if (!client) return;
     void client.jobs(view, null).then((r) => {
       if (r.ok) {
         setItems(r.data.items);
+        setLoadedAt(Date.now());
         setError(null);
       } else setError(t('loadError'));
     });
   }, [client, view, t]);
   useLiveReload(client, reload, view === 'offers' ? 10_000 : POLL_MS);
-  return { items, error, reload };
+  return { items, error, reload, loadedAt };
 }
 
 function useScreenView(screen: string) {
@@ -249,8 +247,10 @@ function useScreenView(screen: string) {
 export function AgentOffers() {
   const t = useTranslations('deliveryAgent');
   const ctx = useAgent();
-  const { items, error, reload } = useAgentJobs('offers');
+  const { items, error, reload, loadedAt } = useAgentJobs('offers');
   const now = useNow(1000);
+  // Sound + vibration on a new offer (design 2026-11-27 § 4; on by default, Q-PP-F3); the status line below says it too.
+  const alert = useNewWorkAlert('rider', items ? items.map((o) => o.offerId ?? o.jobId) : null);
   // One list-level status line (stays mounted when a card leaves) announces new offers and the result of a decline.
   const { say, line } = useStatusLine();
   const seen = useRef<Set<string> | null>(null);
@@ -276,6 +276,10 @@ export function AgentOffers() {
       <h2 id="agent-offers-title" tabIndex={-1} className="font-heading text-xl font-extrabold text-ink">
         {t('offersTitle')} {items ? <span className="text-muted tabular-nums">({open.length})</span> : null}
       </h2>
+      <div className="flex flex-wrap items-center justify-between gap-x-3">
+        <OrderSoundButton alert={alert} />
+        <UpdatedAgo at={loadedAt} onRefresh={reload} />
+      </div>
       {line}
       <LoadGate loading={items === null} error={items ? null : error} onRetry={reload}>
         {(items ?? []).length === 0 ? (
@@ -398,12 +402,6 @@ function OfferCard({
   }
 
   const ended = left !== null && left.seconds === 0;
-  const endsAt = offer.offerExpiresAt
-    ? new Intl.DateTimeFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', {
-        timeStyle: 'short',
-        timeZone: 'Asia/Kolkata',
-      }).format(new Date(offer.offerExpiresAt))
-    : null;
   if (ended) {
     return (
       <article className={card}>
@@ -417,20 +415,11 @@ function OfferCard({
     <article className={`${card} border-accent-button/60`} aria-busy={busy || undefined}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="font-heading text-lg font-extrabold text-ink">{offer.orderCode}</p>
-        {left ? (
-          <p
-            className={`rounded-pill px-3 py-1 text-sm font-extrabold tabular-nums ${left.urgent ? 'bg-warning-bg text-warning' : 'bg-pill text-ink'}`}
-          >
-            {/* The ticking time is for the eye; screen readers get the end time once (no per-second chatter). */}
-            <span aria-hidden="true">
-              {left.urgent ? `${t('hurry')} · ` : ''}
-              {t('timeLeftShort', { time: left.text })}
-            </span>
-            {endsAt ? <span className="sr-only">{t('endsAt', { time: endsAt })}</span> : null}
-          </p>
-        ) : null}
       </div>
-      <div className="mt-2">
+      <div className="mt-3">
+        <OfferTimer endsAt={offer.offerExpiresAt} now={now} windowMs={OFFER_WINDOW_MS} />
+      </div>
+      <div className="mt-3">
         <JobFacts job={offer} />
       </div>
       {declining ? (
@@ -552,8 +541,14 @@ export function AgentHistory() {
   const t = useTranslations('deliveryAgent');
   const s = useTranslations('delivery.jobStatus');
   const locale = useLocale();
+  const p = useTranslations('partnerRider');
   const { items, error, reload } = useAgentJobs('done');
   useScreenView('history');
+  const dayLabel = (day: string) =>
+    new Intl.DateTimeFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', {
+      dateStyle: 'medium',
+      timeZone: 'Asia/Kolkata',
+    }).format(new Date(`${day}T12:00:00+05:30`));
   return (
     <section aria-labelledby="agent-history-title" className="grid gap-3">
       <h2 id="agent-history-title" className="font-heading text-xl font-extrabold text-ink">
@@ -563,25 +558,37 @@ export function AgentHistory() {
         {items?.length === 0 ? (
           <p className={`${card} text-sm text-muted`}>{t('historyEmpty')}</p>
         ) : (
-          <ul className="divide-y divide-line rounded-card border border-line-card bg-surface">
-            {(items ?? []).map((j) => (
-              <li key={j.jobId} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
-                <span>
-                  <span className="block font-bold text-ink">{j.orderCode}</span>
-                  <span className="block text-sm text-muted">
-                    {new Intl.DateTimeFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', {
-                      dateStyle: 'medium',
-                      timeStyle: 'short',
-                      timeZone: 'Asia/Kolkata',
-                    }).format(new Date(j.updatedAt))}
-                  </span>
-                </span>
-                <span className="rounded-pill bg-pill px-3 py-1 text-xs font-extrabold text-ink">
-                  {s(j.status)}
-                </span>
-              </li>
+          // Rows grouped by IST day with the day's delivered count (design 2026-11-27 § 7).
+          <div className="grid gap-4">
+            {groupByIstDay(items ?? []).map((g) => (
+              <section key={g.day}>
+                <h3 className="mb-2 text-sm font-extrabold text-ink">
+                  {p('history_day', {
+                    day: dayLabel(g.day),
+                    count: g.items.filter((j) => j.status === 'delivered').length,
+                  })}
+                </h3>
+                <ul className="divide-y divide-line rounded-card border border-line-card bg-surface">
+                  {g.items.map((j) => (
+                    <li key={j.jobId} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+                      <span>
+                        <span className="block font-bold text-ink">{j.orderCode}</span>
+                        <span className="block text-sm text-muted">
+                          {new Intl.DateTimeFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', {
+                            timeStyle: 'short',
+                            timeZone: 'Asia/Kolkata',
+                          }).format(new Date(j.updatedAt))}
+                        </span>
+                      </span>
+                      <span className="rounded-pill bg-pill px-3 py-1 text-xs font-extrabold text-ink">
+                        {s(j.status)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             ))}
-          </ul>
+          </div>
         )}
       </LoadGate>
     </section>

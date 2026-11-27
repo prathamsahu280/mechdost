@@ -7,6 +7,7 @@ import {
   acceptAgentInvite,
   agentDeliveredCount,
   listAgentPayouts,
+  agentDailyStats,
   agentEarnings,
   payoutSummary,
   recordAgentPayout,
@@ -90,6 +91,7 @@ import {
   SwitchConfirmInput,
   SwitchDeclineInput,
 } from '@mechdost/shared/delivery/api';
+import { AgentStatsQuery } from '@mechdost/shared/delivery/agent-stats';
 import { AGENT_DOCUMENT_KINDS, AGENT_STATUSES } from '@mechdost/shared/delivery/codes';
 import { CSV_BOM, csvLine, paiseToRupees } from '@mechdost/shared/exports';
 import { APPLICATION_REJECT_REASONS } from '@mechdost/shared/partners';
@@ -361,6 +363,13 @@ export function deliveryAgentRoutes(deps: AppDeps, cache: SessionCache) {
           200,
         );
       },
+    )
+    .openapi(
+      r('get', '/agent/me/stats', 'Your delivered jobs per IST day (zero-filled)', 'delivery-agent', {
+        query: AgentStatsQuery,
+      }),
+      async (c) =>
+        c.json(await agentDailyStats(deps.db, { userId: me(c), days: c.req.valid('query').days }), 200),
     )
     .openapi(
       r('post', '/agent/me/online', 'Go online or offline', 'delivery-agent', {

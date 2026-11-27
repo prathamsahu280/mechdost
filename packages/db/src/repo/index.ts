@@ -139,3 +139,4 @@ export * from './delivery-jobs';
 export * from './delivery-mode';
 export * from './delivery-ratings';
 export * from './delivery-payouts';
+export * from './delivery-agent-stats';

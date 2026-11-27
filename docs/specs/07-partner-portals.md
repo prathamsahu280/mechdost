@@ -407,3 +407,24 @@ local stand-ins for the partner kit (`components/portal/workshop/_kit-shim.tsx`:
 - Not built in this batch: master–detail at ≥ 1024 px, calendar agenda and its API field (P1), saved estimate line
   templates (P1), review replies (P2), state-audit row `WS-FRAME` (existing `API-WS-*` rows were pointed at the
   new tabs). Tiles count exactly the lane they open (decisions 2026-11-27 builder rulings).
+
+## Partner portals UI upgrade, batches 0 and A (2026-11-27 night; design `docs/superpowers/specs/2026-11-27-partner-portals-ui-upgrade-design.md`)
+
+- **Partner kit** (`apps/web/src/components/partner/`, batch 0 owns it; others import from `@/components/partner`):
+  `PartnerFrame` + `PartnerStrip` (navy strip with the state in words and Help; bottom tab bar under 1024 px, navy
+  side rail from 1024 px; lives in a portal's layout), `PartnerTabs`, `KpiTile`, `OfferTimer` (big countdown, tread
+  bar from the server end time, "Hurry" under a minute, live region only at 5 min / 1 min / end), `LaneTabs`
+  (`?lane=` links, the caller reads `searchParams`), `StepRail`, `BulletBar`, `DailyBars`/`DataTable` (re-exported),
+  `useNewWorkAlert` + `OrderSoundButton` (Q-PP-F3: sound **on by default**; any tap unlocks audio, "Turn on order
+  sound" shows only while the browser still blocks it; per-device choice in `localStorage`), `UpdatedAgo` (updated
+  line + offline line). Pure maths in `apps/web/src/lib/partner-kit.ts` (`test/partner-kit.test.ts`). Strings in
+  `partnerKit`; events `partner_*` (spec 12).
+- **Shop (batch A, part 1):** the new-order card uses `OfferTimer` with the rule in words ("If you do not answer, the
+  order goes back to MechDost"); the offers list has the order sound and the updated line; **Today tiles** (New ·
+  Packing · Out for delivery, or Ready for pickup for agent shops · Delivered) above the offers, counted from the three
+  existing lists (`lib/shop-today.ts`, "20+" when a list has more pages; "Delivered" counts the first page because
+  the shop order rows carry no delivery date — "Delivered today" needs a date on `ShopOrder`, P1). Strings
+  `partnerShop`.
+- **Not built yet (batch A, part 2):** the split of `/partner/shop` into the five tabs (Today, Orders, Stock & prices,
+  Numbers, My shop; Q-PP-F2) with the `#warnings` notice-link mapping, `BulletBar` on performance, `DailyBars` on
+  staff earnings, price row with the MRP share, availability segmented choice and the weekday strip.

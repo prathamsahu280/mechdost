@@ -10228,5 +10228,48 @@
     "hour_full": "Full",
     "hindi_missing": "Hindi name missing",
     "api_only": "This tab opens with a real sign-in."
+  },
+  "partnerKit": {
+    "help": "Help",
+    "help_label": "Call MechDost help",
+    "timer_left": "{time} left",
+    "timer_hurry": "Hurry: under a minute",
+    "timer_five": "5 minutes left to answer",
+    "timer_ended": "Time is up",
+    "timer_ends_at": "Answer by {time}",
+    "timer_rule": "If you do not answer, the order goes back to MechDost.",
+    "sound_on": "Turn on order sound",
+    "sound_is_on": "Order sound is on",
+    "sound_is_off": "Order sound is off",
+    "sound_ready": "Order sound is ready",
+    "updated_ago": "Updated {minutes} min ago",
+    "updated_now": "Updated just now",
+    "refresh": "Refresh",
+    "offline": "You are offline. We will refresh when you are back.",
+    "needs_you": "Needs you",
+    "step_of": "Step {n} of {total}: {name}",
+    "step_done": "done",
+    "steps_all_done": "All steps done",
+    "city_middle": "City middle: {value}",
+    "no_city": "Not enough shops in your city to compare yet",
+    "new_work": "{count, plural, one {# new item for you} other {# new items for you}}"
+  },
+  "partnerRider": {
+    "earn_total": "Paid to you",
+    "earn_jobs": "Jobs delivered",
+    "earn_total_hint": "Paid to you is every payout minus any correction, as MechDost recorded it.",
+    "earn_chart": "Paid per period",
+    "stats_chart": "Delivered per day, last {days} days",
+    "history_day": "{day} · {count, plural, one {# delivered} other {# delivered}}",
+    "online_on": "Online · new offers come here",
+    "online_off": "Offline · you get no offers"
+  },
+  "partnerShop": {
+    "tiles_label": "Today at a glance",
+    "kpi_new": "New",
+    "kpi_packing": "Packing",
+    "kpi_out": "Out for delivery",
+    "kpi_ready": "Ready for pickup",
+    "kpi_delivered": "Delivered"
   }
 }

@@ -10228,5 +10228,48 @@
     "hour_full": "भरा हुआ",
     "hindi_missing": "हिंदी नाम नहीं है",
     "api_only": "यह टैब असली साइन-इन से खुलता है।"
+  },
+  "partnerKit": {
+    "help": "मदद",
+    "help_label": "MechDost मदद को कॉल करें",
+    "timer_left": "{time} बाकी",
+    "timer_hurry": "जल्दी करें: एक मिनट से कम",
+    "timer_five": "जवाब देने के लिए 5 मिनट बाकी",
+    "timer_ended": "समय खत्म",
+    "timer_ends_at": "{time} तक जवाब दें",
+    "timer_rule": "जवाब न देने पर ऑर्डर MechDost के पास वापस चला जाता है।",
+    "sound_on": "ऑर्डर की आवाज़ चालू करें",
+    "sound_is_on": "ऑर्डर की आवाज़ चालू है",
+    "sound_is_off": "ऑर्डर की आवाज़ बंद है",
+    "sound_ready": "ऑर्डर की आवाज़ तैयार है",
+    "updated_ago": "{minutes} मिनट पहले अपडेट हुआ",
+    "updated_now": "अभी अपडेट हुआ",
+    "refresh": "ताज़ा करें",
+    "offline": "इंटरनेट बंद है। वापस आते ही ताज़ा करेंगे।",
+    "needs_you": "आपका इंतज़ार",
+    "step_of": "चरण {n} / {total}: {name}",
+    "step_done": "पूरा",
+    "steps_all_done": "सभी चरण पूरे",
+    "city_middle": "शहर का औसत: {value}",
+    "no_city": "तुलना के लिए आपके शहर में अभी काफ़ी दुकानें नहीं हैं",
+    "new_work": "{count, plural, one {आपके लिए # नया काम} other {आपके लिए # नए काम}}"
+  },
+  "partnerRider": {
+    "earn_total": "आपको मिला",
+    "earn_jobs": "पहुँचाए गए काम",
+    "earn_total_hint": "आपको मिला = हर भुगतान में से हर सुधार घटाकर, जैसा MechDost ने दर्ज किया।",
+    "earn_chart": "हर अवधि का भुगतान",
+    "stats_chart": "हर दिन पहुँचाए, पिछले {days} दिन",
+    "history_day": "{day} · {count, plural, one {# पहुँचाया} other {# पहुँचाए}}",
+    "online_on": "ऑनलाइन · नए ऑफ़र यहीं आएँगे",
+    "online_off": "ऑफ़लाइन · कोई ऑफ़र नहीं आएगा"
+  },
+  "partnerShop": {
+    "tiles_label": "आज एक नज़र में",
+    "kpi_new": "नए",
+    "kpi_packing": "पैक हो रहे",
+    "kpi_out": "डिलीवरी पर निकले",
+    "kpi_ready": "उठाने के लिए तैयार",
+    "kpi_delivered": "पहुँचाए"
   }
 }

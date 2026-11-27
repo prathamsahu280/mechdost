@@ -1,5 +1,6 @@
 'use client';
 
+import { DailyBars } from './analytics-charts';
 import { ShopStaffPerformance, type ShopStaffPerformanceDto } from '@mechdost/shared/shop-staff-performance';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -9,7 +10,6 @@ import { formatPrice } from '@/lib/format';
 import {
   acceptTime,
   istDayLabel,
-  paiseBarWidth,
   percentOf,
   staffIsEmpty,
   staffKindKey,
@@ -143,7 +143,6 @@ function Earnings({
 }) {
   const t = useTranslations('shopTier2');
   const days = earnings.byDay.slice(0, STAFF_DAYS_SHOWN);
-  const max = Math.max(0, ...days.map((d) => d.paise));
   return (
     <div>
       <h4 className="text-sm font-extrabold text-ink">{t('staffEarnTitle')}</h4>
@@ -163,24 +162,18 @@ function Earnings({
               </li>
             ))}
           </ul>
-          <h5 className="mt-3 text-xs font-extrabold text-muted">{t('staffByDay')}</h5>
-          <ul className="mt-1 space-y-1">
-            {days.map((d) => (
-              <li key={d.day} className="grid grid-cols-[4.5rem_1fr_5rem] items-center gap-2 text-sm">
-                <span className="text-muted">{istDayLabel(d.day, locale)}</span>
-                <svg viewBox="0 0 100 8" preserveAspectRatio="none" className="h-2 w-full" aria-hidden="true">
-                  <rect width="100" height="8" rx="2" className="fill-line-card" />
-                  <rect
-                    width={paiseBarWidth(d.paise, max)}
-                    height="8"
-                    rx="2"
-                    className="fill-accent-button"
-                  />
-                </svg>
-                <span className="text-right font-bold text-ink">{formatPrice(d.paise)}</span>
-              </li>
-            ))}
-          </ul>
+          {/* Day-by-day bars in money green (design 2026-11-27 § 5.3; own SVG, Q-PP-F1), with a table view. */}
+          <div className="mt-3">
+            <DailyBars
+              title={t('staffByDay')}
+              days={days
+                .toSorted((x, y) => x.day.localeCompare(y.day))
+                .map((d) => ({ date: d.day, value: d.paise }))}
+              format={(n) => formatPrice(n)}
+              locale={locale}
+              tone="success"
+            />
+          </div>
         </>
       )}
     </div>

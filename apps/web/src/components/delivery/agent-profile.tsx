@@ -1,5 +1,6 @@
 'use client';
 
+import { DeliveredChart, EarningsNumbers } from './agent-earnings-summary';
 import {
   AGENT_DOCUMENT_KINDS,
   documentNumberProblem,
@@ -98,9 +99,8 @@ function Earnings() {
       <LoadGate loading={!data && !failed} error={!data && failed ? t('loadError') : null} onRetry={reload}>
         {data ? (
           <>
-            <p className="mt-1 text-[15px] font-bold text-ink">
-              {t('deliveredCount', { count: data.deliveredJobs })}
-            </p>
+            <EarningsNumbers data={data} />
+            <DeliveredChart />
             {data.payouts.length === 0 ? (
               <p className="mt-2 text-sm text-muted">{t('earningsEmpty')}</p>
             ) : (
@@ -202,13 +202,15 @@ function DocumentRow({ kind }: { kind: AgentDocumentKind }) {
     : doc.status === 'rejected' && doc.rejectReason
       ? t('docRejected', { reason: rr(doc.rejectReason) })
       : ds(doc.status);
+  // Status badge in words and the admin data colour (design 2026-11-27 § 7): approved green, not approved red,
+  // waiting amber, missing grey.
   const tone = !doc
-    ? 'text-muted'
+    ? 'bg-pill text-muted'
     : doc.status === 'verified'
-      ? 'text-success'
+      ? 'bg-success-bg text-success'
       : doc.status === 'rejected'
-        ? 'text-error'
-        : 'text-warning';
+        ? 'bg-error-bg text-error'
+        : 'bg-warning-bg text-warning';
 
   return (
     <div className="rounded-button border border-line p-3">
@@ -217,11 +219,9 @@ function DocumentRow({ kind }: { kind: AgentDocumentKind }) {
           <h3 id={`${id}-heading`} tabIndex={-1} className="font-bold text-ink">
             {k(kind)}
           </h3>
-          <p className={`text-sm font-bold ${tone}`}>
-            {statusText}
-            {doc ? (
-              <span className="ml-2 font-normal text-muted tabular-nums">{doc.numberMasked}</span>
-            ) : null}
+          <p className="mt-1 flex flex-wrap items-center gap-2 text-sm">
+            <span className={`rounded-pill px-2.5 py-0.5 font-bold ${tone}`}>{statusText}</span>
+            {doc ? <span className="text-muted tabular-nums">{doc.numberMasked}</span> : null}
           </p>
         </div>
         {doc?.status === 'verified' || open ? null : (

@@ -1,11 +1,12 @@
 'use client';
 
+import { BulletBar } from '@/components/partner';
 import { ShopPerformance, type ShopPerformanceDto } from '@mechdost/shared/shop-tools';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import { adminApi } from '@/lib/admin-api';
 import { track } from '@/lib/analytics';
-import { acceptTime, barWidth, percentOf, ratingText } from '@/lib/shop-tools-view';
+import { acceptTime, percentOf, ratingText } from '@/lib/shop-tools-view';
 import { ApiError } from './api-list-state';
 import { portalCard, portalQuiet } from './portal-styles';
 
@@ -154,6 +155,10 @@ function Metrics({ w, hours }: { w: Window; hours: number }) {
   );
 }
 
+/**
+ * One measure as a bullet bar (design 2026-11-27 § 5.3): your value as the accent bar, the city middle as an ink
+ * marker, both written in words; no marker (and the reason) when there is no city middle.
+ */
 function Row({
   label,
   sub,
@@ -166,26 +171,16 @@ function Row({
   city: { text: string; bp: number | null } | null;
 }) {
   const t = useTranslations('shopTier2');
-  const bars = [
-    { name: t('perfYou'), ...mine, cls: 'fill-accent-button' },
-    ...(city ? [{ name: t('perfCity'), ...city, cls: 'fill-ink' }] : []),
-  ];
   return (
-    <div>
-      <h4 className="text-sm font-extrabold text-ink">{label}</h4>
-      <p className="text-xs text-muted">{sub}</p>
-      <ul className="mt-1 space-y-1">
-        {bars.map((b) => (
-          <li key={b.name} className="grid grid-cols-[5.5rem_1fr_3.5rem] items-center gap-2 text-sm">
-            <span className="truncate text-muted">{b.name}</span>
-            <svg viewBox="0 0 100 8" preserveAspectRatio="none" className="h-2 w-full" aria-hidden="true">
-              <rect width="100" height="8" rx="2" className="fill-line-card" />
-              <rect width={barWidth(b.bp)} height="8" rx="2" className={b.cls} />
-            </svg>
-            <span className="text-right font-bold text-ink">{b.text}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <BulletBar
+      label={label}
+      value={mine.bp ?? 0}
+      valueText={mine.text}
+      city={city?.bp ?? null}
+      cityText={city?.text}
+      max={10_000}
+      noCityText={t('perfNoCity')}
+      hint={sub}
+    />
   );
 }

@@ -10,6 +10,7 @@ import type {
   Result,
   ShopDeliveryClient,
 } from '@/lib/delivery/types';
+import { dailyCounts } from '@/lib/delivery/agent-stats-view';
 import * as d from './delivery-store';
 import { localizeShop } from './i18n/localize';
 import { findShop } from './shops';
@@ -74,6 +75,18 @@ export function demoAgentClient(accountId: string, locale: string): AgentClient 
       return Promise.resolve(r.ok ? me() : done(r));
     },
     earnings: () => Promise.resolve({ ok: true, data: d.agentEarnings(agentId()) }),
+    stats: (days) =>
+      Promise.resolve({
+        ok: true,
+        data: dailyCounts(
+          d
+            .agentJobs(agentId(), 'done', locale)
+            .filter((j) => j.status === 'delivered')
+            .map((j) => j.updatedAt),
+          days,
+          Date.now(),
+        ),
+      }),
   };
 }
 

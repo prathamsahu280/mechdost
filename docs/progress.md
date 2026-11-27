@@ -75,6 +75,18 @@ This file is the single source of truth for **where the build is right now**. It
 - Not done: Messages thread restyle + closed flag, motions M2/M5, optimistic Follow (U4 file), Before/After labelled
   slots in the composer. Gates run only where memory allowed (see the builder report).
 
+## 2026-11-27 night — Partner portals UI upgrade: kit (batch 0), shop part 1 (A), rider (C) — builder branch
+
+- **Done:** partner kit `components/partner/*` (+ `lib/partner-kit.ts`, `partnerKit` strings, `partner_*` events,
+  `.partner-tread` CSS); rider portal in the partner frame (bottom tabs / side rail, intro moved, offer timer, sound,
+  updated line, history by day, document badges, net "Paid to you" + payout bars + 14-day delivered chart);
+  `GET /v1/agent/me/stats` (DTO, repo, route, PGlite test); shop new-order card on `OfferTimer`, order sound, updated
+  line, Today tiles (`partnerShop`). Docs: spec 07, 24, 12, design-system "Partner frame", decisions entry.
+- **Next (not done):** shop tab split into Today / Orders / Stock & prices / Numbers / My shop with the `#warnings`
+  notice-link mapping and its test; shop BulletBar + DailyBars restyles; rider job StepRail; `offeredAt` on
+  `ShopOrder` for the shop tread bar; state-audit rows (`SHOP-FRAME`, `DLV-*`); Hindi coverage for new routes.
+- **Gates:** see the builder report (memory-limited: targeted vitest, eslint on changed files, tsc per package).
+
 ## 2026-11-27 night — skills self-improvement step (docs only, uncommitted for the lead)
 
 - Promoted every lesson seen twice from the 2026-11-26/27 learnings: advisor `checklist.md` (UI focus-on-swap,

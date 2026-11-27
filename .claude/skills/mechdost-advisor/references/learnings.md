@@ -710,3 +710,7 @@ L-QB-4 · 2026-11-27 · tooling · The brief named `docs/qa/qa-backlog-2026-11-2
   L327 · 2026-11-27 · ustaad/db · Adding a second reaction kind to a table keyed (post, member, kind): every "liked by
   me" read that selected rows without `kind = 'like'` would have shown Useful as Like → when a kind column gains a value,
   grep every read of the table (camelCase and raw SQL) and filter by kind in the same change.
+
+- L-PP1 · 2026-11-27 · ui/kit · A shared kit for parallel builders must be prop-driven (no `useSearchParams`, events and strings inside the kit) and committed before the other batches start → commit the kit first, keep its barrel stable, and put pure maths in a separate `lib/*` module so tests need no DOM.
+- L-PP2 · 2026-11-27 · tooling · `Set-Content -Encoding utf8` in Windows PowerShell 5.1 re-encoded a UTF-8 file read with `Get-Content -Raw` (`§` → `Â§`), and a git commit run while `pnpm install` held the store hung on the Prettier pre-commit hook → edit files with Python (`newline=''`) or the Edit tool, never PowerShell Set-Content; never commit while an install runs.
+- L-PP3 · 2026-11-27 · ui/data · Shop order rows have `expiresAt` but no offer start and no delivery date, so a drain bar and "Delivered today" cannot be computed client-side → check the DTO for the fields a visual needs before promising it; queue the field as P1.
