@@ -3,6 +3,8 @@
  * tasks B2–B4): pure parts the screens render.
  */
 import { describe, expect, it } from 'vitest';
+import en from '@mechdost/shared/i18n/en.json';
+import hi from '@mechdost/shared/i18n/hi.json';
 import {
   helpedBand,
   ladderState,
@@ -155,5 +157,47 @@ describe('learnTowardsNaya (E15)', () => {
 describe('helpedBand (analytics carry a band, never a list)', () => {
   it('bands the weekly count', () => {
     expect([0, 1, 2, 5, 6, 40].map(helpedBand)).toEqual(['0', '1', '2-5', '2-5', '6+', '6+']);
+  });
+});
+
+describe('U4 copy in English and Hindi (hard rule 10)', () => {
+  const NEW: Record<'card' | 'learn' | 'jobs', string[]> = {
+    card: [
+      'nextLevel',
+      'more',
+      'howCounted',
+      'teamCheck',
+      'levelsSheetTitle',
+      'yourStatus',
+      'sendCard',
+      'topLevel',
+      'verifyFirst',
+      'ruleTextOnly',
+      'helpedWeek',
+      'helpedLead',
+      'close',
+      'openLevelSheet',
+      'shortcutsH',
+      'shortcutLearn',
+      'shortcutDiscover',
+    ],
+    learn: ['towardsNaya'],
+    jobs: ['scamLine', 'learnMore', 'showLess'],
+  };
+  it('every new key exists in both locales, differs, and the Hindi has no Latin words beyond brands', () => {
+    for (const [ns, keys] of Object.entries(NEW) as [keyof typeof NEW, string[]][]) {
+      const e = en.ustaad[ns] as Record<string, string | undefined>;
+      const h = hi.ustaad[ns] as Record<string, string | undefined>;
+      for (const k of keys) {
+        expect(e[k], `en ${ns}.${k}`).toBeTruthy();
+        expect(h[k], `hi ${ns}.${k}`).toBeTruthy();
+        expect(h[k]).not.toBe(e[k]);
+        const latin = (h[k] ?? '')
+          .replace(/\{(level|n|rule|done|need)[,}]/g, '')
+          .replace(/\b(plural|one|other|MechDost|WhatsApp)\b/g, '')
+          .match(/[A-Za-z]{3,}/g);
+        expect(latin, `hi ${ns}.${k}`).toBeNull();
+      }
+    }
   });
 });

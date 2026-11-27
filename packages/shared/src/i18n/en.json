@@ -7205,7 +7205,25 @@
       "state_current": "Now",
       "state_next": "Not yet",
       "state_todo": "Not yet",
-      "state_failed": "Not approved"
+      "state_failed": "Not approved",
+      "nextLevel": "Next level: {level}",
+      "more": "{n} more",
+      "howCounted": "How are these counted?",
+      "teamCheck": "The MechDost team will check",
+      "levelSheetTitle": "What is {level}?",
+      "levelsSheetTitle": "Levels and Izzat",
+      "yourStatus": "Where you are",
+      "sendCard": "Send my card on WhatsApp",
+      "topLevel": "You are at the top level. Keep helping.",
+      "verifyFirst": "Get verified first. Then your answers start counting for levels.",
+      "ruleTextOnly": "Needs {rule}",
+      "helpedWeek": "{n, plural, one {You helped # mechanic this week} other {You helped # mechanics this week}}",
+      "helpedLead": "Counted from your answers in the last 7 days.",
+      "close": "Close",
+      "openLevelSheet": "{level}: what it means",
+      "shortcutsH": "More for you",
+      "shortcutLearn": "Learn: short videos",
+      "shortcutDiscover": "Discover Ustaads near you"
     },
     "qa": {
       "title": "Ask the Ustaads",
@@ -7653,7 +7671,10 @@
       "appStatus_closed": "Closed with the job",
       "confirmHire": "Hire this mechanic? Others on the shortlist stay as they are.",
       "confirmReject": "Tell this mechanic it is not this time? This cannot be undone.",
-      "appMoved": "Application updated."
+      "appMoved": "Application updated.",
+      "scamLine": "If anyone asks for money, don't pay",
+      "learnMore": "Learn more",
+      "showLess": "Show less"
     },
     "correction": {
       "check": "Make it clearer",
@@ -8419,7 +8440,8 @@
       "videoUnavailable": "This video is not available right now.",
       "empty": "No lessons yet. Ask an Ustaad while new ones are added.",
       "emptyCta": "Ask an Ustaad",
-      "err_USTAAD_DAILY_CAP": "You have marked enough videos for today. Come back tomorrow."
+      "err_USTAAD_DAILY_CAP": "You have marked enough videos for today. Come back tomorrow.",
+      "towardsNaya": "To become Naya Ustaad: {done}/{need} videos watched"
     },
     "social": {
       "follow": "Follow",

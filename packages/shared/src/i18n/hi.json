@@ -7205,7 +7205,25 @@
       "state_current": "अभी",
       "state_next": "अभी नहीं",
       "state_todo": "अभी नहीं",
-      "state_failed": "मंज़ूरी नहीं"
+      "state_failed": "मंज़ूरी नहीं",
+      "nextLevel": "अगला लेवल: {level}",
+      "more": "{n} और",
+      "howCounted": "ये कैसे गिने जाते हैं?",
+      "teamCheck": "MechDost टीम जाँच करेगी",
+      "levelSheetTitle": "{level} क्या है?",
+      "levelsSheetTitle": "लेवल और इज़्ज़त",
+      "yourStatus": "आपकी स्थिति",
+      "sendCard": "WhatsApp पर कार्ड भेजो",
+      "topLevel": "आप सबसे ऊँचे लेवल पर हैं। मदद करते रहो।",
+      "verifyFirst": "पहले वेरिफ़िकेशन पूरा करो। फिर आपके जवाब लेवल के लिए गिने जाएँगे।",
+      "ruleTextOnly": "चाहिए: {rule}",
+      "helpedWeek": "{n, plural, one {इस हफ़्ते आपने # मैकेनिक की मदद की} other {इस हफ़्ते आपने # मैकेनिकों की मदद की}}",
+      "helpedLead": "पिछले 7 दिनों के आपके जवाबों से गिना गया।",
+      "close": "बंद करो",
+      "openLevelSheet": "{level}: इसका मतलब",
+      "shortcutsH": "आपके लिए और",
+      "shortcutLearn": "सीखें: छोटे वीडियो",
+      "shortcutDiscover": "आसपास के उस्ताद खोजो"
     },
     "qa": {
       "title": "उस्तादों से पूछो",
@@ -7653,7 +7671,10 @@
       "appStatus_closed": "नौकरी के साथ बंद",
       "confirmHire": "इस मिस्त्री को काम पर रखें? चुनी हुई सूची के बाकी लोग वैसे ही रहेंगे।",
       "confirmReject": "इस मिस्त्री को बताएँ कि इस बार नहीं? यह वापस नहीं होगा।",
-      "appMoved": "अर्ज़ी बदल दी।"
+      "appMoved": "अर्ज़ी बदल दी।",
+      "scamLine": "पैसे माँगे तो मत देना",
+      "learnMore": "और जानो",
+      "showLess": "कम दिखाओ"
     },
     "correction": {
       "check": "साफ़ करके दिखाएँ",
@@ -8419,7 +8440,8 @@
       "videoUnavailable": "यह वीडियो अभी उपलब्ध नहीं है।",
       "empty": "अभी कोई पाठ नहीं। नए पाठ आने तक उस्ताद से पूछो।",
       "emptyCta": "उस्ताद से पूछो",
-      "err_USTAAD_DAILY_CAP": "आज के लिए काफ़ी वीडियो मान लिए। कल फिर आओ।"
+      "err_USTAAD_DAILY_CAP": "आज के लिए काफ़ी वीडियो मान लिए। कल फिर आओ।",
+      "towardsNaya": "नया उस्ताद बनने के लिए: {done}/{need} वीडियो देखे"
     },
     "social": {
       "follow": "फ़ॉलो करो",
