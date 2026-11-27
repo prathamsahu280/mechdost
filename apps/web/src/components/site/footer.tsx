@@ -205,13 +205,13 @@ export function Footer({ roadside = false }: { roadside?: boolean }) {
               <h2 id="footer-col-partners" className="mb-3 font-heading text-sm font-extrabold text-ink">
                 {t('partnersLabel')}
               </h2>
-              <ul className="flex flex-col gap-0.5 tab:grid tab:grid-cols-3 min-[1100px]:flex">
+              <ul className="flex flex-col gap-0.5 tab:grid tab:grid-cols-2 min-[1100px]:flex">
                 {partnerLinks.map((link) => (
                   <li key={link.href}>
                     <LocalLink
                       href={link.href}
                       data-track={link.track}
-                      className={`${linkClass} group/link font-semibold whitespace-nowrap text-ink`}
+                      className={`${linkClass} group/link leading-snug font-semibold text-ink`}
                     >
                       {link.icon}
                       {link.label}
