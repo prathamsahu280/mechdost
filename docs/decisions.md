@@ -2796,3 +2796,7 @@ Within the QA fix plan (`docs/qa/ustaad-sim-fix-plan-2026-11-27.md`, Batch A); n
   build. **Inspiration, not imitation** (memory "ui-redesign-feedback": two earlier samples were rejected for copying a
   look and inventing toggles): keep the MechDost tokens/fonts/theme (hard rule 2), restyle the REAL network pages, no
   invented features without a spec line, every new string en + hi, calm-UI rules kept (one primary action per screen).
+- **Partner portals UI upgrade (founder, 2026-11-27 night):** the shop, workshop and delivery-rider portals get a
+  proper UI upgrade with better components and data visualisation. Same process as the Ustaad upgrade: research +
+  visual study (D:\mechdost-qa\portal-inspiration-2026-11-27\board.html, internal reference only) → design doc
+  `docs/superpowers/specs/2026-11-27-partner-portals-ui-upgrade-design.md` → founder sees it → build in batches.
