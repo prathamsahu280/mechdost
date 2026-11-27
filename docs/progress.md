@@ -1401,3 +1401,16 @@ Done: launcher hides on phones while a field is focused and on `data-launcher-av
   lookups. Test: never-settling PDF → mail still sent. Pushed 02:47 on top of batch 2.
 - Memory: the harness killed three background jobs at low memory (~01:45; gates, worktree cleanup, CI watcher); gates
   were re-run in the foreground one package at a time. Worktree cleanup removed 26 merged agent copies (C: 14 → 21 GB).
+
+### 2026-11-28 03:35 IST — deploy 2 live (05990f6e), checked (lead)
+
+- Live on api/web/worker 05990f6e, 0 errors after 12 min. Contains batch 2 (Bench kit polish, shop tabs, workshop kit
+  swap, Saved page), the email fix (f20c1e04) and the staff-preview leak fix (05990f6e).
+- **Leak fixed live:** a refused viewer's `/ustaad`, `/hi/ustaad`, `/ustaad/ask` answer 404 with 0 network strings (was 1
+  each: the 404 HTML carried ustaad.shell/standing messages). Cause and fix in spec 23 (2026-11-28 note).
+- **Phone inline search checked in a browser at 390 px:** the icon (48 px) opens the field inline over the top bar,
+  focused, Close button, suggestions under it, no modal (0 `aria-modal`). Routes 200: /, /hi, /partner/shop,
+  /partner/shop/orders, /partner/workshop/jobs, /partner/delivery, /partners.
+- Not checked live (needs a signed-in member/partner and the QA bypass, which is off): the network screens (U1–U4,
+  Bench kit motion and light lift, Saved, YouTube embeds) and the partner portals with data — first thing for the next
+  session with the founder's OK for a short bypass window.
