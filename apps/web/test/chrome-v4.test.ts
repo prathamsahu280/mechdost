@@ -95,10 +95,11 @@ describe('panels load lazily and stay out of the first load', () => {
     expect(trigger).not.toMatch(/from '\.\/header-search'/);
   });
 
-  it('the palette is a labelled modal dialog with a combobox and closes with Escape', () => {
+  it('the palette is a labelled modal dialog (desktop) with a combobox and closes with Escape', () => {
+    // Phones open it inline over the top bar instead (founder 2026-11-27 night; test/header-search-inline.test.ts).
     const palette = src('components/site/header-search.tsx');
-    expect(palette).toContain('role="dialog"');
-    expect(palette).toContain('aria-modal="true"');
+    expect(palette).toContain("role: 'dialog'");
+    expect(palette).toContain("'aria-modal': true");
     expect(palette).toContain('role="combobox"');
     expect(palette).toContain("e.key === 'Escape'");
     expect(palette).toContain('createPortal');
@@ -241,9 +242,10 @@ describe('new strings exist in English and Hindi with the same placeholders', ()
 });
 
 describe('chrome v4 CI regressions (2026-11-23)', () => {
-  it('phone search bar is named by its visible text, not a different aria-label', () => {
+  it('the phone search icon has no visible text, so the label names it (was: bar named by its text)', () => {
     const s = src('components/site/search-trigger.tsx');
-    expect(s).toContain('aria-label={isBar ? label : undefined}');
+    expect(s).toContain('aria-label={label}');
+    expect(s).toContain('{isBar ? <span className="sr-only min-[1440px]:not-sr-only">{text}</span> : null}');
   });
   it('footer links are at least 24px wide (short Hindi words like कार्ट)', () => {
     expect(src('components/site/footer.tsx')).toMatch(/inline-flex min-h-10 min-w-6 /);

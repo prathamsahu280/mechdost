@@ -9,7 +9,9 @@ This file is the single source of truth for **where the build is right now**. It
   spec 23 § 21i); (2) "Read the network rules" link on Ustaad Home, Jobs, Me, both report forms, the composer and the
   held note; (3) local drafts for the post, question and message composers + `beforeunload` warning; (4) `/partners`
   intro, joining steps and home teaser name delivery partners; (5) theme follows the device until the visitor chooses
-  (decisions 2026-11-27 night, replaces "light by default").
+  (decisions 2026-11-27 night, replaces "light by default"); (6, added by the lead) phone search is a top-bar icon
+  that opens the field inline over the bar, desktop modal unchanged (decisions 2026-11-27 night; the state-audit
+  `CHR-SEARCH` rows wait for `#header-search-panel` on phones now — re-run them).
 - Gates: targeted vitest files green, tsc web, eslint on changed files, prettier (see the branch report). No full
   suites, no build, no e2e, no push. **Next:** lead merges, runs the full suites after 00:30, then `hindi-coverage`
   e2e on `/hi/ustaad/*` and a real-browser check of the drafts (reload warning) and the dark device theme.

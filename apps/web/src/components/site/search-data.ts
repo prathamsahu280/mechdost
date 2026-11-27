@@ -41,4 +41,12 @@ export interface SearchData {
 export interface SearchPanelProps {
   data: SearchData;
   onClose: () => void;
+  /** Opened from the phone icon: the field covers the top bar and suggestions drop under it (no modal). */
+  inline?: boolean;
 }
+
+/** The inline (phone) search panel; the phone icon's `aria-controls` points at it. */
+export const INLINE_PANEL_ID = 'header-search-panel';
+
+/** The palette tells the phone icon whether it is open (for its `aria-expanded`). */
+export const STATE_EVENT = 'mechdost:search-state';

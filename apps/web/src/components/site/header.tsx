@@ -128,8 +128,9 @@ function useSearchData(locale: string, roadside: boolean): SearchData {
 /**
  * Floating glass header (v4, user-approved design 2026-11-23, `docs/design-system.md` "Site chrome"): the logo, a
  * segmented nav (≥1024px) with a white chip and a small orange "tread" under the current page, the search pill, the
- * bell, the account avatar (menu) and the navy cart button. Under 1024px it is a compact bar (logo, bell, cart, avatar)
- * with a full-width search bar below it, and the bottom dock carries the tabs. The bar shrinks a little while the page
+ * bell, the account avatar (menu) and the navy cart button. Under 1024px it is a compact bar (logo, search icon, bell,
+ * cart, avatar); the search icon opens the field inline over the bar (founder 2026-11-27 night), and the bottom dock
+ * carries the tabs. The bar shrinks a little while the page
  * scrolls (CSS scroll-driven animation, none under reduced motion). The outer box keeps a fixed height, so the page
  * never reflows when the bar shrinks.
  */
@@ -211,6 +212,12 @@ export function Header({
               hint="/"
               icon={searchIcon}
             />
+            <SearchTrigger
+              variant="phone"
+              label={c('searchOpenLabel')}
+              text={c('searchPhone')}
+              icon={searchIcon}
+            />
             <Bell copy={bellCopy} locale={locale} />
             <div className="order-2 empty:hidden nav:order-none">
               <AccountMenu
@@ -230,14 +237,6 @@ export function Header({
           </div>
         </div>
       </header>
-      <div className="mx-auto max-w-[1320px] px-2.5 pt-2 tab:px-5 nav:hidden">
-        <SearchTrigger
-          variant="phone"
-          label={c('searchOpenLabel')}
-          text={c('searchPhone')}
-          icon={searchIcon}
-        />
-      </div>
     </>
   );
 }

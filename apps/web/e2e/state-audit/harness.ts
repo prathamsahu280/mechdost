@@ -225,10 +225,13 @@ export async function prepare(page: Page, c: AuditCase): Promise<string[]> {
       // The menu is a lazy chunk: wait for it, so the audit never measures the gap between click and mount.
       await page.locator('header [role="menu"]').waitFor({ state: 'visible' });
     } else if (c.code === 'CHR-SEARCH' || c.code === 'CHR-SEARCH-ROADSIDE') {
-      // The desktop pill from 1024 px, the full-width bar under it; both open the same palette.
+      // The desktop pill from 1024 px opens the modal palette; under it the top-bar icon opens it inline (2026-11-27).
       const pill = page.locator('[data-track="header_search"]');
-      await ((await pill.isVisible()) ? pill : page.locator('[data-track="header_search_phone"]')).click();
-      await page.locator('[role="dialog"][aria-modal="true"]').waitFor({ state: 'visible' });
+      const desktop = await pill.isVisible();
+      await (desktop ? pill : page.locator('[data-track="header_search_phone"]')).click();
+      await page
+        .locator(desktop ? '[role="dialog"][aria-modal="true"]' : '#header-search-panel')
+        .waitFor({ state: 'visible' });
       if (c.code === 'CHR-SEARCH-ROADSIDE') {
         // A breakdown word puts "Roadside help" on top of the suggestions (spec 22, 2026-11-24).
         await page.getByRole('combobox').fill(c.locale === 'hi' ? 'पंक्चर' : 'puncture');

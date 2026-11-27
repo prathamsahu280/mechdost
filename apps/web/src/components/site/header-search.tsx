@@ -10,7 +10,7 @@ import { SUGGEST_MAX, SUGGEST_QUERY_MIN, type SuggestItemDto } from '@mechdost/s
 import type { CategoryKey } from '@/demo/categories';
 import { track } from '@/lib/analytics';
 import { suggestSearch } from '@/lib/catalogue-public-api';
-import type { SearchPanelProps } from './search-data';
+import { INLINE_PANEL_ID, type SearchPanelProps } from './search-data';
 
 /**
  * The search palette behind the header's search pill (v4, decision 2026-11-23). A modal dialog with a WAI-ARIA
@@ -35,7 +35,7 @@ interface Row {
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled])';
 
-export default function HeaderSearch({ data, onClose }: SearchPanelProps) {
+export default function HeaderSearch({ data, onClose, inline = false }: SearchPanelProps) {
   const { copy, prefix, api, locale } = data;
   const router = useRouter();
   const listId = useId();
@@ -50,12 +50,25 @@ export default function HeaderSearch({ data, onClose }: SearchPanelProps) {
 
   useEffect(() => {
     input.current?.focus();
+    // Inline (phone): no modal, so the page keeps scrolling; a tap outside the field and its suggestions closes it.
+    if (inline) return undefined;
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = previous;
     };
-  }, []);
+  }, [inline]);
+
+  useEffect(() => {
+    if (!inline) return undefined;
+    const onDown = (e: PointerEvent) => {
+      if (e.target instanceof Node && !dialog.current?.contains(e.target)) onClose();
+    };
+    document.addEventListener('pointerdown', onDown);
+    return () => {
+      document.removeEventListener('pointerdown', onDown);
+    };
+  }, [inline, onClose]);
 
   useEffect(() => {
     if (!long) return undefined;
@@ -209,6 +222,150 @@ export default function HeaderSearch({ data, onClose }: SearchPanelProps) {
   const chip =
     'press m-1 inline-flex min-h-11 items-center gap-1.5 rounded-pill bg-pill px-3.5 text-[13px] font-semibold text-ink hover:bg-line';
 
+  // Phone (inline, founder 2026-11-27 night): the panel sits on the header bar (its positioned ancestor), the field
+  // row is exactly the bar's height so nothing shifts, and the suggestions drop under it. Desktop: the modal palette.
+  const panel = (
+    <div
+      ref={dialog}
+      id={inline ? INLINE_PANEL_ID : undefined}
+      {...(inline ? { role: 'search' } : { role: 'dialog', 'aria-modal': true })}
+      aria-label={copy.title}
+      onKeyDown={onDialogKey}
+      className={
+        inline
+          ? 'absolute inset-x-0 top-0 z-[60] max-h-[85vh] overflow-y-auto rounded-[18px] bg-surface shadow-dialog'
+          : 'max-h-[78vh] w-[min(640px,100%)] overflow-y-auto rounded-[18px] bg-surface shadow-dialog'
+      }
+    >
+      <div
+        className={`flex items-center gap-2.5 border-b border-line ${inline ? 'h-14 pr-1 pl-3' : 'px-4 py-3'}`}
+      >
+        <Search aria-hidden="true" className="size-5 shrink-0 text-muted" />
+        <input
+          ref={input}
+          type="search"
+          role="combobox"
+          aria-expanded={long && rows.length > 0}
+          aria-controls={long ? listId : undefined}
+          aria-activedescendant={activeId}
+          aria-autocomplete="list"
+          aria-label={copy.title}
+          autoComplete="off"
+          enterKeyHint="search"
+          maxLength={80}
+          placeholder={copy.placeholder}
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setActive(-1);
+          }}
+          onKeyDown={onInputKey}
+          className="min-h-11 min-w-0 flex-1 appearance-none rounded-lg border-0 bg-transparent px-1 text-base font-semibold text-ink placeholder:text-muted [&::-webkit-search-cancel-button]:hidden"
+        />
+        <kbd
+          aria-hidden="true"
+          lang="en"
+          className="hidden rounded-md bg-pill px-1.5 py-0.5 font-sans text-[11px] font-bold text-muted min-[560px]:inline"
+        >
+          {copy.esc}
+        </kbd>
+        <button
+          type="button"
+          aria-label={copy.close}
+          data-track="header_search_close"
+          onClick={onClose}
+          className={`press grid ${inline ? 'size-12' : 'size-11'} shrink-0 place-items-center rounded-xl text-muted hover:bg-pill hover:text-ink`}
+        >
+          <X aria-hidden="true" className="size-5" />
+        </button>
+      </div>
+
+      <p role="status" className="sr-only">
+        {fresh ? copy.count.replace('{count}', String(items.length)) : ''}
+      </p>
+
+      {long ? (
+        <ul id={listId} role="listbox" aria-label={copy.suggestions} className="p-2">
+          {rows.map((row, i) => (
+            <li
+              key={row.key}
+              id={optionId(i)}
+              role="option"
+              aria-selected={i === active}
+              onMouseDown={(e) => {
+                e.preventDefault(); // keep focus in the input
+              }}
+              onClick={() => {
+                choose(i);
+              }}
+              onMouseMove={() => {
+                if (active !== i) setActive(i);
+              }}
+              className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-3 py-1.5 text-sm text-ink ${
+                i === active ? 'bg-pill' : ''
+              }`}
+            >
+              {row.kind === 'all' ? (
+                <Search aria-hidden="true" className="size-4 shrink-0 text-muted" />
+              ) : row.kind === 'roadside' ? (
+                <Siren aria-hidden="true" className="size-4 shrink-0 text-accent-soft-text" />
+              ) : null}
+              <span className="min-w-0 flex-1">
+                <span className={`block truncate ${row.kind === 'all' ? 'font-semibold' : 'font-bold'}`}>
+                  {row.label}
+                </span>
+                {row.subtitle ? (
+                  <span className="block truncate text-xs text-muted">{row.subtitle}</span>
+                ) : null}
+              </span>
+              {row.kind === 'all' ? null : (
+                <span className="shrink-0 text-xs font-bold text-muted">
+                  {row.kind === 'roadside' ? (roadside?.kind ?? '') : copy.kind[row.kind]}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <>
+          <section aria-label={copy.popular} className="p-2">
+            <h2 className="px-3 py-1.5 text-[12.5px] font-bold text-muted">{copy.popular}</h2>
+            <ul className="flex flex-wrap">
+              {data.popular.map((text) => (
+                <li key={text}>
+                  <Link
+                    href={shopHref(text)}
+                    data-track="header_search_popular"
+                    onClick={() => {
+                      track('search', { query: text, source: 'header' });
+                      onClose();
+                    }}
+                    className={chip}
+                  >
+                    {text}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+          <section aria-label={copy.categories} className="p-2 pt-0">
+            <h2 className="px-3 py-1.5 text-[12.5px] font-bold text-muted">{copy.categories}</h2>
+            <ul className="flex flex-wrap">
+              {data.categories.map((c) => (
+                <li key={c.href}>
+                  <Link href={c.href} data-track="header_search_category" onClick={onClose} className={chip}>
+                    {c.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+          <p className="px-5 pb-4 text-xs text-muted">{copy.hint}</p>
+        </>
+      )}
+    </div>
+  );
+  if (inline) return panel;
   return createPortal(
     <div
       className="fixed inset-0 z-[60] flex items-start justify-center bg-navy/45 px-3 pt-[10vh] backdrop-blur-[3px]"
@@ -216,144 +373,7 @@ export default function HeaderSearch({ data, onClose }: SearchPanelProps) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div
-        ref={dialog}
-        role="dialog"
-        aria-modal="true"
-        aria-label={copy.title}
-        onKeyDown={onDialogKey}
-        className="max-h-[78vh] w-[min(640px,100%)] overflow-y-auto rounded-[18px] bg-surface shadow-dialog"
-      >
-        <div className="flex items-center gap-2.5 border-b border-line px-4 py-3">
-          <Search aria-hidden="true" className="size-5 shrink-0 text-muted" />
-          <input
-            ref={input}
-            type="search"
-            role="combobox"
-            aria-expanded={long && rows.length > 0}
-            aria-controls={long ? listId : undefined}
-            aria-activedescendant={activeId}
-            aria-autocomplete="list"
-            aria-label={copy.title}
-            autoComplete="off"
-            enterKeyHint="search"
-            maxLength={80}
-            placeholder={copy.placeholder}
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setActive(-1);
-            }}
-            onKeyDown={onInputKey}
-            className="min-h-11 min-w-0 flex-1 appearance-none rounded-lg border-0 bg-transparent px-1 text-base font-semibold text-ink placeholder:text-muted [&::-webkit-search-cancel-button]:hidden"
-          />
-          <kbd
-            aria-hidden="true"
-            lang="en"
-            className="hidden rounded-md bg-pill px-1.5 py-0.5 font-sans text-[11px] font-bold text-muted min-[560px]:inline"
-          >
-            {copy.esc}
-          </kbd>
-          <button
-            type="button"
-            aria-label={copy.close}
-            data-track="header_search_close"
-            onClick={onClose}
-            className="press grid size-11 shrink-0 place-items-center rounded-xl text-muted hover:bg-pill hover:text-ink"
-          >
-            <X aria-hidden="true" className="size-5" />
-          </button>
-        </div>
-
-        <p role="status" className="sr-only">
-          {fresh ? copy.count.replace('{count}', String(items.length)) : ''}
-        </p>
-
-        {long ? (
-          <ul id={listId} role="listbox" aria-label={copy.suggestions} className="p-2">
-            {rows.map((row, i) => (
-              <li
-                key={row.key}
-                id={optionId(i)}
-                role="option"
-                aria-selected={i === active}
-                onMouseDown={(e) => {
-                  e.preventDefault(); // keep focus in the input
-                }}
-                onClick={() => {
-                  choose(i);
-                }}
-                onMouseMove={() => {
-                  if (active !== i) setActive(i);
-                }}
-                className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-xl px-3 py-1.5 text-sm text-ink ${
-                  i === active ? 'bg-pill' : ''
-                }`}
-              >
-                {row.kind === 'all' ? (
-                  <Search aria-hidden="true" className="size-4 shrink-0 text-muted" />
-                ) : row.kind === 'roadside' ? (
-                  <Siren aria-hidden="true" className="size-4 shrink-0 text-accent-soft-text" />
-                ) : null}
-                <span className="min-w-0 flex-1">
-                  <span className={`block truncate ${row.kind === 'all' ? 'font-semibold' : 'font-bold'}`}>
-                    {row.label}
-                  </span>
-                  {row.subtitle ? (
-                    <span className="block truncate text-xs text-muted">{row.subtitle}</span>
-                  ) : null}
-                </span>
-                {row.kind === 'all' ? null : (
-                  <span className="shrink-0 text-xs font-bold text-muted">
-                    {row.kind === 'roadside' ? (roadside?.kind ?? '') : copy.kind[row.kind]}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <>
-            <section aria-label={copy.popular} className="p-2">
-              <h2 className="px-3 py-1.5 text-[12.5px] font-bold text-muted">{copy.popular}</h2>
-              <ul className="flex flex-wrap">
-                {data.popular.map((text) => (
-                  <li key={text}>
-                    <Link
-                      href={shopHref(text)}
-                      data-track="header_search_popular"
-                      onClick={() => {
-                        track('search', { query: text, source: 'header' });
-                        onClose();
-                      }}
-                      className={chip}
-                    >
-                      {text}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-            <section aria-label={copy.categories} className="p-2 pt-0">
-              <h2 className="px-3 py-1.5 text-[12.5px] font-bold text-muted">{copy.categories}</h2>
-              <ul className="flex flex-wrap">
-                {data.categories.map((c) => (
-                  <li key={c.href}>
-                    <Link
-                      href={c.href}
-                      data-track="header_search_category"
-                      onClick={onClose}
-                      className={chip}
-                    >
-                      {c.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-            <p className="px-5 pb-4 text-xs text-muted">{copy.hint}</p>
-          </>
-        )}
-      </div>
+      {panel}
     </div>,
     document.body,
   );
