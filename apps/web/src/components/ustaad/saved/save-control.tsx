@@ -2,10 +2,9 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
-import { SaveStateDto } from '@mechdost/shared/ustaad/dto/saved';
 import type { UstaadSaveKind } from '@mechdost/shared/ustaad/saved';
 import { track } from '@/lib/analytics';
-import { authed } from '@/lib/orders-api';
+import { ustaadClient } from '@/lib/ustaad/client';
 import { toggleSaved } from '@/lib/ustaad/save-toggle';
 import { UstaadIcon } from '../shell/icons';
 
@@ -42,10 +41,7 @@ export function SaveControl({
     const r = await toggleSaved({
       kind,
       saved,
-      send: (on) =>
-        authed(locale, `/ustaad/saves/${kind}/${encodeURIComponent(id)}`, SaveStateDto, {
-          method: on ? 'PUT' : 'DELETE',
-        }),
+      send: async (on) => (await ustaadClient(locale)).setSaved(kind, id, on),
       onState: (s) => {
         setSaved(s);
         onChange?.(s);
