@@ -1353,3 +1353,25 @@ Done: launcher hides on phones while a field is focused and on `data-launcher-av
 - Next: lead merges and compares the result with the demo in a real browser (not done here: no browser run, no build,
   no e2e); the state-audit model has no row for `.ustaad-seg` (no segmented control exists in the network yet).
 - Open: V9 (site-wide lift) stays pending; story progress stays JS-ticked (100 ms) with a linear transition.
+
+### 2026-11-28 01:35 IST — night build: merged, migrated, first deploy running (lead)
+
+- **Merged to main tonight** (each audited: advisor brief, skills, exit codes; conflicts resolved per key for locale
+  JSON, union for docs): wording/site-wide (theme follows device, rules link, drafts, Hindi pass, inline phone search),
+  voice/video summaries + captions + recorder, voice-note player (seek/skip/speed), admin + delivery/COD bug batch (17),
+  member bug batch (SIM-B1 404, F1 emails, F6 video, P4, P22 search, starter seed), U1 shell/dock/Home/stories/new-posts,
+  U2/U3 post card/Useful/Pehchaan tag/fix log/composer/best-answer stamp/Ask, U4 Me/Learn/Jobs/notifications, partner
+  kit + rider portal + shop Today/offers, workshop tabs, Saved data/API/SaveControl, YouTube link embeds, "Mechanic
+  Network" rename (user-facing only; old name reserved).
+- **Migrations applied to production** 0112 media text, 0113 Useful reaction, 0114 Saved tables (RLS + REVOKE +
+  triggers), 0115 video links — 111 migrations; renumbered from builder numbers with regenerated snapshots (lesson
+  L-LEAD-MIG: drizzle-kit generate clobbered 0109/0110 snapshots, restored before commit). `db:seed:ustaad-starter`
+  run: +6 tags, +79 list entries (Q-QB-1 founder review of the banned words still open).
+- **Gates on 6a1db7be:** tsc 4 packages 0; lint 0; prettier 0; vitest shared 1126, db 1843, api 993, web 2112 — all
+  green after 8 integration fixes (commit 6a1db7be). Pushed 01:18; CI + Deploy running.
+- **Second batch merged locally (not pushed yet):** Bench kit polish (M1–M6 motion, network light lift, metal tags,
+  type/spacing; 310 tests) and shop portal tabs + workshop kit swap (admin layout loads partnerKit; checklist
+  regenerated). Push after deploy 1 is verified live.
+- **Running:** Saved page UI agent (Sonnet, retry on the new base), report by 03:00.
+- **Next:** smoke-check deploy 1 live (DC-B11 heartbeat + 2-min offer test, email send_timeout, staff-preview page
+  source, new screens light/dark en/hi), push batch 2, verify, merge Saved page, handover by 05:38.
