@@ -73,7 +73,7 @@ describe('freeSuggestions / withCollection', () => {
 });
 
 describe('words and events', () => {
-  const keys = (o: unknown): string[] => Object.keys((o ?? {}) as Record<string, unknown>).sort();
+  const keys = (o: unknown): string[] => Object.keys(o ?? {}).sort();
   it('ustaad.saved has the same keys in English and Hindi, none empty', () => {
     const e = (en as unknown as { ustaad: { saved: Record<string, string> } }).ustaad.saved;
     const h = (hi as unknown as { ustaad: { saved: Record<string, string> } }).ustaad.saved;
