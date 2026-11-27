@@ -188,7 +188,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     page: 'Workshop portal (/partner/workshop), real sign-in',
     component:
       'Job card photo section: before or after stage, 0 / 1 / 6 photos, required or optional, an upload the API refuses, the gate message at vehicle received',
-    path: '/partner/workshop',
+    path: '/partner/workshop/jobs',
     scope: 'main',
     strategy: 'pairwise',
     params: [
@@ -400,7 +400,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     page: 'Workshop portal (/partner/workshop), real sign-in',
     component:
       'My workshop card: profile text in English and Hindi, hours, busy mode, capacity per hour, menu ranges, pin and GSTIN requests (plain / busy / a waiting pin request)',
-    path: '/partner/workshop',
+    path: '/partner/workshop/profile',
     scope: 'main',
     strategy: 'pairwise',
     params: [
@@ -880,7 +880,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     page: 'Workshop portal (/partner/workshop), real sign-in',
     component:
       'Performance section behind its button: own numbers beside the anonymised city median, no median below three workshops, nothing in the range, 90 days, a timeout, a staff account refused',
-    path: '/partner/workshop',
+    path: '/partner/workshop/numbers',
     scope: 'main',
     strategy: 'pairwise',
     params: [
