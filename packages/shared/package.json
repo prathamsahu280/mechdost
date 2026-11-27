@@ -84,6 +84,7 @@
     "./support-guest": "./src/support-guest.ts",
     "./partners": "./src/partners.ts",
     "./partner-api": "./src/partner-api.ts",
+    "./partner-client-events": "./src/partner-client-events.ts",
     "./email-templates": "./src/email-templates.ts",
     "./bill-document": "./src/bill-document.ts",
     "./email-layout": "./src/email-layout.ts",

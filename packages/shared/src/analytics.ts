@@ -9,6 +9,7 @@ import { RECO_ALGOS, RECO_SURFACES } from './recommendation-limits';
 import { USTAAD_CLIENT_EVENT_SCHEMAS, type UstaadServerEventProps } from './ustaad/analytics';
 import type { DeliveryServerEventProps } from './delivery/analytics';
 import { DELIVERY_CLIENT_EVENT_SCHEMAS } from './delivery/client-events';
+import { PARTNER_CLIENT_EVENT_SCHEMAS } from './partner-client-events';
 
 /**
  * Server-side analytics events (spec 12; hard rules 9 and 16). Emitted by the API inside the same transaction
@@ -631,6 +632,8 @@ export const CLIENT_EVENT_SCHEMAS = {
   ...USTAAD_CLIENT_EVENT_SCHEMAS,
   // Delivery agents (spec 24), kept in their own file.
   ...DELIVERY_CLIENT_EVENT_SCHEMAS,
+  // Partner portals' shared kit (design 2026-11-27), kept in its own file.
+  ...PARTNER_CLIENT_EVENT_SCHEMAS,
   page_view: z.object({ path, locale: z.enum(['en', 'hi']) }).strict(),
   click: z.object({ id, path }).strict(),
   // A phone-code send or check failed (2026-11-16): the Firebase error code only, never the phone number.

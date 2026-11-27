@@ -10006,5 +10006,30 @@
     "newJobs": "{count, plural, one {इस कतार में एक नया काम} other {इस कतार में # नए काम}}",
     "csvDone": "{count, plural, one {फ़ाइल डाउनलोड हुई: # भुगतान} other {फ़ाइल डाउनलोड हुई: # भुगतान}}",
     "amountHint": "रुपये में, जैसे 1500 या 1500.50"
+  },
+  "partnerKit": {
+    "help": "मदद",
+    "help_label": "MechDost मदद को कॉल करें",
+    "timer_left": "{time} बाकी",
+    "timer_hurry": "जल्दी करें: एक मिनट से कम",
+    "timer_five": "जवाब देने के लिए 5 मिनट बाकी",
+    "timer_ended": "समय खत्म",
+    "timer_ends_at": "{time} तक जवाब दें",
+    "timer_rule": "जवाब न देने पर ऑर्डर MechDost के पास वापस चला जाता है।",
+    "sound_on": "ऑर्डर की आवाज़ चालू करें",
+    "sound_is_on": "ऑर्डर की आवाज़ चालू है",
+    "sound_is_off": "ऑर्डर की आवाज़ बंद है",
+    "sound_ready": "ऑर्डर की आवाज़ तैयार है",
+    "updated_ago": "{minutes} मिनट पहले अपडेट हुआ",
+    "updated_now": "अभी अपडेट हुआ",
+    "refresh": "ताज़ा करें",
+    "offline": "इंटरनेट बंद है। वापस आते ही ताज़ा करेंगे।",
+    "needs_you": "आपका इंतज़ार",
+    "step_of": "चरण {n} / {total}: {name}",
+    "step_done": "पूरा",
+    "steps_all_done": "सभी चरण पूरे",
+    "city_middle": "शहर का औसत: {value}",
+    "no_city": "तुलना के लिए आपके शहर में अभी काफ़ी दुकानें नहीं हैं",
+    "new_work": "{count, plural, one {आपके लिए # नया काम} other {आपके लिए # नए काम}}"
   }
 }

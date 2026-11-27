@@ -10006,5 +10006,30 @@
     "newJobs": "{count, plural, one {A new job in this queue} other {# new jobs in this queue}}",
     "csvDone": "{count, plural, one {File downloaded: # payout} other {File downloaded: # payouts}}",
     "amountHint": "In rupees, like 1500 or 1500.50"
+  },
+  "partnerKit": {
+    "help": "Help",
+    "help_label": "Call MechDost help",
+    "timer_left": "{time} left",
+    "timer_hurry": "Hurry: under a minute",
+    "timer_five": "5 minutes left to answer",
+    "timer_ended": "Time is up",
+    "timer_ends_at": "Answer by {time}",
+    "timer_rule": "If you do not answer, the order goes back to MechDost.",
+    "sound_on": "Turn on order sound",
+    "sound_is_on": "Order sound is on",
+    "sound_is_off": "Order sound is off",
+    "sound_ready": "Order sound is ready",
+    "updated_ago": "Updated {minutes} min ago",
+    "updated_now": "Updated just now",
+    "refresh": "Refresh",
+    "offline": "You are offline. We will refresh when you are back.",
+    "needs_you": "Needs you",
+    "step_of": "Step {n} of {total}: {name}",
+    "step_done": "done",
+    "steps_all_done": "All steps done",
+    "city_middle": "City middle: {value}",
+    "no_city": "Not enough shops in your city to compare yet",
+    "new_work": "{count, plural, one {# new item for you} other {# new items for you}}"
   }
 }

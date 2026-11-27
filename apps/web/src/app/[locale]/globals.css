@@ -234,6 +234,35 @@
   background: repeating-linear-gradient(90deg, var(--color-accent) 0 4px, transparent 4px 6px);
 }
 
+/* Partner kit offer timer (design 2026-11-27 § 4): the nav chip's orange tread dash, drained by scaleX from the
+   server end time; amber under a minute. Reduced motion: no smoothing (the text still counts). */
+.partner-tread {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--color-accent-button) 0 8px,
+    color-mix(in srgb, var(--color-accent-button) 55%, transparent) 8px 11px
+  );
+  transition: transform 1s linear;
+}
+.partner-tread-urgent {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--color-warning) 0 8px,
+    color-mix(in srgb, var(--color-warning) 55%, transparent) 8px 11px
+  );
+}
+@media (prefers-reduced-motion: reduce) {
+  .partner-tread {
+    transition: none;
+  }
+}
+/* Focus never hides under the partner bottom tab bar (WCAG 2.4.11). */
+@media (max-width: 1023.98px) {
+  html:has([data-partner-tabbar]) {
+    scroll-padding-bottom: 6rem;
+  }
+}
+
 /* Theme icon swap without JS (the toggle's state is the <html data-theme> / system preference). */
 .theme-icon-sun {
   display: none;
