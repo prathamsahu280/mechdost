@@ -223,7 +223,7 @@ which are automated. Add new classes at the end of the relevant section.
   names widen the page at 320 px. Test: the state audit `hscroll` rule at 320 px with a table of row actions; guard
   `apps/web/test/audit-batch-2a.test.ts` (AdminTable and ScrollRegion carry `relative`).
 - **Q2 · A "keep it applied" observer fights the user** — a MutationObserver that re-applies the stored value reverts
-  a change that could not be stored (storage full). Test: fake observer in `test/theme-light-default.test.ts`;
+  a change that could not be stored (storage full). Test: fake observer in `test/theme-follows-device.test.ts`;
   e2e qa-regressions "theme toggle ... storage is full".
 - **Q3 · Copy ruling leaves an e2e literal behind** — a ruling rewords customer copy, the e2e asserting the old text
   keeps failing for days. Test: `git log -S '<literal>'` on every failing text assertion; the ruling's change greps

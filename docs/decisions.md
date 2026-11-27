@@ -2779,3 +2779,13 @@ Within the QA fix plan (`docs/qa/ustaad-sim-fix-plan-2026-11-27.md`, Batch A); n
 - New audit action `delivery_job.offer_expired` (actor `system`) on each worker expiry; the worker logs
   `delivery_offers_not_expired` (warn) when due offers neither expired nor failed. DC-B11 (production cause still to
   be confirmed on the server).
+
+## 2026-11-27 (night) — Theme follows the device unless the visitor chose one
+
+Founder (2026-11-27 night, "all ranked improvements approved"): when the visitor never chose a theme the site follows
+the device (`prefers-color-scheme`) and switches live when the device does; an explicit choice saved under
+`mechdost-theme` (footer or account-menu toggle) still wins on every visit. **Replaces "Light mode by default"
+(2026-11-23).** No flash: the inline `THEME_INIT_SCRIPT` (`apps/web/src/lib/theme.ts`, CSP hash) resolves saved
+choice → device → light before paint and listens to the media query; `theme-client.ts` falls back to the device (the
+three maps read `data-theme`, which the script always sets). Guard `apps/web/test/theme-follows-device.test.ts`
+(renamed from `theme-light-default.test.ts`).

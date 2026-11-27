@@ -3,11 +3,16 @@ import { THEME_STORAGE_KEY } from '@/lib/theme';
 
 export type Theme = 'light' | 'dark';
 
-/** The theme the page shows now: the explicit choice on `<html data-theme>`, else light (the default). */
+/** The device's theme (`prefers-color-scheme`). */
+function deviceTheme(): Theme {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+/** The theme the page shows now: the value on `<html data-theme>`, else the device's (founder 2026-11-27 night). */
 export function currentTheme(): Theme {
   const explicit = document.documentElement.dataset.theme;
   if (explicit === 'dark' || explicit === 'light') return explicit;
-  return 'light'; // light by default (user 2026-11-23)
+  return deviceTheme();
 }
 
 function subscribe(onChange: () => void) {
@@ -52,7 +57,7 @@ export function applySavedTheme(): void {
   try {
     saved = localStorage.getItem(THEME_STORAGE_KEY);
   } catch {
-    // Storage blocked: light applies.
+    // Storage blocked: the device's theme applies.
   }
-  document.documentElement.dataset.theme ??= saved === 'dark' ? 'dark' : 'light';
+  document.documentElement.dataset.theme ??= saved === 'dark' || saved === 'light' ? saved : deviceTheme();
 }
