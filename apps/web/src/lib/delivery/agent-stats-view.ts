@@ -33,3 +33,15 @@ export function payoutBars(payouts: readonly { periodFrom: string; amountPaise: 
     .toSorted(([a], [b]) => a.localeCompare(b))
     .map(([date, value]) => ({ date, value: Math.max(0, value) }));
 }
+
+/** History rows grouped by IST day (newest day first, rows kept in their order); `label` = the day for the section. */
+export function groupByIstDay<T extends { updatedAt: string }>(rows: readonly T[]) {
+  const groups: { day: string; label: string; items: T[] }[] = [];
+  for (const row of rows) {
+    const day = istDay(row.updatedAt);
+    const last = groups.at(-1);
+    if (last?.day === day) last.items.push(row);
+    else groups.push({ day, label: day, items: [row] });
+  }
+  return groups;
+}

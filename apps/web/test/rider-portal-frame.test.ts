@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { AgentStatsQuery } from '@mechdost/shared/delivery/agent-stats';
-import { dailyCounts, istDay, payoutBars } from '@/lib/delivery/agent-stats-view';
+import { dailyCounts, groupByIstDay, istDay, payoutBars } from '@/lib/delivery/agent-stats-view';
 
 const src = (p: string) => readFileSync(new URL(`../src/${p}`, import.meta.url), 'utf8');
 const json = (l: string) =>
@@ -30,6 +30,25 @@ describe('rider earnings numbers (design 2026-11-27 § 7)', () => {
     expect(r.days).toHaveLength(7);
     expect(r.totalDelivered).toBe(2);
     expect(istDay('2026-11-27T18:29:59Z')).toBe('2026-11-27');
+  });
+});
+
+describe('rider history by day', () => {
+  it('groups rows by IST day, newest first, keeping their order', () => {
+    const g = groupByIstDay([
+      { updatedAt: '2026-11-27T19:00:00Z', id: 'a' }, // 28 Nov IST
+      { updatedAt: '2026-11-27T10:00:00Z', id: 'b' },
+      { updatedAt: '2026-11-27T05:00:00Z', id: 'c' },
+    ]);
+    expect(g.map((x) => [x.day, x.items.map((i) => i.id)])).toEqual([
+      ['2026-11-28', ['a']],
+      ['2026-11-27', ['b', 'c']],
+    ]);
+  });
+  it('documents show their state as a coloured badge with words', () => {
+    const profile = src('components/delivery/agent-profile.tsx');
+    expect(profile).toMatch(/bg-success-bg text-success/);
+    expect(profile).toMatch(/rounded-pill px-2\.5 py-0\.5 font-bold \$\{tone\}/);
   });
 });
 

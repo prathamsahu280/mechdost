@@ -19,6 +19,7 @@ import {
 } from '@/components/partner';
 import { track } from '@/lib/analytics';
 import { localePath } from '@/lib/locale-path';
+import { groupByIstDay } from '@/lib/delivery/agent-stats-view';
 import { useRiderTabs } from './rider-tabs';
 import { site } from '@/lib/site';
 import { useAgentClient, useLiveReload } from '@/lib/delivery/use-delivery-client';
@@ -540,8 +541,14 @@ export function AgentHistory() {
   const t = useTranslations('deliveryAgent');
   const s = useTranslations('delivery.jobStatus');
   const locale = useLocale();
+  const p = useTranslations('partnerRider');
   const { items, error, reload } = useAgentJobs('done');
   useScreenView('history');
+  const dayLabel = (day: string) =>
+    new Intl.DateTimeFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', {
+      dateStyle: 'medium',
+      timeZone: 'Asia/Kolkata',
+    }).format(new Date(`${day}T12:00:00+05:30`));
   return (
     <section aria-labelledby="agent-history-title" className="grid gap-3">
       <h2 id="agent-history-title" className="font-heading text-xl font-extrabold text-ink">
@@ -551,25 +558,37 @@ export function AgentHistory() {
         {items?.length === 0 ? (
           <p className={`${card} text-sm text-muted`}>{t('historyEmpty')}</p>
         ) : (
-          <ul className="divide-y divide-line rounded-card border border-line-card bg-surface">
-            {(items ?? []).map((j) => (
-              <li key={j.jobId} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
-                <span>
-                  <span className="block font-bold text-ink">{j.orderCode}</span>
-                  <span className="block text-sm text-muted">
-                    {new Intl.DateTimeFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', {
-                      dateStyle: 'medium',
-                      timeStyle: 'short',
-                      timeZone: 'Asia/Kolkata',
-                    }).format(new Date(j.updatedAt))}
-                  </span>
-                </span>
-                <span className="rounded-pill bg-pill px-3 py-1 text-xs font-extrabold text-ink">
-                  {s(j.status)}
-                </span>
-              </li>
+          // Rows grouped by IST day with the day's delivered count (design 2026-11-27 § 7).
+          <div className="grid gap-4">
+            {groupByIstDay(items ?? []).map((g) => (
+              <section key={g.day}>
+                <h3 className="mb-2 text-sm font-extrabold text-ink">
+                  {p('history_day', {
+                    day: dayLabel(g.day),
+                    count: g.items.filter((j) => j.status === 'delivered').length,
+                  })}
+                </h3>
+                <ul className="divide-y divide-line rounded-card border border-line-card bg-surface">
+                  {g.items.map((j) => (
+                    <li key={j.jobId} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+                      <span>
+                        <span className="block font-bold text-ink">{j.orderCode}</span>
+                        <span className="block text-sm text-muted">
+                          {new Intl.DateTimeFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', {
+                            timeStyle: 'short',
+                            timeZone: 'Asia/Kolkata',
+                          }).format(new Date(j.updatedAt))}
+                        </span>
+                      </span>
+                      <span className="rounded-pill bg-pill px-3 py-1 text-xs font-extrabold text-ink">
+                        {s(j.status)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             ))}
-          </ul>
+          </div>
         )}
       </LoadGate>
     </section>
