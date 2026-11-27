@@ -55,17 +55,20 @@ export function PehchaanTag({
   const key = `lvl_${level}` as 'lvl_naya';
   if (!l.has(key)) return null;
   const t = pehchaanTone(level);
-  const edge = tone === 'light' ? (level === 'master' ? 'bg-accent-light' : 'bg-hero-copy') : t.cls.edge;
+  // On navy cards the outline Chhotu tag turns navy with white text (visual language § 3.3), not a white chip.
+  const fill = tone === 'light' && level === 'apprentice' ? 'bg-navy text-white' : t.cls.fill;
+  const edge =
+    tone === 'light' ? (level === 'master' ? 'bg-accent-light' : 'bg-tag-edge-on-navy') : t.cls.edge;
   const body: ReactNode = (
     <span className={`inline-flex p-px ${OUTER} ${edge}`}>
       <span
-        className={`inline-flex items-center gap-1.5 pr-2.5 pl-[18px] leading-[1.45] font-bold ${size === 'md' ? 'min-h-8 text-sm' : 'min-h-6 text-xs'} ${INNER} ${t.cls.fill}`}
+        className={`inline-flex items-center gap-1.5 pr-2.5 pl-[18px] leading-[1.45] font-bold ${size === 'md' ? 'min-h-8 text-sm' : 'min-h-[26px] text-[13px] [&:lang(hi)]:min-h-7 [&:lang(hi)]:text-sm'} ${INNER} ${fill}`}
       >
         <span className="whitespace-nowrap">{l(key)}</span>
         {t.lines > 0 ? (
           <span aria-hidden="true" className="inline-flex gap-[2px]">
             {Array.from({ length: t.lines }, (_, i) => (
-              <span key={i} className="h-2.5 w-[2px] rounded-full bg-current opacity-80" />
+              <span key={i} className="h-[9px] w-[2px] rounded-full bg-current opacity-90" />
             ))}
           </span>
         ) : null}

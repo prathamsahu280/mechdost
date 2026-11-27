@@ -54,6 +54,14 @@
   --color-brass: #e0a526;
   --color-brass-text: #865800;
   --color-surface-raised: #ffffff;
+  /* Level metals, 2-stop sheen (visual language § 3.6 A, decision 2026-11-28): steel, brass, blackened steel */
+  --color-naya-top: #d6dde6;
+  --color-naya-bottom: #b4bfcc;
+  --color-pakka-top: #eeb94a;
+  --color-pakka-bottom: #d1961c;
+  --color-master-top: #1d3050;
+  --color-master-bottom: #0b1626;
+  --color-tag-edge-on-navy: #a3b3c7; /* tag edge on the navy Ask card: 7.4:1 on navy */
   --color-hero-copy: #cfd9e5;
   --color-focus: #e65325;
   --color-star: #c27803; /* rating stars: ≥3:1 on white (decision 2026-11-01) */
@@ -158,6 +166,13 @@
   --color-brass: #e0a526;
   --color-brass-text: #f2c461;
   --color-surface-raised: #16263e;
+  --color-naya-top: #4a5d78;
+  --color-naya-bottom: #33445c;
+  --color-pakka-top: #eeb94a;
+  --color-pakka-bottom: #d1961c;
+  --color-master-top: #f4f7fb;
+  --color-master-bottom: #cfd8e3;
+  --color-tag-edge-on-navy: #a3b3c7;
   --color-focus: #ff8b59;
   --color-star: #f5b041;
   --shadow-card: 0 4px 16px #00000033;
@@ -204,6 +219,13 @@
     --color-brass: #e0a526;
     --color-brass-text: #f2c461;
     --color-surface-raised: #16263e;
+    --color-naya-top: #4a5d78;
+    --color-naya-bottom: #33445c;
+    --color-pakka-top: #eeb94a;
+    --color-pakka-bottom: #d1961c;
+    --color-master-top: #f4f7fb;
+    --color-master-bottom: #cfd8e3;
+    --color-tag-edge-on-navy: #a3b3c7;
     --color-focus: #ff8b59;
     --color-star: #f5b041;
     --shadow-card: 0 4px 16px #00000033;

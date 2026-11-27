@@ -28,14 +28,20 @@ export const PEHCHAAN_TONES = {
     fg: 'ink',
     edge: 'input-border',
     lines: 1,
-    cls: { fill: 'bg-zinc text-ink', edge: 'bg-input-border' },
+    cls: {
+      fill: 'bg-zinc bg-[linear-gradient(180deg,var(--color-naya-top),var(--color-naya-bottom))] text-ink',
+      edge: 'bg-input-border',
+    },
   },
   pakka: {
     fill: 'brass',
     fg: 'navy',
     edge: 'brass-text',
     lines: 2,
-    cls: { fill: 'bg-brass text-navy', edge: 'bg-brass-text' },
+    cls: {
+      fill: 'bg-brass bg-[linear-gradient(180deg,var(--color-pakka-top),var(--color-pakka-bottom))] text-navy',
+      edge: 'bg-brass-text',
+    },
   },
   bada: {
     fill: 'accent-button',
@@ -49,7 +55,10 @@ export const PEHCHAAN_TONES = {
     fg: 'surface',
     edge: 'accent',
     lines: 4,
-    cls: { fill: 'bg-ink text-surface', edge: 'bg-accent' },
+    cls: {
+      fill: 'bg-ink bg-[linear-gradient(180deg,var(--color-master-top),var(--color-master-bottom))] text-surface',
+      edge: 'bg-accent',
+    },
   },
 } as const;
 
