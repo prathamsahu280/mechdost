@@ -52,6 +52,19 @@ export function formFromRow(fields: readonly TableField[], row: TableRow): Table
   return out;
 }
 
+/**
+ * The problems to show: a field's only after the person left it, all of them after Save was pressed (SIM-B7 —
+ * a new form must not open with "Enter a valid value." on every field; WCAG 3.3.1 after input, not before).
+ */
+export function shownProblems<P>(
+  problems: Record<string, P>,
+  touched: ReadonlySet<string>,
+  submitted: boolean,
+): Record<string, P> {
+  if (submitted) return problems;
+  return Object.fromEntries(Object.entries(problems).filter(([name]) => touched.has(name)));
+}
+
 export function formProblems(fields: readonly TableField[], form: TableForm): Record<string, FormProblem> {
   const out: Record<string, FormProblem> = {};
   for (const f of fields) {
