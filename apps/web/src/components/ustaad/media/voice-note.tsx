@@ -77,6 +77,14 @@ export function VoiceNote({
   const [dur, setDur] = useState(fallbackS);
   const [rate, setRate] = useState<VoiceRate>(1);
   const [dragging, setDragging] = useState(false);
+  // The slider's announced value moves on seeks and every 10 s of playback, not on each timeupdate (a focused
+  // slider would otherwise be re-read over the audio about four times a second).
+  const [ariaS, setAriaS] = useState(0);
+  const lastAria = useRef(0);
+  // One polite message after a control (speed, skip) for screen readers; the same status region shows a failure.
+  const [announce, setAnnounce] = useState('');
+  const playButton = useRef<HTMLButtonElement | null>(null);
+  const controls = useRef<HTMLDivElement | null>(null);
   const handle = useRef({
     pause: () => {
       audio.current?.pause();
@@ -129,7 +137,12 @@ export function VoiceNote({
       setDur(knownDuration(a, fallbackS));
     };
     a.ontimeupdate = () => {
-      if (!drag.current) setCur(a.currentTime);
+      if (drag.current) return;
+      setCur(a.currentTime);
+      if (Math.abs(a.currentTime - lastAria.current) >= 10) {
+        lastAria.current = a.currentTime;
+        setAriaS(a.currentTime);
+      }
     };
     a.onended = () => {
       setDur(knownDuration(a, fallbackS));
@@ -138,6 +151,8 @@ export function VoiceNote({
       playback.release(handle.current);
     };
     a.onerror = () => {
+      // The controls unmount on failure: keep focus on the play button, which stays.
+      if (controls.current?.contains(document.activeElement)) playButton.current?.focus();
       setState('failed');
     };
     audio.current = a;
@@ -152,6 +167,8 @@ export function VoiceNote({
     if (!a || !(dur > 0)) return;
     a.currentTime = seconds;
     setCur(seconds);
+    setAriaS(seconds);
+    lastAria.current = seconds;
     // Keys repeat while held: one event per second at most.
     if (via === 'key') {
       const now = Date.now();
@@ -215,6 +232,7 @@ export function VoiceNote({
     } catch {
       // Private mode or blocked storage: the speed still applies to this note.
     }
+    setAnnounce(t('voiceSpeed', { rate: String(next) }));
     track('ustaad_voice_speed_changed', { rate: next === 1 ? '1' : next === 1.5 ? '1.5' : '2' });
   }
 
@@ -243,6 +261,7 @@ export function VoiceNote({
   const active = state !== 'idle' && state !== 'failed' && dur > 0;
   const fraction = dur > 0 ? Math.min(1, Math.max(0, cur / dur)) : 0;
   const parts = valueTextParts(cur, dur);
+  const ariaParts = valueTextParts(ariaS, dur);
   const bars = waveformHeights(mediaId);
   const focusRing = 'focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus';
   return (
@@ -254,6 +273,7 @@ export function VoiceNote({
       ) : null}
       <div className="flex flex-wrap items-center gap-3">
         <button
+          ref={playButton}
           type="button"
           onClick={() => void toggle()}
           data-track="ustaad_voice_play"
@@ -273,22 +293,24 @@ export function VoiceNote({
           {playing ? t('pauseVoice') : state === 'loading' ? t('voiceLoading') : t('playVoice')}
           {meta ? <span className="font-semibold tabular-nums opacity-90">{meta}</span> : null}
         </button>
-        <p role="status" className="text-sm font-bold text-error empty:sr-only">
-          {state === 'failed' ? t('voiceFailed') : ''}
+        <p role="status" className={state === 'failed' ? 'text-sm font-bold text-error' : 'sr-only'}>
+          {state === 'failed' ? t('voiceFailed') : announce}
         </p>
       </div>
       {active ? (
-        <div className="grid w-full max-w-sm gap-1">
-          {/* The waveform is the seek bar: a keyboard slider; tap or drag anywhere on it (touch included). */}
+        <div ref={controls} className="grid w-full max-w-sm gap-1">
+          {/* The waveform is the seek bar: a keyboard slider; tap or drag anywhere on it (touch included). A div, not
+              <input type=range>, so the 30 bars are the track and the pointer can be captured for the drag time. */}
           <div
             ref={bar}
             role="slider"
             tabIndex={0}
             aria-label={t('voiceSeek')}
+            aria-describedby={label ? `${summaryId}-from` : undefined}
             aria-valuemin={0}
             aria-valuemax={Math.round(dur)}
-            aria-valuenow={Math.round(cur)}
-            aria-valuetext={t('voiceValueText', parts)}
+            aria-valuenow={Math.round(ariaS)}
+            aria-valuetext={t('voiceValueText', ariaParts)}
             onKeyDown={onKeyDown}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
@@ -302,7 +324,7 @@ export function VoiceNote({
                 key={i}
                 aria-hidden="true"
                 className={`flex-1 rounded-full transition-colors duration-150 motion-reduce:transition-none ${
-                  (i + 0.5) / bars.length <= fraction ? 'bg-accent-button' : dark ? 'bg-white/35' : 'bg-line'
+                  (i + 0.5) / bars.length <= fraction ? 'bg-accent-button' : dark ? 'bg-white/60' : 'bg-muted'
                 }`}
                 style={{ height: `${String(Math.round((h / 100) * 28))}px` }}
               />
@@ -328,7 +350,9 @@ export function VoiceNote({
               <button
                 type="button"
                 onClick={() => {
-                  seekTo(skipTarget(cur, -SKIP_S, dur), 'skip');
+                  const to = skipTarget(cur, -SKIP_S, dur);
+                  seekTo(to, 'skip');
+                  setAnnounce(t('voiceValueText', valueTextParts(to, dur)));
                 }}
                 data-track="ustaad_voice_back10"
                 className={`press inline-flex size-12 items-center justify-center rounded-full ${focusRing} ${chip}`}
@@ -348,7 +372,9 @@ export function VoiceNote({
               <button
                 type="button"
                 onClick={() => {
-                  seekTo(skipTarget(cur, SKIP_S, dur), 'skip');
+                  const to = skipTarget(cur, SKIP_S, dur);
+                  seekTo(to, 'skip');
+                  setAnnounce(t('voiceValueText', valueTextParts(to, dur)));
                 }}
                 data-track="ustaad_voice_forward10"
                 className={`press inline-flex size-12 items-center justify-center rounded-full ${focusRing} ${chip}`}
