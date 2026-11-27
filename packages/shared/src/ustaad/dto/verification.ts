@@ -211,6 +211,11 @@ export const MyCardDto = z.object({
   bestAnswers: z.number().int(),
   videos: z.number().int(),
   recommendations: z.number().int(),
+  /**
+   * "You helped N mechanics this week" (founder Q-UI-2, 2026-11-27): distinct other members whose questions I
+   * answered (visible answers) in the last 7 days, rolling. A count only; no names.
+   */
+  helpedThisWeek: z.number().int().min(0),
   badges: z.array(
     z.object({ code: z.string(), name: z.string(), rule: z.string(), icon: z.string(), held: z.boolean() }),
   ),

@@ -3,7 +3,7 @@
  * badges held and the ladder with "You are here" and the qualified-follower count next to the rule. Phone never part
  * of it (SR-34). Text comes in the member's language (`*_hi` columns, hard rule 10).
  */
-import { and, asc, eq, isNull } from 'drizzle-orm';
+import { and, asc, eq, gte, isNull, ne, sql } from 'drizzle-orm';
 import type { UstaadMemberStatus } from '@mechdost/shared/ustaad/codes';
 import type { MyCard } from '@mechdost/shared/ustaad/dto/verification';
 import { shownIzzat } from '@mechdost/shared/ustaad/izzat';
@@ -16,7 +16,11 @@ import {
   ustaadLevelRules,
   ustaadMemberCounters,
   ustaadMembers,
+  ustaadAnswers,
+  ustaadQuestions,
 } from '../../schema';
+
+const HELPED_WINDOW_MS = 7 * 86_400_000;
 import { NotFoundError } from '../errors';
 import type { Tx } from '../orders';
 import { ustaadMemberOfUser } from './members';
@@ -123,8 +127,22 @@ export async function ustaadMyCard(tx: Tx, userId: string, lang: 'hi' | 'en'): P
       staffReview: groups.some((g) => g.needsStaffReview) || level === 'bada' || level === 'master',
     };
   });
+  // Rolling 7 days (never resets to zero on a Monday); served by ustaad_answers (author_id, created_at).
+  const [helped] = await tx
+    .select({ n: sql<number>`count(distinct ${ustaadQuestions.askerId})::int` })
+    .from(ustaadAnswers)
+    .innerJoin(ustaadQuestions, eq(ustaadQuestions.id, ustaadAnswers.questionId))
+    .where(
+      and(
+        eq(ustaadAnswers.authorId, member.id),
+        eq(ustaadAnswers.status, 'visible'),
+        gte(ustaadAnswers.createdAt, new Date(Date.now() - HELPED_WINDOW_MS)),
+        ne(ustaadQuestions.askerId, member.id),
+      ),
+    );
   return {
     member,
+    helpedThisWeek: helped?.n ?? 0,
     followers: roundedCount(c?.followers ?? 0),
     qualifiedFollowers: qualified,
     izzat: shownIzzat(c?.izzat ?? 0),

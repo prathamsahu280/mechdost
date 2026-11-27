@@ -910,3 +910,46 @@ describe('my card and ladder (§ 5 /ustaad/me, § 9)', () => {
     expect(roundedCount(25_400)).toBe('25.4k');
   });
 });
+
+describe('weekly "you helped N mechanics" (founder Q-UI-2, 2026-11-27)', () => {
+  const AZ = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let qSeq = 0;
+  async function ask(askerId: string): Promise<string> {
+    qSeq += 1;
+    const tail = `${AZ.charAt(qSeq % 26)}${AZ.charAt(Math.floor(qSeq / 26) % 26)}`;
+    const [q] = await db
+      .insert(s.ustaadQuestions)
+      .values({ code: `UQ-RPR-2026-HLPQ${tail}`, askerId, cityId: f.raipur, title: 'Splendor starts hard' })
+      .returning({ id: s.ustaadQuestions.id });
+    if (!q) throw new Error('question');
+    return q.id;
+  }
+  async function answer(questionId: string, authorId: string, o: { status?: string; at?: Date } = {}) {
+    await db.insert(s.ustaadAnswers).values({
+      questionId,
+      authorId,
+      body: 'Check the plug',
+      status: o.status ?? 'visible',
+      createdAt: o.at ?? new Date(),
+    });
+  }
+
+  it('counts distinct askers of my visible answers in the last 7 days; not me, not hidden, not older', async () => {
+    const me = await mkMember();
+    const a = await mkMember();
+    const b = await mkMember();
+    const c = await mkMember();
+    const d = await mkMember();
+    const qa1 = await ask(a.memberId);
+    await answer(qa1, me.memberId);
+    await answer(await ask(a.memberId), me.memberId); // same asker twice → counted once
+    await answer(await ask(b.memberId), me.memberId, { at: new Date(Date.now() - 6 * DAY) }); // inside the window
+    await answer(await ask(c.memberId), me.memberId, { at: new Date(Date.now() - 8 * DAY) }); // outside
+    await answer(await ask(d.memberId), me.memberId, { status: 'removed' }); // not visible
+    await answer(await ask(me.memberId), me.memberId); // my own question
+    await answer(qa1, b.memberId); // someone else's answer
+    expect((await ustaadMyCard(t(), me.userId, 'en')).helpedThisWeek).toBe(2);
+    const fresh = await mkMember();
+    expect((await ustaadMyCard(t(), fresh.userId, 'en')).helpedThisWeek).toBe(0);
+  });
+});
