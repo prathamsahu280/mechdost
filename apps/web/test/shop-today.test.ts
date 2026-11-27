@@ -30,6 +30,11 @@ describe('shop Today counts (design 2026-11-27 § 5.2)', () => {
     expect(c.packing).toBe('0+');
     expect(c.delivered).toBe('0+');
   });
+  it('performance measures are bullet bars against the city middle', () => {
+    const perf = src('components/portal/shop-performance-api.tsx');
+    expect(perf).toMatch(/<BulletBar/);
+    expect(perf).toMatch(/noCityText=\{t\('perfNoCity'\)\}/);
+  });
   it('tiles sit above the offers and every partnerShop string has Hindi', () => {
     const api = src('components/portal/shop-portal-api.tsx');
     expect(api.indexOf('<ShopTodayTiles')).toBeLessThan(api.indexOf('aria-labelledby="offered-title"'));
