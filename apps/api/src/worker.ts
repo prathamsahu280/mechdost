@@ -231,8 +231,11 @@ const deliveryTimer = setInterval(() => {
   if (expiringDelivery) return;
   expiringDelivery = true;
   void expireDueDeliveryOffers(db)
-    .then(async ({ expired, failed }) => {
+    .then(async ({ due, expired, failed }) => {
       if (expired > 0) log('info', 'delivery_offers_expired', { count: expired });
+      // A due offer that neither expired nor failed would otherwise be silent (DC-B11): say so.
+      if (due > expired + failed.length)
+        log('warn', 'delivery_offers_not_expired', { due, expired, failed: failed.length });
       for (const f of failed)
         log('error', 'delivery_offer_expiry_failed', { offerId: f.offerId, ...safeError(f.error) });
       const resumed = await resumePausedAgents(db);
