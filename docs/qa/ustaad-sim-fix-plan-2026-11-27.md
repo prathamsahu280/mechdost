@@ -88,3 +88,4 @@ answerer block) · SIM-LEAD-1 (email verification lags on other devices: "I've v
 | SIM-F2                   | fixed                        | appeal receipt email ustaad_appeal_received opens /ustaad/me/standing               |
 | SIM-P2 / G16 / P16 / G18 | fixed (run the seed on prod) | pnpm db:seed:ustaad-starter, add-only                                               |
 | SIM-P22                  | fixed                        | cross-script name key + work words in Discover search                               |
+| SIM-F6 / SIM-P28         | fixed                        | udta/meta allowed without GPS; .mov/.3gp picker; length checked before upload       |

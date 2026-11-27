@@ -4105,7 +4105,13 @@
     "tpl_cod_rejected": "Cash on delivery not approved",
     "tpl_cod_revoked": "Cash on delivery turned off",
     "tpl_delivery_agent_invite": "Delivery agent invitation",
-    "tpl_delivery_offer": "New delivery job for an agent"
+    "tpl_delivery_offer": "New delivery job for an agent",
+    "tpl_ustaad_content_removed": "Ustaad Network: content removed",
+    "tpl_ustaad_strike": "Ustaad Network: strike",
+    "tpl_ustaad_banned": "Ustaad Network: account blocked",
+    "tpl_ustaad_appeal_received": "Ustaad Network: appeal received",
+    "tpl_ustaad_appeal_upheld": "Ustaad Network: appeal decided, decision stays",
+    "tpl_ustaad_appeal_overturned": "Ustaad Network: appeal accepted"
   },
   "reco": {
     "title": "Goes well with this",
@@ -7441,6 +7447,9 @@
       "err_poll_options": "Fill in 2 to 4 options.",
       "err_link_invalid": "This link cannot be posted. Use a normal http or https link.",
       "err_media_required": "Add a photo, voice note, video or PDF first.",
+      "err_video_type": "This file is not a video we can post. Choose an MP4, MOV, 3GP or WebM video.",
+      "err_video_unknown_length": "We could not read how long this video is. Save it again on your phone or choose another video.",
+      "err_video_too_long": "This video is longer than 5 minutes. Cut it shorter and try again.",
       "err_USTAAD_DAILY_CAP": "You have done a lot today. Try again tomorrow.",
       "err_USTAAD_LINKS_LOCKED": "New members can share links after a few days.",
       "err_USTAAD_LINK_BLOCKED": "This website cannot be shared here.",

@@ -4105,7 +4105,13 @@
     "tpl_cod_rejected": "कैश ऑन डिलीवरी मंज़ूर नहीं",
     "tpl_cod_revoked": "कैश ऑन डिलीवरी बंद",
     "tpl_delivery_agent_invite": "डिलीवरी एजेंट का न्योता",
-    "tpl_delivery_offer": "एजेंट के लिए नया डिलीवरी काम"
+    "tpl_delivery_offer": "एजेंट के लिए नया डिलीवरी काम",
+    "tpl_ustaad_content_removed": "उस्ताद नेटवर्क: पोस्ट हटाई गई",
+    "tpl_ustaad_strike": "उस्ताद नेटवर्क: चेतावनी",
+    "tpl_ustaad_banned": "उस्ताद नेटवर्क: खाता रोका गया",
+    "tpl_ustaad_appeal_received": "उस्ताद नेटवर्क: अपील मिली",
+    "tpl_ustaad_appeal_upheld": "उस्ताद नेटवर्क: अपील पर फ़ैसला, फ़ैसला वही",
+    "tpl_ustaad_appeal_overturned": "उस्ताद नेटवर्क: अपील मान ली गई"
   },
   "reco": {
     "title": "इसके साथ अच्छा चलता है",
@@ -7441,6 +7447,9 @@
       "err_poll_options": "2 से 4 विकल्प भरो।",
       "err_link_invalid": "यह लिंक पोस्ट नहीं हो सकता। सामान्य http या https लिंक डालो।",
       "err_media_required": "पहले फ़ोटो, आवाज़, वीडियो या PDF जोड़ो।",
+      "err_video_type": "यह फ़ाइल ऐसा वीडियो नहीं है जो डाला जा सके। MP4, MOV, 3GP या WebM वीडियो चुनो।",
+      "err_video_unknown_length": "इस वीडियो की लंबाई पढ़ी नहीं जा सकी। फ़ोन में इसे फिर से सेव करो या कोई दूसरा वीडियो चुनो।",
+      "err_video_too_long": "यह वीडियो 5 मिनट से लंबा है। इसे छोटा करके फिर से कोशिश करो।",
       "err_USTAAD_DAILY_CAP": "आज के लिए बहुत हो गया। कल फिर कोशिश करो।",
       "err_USTAAD_LINKS_LOCKED": "नए सदस्य कुछ दिन बाद लिंक डाल सकते हैं।",
       "err_USTAAD_LINK_BLOCKED": "यह वेबसाइट यहाँ शेयर नहीं हो सकती।",

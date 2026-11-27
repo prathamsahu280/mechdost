@@ -2090,6 +2090,14 @@ One commit per item, test first. Ids from `D:\mechdost-qa\ustaad-sim-2026-11-27\
   `USTAAD_WORK_WORDS` (en + hi + common spellings: wiring/बिजली → electrical, scanner/स्कैनर → diagnostics …) also match
   members with that work or vehicle code. Keys shorter than two consonants do not use the key match. The key match is a
   scan within the city filter (no index; fine at launch size, revisit with Meilisearch).
+- **SIM-F6 / SIM-P28** (changes the 2026-11-26 "any udta refuses" allowlist rule): `udta` and `meta` are allowed
+  inside `moov` and `trak` when they carry no location — `hasLocation` in `apps/api/src/ustaad/media/duration.ts`
+  refuses `©xyz`, `loci` and any `location` key name (`com.apple.quicktime.location.*`). ffmpeg's own
+  `udta/meta/ilst/©too` after `-map_metadata -1` and ordinary phone tags pass; top-level `uuid`/XMP and unknown boxes
+  still refuse. The composer picker accepts `.mov`, `.3gp`, `.3g2`, `.m4v` (declared as `video/mp4`; the API checks the
+  real container) and stops before any upload when the length cannot be read (MediaRecorder WebM with no Duration →
+  "We could not read how long this video is") or is over the 300 s hard cap; the setting's own limit is still checked
+  by the API at media create (before the bytes go up). Not done: in-app video recording; server remux (v2).
 
 ## 22. Not built / later
 

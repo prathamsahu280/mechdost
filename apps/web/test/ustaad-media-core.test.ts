@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   baseMime,
+  VIDEO_ACCEPT,
+  videoDeclaredMime,
+  videoLengthProblem,
   clockText,
   fitWithin,
   isHold,
@@ -55,5 +58,25 @@ describe('hold-to-talk with a tap fallback', () => {
     expect(clockText(0)).toBe('0:00');
     expect(clockText(7_400)).toBe('0:07');
     expect(clockText(83_000)).toBe('1:23');
+  });
+});
+
+// SIM-F6 / SIM-P28 (live QA 2026-11-27): the picker hid iPhone .mov and Android .3gp; a MediaRecorder WebM without a
+// length went up and came back as a network error.
+describe('video picking (SIM-F6, SIM-P28)', () => {
+  it('accepts .mov and .3gp/.3g2 and declares them as MP4 (the API checks the real container)', () => {
+    expect(VIDEO_ACCEPT).toContain('video/quicktime');
+    expect(VIDEO_ACCEPT).toContain('.3gp');
+    expect(VIDEO_ACCEPT).toContain('.3g2');
+    expect(videoDeclaredMime('video/quicktime', 'IMG_0001.MOV')).toBe('video/mp4');
+    expect(videoDeclaredMime('video/3gpp', 'VID.3gp')).toBe('video/mp4');
+    expect(videoDeclaredMime('', 'clip.3g2')).toBe('video/mp4');
+    expect(videoDeclaredMime('video/webm', 'rec.webm')).toBe('video/webm');
+    expect(videoDeclaredMime('video/x-msvideo', 'a.avi')).toBeNull();
+  });
+  it('a video whose length cannot be read, or that is over the hard cap, is stopped before the upload', () => {
+    expect(videoLengthProblem(0)).toBe('unknown_length');
+    expect(videoLengthProblem(301_000)).toBe('too_long');
+    expect(videoLengthProblem(60_000)).toBeNull();
   });
 });
