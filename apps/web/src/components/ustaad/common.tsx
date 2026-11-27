@@ -148,7 +148,8 @@ export function AuthorLine({
   return (
     <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
       <MemberName name={name} className={`font-bold ${tone === 'light' ? 'text-white' : 'text-ink'}`} />
-      <PehchaanTag level={author.level} tone={tone === 'light' ? 'light' : 'default'} />
+      {/* Static here: author lines also sit inside whole-card links (Ask list), and links must not nest. */}
+      <PehchaanTag level={author.level} tone={tone === 'light' ? 'light' : 'default'} interactive={false} />
     </span>
   );
 }

@@ -212,7 +212,7 @@ export function MemberLine({
         {m.verified ? (
           <BadgeCheck aria-label={t('verified')} role="img" className="size-5 shrink-0 text-success" />
         ) : null}
-        <PehchaanTag level={m.level} />
+        <PehchaanTag level={m.level} interactive={false} />
       </div>
       <p className="text-sm text-muted">
         <span data-user-content>{area}</span>

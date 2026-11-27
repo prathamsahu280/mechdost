@@ -18,12 +18,15 @@ export function PehchaanTag({
   size = 'sm',
   onOpen,
   tone = 'default',
+  interactive = true,
 }: {
   level: string;
   size?: 'sm' | 'md';
   onOpen?: () => void;
   /** `light` on navy surfaces (the Ask question card). */
   tone?: 'default' | 'light';
+  /** false inside a row that is itself a link or button (no nested interactive controls). */
+  interactive?: boolean;
 }) {
   const l = useTranslations('ustaad.labels');
   const locale = useLocale();
@@ -37,6 +40,7 @@ export function PehchaanTag({
       <span className="whitespace-nowrap">{l(key)}</span>
     </>
   );
+  if (!interactive) return <span className={shape}>{body}</span>;
   if (onOpen)
     return (
       <button

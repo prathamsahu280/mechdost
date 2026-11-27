@@ -7,6 +7,7 @@ import { useRef } from 'react';
 import { localePath } from '@/lib/locale-path';
 import type { ThreadView } from '@/lib/ustaad/messages-api';
 import { LoadFailed, LoadingBlock, SampleNote, btnPrimary, useTimeAgo } from '../common';
+import { PehchaanTag } from '../common/pehchaan-tag';
 import { Avatar, MoreButton, TabLinks, useDmErrorText, useMemberName, usePaged } from './shared';
 import { THREAD_BOXES, type ThreadBox } from './view';
 
@@ -114,6 +115,7 @@ function ThreadRow({ th, box }: { th: ThreadView; box: ThreadBox }) {
           >
             {name}
           </span>
+          <PehchaanTag level={th.other.level} interactive={false} />
           {th.muted ? (
             <BellOff aria-label={t('mutedIcon')} role="img" className="size-4 shrink-0 text-muted" />
           ) : null}
