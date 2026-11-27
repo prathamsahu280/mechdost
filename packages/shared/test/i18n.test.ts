@@ -46,6 +46,7 @@ describe('locale messages', () => {
       'ustaad.feed.kind_document', // PDF: a file-format code
       'ustaad.media.sizeKb', // KB: a unit (hard rule 10)
       'ustaad.media.sizeMb', // MB: a unit (hard rule 10)
+      'ustaad.media.voiceElapsed', // "{elapsed} / {total}": two clock times, no words (voice player 2026-11-28)
       'announcement.brand',
       'language.other',
       'language.otherName',

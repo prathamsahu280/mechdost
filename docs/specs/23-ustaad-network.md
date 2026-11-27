@@ -714,6 +714,17 @@ needs a key (Q-U6); until then an admin domain deny list in `ustaad_word_lists` 
   allows `blob:`); with no captions a visible "No captions" note sits under the video, and the summary as a labelled
   "Summary:" line. Voice notes show "Voice note from <name> · 0:42" (or "Your voice note · 0:42"), duration and size
   on the play button, a progress bar while playing, and the summary under the player (linked by `aria-describedby`).
+- **Player controls (founder 2026-11-28: "click to go ahead in the audio time and stuff").** After the first tap the
+  progress bar is a 30-bar waveform (CSS only, heights derived from the media id; no audio decoding) that is a keyboard
+  **slider** (`role="slider"`, name "Voice note position" / "आवाज़ संदेश में जगह", value text "0:12 of 0:42" /
+  "0:42 में से 0:12"): tap anywhere to seek there, drag with any pointer (touch included, pointer capture,
+  `touch-action: pan-y`) with the time shown above the thumb while dragging, ←/→ (and ↓/↑) ±5 s, Home/End. Under it
+  elapsed / total, **back 10 s** and **forward 10 s** buttons (48 px, words for screen readers) and a **speed chip**
+  1× → 1.5× → 2× → 1× remembered per viewer (`localStorage` key `mechdost-voice-rate`, read only after the tap, every
+  access in try/catch). Played bars turn accent with a colour change only (none with reduced motion). The duration
+  comes from the audio element, else the stored `durationMs`; a note with neither (MediaRecorder WebM before it has
+  played through, comments/stories that pass no info) shows the controls only once the duration is known. Pure
+  helpers in `lib/ustaad/voice-ui.ts`, tested in `apps/web/test/ustaad-voice-seek.test.ts`.
 - **Recorder upgrade.** While recording the mic button shows the word **Stop / रोको** (its name), a visible **Cancel**
   discards the take (nothing saved; a pointer the system takes away mid-hold also discards, it used to save), the time
   left shows from 10 s and is announced once through the one status region, and after recording an optional summary

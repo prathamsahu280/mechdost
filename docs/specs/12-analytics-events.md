@@ -270,7 +270,11 @@ phone) and the smart-correction events; every control also carries `data-track` 
 `ustaad_voice_*`, `ustaad_learn_*`, `ustaad_pin_*`, `ustaad_area_zone`, `ustaad_job_*`). **2026-11-27 night (spec 23 § 10b):**
 `ustaad_media_text_added { kind: audio|video, summary: bool, captions: bool }` when an upload declaration carries the
 author's typed summary or captions (flags only, never the text); controls `ustaad_voice_cancel`, `ustaad_voice_summary`,
-`ustaad_video_summary`, `ustaad_video_captions`. Questions asked, answers,
+`ustaad_video_summary`, `ustaad_video_captions`. **2026-11-28 (voice-note player, spec 23 § 10b):**
+`ustaad_voice_seeked { via: tap|drag|key|skip, seconds }` (whole second sought to, ≤ 3600; key seeks at most one
+event a second) and `ustaad_voice_speed_changed { rate: '1'|'1.5'|'2' }`; never ids or text. Named in the existing
+`ustaad_voice_*` family rather than the brief's `voice_note_*` so the catalogue stays one prefix per module; controls
+`ustaad_voice_seek`, `ustaad_voice_back10`, `ustaad_voice_forward10`, `ustaad_voice_speed`. Questions asked, answers,
 votes, best answers, job posts, applications and pin confirmations are counted server-side (spec 23 § 16). Never
 text, names, phones or locations.
 
