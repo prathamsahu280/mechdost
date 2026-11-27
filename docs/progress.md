@@ -2,6 +2,17 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-27 night — Ustaad voice/video text alternatives + recorder upgrade (builder, NOT merged)
+
+- Founder night entry built (spec 23 § 10b): typed summary on every voice item and video, typed captions on videos
+  (WebVTT `<track>` + visible "No captions"), screened with the content; recorder Cancel / "Stop" / 10 s time left /
+  summary field; voice notes with duration, size, progress, labelled "Voice note from <name> · 0:42", one player at
+  a time (also stops Listen). Migration **0112_ustaad_media_text** (unapplied). Q-STT-1 (auto captions research) and
+  Q-STT-2 (search over summaries) queued. Gates in the agent report; full suites for the lead after 00:30.
+- **Open follow-ups:** search over summaries (Q-STT-2); labelled line in comments/stories players; a11y review items
+  not fixed (video `aria-describedby` to its summary, fieldset/legend + captions counter on the video form, lang on
+  summaries in the video note, `aria-valuetext` on the progress bar, "Record again" restarts nothing — same as remove).
+
 ## 2026-11-27 evening — delivery go-live blockers fixed (builder, branch `worktree-agent-adc124fa15469db75`, NOT merged)
 
 - Seven commits, test first (spec 24 § 17): DC-P11 job photos carry the job id; DC-B11 sweep audited + warns on

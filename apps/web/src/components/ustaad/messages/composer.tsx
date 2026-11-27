@@ -109,7 +109,7 @@ export function Composer({
       c.upload(
         blob.blob,
         panel === 'voice' && rec
-          ? { kind: 'audio', mime: rec.mime, durationMs: rec.durationMs }
+          ? { kind: 'audio', mime: rec.mime, durationMs: rec.durationMs, summary: rec.summary }
           : { kind: 'image', mime: img?.mime ?? 'image/jpeg', width: img?.width, height: img?.height },
         setPct,
       ),

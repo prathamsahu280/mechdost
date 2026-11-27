@@ -2800,3 +2800,23 @@ Within the QA fix plan (`docs/qa/ustaad-sim-fix-plan-2026-11-27.md`, Batch A); n
   proper UI upgrade with better components and data visualisation. Same process as the Ustaad upgrade: research +
   visual study (D:\mechdost-qa\portal-inspiration-2026-11-27\board.html, internal reference only) → design doc
   `docs/superpowers/specs/2026-11-27-partner-portals-ui-upgrade-design.md` → founder sees it → build in batches.
+
+## 2026-11-27 (night) — Voice/video text alternatives and recorder upgrade: builder's rulings (spec 23 § 10b)
+
+Implements the founder's night entry above; no founder decision changed.
+
+- **Stored on the media row, fixed at declaration.** `ustaad_media.summary` (≤ 200), `captions` (≤ 4000, video only)
+  and `captions_lang` (`hi|en`), migration `0112_ustaad_media_text`. Sent with `POST /v1/ustaad/media`; there is no
+  edit route, so an edit can never skip the moderation screen. Cost if wrong: an author who wants to fix a typo
+  re-records or re-uploads (an owner-only edit route with a re-screen can come later).
+- **Screened with the content.** `explainUstaadScreen` appends the media's summary and caption words to the typed text,
+  so all create paths and the auto-hold report use the same word lists and scam checks (no separate media screen).
+- **Captions are author-typed and built into WebVTT on read** (blob URL `<track>`; no cross-origin captions file). A
+  single untimed block becomes one cue for the whole clip, as the founder asked; timed "0:05 — text" lines are the
+  synchronised form (a11y review: a single block is not synchronised captions; the hint asks for timed lines first).
+- **One player at a time** through a page registry (`lib/ustaad/voice-ui.ts`) shared by voice notes, feed videos and
+  Listen (`speechSynthesis`).
+- **Recorder:** pointer-cancel now **discards** (it saved the clip before); `aria-pressed` dropped because the button's
+  name changes to the visible word "Stop / रोको" while recording; time left announced once at 10 s.
+- **Not done in this change:** search over summaries (no content search exists; Q-STT-2), auto captions/summaries
+  (research only, Q-STT-1, nothing wired), labelled voice line in comments and stories.

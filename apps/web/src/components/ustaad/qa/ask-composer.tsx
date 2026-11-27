@@ -84,7 +84,7 @@ export function AskComposer() {
       setProgress(0);
       const up = await client.upload(
         voice.blob,
-        { kind: 'audio', mime: voice.mime, durationMs: voice.durationMs },
+        { kind: 'audio', mime: voice.mime, durationMs: voice.durationMs, summary: voice.summary },
         setProgress,
       );
       if (!up.ok) {

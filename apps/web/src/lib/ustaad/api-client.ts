@@ -21,6 +21,7 @@ import {
 } from '@mechdost/shared/ustaad/dto/responses';
 import { authed, type ApiResult, type Schema } from '../orders-api';
 import { baseMime } from './media-core';
+import { track } from '../analytics';
 import type { UstaadClient } from './client';
 
 /**
@@ -122,7 +123,15 @@ export function apiUstaadClient(locale: string): UstaadClient {
         sha256: await sha256Hex(file),
         ...(meta.durationMs === undefined ? {} : { durationMs: meta.durationMs }),
         ...(meta.width === undefined ? {} : { width: meta.width, height: meta.height }),
+        ...(meta.summary ? { summary: meta.summary } : {}),
+        ...(meta.captions ? { captions: meta.captions } : {}),
       });
+      if (declared.ok && (meta.kind === 'audio' || meta.kind === 'video') && (meta.summary || meta.captions))
+        track('ustaad_media_text_added', {
+          kind: meta.kind,
+          summary: Boolean(meta.summary),
+          captions: Boolean(meta.captions),
+        });
       if (!declared.ok) return declared;
       // Voice notes and phone photos stay far under the 16 MB single-PUT limit; multipart is the feed's (D) path.
       if (!declared.data.put) return { ok: false, status: 0, code: 'MEDIA_TOO_LARGE' };

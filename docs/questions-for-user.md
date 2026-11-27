@@ -565,3 +565,35 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
 - ~~Q-DC-5~~ Lead: "everyone" COD is not switched on (open the switch, read the warning, cancel).
 - ~~Q-DC-6~~ Default kept: ≤ 10 emails, then outbox rows only.
 - ~~Q-DC-7~~ **Founder: the ₹1 Racer4 listing is his deliberate payment test price** — not a bug.
+
+#### Voice and video text alternatives (2026-11-27 night, spec 23 § 10b)
+
+- **Q-STT-1 (Decision, P2) — automatic captions and summaries for Hindi/Hinglish voice notes and videos.** Today the
+  author types them; nothing is transcribed. Research (builder, 2026-11-27; most Hindi accuracy figures are
+  vendor-reported, no independent Hinglish or Chhattisgarhi numbers exist, so a 50-clip bake-off on real garage audio
+  comes first):
+  - **Sarvam AI Saaras v3** (Indian company): ₹0.49 per audio minute pay-as-you-go
+    (https://www.sarvam.ai/api-pricing); vendor WER ~19 % on IndicVoices with mid-sentence Hindi-English handling
+    (https://www.sarvam.ai/speech-to-text); an independent paper puts Hindi WER at 14.5 % vs 13.8 % for the open
+    IndicConformer (https://arxiv.org/pdf/2608.08235). India data-residency terms still to be read.
+  - **OpenAI gpt-4o-mini-transcribe** ~$0.003/min, gpt-4o-transcribe / whisper-1 ~$0.006/min
+    (https://www.neowin.net/news/openai-announces-next-generation-audio-models-to-power-voice-agents/); no published
+    Hindi WER; processed in the US.
+  - **Deepgram Nova-3** $0.0052/min (https://deepgram.com/pricing); **Google Chirp 3** ~$0.016/min and **AWS
+    Transcribe** ~$0.024/min (https://awesomeagents.ai/pricing/transcription-api-pricing/); Azure lists 5 free hours a
+    month (https://azure.microsoft.com/en-in/pricing/details/speech). No neutral Hindi numbers for these.
+  - **Self-hosted Whisper** (faster-whisper large-v3-turbo; GPU speed in
+    https://github.com/SYSTRAN/faster-whisper/issues/1030): no per-minute fee and audio never leaves our server, but on
+    the 4-vCPU AWS box it would run about real time and compete with web/API (estimate); a GPU box (~$380/month)
+    costs more than an API at our volume.
+  - **Summary step:** Claude Haiku 4.5 at $1/M input, $5/M output (https://www.anthropic.com/news/claude-haiku-4-5)
+    ≈ $0.0007 per summary (estimate).
+  - **Estimated monthly cost** (Sarvam + Haiku): ≈ ₹550 at 1,000 minutes, ≈ ₹5,500 at 10,000 minutes;
+    gpt-4o-mini-transcribe + Haiku ≈ ₹350 / ₹3,200.
+    **Recommendation:** bake-off of Sarvam Saaras v3, gpt-4o-mini-transcribe and self-hosted large-v3-turbo on 50 real
+    clips; if Sarvam wins and its DPDP terms are acceptable, run it as a **suggestion** the author edits before posting
+    (behind the `ustaad_voice` consent and a new purpose line), never auto-published. Needs: a Sarvam account/key and the
+    founder's yes to send voice to a processor. **Default meanwhile:** author-typed only, no provider wired.
+- **Q-STT-2 (Decision, P3) — search over summaries.** Discover searches people and tags only; there is no post or
+  question text search to add the summaries to. Build a content search (posts, questions, summaries; Postgres FTS
+  en + hi) as its own item? **Default meanwhile:** summaries are stored and screened, not searched.

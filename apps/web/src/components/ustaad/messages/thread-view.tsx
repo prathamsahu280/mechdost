@@ -486,7 +486,7 @@ function Bubble({ m }: { m: MessageView }) {
     >
       <span className="sr-only">{mine ? t('you') : t('them')}</span>
       {m.kind === 'voice' && m.mediaId ? (
-        <VoiceNote mediaId={m.mediaId} tone={mine ? 'dark' : 'light'} />
+        <VoiceNote mediaId={m.mediaId} tone={mine ? 'dark' : 'light'} info={{ ...m.voice, mine }} />
       ) : null}
       {m.kind === 'photo' && m.mediaId ? <PhotoBubble mediaId={m.mediaId} /> : null}
       {m.kind === 'post_share' && m.postId ? (

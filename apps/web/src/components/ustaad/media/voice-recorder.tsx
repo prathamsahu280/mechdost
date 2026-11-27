@@ -1,9 +1,11 @@
 'use client';
 
-import { Mic, RotateCcw, Square, Trash2 } from 'lucide-react';
+import { Mic, RotateCcw, Square, Trash2, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
+import { MEDIA_SUMMARY_MAX } from '@mechdost/shared/ustaad/media-text';
 import { clockText, isHold, pickRecorderMime, recordedMs } from '@/lib/ustaad/media-core';
+import { stopOutcome, summaryLeft, timeLeftToAnnounce } from '@/lib/ustaad/voice-ui';
 import { grantVoiceConsent, voiceConsentState } from '@/lib/ustaad/voice-consent';
 
 export interface Recording {
@@ -11,10 +13,11 @@ export interface Recording {
   /** The plain MIME the API accepts (`audio/webm`, `audio/ogg`, `audio/mp4`). */
   mime: string;
   durationMs: number;
+  /** Optional typed summary (≤ 200 characters; spec 23 § 10a), sent with the upload declaration. */
+  summary?: string;
 }
 
 type State = 'idle' | 'recording' | 'done' | 'denied' | 'unsupported';
-const MIN_MS = 700;
 
 const quiet =
   'press inline-flex min-h-12 items-center justify-center gap-2 rounded-button border border-input-border bg-surface px-4 text-[15px] font-bold text-ink hover:bg-pill focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus';
@@ -47,7 +50,12 @@ export function VoiceRecorder({
   const allowBtn = useRef<HTMLButtonElement>(null);
   const [state, setState] = useState<State>('idle');
   const [elapsed, setElapsed] = useState(0);
-  const [note, setNote] = useState<'tooShort' | null>(null);
+  const [note, setNote] = useState<'tooShort' | 'cancelled' | null>(null);
+  const [leftNotice, setLeftNotice] = useState<number | null>(null);
+  const [summary, setSummary] = useState('');
+  const cancelled = useRef(false);
+  const announcedLeft = useRef(false);
+  const take = useRef<Recording | null>(null);
   const [rec, setRec] = useState<{ url: string; durationMs: number } | null>(null);
   const recorder = useRef<MediaRecorder | null>(null);
   const startedAt = useRef(0);
@@ -90,6 +98,8 @@ export function VoiceRecorder({
       requestAnimationFrame(() => allowBtn.current?.focus());
       return;
     }
+    // The "allowed" note was for the first tap only; never announce it again.
+    setConsentNote(null);
     const choice =
       typeof MediaRecorder === 'undefined' ? null : pickRecorderMime((m) => MediaRecorder.isTypeSupported(m));
     if (!choice || !('mediaDevices' in navigator)) {
@@ -125,25 +135,41 @@ export function VoiceRecorder({
       if (timer.current !== null) window.clearInterval(timer.current);
       timer.current = null;
       const durationMs = recordedMs(startedAt.current, Date.now(), maxSeconds);
-      if (durationMs < MIN_MS || chunks.length === 0) {
+      const outcome = stopOutcome({ cancelled: cancelled.current, durationMs, chunks: chunks.length });
+      cancelled.current = false;
+      setLeftNotice(null);
+      if (outcome !== 'keep') {
+        // Cancel (or the system taking the pointer mid-hold) never saves the take.
         setState('idle');
-        setNote('tooShort');
+        setNote(outcome === 'discard' ? 'cancelled' : 'tooShort');
         change.current(null);
+        if (outcome === 'discard') focusMic.current = true;
         return;
       }
       const blob = new Blob(chunks, { type: choice.declare });
       setRec({ url: URL.createObjectURL(blob), durationMs });
+      setSummary('');
       setState('done');
-      change.current({ blob, mime: choice.declare, durationMs });
+      take.current = { blob, mime: choice.declare, durationMs };
+      change.current(take.current);
     };
     recorder.current = mr;
     startedAt.current = Date.now();
+    cancelled.current = false;
+    announcedLeft.current = false;
+    setLeftNotice(null);
     setElapsed(0);
     mr.start();
     setState('recording');
     timer.current = window.setInterval(() => {
       const ms = Date.now() - startedAt.current;
       setElapsed(ms);
+      const left = timeLeftToAnnounce(ms, maxSeconds, announcedLeft.current);
+      if (left !== null) {
+        // Announced once, through the one status region (not on every tick).
+        announcedLeft.current = true;
+        setLeftNotice(left);
+      }
       if (ms >= maxSeconds * 1000) stop();
     }, 250);
   }
@@ -152,7 +178,25 @@ export function VoiceRecorder({
     if (recorder.current?.state === 'recording') recorder.current.stop();
   }
 
+  /** Discard the take in progress: nothing is saved. */
+  function cancel() {
+    if (recorder.current?.state !== 'recording') return;
+    cancelled.current = true;
+    recorder.current.stop();
+  }
+
+  function saveSummary(text: string) {
+    setSummary(text);
+    const trimmed = text.trim();
+    if (!take.current) return;
+    const { blob, mime, durationMs } = take.current;
+    take.current = { blob, mime, durationMs, ...(trimmed ? { summary: trimmed } : {}) };
+    change.current(take.current);
+  }
+
   function reset() {
+    take.current = null;
+    setSummary('');
     setRec(null);
     setState('idle');
     setElapsed(0);
@@ -178,13 +222,17 @@ export function VoiceRecorder({
         ? t('recUnsupported')
         : note === 'tooShort'
           ? t('recTooShort')
-          : recording
-            ? t('recStarted')
-            : state === 'done' && rec
-              ? t('recDone', { time: clockText(rec.durationMs) })
-              : consentNote === 'ready'
-                ? t('voiceConsentReady')
-                : '';
+          : note === 'cancelled'
+            ? t('recCancelled')
+            : recording && leftNotice !== null
+              ? t('recTimeLeft', { s: leftNotice })
+              : recording
+                ? t('recStarted')
+                : state === 'done' && rec
+                  ? t('recDone', { time: clockText(rec.durationMs) })
+                  : consentNote === 'ready'
+                    ? t('voiceConsentReady')
+                    : '';
 
   return (
     <div>
@@ -247,6 +295,29 @@ export function VoiceRecorder({
           <p className="font-bold text-ink">{t('recDone', { time: clockText(rec.durationMs) })}</p>
           {/* Native controls: play, pause and seek with keyboard and screen readers. */}
           <audio controls preload="metadata" src={rec.url} className="w-full" aria-label={t('voiceNote')} />
+          <div className="grid gap-1.5">
+            <label htmlFor={`${hintId}-summary`} className="text-[15px] font-bold text-ink">
+              {t('summaryLabel')}
+            </label>
+            <p id={`${hintId}-summary-hint`} className="text-sm leading-relaxed text-muted">
+              {t('summaryHint')}
+            </p>
+            <textarea
+              id={`${hintId}-summary`}
+              value={summary}
+              maxLength={MEDIA_SUMMARY_MAX}
+              rows={2}
+              aria-describedby={`${hintId}-summary-hint ${hintId}-summary-left`}
+              data-track="ustaad_voice_summary"
+              onChange={(e) => {
+                saveSummary(e.target.value);
+              }}
+              className="min-h-12 w-full rounded-input border border-input-border bg-surface px-3 py-2 text-[15px] text-ink focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+            />
+            <p id={`${hintId}-summary-left`} className="text-sm text-muted tabular-nums">
+              {t('summaryLeft', { n: summaryLeft(summary) })}
+            </p>
+          </div>
           <div className="flex flex-wrap gap-2">
             <button type="button" className={quiet} data-track="ustaad_voice_rerecord" onClick={reset}>
               <RotateCcw aria-hidden="true" className="size-5" />
@@ -263,7 +334,6 @@ export function VoiceRecorder({
           <button
             ref={mic}
             type="button"
-            aria-pressed={recording}
             aria-describedby={hintId}
             data-track={recording ? 'ustaad_voice_stop' : 'ustaad_voice_start'}
             onPointerDown={(e) => {
@@ -289,7 +359,11 @@ export function VoiceRecorder({
             }}
             onPointerCancel={() => {
               // Scrolled away or the system took the pointer: a hold ends here, flags never stay stuck.
-              if (pointerStarted.current && isHold(Date.now() - pressAt.current)) stop();
+              // Audit 9: a cancelled pointer discards the take, it never saves it.
+              if (pointerStarted.current && isHold(Date.now() - pressAt.current)) {
+                if (recorder.current?.state === 'recording') cancel();
+                else cancelStart.current = true;
+              }
               pointerStarted.current = false;
               suppressClick.current = false;
             }}
@@ -325,22 +399,46 @@ export function VoiceRecorder({
             }`}
           >
             {recording ? (
-              <Square aria-hidden="true" className="size-8" />
+              <span className="flex flex-col items-center gap-0.5">
+                <Square aria-hidden="true" className="size-6" />
+                {/* The visible word is the button's name while recording ("Stop" / "रोको"). */}
+                <span className="text-sm leading-none font-extrabold">{t('recStopWord')}</span>
+              </span>
             ) : (
-              <Mic aria-hidden="true" className="size-9" />
+              <>
+                <Mic aria-hidden="true" className="size-9" />
+                <span className="sr-only">{t('recName')}</span>
+              </>
             )}
-            <span className="sr-only">{t('recName')}</span>
           </button>
           <div className="min-w-0">
             <p className="font-heading text-lg font-extrabold text-ink">
               {recording ? (
                 <span aria-hidden="true" className="tabular-nums">
                   {t('recording', { time: clockText(elapsed) })}
+                  {maxSeconds * 1000 - elapsed <= 10_000 ? (
+                    <span className="ml-2 text-base text-error">
+                      {t('recLeftShort', {
+                        s: Math.max(0, Math.ceil((maxSeconds * 1000 - elapsed) / 1000)),
+                      })}
+                    </span>
+                  ) : null}
                 </span>
               ) : (
                 label
               )}
             </p>
+            {recording ? (
+              <button
+                type="button"
+                className={`${quiet} mt-2`}
+                data-track="ustaad_voice_cancel"
+                onClick={cancel}
+              >
+                <X aria-hidden="true" className="size-5" />
+                {t('recCancel')}
+              </button>
+            ) : null}
             <p id={hintId} className="mt-0.5 text-sm leading-relaxed text-muted">
               {state === 'denied'
                 ? t('recDenied')
@@ -348,7 +446,9 @@ export function VoiceRecorder({
                   ? t('recUnsupported')
                   : note === 'tooShort'
                     ? t('recTooShort')
-                    : `${hint} ${t('recHint')} ${t('recMax', { s: maxSeconds })}`}
+                    : note === 'cancelled'
+                      ? t('recCancelled')
+                      : `${hint} ${t('recHint')} ${t('recMax', { s: maxSeconds })}`}
             </p>
           </div>
         </div>
