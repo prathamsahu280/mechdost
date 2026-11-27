@@ -13,9 +13,15 @@ This file is the single source of truth for **where the build is right now**. It
   `StepRail`, `BulletBar`, `KitSection`): the lead swaps them for batch 0's `components/partner/*` on merge.
 - **Merge overlap to expect:** `packages/shared/src/analytics.ts` (batch A adds the same `partner_*` events; keep one
   copy with the `shop | workshop | delivery` enum).
-- Not done: master–detail at ≥ 1024 px; calendar agenda + accepted date/hour on list rows (P1, design § 6.4); state-audit
-  rows `API-WS-*` / `WS-FRAME`; e2e not run (paths updated in `service-estimate.spec.ts`, Hindi coverage lists the
-  new routes).
+- Not done: master–detail at ≥ 1024 px; calendar agenda + accepted date/hour on list rows (P1, design § 6.4);
+  staff (mechanic) seeing Jobs only (all four tabs show; Numbers already tells staff it is not for them); single-hue
+  payment split, reasons bars and "Show as table" on Numbers; kit pieces new-order sound (founder: on by default),
+  `OfferTimer` on roadside, updated/offline line; demo job card (`workshop-job.tsx`) rail and rows; new state-audit
+  row `WS-FRAME` and a split of `API-WS-HOMEJOB` (spans three tabs); checklist not regenerated after the
+  `model-api.ts` path changes (PHOTOS → Jobs, MYWORKSHOP → profile, PERFORMANCE → Numbers). axe, e2e and audit rows
+  not run (paths updated in `service-estimate.spec.ts`; Hindi coverage lists the new routes).
+- Merge note: `BulletBar` and the one-blue funnel live in `WorkshopStatsView`, which the admin Workshops analytics
+  tab also renders (admin changes the same way).
 
 ## 2026-11-27 night — skills self-improvement step (docs only, uncommitted for the lead)
 

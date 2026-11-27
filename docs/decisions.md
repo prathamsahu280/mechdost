@@ -2810,3 +2810,22 @@ Within the QA fix plan (`docs/qa/ustaad-sim-fix-plan-2026-11-27.md`, Batch A); n
   - Q-PP-F3: the new-order sound is **on by default** (browsers still need one tap to unlock audio; the "Turn on order sound" tap is shown once).
   - Q-PP-F4: the storefront header, search and footer **stay** on partner pages.
   - Q-PP-F5: build the **rider per-day stats API now** (with batch C).
+
+## 2026-11-27 (night) — Workshop portal tabs: builder's rulings (batch B; design 2026-11-27 § 6, § 13)
+
+Within the approved design; no founder decision changed.
+
+- **Four tabs in v1, not the brief's eight:** Today · Jobs · Numbers · My workshop, as the design's § 6.1. Bills live
+  in the job card (Jobs), the service menu in My workshop, reviews (rating + count) in Numbers; Calendar waits for the
+  accepted date and hour on the list rows (§ 6.4, P1) and review replies are P2.
+- **`?job=SR-…` focus view on Jobs:** one job stays open while it moves from lane to lane (ready → billed → paid),
+  with "Back to jobs"; the step-by-step e2e flows use it. Master–detail at ≥ 1024 px is a follow-up.
+- **Tab bar placement:** an in-page tab grid under the page intro, like the rider portal (`AgentTabs`), because the
+  storefront bottom bar stays on partner pages (Q-PP-F4); the kit's `PartnerFrame` (batch 0) replaces it on merge.
+- **The "Show performance" toggle is gone:** the Numbers tab opens the screen directly (still owner only; still loaded
+  on demand). Click id `workshop_performance_toggle` retired.
+- **Each Today tile counts exactly the lane it opens:** "Waiting for the customer" = Proposed lane, "In the workshop" =
+  In the workshop lane (an estimate waiting for the customer's answer is work in the workshop), "Ready or to bill" =
+  Ready & bill lane. The design's `waitingForCustomer` count would not match any lane.
+- **Event keys:** `partner_tab_viewed` / `partner_kpi_clicked` / `partner_lane_viewed` take `portal` (`shop |
+workshop | delivery`) and a snake_case key (regex, ≤ 32 chars) so batches A–C share one schema.

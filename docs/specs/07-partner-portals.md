@@ -405,4 +405,5 @@ local stand-ins for the partner kit (`components/portal/workshop/_kit-shim.tsx`:
 - **Demo builds:** Today and Jobs show the demo store's requests and jobs; Numbers and My workshop say they open
   with a real sign-in.
 - Not built in this batch: master–detail at ≥ 1024 px, calendar agenda and its API field (P1), saved estimate line
-  templates (P1), review replies (P2), state-audit rows `API-WS-*` / `WS-FRAME`.
+  templates (P1), review replies (P2), state-audit row `WS-FRAME` (existing `API-WS-*` rows were pointed at the
+  new tabs). Tiles count exactly the lane they open (decisions 2026-11-27 builder rulings).
