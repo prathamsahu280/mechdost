@@ -44,6 +44,8 @@ describe('locale messages', () => {
       'ustaad.feed.share', // WhatsApp: a brand (hard rule 10)
       'ustaad.feed.officialBadge', // MechDost: the brand on official posts
       'ustaad.feed.kind_document', // PDF: a file-format code
+      'ustaad.media.sizeKb', // KB: a unit (hard rule 10)
+      'ustaad.media.sizeMb', // MB: a unit (hard rule 10)
       'announcement.brand',
       'language.other',
       'language.otherName',
