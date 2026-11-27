@@ -1424,3 +1424,37 @@ Done: launcher hides on phones while a field is focused and on `data-launcher-av
 - Not checked live (needs a signed-in member/partner and the QA bypass, which is off): the network screens (U1–U4,
   Bench kit motion and light lift, Saved, YouTube embeds) and the partner portals with data — first thing for the next
   session with the founder's OK for a short bypass window.
+
+## HANDOVER 2026-11-28 ~04:20 IST (lead) — read this first next session
+
+**Live on mechdost.com:** deploy 2 = 05990f6e (03:15). **Deploy 3 = fb65ca94 pushed 04:16** (partner kit a11y + Messages
+restyle on top) — check `gh run list --branch main` first; if it failed, fix and redeploy before anything else.
+
+**Built and live tonight (founder-approved, 2026-11-27/28):** "Mechanic Network" name everywhere users see it; the
+network UI upgrade U1–U4 (one compact header, dock Home · Ask · + · Jobs · Me, calm Home, story rings + viewer,
+"New posts" pill, Pehchaan key-tag with metal finishes + grade lines, Useful reaction, fix-log / tip / before-after
+posts, composer tiles, best-answer stamp, Me/ID card + weekly "helped N" note + next-level numbers, Learn progress,
+Jobs scam line, notification filters); Bench kit polish (M1–M6 motion, network light lift, dark depth); voice/video
+typed summaries + captions; recorder upgrade; voice-note player (seek/drag/±10 s/speed); YouTube link embeds
+(click-to-play, nocookie, CSP); Saved (every kind, collections, search, page); Messages restyle; partner portals
+(kit, rider + stats API, shop tabs, workshop tabs, kit a11y); wording pass (theme follows device, rules link, drafts,
+Hindi आप register, inline phone search); bug batches (member, admin, delivery/COD); two live fixes found tonight —
+**order_delivered emails** (failed every retry: PDF lookups starved on the worker pool → 8 s attachment budget +
+own pool) and **staff-preview leak** (404 HTML carried network copy → every /ustaad page guards itself).
+
+**Database:** migrations 0112–0115 applied to production (111 total); starter lists seeded (+6 tags, +79 entries).
+
+**Not verified live (needs a signed-in member/partner; the QA Turnstile bypass is OFF):** all network screens and
+the partner portals with data, Saved, YouTube playback inside the sandbox, Bench kit motion — do this first with the
+founder's OK for a short bypass window (runbook: docs/progress.md 2026-11-27 entries).
+
+**Open for the founder (docs/questions-for-user.md):** Q-DC-B11-LIVE (2-min live offer test), Q-QB-1 (banned-words
+list review), Q-QB-4 (relaxed video location check), Q234 (Saved: WhatsApp share for non-posts, admin limits), three
+wording OKs from the Hindi pass (qa.disclaimer, track_ustaad_hint, media.err_MEDIA_LOCATION), V9 (site-wide light
+lift), Q-STT-1 (auto-captions provider — default: none).
+
+**Leftovers (each builder's "not done", in spec 23 § 21i and spec 07):** saved-by-me flags on Q/A/job/lesson DTOs;
+Learn file sizes + continue; job card employer name; profile /u restyle; workshop calendar + master–detail; shop
+"Delivered today" + per-row stock ±; rider job step rail; story auto-advance on media end; e2e + state-audit rows +
+Hindi crawl for every new screen; partner kit a11y follow-ups (Hindi bar label wrap vs 65 px padding, visible focus
+after tab change); Messages a11y follow-ups (scroll-padding under stacked sticky bars, repeated status text).
