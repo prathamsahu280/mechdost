@@ -242,8 +242,14 @@ restyle. No new colours, fonts or radii.
 - **Frame:** navy `blueprint` strip first (name, state in words with a dot, Help call 48 px); under 1024 px the tabs
   are a fixed bottom bar (52 px tiles, icon over a word, `accent-soft` current tile, like the storefront dock, which
   is hidden on `/partner/*`); from 1024 px a `navy-sidebar` rail with `navy-sidebar-active` for the current tab. Focus
-  is never hidden under the bar (`scroll-padding-bottom` while the bar is present). Tabs are links with
-  `aria-current="page"`.
+  is never hidden under the bar (`html:has([data-partner-tabbar])` sets `scroll-padding-bottom` to
+  `--partner-tabbar-h` = 65 px + safe area, plus 8 px). Tabs are links with `aria-current="page"`. Bar labels are
+  12 px (13 px under `:lang(hi)`, `.partner-tab-label`); the 52 px tile height is unchanged. **Keyboard and focus
+  (a11y pass 2026-11-28):** `LaneTabs` has 8 px padding and `scroll-px-2` so the 5 px focus ring is never clipped, and
+  Left/Right (wrapping) plus Home/End move between lanes; after a tab the partner clicked, focus moves to the new
+  page's `h1` (`tabIndex -1`, the frame's screen-reader-only tab name, or the layout's own `h1` when `heading={false}`)
+  and the name is said once in the frame's polite status (never on first load or back/forward); a `KpiTile` whose
+  `href` has a `#hash` focuses the target element.
 - **Offer timer:** the countdown text in Manrope 24 px tabular, the nav chip's tread dash as a draining bar
   (`.partner-tread`, `accent-button`; `.partner-tread-urgent`, `warning`, under a minute, with "Hurry" in words); the
   bar is `aria-hidden` and does not ease under reduced motion.

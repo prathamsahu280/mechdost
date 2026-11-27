@@ -3,7 +3,7 @@
 import type { PartnerPortal } from '@mechdost/shared/partner-client-events';
 import { usePathname } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import { LocalLink } from '@/components/ui/local-link';
 import { track } from '@/lib/analytics';
 import { localePath } from '@/lib/locale-path';
@@ -46,11 +46,11 @@ export function PartnerTabs({
   label: string;
   variant: 'bar' | 'rail';
   /** Called when the partner picks a tab (not on load, back or forward): the frame then moves focus to the heading. */
-  onUserNavigate?: () => void;
+  onUserNavigate?: (e: MouseEvent<HTMLElement>) => void;
 }) {
   const current = useCurrentTab(tabs);
-  const onTab = (id: string) => () => {
-    onUserNavigate?.();
+  const onTab = (id: string) => (e: MouseEvent<HTMLElement>) => {
+    onUserNavigate?.(e);
     track('partner_tab_viewed', { portal, tab: id });
   };
   if (variant === 'rail') {

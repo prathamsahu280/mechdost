@@ -56,6 +56,21 @@ describe('focus after a tab change', () => {
   });
 });
 
+describe('review follow-ups (keyboard-navigator, 2026-11-28)', () => {
+  it('leaves modified keys (Alt+Left, Ctrl+Home) to the browser in LaneTabs', () => {
+    expect(lane).toMatch(/e\.altKey \|\| e\.ctrlKey \|\| e\.metaKey \|\| e\.shiftKey/);
+  });
+
+  it('arms the focus move from any plain link click in the frame, not new-tab clicks', () => {
+    expect(frame).toMatch(/onClickCapture=\{onFrameClick\}/);
+    expect(frame).toMatch(/e\.button !== 0/);
+  });
+
+  it('does not move focus for modified clicks on a KpiTile hash link', () => {
+    expect(kpi).toMatch(/e\.button !== 0/);
+  });
+});
+
 describe('KpiTile hash links', () => {
   it('moves focus to the in-page target of its hash', () => {
     expect(kpi).toMatch(/focusHashTarget\(/);

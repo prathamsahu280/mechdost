@@ -34,6 +34,7 @@ export function LaneTabs({
   hrefFor: (id: string) => string;
 }) {
   function onKey(e: KeyboardEvent<HTMLUListElement>) {
+    if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return; // keep Alt+Left, Ctrl+Home, … for the browser
     if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(e.key)) return;
     const links = [...e.currentTarget.querySelectorAll<HTMLAnchorElement>('a')];
     const at = links.indexOf(document.activeElement as HTMLAnchorElement);

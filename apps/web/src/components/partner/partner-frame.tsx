@@ -4,14 +4,14 @@ import type { PartnerPortal } from '@mechdost/shared/partner-client-events';
 import { Phone } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useRef, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
 import { track } from '@/lib/analytics';
 import { tabFocusPlan } from '@/lib/partner-kit';
 import { site } from '@/lib/site';
 import { PartnerTabs, useCurrentTab, type PartnerTab } from './partner-tabs';
 
-/** A tab click counts as the cause of the next route change for this long. */
-const USER_NAV_WINDOW_MS = 5000;
+/** A link click counts as the cause of the next route change for this long (short, so Back later never steals focus). */
+const USER_NAV_WINDOW_MS = 2000;
 
 export type PartnerStateTone = 'ok' | 'busy' | 'off';
 
@@ -58,9 +58,19 @@ export function PartnerFrame({
   const statusRef = useRef<HTMLParagraphElement>(null);
   const prevPath = useRef<string | null>(null);
   const tabClickedAt = useRef(0);
-  const onUserNavigate = useCallback(() => {
+  // A plain primary click on a link inside the frame (a tab or a KPI tile) is the cause of the next route change;
+  // new-tab and modified clicks are not.
+  const onUserNavigate = useCallback((e?: MouseEvent<HTMLElement>) => {
+    if (e && (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey))
+      return;
     tabClickedAt.current = Date.now();
   }, []);
+  const onFrameClick = useCallback(
+    (e: MouseEvent<HTMLElement>) => {
+      if (e.target instanceof Element && e.target.closest('a[href]')) onUserNavigate(e);
+    },
+    [onUserNavigate],
+  );
 
   // After a tab the partner picked: focus the new page's heading and say its name once in the polite status. Never on
   // the first load, and never on back/forward (the tab click is only valid for a few seconds).
@@ -72,15 +82,19 @@ export function PartnerFrame({
     tabClickedAt.current = 0;
     const target = headingRef.current ?? document.querySelector<HTMLElement>('h1');
     if (target) {
+      // Focusing the heading makes a screen reader say it: the status is only the fallback, so it is never said twice.
       if (!target.hasAttribute('tabindex')) target.tabIndex = -1;
       target.focus({ preventScroll: true });
+    } else if (statusRef.current) {
+      statusRef.current.textContent = '';
+      statusRef.current.textContent = headingText;
     }
-    if (statusRef.current) statusRef.current.textContent = headingText;
   }, [pathname, headingText]);
 
   return (
     <div
       data-partner-frame={portal}
+      onClickCapture={onFrameClick}
       className="nav:grid nav:grid-cols-[14rem_minmax(0,1fr)] nav:items-start nav:gap-6"
     >
       <aside className="hidden nav:sticky nav:top-4 nav:block">

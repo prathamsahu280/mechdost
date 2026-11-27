@@ -2,6 +2,12 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-28 — partner kit accessibility fixes (builder, branch `worktree-agent-a5dbdbe8eee1c5765`, NOT merged)
+
+- Fixed in `components/partner/*`: lane focus ring room, Home/End, bottom-bar scroll padding from bar height + safe
+  area, 12/13 px bar labels, focus to the heading + polite status after a user tab click, KPI hash focus. Tests
+  `partner-kit-a11y.test.ts` + `partner-kit.test.ts` (RED 8/8 first). Not run: e2e, browser, build, axe live.
+
 ## 2026-11-27 night — Ustaad UI upgrade U1 (builder, branch `worktree-agent-af3e09158b62176e9`, NOT merged)
 
 - Built: shell (compact chrome by CSS marker, 56 px network header, dock Home·Ask·Create·Jobs·Me, neutral frame +
