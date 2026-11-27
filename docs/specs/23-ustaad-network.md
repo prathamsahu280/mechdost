@@ -1963,6 +1963,13 @@ Each fix has a regression test named after the QA id.
   button lives. Client event `ustaad_job_applicants_viewed { count }`; the moves are the existing server event
   `ustaad_application_moved`. Tests: `ustaad-local.test.ts` "employer sees and hears about applications (SIM-P18)",
   `ustaad-local-api.test.ts` "SIM-P18 …", `apps/web/test/ustaad-applicants-view.test.ts`.
+- **SIM-P18 security follow-up (lead's review, 2026-11-27).** The applicants list runs the same member gate as the
+  employer's moves (restricted, frozen, banned or departed employers refused) and answers 404 for a draft, held or
+  removed job as for an unknown code. It leaves out withdrawn applications (the applicant took theirs back; ruling:
+  hidden, not shown greyed), banned or departed applicants and anyone blocked either way with the employer (SR-35,
+  `ustaadNotBlockedSql`). Applying to a job whose employer is blocked either way answers 404 and rings nothing. The
+  verified tick comes from `ustaadMemberCard` (verified state and a level past `apprentice` / `ustaad_pending`), the
+  same trust signal as every other card. Tests: the four "security: …" cases in `ustaad-local.test.ts`.
 - **SIM-P17 — the server decides the employer.** `PostJobDto.employer` is optional and the web form no longer sends
   one (it hard-coded `trade`, so a workshop owner got 403). `ustaadJobEmployerOptions(userId, memberWorkshopId)`
   lists what the user may post as: every workshop they hold a grant on (the member's own linked workshop first),

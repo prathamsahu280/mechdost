@@ -221,6 +221,11 @@ describe('jobs', () => {
   it('SIM-P18: the employer lists the applicants (cursor); the applicant and outsiders get 404', async () => {
     const list = await call(worker, 'GET', '/ustaad/jobs');
     const code = (list.body.items as { code: string }[])[0]?.code ?? '';
+    // The tick needs a verified state and a level past the pre-verified ones (same rule as member cards).
+    await ctx.db
+      .update(s.ustaadMembers)
+      .set({ level: 'pakka' })
+      .where(eq(s.ustaadMembers.id, workerMemberId));
     const mine = await call(employer, 'GET', `/ustaad/jobs/${code}/applications?limit=1`);
     expect(mine.status).toBe(200);
     const items = mine.body.items as { member: { displayName: string; verified: boolean }; status: string }[];

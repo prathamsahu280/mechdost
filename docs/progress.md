@@ -7,7 +7,8 @@ This file is the single source of truth for **where the build is right now**. It
 From `docs/qa/ustaad-sim-fix-plan-2026-11-27.md` (Batch A); details and tests in spec 23 § 21h. One commit per item.
 
 - **Done:** SIM-P18 (employer bell on each application + Applicants list on the job page, owner-only API with cursor); SIM-P17 (server picks the employer account; form sends none).
-- **Next:** security follow-ups on P18, P11, P20/G17, P26, P19/P24, P27/P23, B8, P10, P34.
+- **Done:** P18 security follow-up (gate, hidden jobs, blocks, banned/withdrawn hidden, card tick).
+- **Next:** P11, P20/G17, P26, P19/P24, P27/P23, B8, P10, P34.
 
 ## 2026-11-27 overnight (lead, founder asleep) — handover (written 04:55)
 
