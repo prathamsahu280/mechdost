@@ -5,6 +5,7 @@
  */
 import { RSA_PAYMENT_WINDOW_MINUTES } from '@mechdost/shared/rsa';
 import { createDb, createListener } from '@mechdost/db';
+import { sweepWatch } from './sweep-watch';
 import { loadKeyring, type Keyring } from '@mechdost/db/crypto';
 import { grievanceContactLine } from '@mechdost/shared/company';
 import { trustLineText } from '@mechdost/shared/content';
@@ -226,12 +227,21 @@ requestTimer.unref();
 // transaction under the request lock, so several workers may run this safely.
 // Delivery agents (spec 24): offers past their timer go back to the admin queue; paused agents with an end date
 // resume. One transaction per offer, so several workers may run this safely.
-let expiringDelivery = false;
+// DC-B11: a heartbeat (due count) every 10 min and one warning when a run hangs, so "nothing due" and "stuck" differ.
+const deliveryWatch = sweepWatch('delivery_offers', {
+  heartbeatEvery: 20,
+  stuckAfterMs: 120_000,
+  log: (message, data) => {
+    log(message === 'sweep_stuck' ? 'warn' : 'info', message, data);
+  },
+});
+let deliveryDue = 0;
 const deliveryTimer = setInterval(() => {
-  if (expiringDelivery) return;
-  expiringDelivery = true;
+  if (!deliveryWatch.begin(Date.now())) return;
+  deliveryDue = 0;
   void expireDueDeliveryOffers(db)
     .then(async ({ due, expired, failed }) => {
+      deliveryDue = due;
       if (expired > 0) log('info', 'delivery_offers_expired', { count: expired });
       // A due offer that neither expired nor failed would otherwise be silent (DC-B11): say so.
       if (due > expired + failed.length)
@@ -245,7 +255,7 @@ const deliveryTimer = setInterval(() => {
       log('error', 'delivery_sweep_failed', safeError(err));
     })
     .finally(() => {
-      expiringDelivery = false;
+      deliveryWatch.end(Date.now(), { due: deliveryDue });
     });
 }, 30_000);
 

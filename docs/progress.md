@@ -1145,3 +1145,18 @@ Done: launcher hides on phones while a field is focused and on `data-launcher-av
 
 - **2026-11-25 (night): vehicle segments phase 1 built on branch worktree-agent-ae19773ae46d7bc7b (not pushed, migration `0087_vehicle_segments` written and NOT applied).** Segments table + many-to-many + reviewed category mapping, insert trigger and backfill function, listing filter `segment` with facet counts, `/v1/catalogue/segments`, admin routes (list, patch, per-product set), search kind `segment` with truck / tractor / JCB / inverter words, shop chips, card tag, product page line, home "Shop by vehicle" section, admin panel and product editor field, demo catalogue with 7 heavy-vehicle products, events `shop_segment_filtered` and `home_segment_tile_clicked`, state-audit rows, spec 02 / 08 / 12, design system, decision. Owed before shipping: founder reviews screenshots (scratchpad `segments`), apply 0087 first (preview SQL in spec 02 section "Vehicle segments"), then deploy; staff set segments on the untagged general-category products.
   Gates (2026-11-25 night, exit codes read from files): shared tsc 0 + vitest 73 files / 741 tests 0; db tsc 0 + vitest 110 files / 1398 tests 0; api tsc 0 + vitest 89 files / 677 tests 0; web `next typegen && tsc` 0, vitest 171 files (all pass after fixes); eslint shared/db/api/web touched files 0; demo build 0; e2e segments.spec 16/16, hindi-coverage, shell, admin-edit, demo-flows pass except two specs that fail identically on main's build (admin-site "settings drive the bulk minimum", demo-flows "assistant answers a bulk-order question": not caused by this work); state-audit SHOP-SEGMENT-* 48 and HOME-VEHICLE-* 16 pass. JS budget (gz, page / measure-js): `/` 166.8 to 166.9 KB, `/shop` 174.5 to 177.4 KB, product page 176.2 to 176.2 KB (limit 180). Screenshots: scratchpad `segments`.
+
+### 2026-11-27 ~23:15 IST — DRT live retest + DC-B11 evidence (lead)
+
+- DRT retest (build 0d181250): PASS live — DC-P11 rider photos, DC-P9 ready for pickup, DC-B7 staff document/photo
+  links, DC-B3 (one path), DC-P8 wrong code, DC-P10 dark strip, SIM-RT1 banned Home, SIM-RT2 old bell links.
+  Not run: DC-P5/P8 Aadhaar/PAN (no upload form), DC-P4 (needs a fresh rider phone). All settings restored and re-read
+  (WhatsApp templates on, agents off, timeout 15, Sharma self, stock 10). +5 emails, 0 WhatsApp. QA bypass removed.
+- **DC-B11 still fails live**: offer due 22:29:43 stayed `offered` until staff withdrew it 22:34:57. Ruled out: RLS
+  (worker = same `postgres.*` role, bypassrls), DB locks (none stuck). Worker logs nothing for the sweep (neither
+  expired nor not-expired), so either 0 due every tick or a run never finished (in-flight flag). Worker pool is
+  `max: 2` shared by ~9 interval sweeps, no lock/statement timeouts. Added `apps/api/src/sweep-watch.ts`
+  (heartbeat with due count every 20 runs + one `sweep_stuck` warning after 2 min), wired into the delivery sweep.
+  Next: deploy, set Raipur offer timeout 2 with agents on (founder OK for test runs), watch `sweep_heartbeat`.
+- Also seen in the worker log: 6 `notify_send_failed` email `send_timeout` + `email_attachment_skipped`
+  (PhaseTimeout) in 24 h — investigate with the email outbox (open).
