@@ -353,3 +353,12 @@ Codes, counts and booleans only; never a typed code, phone, name or address.
 Client `click` ids for every agent, shop, customer and admin delivery action (list in spec 24 § Web screens →
 Analytics) and `code_submitted {kind:'delivery'}` for pickup, delivery and return codes. No PII: ids, codes and
 paths only (the invite token is redacted). Typed events in the shared catalogue: contract gap G6.
+
+### Partner portals UI upgrade (2026-11-27 night, design § 10)
+
+Client (strict schemas in `packages/shared/src/analytics.ts`): `partner_tab_viewed {portal, tab}` (a portal tab
+shown; workshop tabs `today | jobs | numbers | profile`), `partner_kpi_clicked {portal, tile}` (workshop tiles
+`new_requests | waiting_customer | in_workshop | to_bill`), `partner_lane_viewed {portal, lane}` (workshop lanes
+`proposed | confirmed | in_workshop | ready_bill | done`). `portal` is `shop | workshop | delivery`; keys are
+snake_case words only, never codes, names or amounts. The workshop click id `workshop_performance_toggle` is retired
+(the Numbers tab replaced the toggle).

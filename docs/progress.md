@@ -2,6 +2,21 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-27 night — partner portals UI upgrade, batch B: workshop portal (builder, branch `worktree-agent-ae831b8c40c7219cb`, NOT merged)
+
+- Built (spec 07 § "Workshop portal tabs"): layout frame with tabs Today · Jobs · Numbers · My workshop; Today tiles,
+  new requests and roadside; Jobs lanes with counts (`?lane=`, `?job=` focus view); job card step rail; estimate rows
+  with state words and totals by state; 48 px hour chips with free places; menu rows with the "Hindi name missing"
+  badge; bullet bars vs the city middle on Numbers; old anchors forwarded; events `partner_tab_viewed`,
+  `partner_kpi_clicked`, `partner_lane_viewed` (spec 12); strings `partnerWorkshop` (en + hi).
+- **Kit shims** in `apps/web/src/components/portal/workshop/_kit-shim.tsx` (`PartnerTabs`, `KpiTile`, `LaneTabs`,
+  `StepRail`, `BulletBar`, `KitSection`): the lead swaps them for batch 0's `components/partner/*` on merge.
+- **Merge overlap to expect:** `packages/shared/src/analytics.ts` (batch A adds the same `partner_*` events; keep one
+  copy with the `shop | workshop | delivery` enum).
+- Not done: master–detail at ≥ 1024 px; calendar agenda + accepted date/hour on list rows (P1, design § 6.4); state-audit
+  rows `API-WS-*` / `WS-FRAME`; e2e not run (paths updated in `service-estimate.spec.ts`, Hindi coverage lists the
+  new routes).
+
 ## 2026-11-27 night — skills self-improvement step (docs only, uncommitted for the lead)
 
 - Promoted every lesson seen twice from the 2026-11-26/27 learnings: advisor `checklist.md` (UI focus-on-swap,

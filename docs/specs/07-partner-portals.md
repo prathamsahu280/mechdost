@@ -367,3 +367,42 @@ Separate from seller applications (their table is seller-shaped: GST status, add
 Shop portal for agent-mode shops (ready for pickup, pickup code, agent first name + vehicle, return code, switch
 confirm/decline, "Who delivers your orders" requests) and the delivery agent portal `/partner/delivery`: spec 24
 § Web screens. Self-delivering shops are unchanged.
+
+## Workshop portal tabs (2026-11-27 night, partner portals UI upgrade batch B)
+
+Design: `docs/superpowers/specs/2026-11-27-partner-portals-ui-upgrade-design.md` § 6 and § 13 batch B; founder
+answers 2026-11-27 (Q-PP-F1 own SVG charts, F2 split into tabs, F4 storefront header stays). Branch built against
+local stand-ins for the partner kit (`components/portal/workshop/_kit-shim.tsx`: `PartnerTabs`, `KpiTile`,
+`LaneTabs`, `StepRail`, `BulletBar`), to be swapped for `components/partner/*` on merge.
+
+- **Frame** (`app/[locale]/partner/workshop/layout.tsx` + `components/portal/workshop/workshop-frame.tsx`): guard,
+  demo partner gate, message bundles (now incl. `partnerWorkshop`) and the tab bar live in the layout and stay
+  mounted while tabs change. Tabs are links with `aria-current="page"` (48 px): **Today** `/partner/workshop`,
+  **Jobs** `/partner/workshop/jobs`, **Numbers** `/partner/workshop/numbers`, **My workshop**
+  `/partner/workshop/profile`. Calendar is not a tab in v1 (needs the accepted date and hour on the list rows,
+  design § 6.4, P1).
+- **Today:** push prompt, name plate, four tiles counted from the `new` and `active` lists (no new API; "20+" when
+  another page exists): New requests (amber, "Needs you" in words), Waiting for the customer, In the workshop, Ready
+  or to bill; each tile links to its lane. Then New requests (propose or decline) and the roadside offers panel.
+- **Jobs:** lane tabs with counts over `active` + `done`: Proposed · Confirmed · In the workshop
+  (`vehicle_received`…`in_progress`) · Ready & bill (`ready`, `billed`) · Done (`paid`, `completed`, `cancelled`,
+  `rejected`). `?lane=` keeps the lane (invalid or missing → first lane with work); `?job=SR-…` opens one job in
+  place and keeps it open while it moves between lanes (ready → bill → paid), with "Back to jobs".
+- **Job card:** a six-step rail (Received · Estimate · Work · Ready · Bill · Paid; "Step n of 6: name" in words,
+  `aria-current="step"`) from `vehicle_received` on; estimate lines as rows with the state as a word badge
+  (Approved green ✓, Waiting for the customer amber …, Declined grey ✕ struck through) and totals by state
+  ("Approved ₹…" only once a line is approved, using the bill's maths; each group rounded on its own).
+- **Proposal hour:** 48 px hour chips (radio buttons named `hour`) with free places in words ("2 free" / "Full",
+  a full hour cannot be picked) instead of a select.
+- **Numbers:** the Performance screen opens directly (the "Show performance" toggle is gone; still owner only,
+  staff see why). Tiles get a bullet bar (your value in accent, the city middle as an ink marker only when ≥ 3
+  workshops; both values written). Funnel bars in one blue (counts).
+- **My workshop:** My workshop editor and Home servicing. Service menu rows show the price range and an amber
+  **"Hindi name missing"** badge for a line without its Hindi title (hard rule 10; never blocks saving).
+- **Old links:** stored notices (`rsa.offer`, `ustaad.attestation_requested`) open `/partner/workshop` = Today
+  (roadside offers stay there); the old one-page anchors `#jobs-title` and `#completed-jobs` are forwarded to the
+  Jobs tab (`legacyWorkshopTarget`, unit-tested in `apps/web/test/workshop-portal-view.test.ts`).
+- **Demo builds:** Today and Jobs show the demo store's requests and jobs; Numbers and My workshop say they open
+  with a real sign-in.
+- Not built in this batch: master–detail at ≥ 1024 px, calendar agenda and its API field (P1), saved estimate line
+  templates (P1), review replies (P2), state-audit rows `API-WS-*` / `WS-FRAME`.
