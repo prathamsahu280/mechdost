@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { canonicalPath } from '@/lib/locale-path';
+import { stripLocale } from '@/lib/locale-path';
 
 export interface UstaadTab {
   key: 'home' | 'discover' | 'create' | 'learn' | 'me';
@@ -17,9 +17,14 @@ export interface UstaadTab {
   icon: ReactNode;
 }
 
-function isCurrent(pathname: string, path: string): boolean {
-  if (path === '/ustaad') return pathname === '/ustaad';
-  return pathname === path || pathname.startsWith(`${path}/`);
+/**
+ * Whether a tab's canonical path is the page being shown, in either language: the locale prefix (`/hi`, internal
+ * `/en`) is stripped first — the Hindi dock never marked its tab when only `/en` was removed (QA 2026-11-27).
+ */
+export function isCurrentUstaadTab(pathname: string, path: string): boolean {
+  const here = stripLocale(pathname);
+  if (path === '/ustaad') return here === '/ustaad';
+  return here === path || here.startsWith(`${path}/`);
 }
 
 /**
@@ -45,7 +50,7 @@ export function UstaadNav({
   extras?: readonly UstaadRailLink[];
   label: string;
 }) {
-  const pathname = canonicalPath(usePathname());
+  const pathname = usePathname();
   return (
     <>
       <nav
@@ -55,7 +60,7 @@ export function UstaadNav({
       >
         <ul className="grid grid-cols-5 items-end gap-0.5">
           {tabs.map((tab) => {
-            const current = isCurrent(pathname, tab.path);
+            const current = isCurrentUstaadTab(pathname, tab.path);
             if (tab.key === 'create')
               return (
                 <li key={tab.key} className="flex justify-center">
@@ -91,7 +96,7 @@ export function UstaadNav({
       <nav aria-label={label} className="hidden nav:block">
         <ul className="sticky top-24 grid gap-1">
           {tabs.map((tab) => {
-            const current = isCurrent(pathname, tab.path);
+            const current = isCurrentUstaadTab(pathname, tab.path);
             const create = tab.key === 'create';
             return (
               <li key={tab.key}>
@@ -115,7 +120,7 @@ export function UstaadNav({
           })}
           {extras.length > 0 ? <li aria-hidden="true" className="my-2 border-t border-line" /> : null}
           {extras.map((x) => {
-            const current = isCurrent(pathname, `/ustaad/${x.key}`);
+            const current = isCurrentUstaadTab(pathname, `/ustaad/${x.key}`);
             return (
               <li key={x.key}>
                 <Link
