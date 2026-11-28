@@ -11,7 +11,7 @@ Status: decided · Phase 1 · Decisions: Staff security, Non-functional requirem
 - Staff 2FA (TOTP) implemented; enforced automatically once any staff beyond founders exists (`settings.enforce_staff_2fa` auto-true on 2nd staff).
 - **CSP (2026-11-09):** site-wide allow-list policy from `apps/web/src/lib/csp.ts` (decisions 2026-11-09); and in real sign-in mode a nonce + `strict-dynamic` policy on `/login` (proxy `src/proxy.ts`, layout inline scripts by hash).
 - Staff sign-in = password + a phone code every time (decision 2026-11-01); the API grants staff permissions only to a session made by both steps (`staff_2fa` custom-token claim, ≤ 12 h old), otherwise `STAFF_2FA_REQUIRED` (built 2026-11-09, spec 01).
-- Sessions: staff idle 30 min / absolute 12 h; partners 7 days; customers 30 days; sign-out-all; new-device alert (P1).
+- Sessions: staff idle 30 min / absolute 12 h; partners 7 days; customers 30 days; sign-out-all (built 2026-11-28: `POST /v1/me/sessions/revoke-all`, 5/hour/user, audited `auth.sessions_revoked`, revokes every Firebase refresh token, spec 01); new-device alert (P1).
 - Audit log on every mutation (actor, ip, entity, before/after, reason) — immutable.
 
 ## Abuse protection (user request: "users shouldn't spam")

@@ -2,6 +2,10 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-28 — Stale "Signed in as" fix + "Sign out of all devices" (builder, branch worktree-agent-a4189feed8154e2f9, NOT merged)
+
+- A (bug): `lib/auth/session-ended.ts` + `session-ended-flag.ts` + `SessionEndedNotice`; `currentIdToken` reports a missing Firebase user only after `authStateReady`; `admin-api`/`orders-api` report 401 `TOKEN_REVOKED`; sign-out clean-up extracted to `forgetAccountOnDevice()`. B: `POST /v1/me/sessions/revoke-all` (`routes/sessions.ts`, `db/repo/sign-out-all.ts`), Security-card section, event `account_signed_out_all`, strings `signOutAll*` + `auth.sessionEndedNotice` (en + hi). Docs: spec 01, 12, 13, decisions, Q-SES-1/2 answered, state-audit row API-ACC-SECURITY. Not done: real-browser pass, Playwright state-audit run (owed to CI). The device list is another builder's branch (will touch the same Security card, route registration and analytics.ts: expect small merge conflicts).
+
 ## 2026-11-28 — Mechanic Network batch D: state-audit rows + profile restyle (builder, branch worktree-agent-adc9e97b192ec1613, NOT merged)
 
 - D1: rows API-USTAAD-LEARN / -JOBS / -SAVED (model-api.ts), fixtures in api-mode/ustaad-member-fixtures.ts, server mock

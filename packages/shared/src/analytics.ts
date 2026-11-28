@@ -529,6 +529,8 @@ export interface ServerEventProps extends UstaadServerEventProps, DeliveryServer
   refund_requested_after_close: { refundId: string; paymentId: string; amountPaise: number };
   /** A credit note was issued for a processed refund of an invoiced order. */
   credit_note_issued: { refundId: string; creditNoteNumber: string; totalPaise: number };
+  /** "Sign out of all devices" (founder 2026-11-28): the person ended every session of their own account. No props. */
+  account_signed_out_all: Record<string, never>;
   /** Customer account (design 2026-11-15): codes and flags only; no name, phone, address text or registration. */
   address_saved: { addressId: string; label: string; isDefault: boolean; action: 'created' | 'updated' };
   address_deleted: { addressId: string };

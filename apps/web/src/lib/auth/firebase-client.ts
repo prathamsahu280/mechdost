@@ -30,6 +30,7 @@ import {
 import { isTransientAuthCode, retryOnce } from './sign-in-retry';
 import { changeFailFor, type ChangeFail } from './password-change';
 import type { RealMe } from './real-account';
+import { noteFirebaseUser } from './session-ended';
 
 /**
  * Real sign-in in the browser (spec 01 "Password sign-in", Q69 firebase mode). **Heavy**: import it only with
@@ -341,6 +342,9 @@ export type ApiMe = RealMe & { version: number };
 export async function currentIdToken(locale: string, forceRefresh = false): Promise<string | null> {
   const a = firebaseAuth(locale);
   await a.authStateReady();
+  // Firebase has finished restoring the browser session: no user while the site says "signed in" means the session
+  // ended elsewhere (bug 2026-11-28), so the site session is cleared instead of showing a sign-in no call can use.
+  noteFirebaseUser(a.currentUser?.uid ?? null);
   return a.currentUser ? a.currentUser.getIdToken(forceRefresh) : null;
 }
 

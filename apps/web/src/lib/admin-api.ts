@@ -60,6 +60,13 @@ export async function adminApi<T>(
     return { ok: false, status: 0, code: 'NETWORK' };
   }
   const body: unknown = await res.json().catch(() => null);
+  // A revoked sign-in (bug 2026-11-28) ends the site session; loaded only on a 401, so no page pays for it.
+  if (!res.ok && res.status === 401) {
+    const code = errorCode(body);
+    void import('./auth/session-ended').then((m) => {
+      m.noteApiAnswer(401, code);
+    });
+  }
   if (!res.ok)
     return {
       ok: false,
