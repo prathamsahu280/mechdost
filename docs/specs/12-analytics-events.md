@@ -304,7 +304,9 @@ text, names, phones, tokens or locations; the teaser path is redacted to `/ustaa
 **2026-11-27 (UI upgrade U1, spec 23 § 21i-U1):** `ustaad_shell_home_logo {}` (MechDost mark in the network header),
 `ustaad_feed_new_pill_shown {}` (once per check that found posts), `ustaad_feed_new_pill_tapped {}`,
 `ustaad_home_more_opened {}`, `ustaad_home_question_tapped { position }` (catalogued for the questions strip, not sent
-yet), `ustaad_story_paused {}`; `ustaad_tab_opened.tab` now also takes `ask` and `jobs` (dock Home · Ask · Create ·
+yet), `ustaad_story_paused {}` (not sent from 2026-11-28: the story viewer has no timer now); `ustaad_story_autonext
+{ on }` (2026-11-28, the viewer's "Auto next" switch; a played voice note or video moves on when it ends, photos never);
+`ustaad_learn_continue_tapped {}` (now sent by Learn's Continue card); `ustaad_tab_opened.tab` now also takes `ask` and `jobs` (dock Home · Ask · Create ·
 Jobs · Me). New `data-track` names: `ustaad_tab_{ask,jobs}`, `ustaad_rail_{discover,learn}`, `ustaad_shortcut_discover`,
 `ustaad_feed_new_pill`.
 

@@ -7468,7 +7468,7 @@
       "storyClose": "Close stories",
       "storyCount": "{n} of {total}",
       "seenBy": "{count, plural, =0 {No one has seen it yet} one {Seen by # mechanic} other {Seen by # mechanics}}",
-      "storyHint": "Tap the left or right side to move. Press and hold to pause.",
+      "storyHint": "Tap the left or right side to move, or use Previous and Next.",
       "storyReply": "Reply in messages",
       "storiesEmpty": "No stories yet today.",
       "commentsTitle": "Comments",
@@ -7680,6 +7680,7 @@
       "filterLabel": "Kind of work",
       "allRoles": "All work",
       "perMonth": "a month",
+      "verifiedGarage": "Verified garage",
       "payH": "Pay",
       "timeH": "Timing",
       "expH": "Experience",
@@ -8566,7 +8567,9 @@
       "empty": "No lessons yet. Ask an Ustaad while new ones are added.",
       "emptyCta": "Ask an Ustaad",
       "err_USTAAD_DAILY_CAP": "You have marked enough videos for today. Come back tomorrow.",
-      "towardsNaya": "To become Naya Ustaad: {done}/{need} videos watched"
+      "towardsNaya": "To become Naya Ustaad: {done}/{need} videos watched",
+      "continueH": "Continue",
+      "continueGo": "Go to this lesson"
     },
     "social": {
       "follow": "Follow",
@@ -9212,6 +9215,10 @@
       "prev": "Previous",
       "next": "Next",
       "pause": "Pause",
+      "autoNext": "Auto next",
+      "autoNextOn": "On",
+      "autoNextOff": "Off",
+      "autoNextHelp": "A voice note or video you play moves to the next story when it ends. Photos wait for Next.",
       "play": "Play",
       "close": "Close"
     },

@@ -4,11 +4,13 @@ import { CheckCircle2, ExternalLink, GraduationCap, Play } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
-import type { LearnResourceView } from '@mechdost/shared/ustaad/dto/qa';
+import type { LearnResourceView, LearnView } from '@mechdost/shared/ustaad/dto/qa';
 import { track } from '@/lib/analytics';
 import { localePath } from '@/lib/locale-path';
 import { ustaadClient } from '@/lib/ustaad/client';
 import { learnTowardsNaya } from '@/lib/ustaad/card';
+import { continueLesson } from '@/lib/ustaad/learn-continue';
+import { mediaSizeText } from '@/lib/ustaad/voice-ui';
 import { createWatchMeter, HEARTBEAT_MS } from '@/lib/ustaad/learn-meter';
 import { progressBar } from '../card/styles';
 import { SaveControl } from '../saved/save-control';
@@ -56,6 +58,39 @@ function LearnProgress() {
       <progress aria-labelledby={labelId} value={p.done} max={p.need} className={progressBar}>
         {p.done}/{p.need}
       </progress>
+    </section>
+  );
+}
+
+/**
+ * "Continue" (spec 23 § 21i-L): the lesson left unfinished, from the progress the list already has. One quiet button
+ * takes focus to that lesson (its Play button is then one Tab away); nothing plays by itself.
+ */
+function ContinueEntry({ view }: { view: LearnView }) {
+  const t = useTranslations('ustaad.learn');
+  const locale = useLocale();
+  const labelId = useId();
+  const r = continueLesson(view);
+  if (!r) return null;
+  const pct = r.durationS ? Math.min(100, Math.round((r.watchedSeconds / r.durationS) * 100)) : 0;
+  function go() {
+    track('ustaad_learn_continue_tapped', {});
+    const el = document.getElementById(`lesson-${r?.id ?? ''}`);
+    el?.scrollIntoView({ block: 'center' });
+    el?.focus();
+  }
+  return (
+    <section aria-labelledby={labelId} className={`${card} grid gap-2`}>
+      <h2 id={labelId} className="font-heading text-base font-extrabold text-ink">
+        {t('continueH')}
+      </h2>
+      <p className="text-[15.5px] leading-snug font-bold text-ink">
+        {locale === 'hi' ? r.titleHi : r.titleEn}
+        {pct > 0 ? <span className="font-normal text-muted"> · {t('progress', { pct })}</span> : null}
+      </p>
+      <button type="button" className={`${btnQuiet} justify-self-start`} onClick={go}>
+        {t('continueGo')}
+      </button>
     </section>
   );
 }
@@ -115,6 +150,8 @@ export function LearnView() {
       </header>
 
       <LearnProgress />
+
+      {loaded.state === 'ok' ? <ContinueEntry view={loaded.data} /> : null}
 
       <div className={`${card} flex flex-wrap items-center justify-between gap-3`}>
         <div className="min-w-0">
@@ -220,6 +257,7 @@ function Resource({
   onProgress: (id: string, p: { watchedSeconds: number; completed: boolean }) => void;
 }) {
   const t = useTranslations('ustaad.learn');
+  const tm = useTranslations('ustaad.media');
   const locale = useLocale();
   const label = useCodeLabel();
   const errorText = useErrorText('learn');
@@ -233,6 +271,8 @@ function Resource({
       : r.durationS >= 60
         ? t('minutes', { m: Math.round(r.durationS / 60) })
         : t('seconds', { s: r.durationS });
+  const size = r.sizeBytes ? mediaSizeText(r.sizeBytes) : null;
+  const sizeText = size ? tm(size.unit === 'mb' ? 'sizeMb' : 'sizeKb', { n: size.value }) : null;
   const pct = r.durationS ? Math.min(100, Math.round((r.watchedSeconds / r.durationS) * 100)) : 0;
   const tags = [label(r.segmentCode), label(r.workCode)].filter((x): x is string => x !== null);
 
@@ -263,12 +303,17 @@ function Resource({
   }
 
   return (
-    <div className="grid gap-2.5 rounded-xl">
+    <div
+      id={`lesson-${r.id}`}
+      tabIndex={-1}
+      className="grid scroll-mt-24 gap-2.5 rounded-xl focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+    >
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[15.5px] leading-snug font-bold text-ink">{title}</p>
           <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
             {length ? <span>{length}</span> : null}
+            {sizeText ? <span>{sizeText}</span> : null}
             {tags.map((x) => (
               <span key={x} className="rounded-full bg-surface-alt px-2 py-0.5 text-xs font-bold text-ink">
                 {x}
@@ -336,7 +381,7 @@ function Resource({
         </div>
       ) : null}
       <div className="flex">
-        <SaveControl kind="lesson" id={r.id} saved={false} />
+        <SaveControl kind="lesson" id={r.id} saved={r.savedByMe} />
       </div>
       <p
         role="status"

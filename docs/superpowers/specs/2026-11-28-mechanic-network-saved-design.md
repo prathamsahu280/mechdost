@@ -57,6 +57,12 @@ a few self-named folders rather than by tags. Worth checking in the next founder
 - Public collections or "most saved" lists of other people's saves.
 - Downloads of other members' media to the phone (rights + data use); revisit with the founder (item 3 above).
 
+## Status update (2026-11-28, batch N)
+
+The "saved by me" flags on question, answer, job and lesson views are built (spec 23 § 21i-L): the Save control starts
+in the right state. Still open: "Send to my WhatsApp" for non-post kinds, admin settings for the collection limit and
+suggested names, an e2e of the page and sheet.
+
 ## Build (2026-11-28, branch `worktree-agent-a754e32db80755c6d`)
 
 - **DB** `0190_ustaad_saved_collections`: `ustaad_saved_items` (member, kind ∈ question/answer/job/lesson, target id;

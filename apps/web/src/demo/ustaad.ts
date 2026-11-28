@@ -1,6 +1,7 @@
 import type { ChoicesView, MemberView } from '@mechdost/shared/ustaad/dto/members';
 import type { AnswerView, LearnView, QuestionCard, QuestionDetail } from '@mechdost/shared/ustaad/dto/qa';
 import type { ApiResult } from '@/lib/orders-api';
+import type { UstaadSaveKind } from '@mechdost/shared/ustaad/saved';
 import { createDemoSaved } from './ustaad-saved';
 import type { ApplicantView, Job, MyLocation, UstaadClient, Zone } from '@/lib/ustaad/client';
 
@@ -102,6 +103,7 @@ const answer = (
   votedByMe: false,
   isBest: false,
   mine: a.id === ME.id,
+  savedByMe: false,
   author: a,
   parts: [],
   createdAt: ago(minutes),
@@ -136,6 +138,7 @@ function seedQuestions(): QuestionDetail[] {
     answers: 3,
     asker: SONU,
     mine: false,
+    savedByMe: false,
     createdAt: ago(190),
   };
   const best = answer(
@@ -168,6 +171,7 @@ function seedQuestions(): QuestionDetail[] {
     answers: 2,
     asker: DEEPAK,
     mine: false,
+    savedByMe: false,
     createdAt: ago(75),
   };
   const q3: QuestionCard = {
@@ -182,6 +186,7 @@ function seedQuestions(): QuestionDetail[] {
     answers: 0,
     asker: SONU,
     mine: false,
+    savedByMe: false,
     createdAt: ago(22),
   };
   const q4: QuestionCard = {
@@ -196,6 +201,7 @@ function seedQuestions(): QuestionDetail[] {
     answers: 0,
     asker: ME,
     mine: true,
+    savedByMe: false,
     createdAt: ago(8),
   };
   const q5: QuestionCard = {
@@ -210,6 +216,7 @@ function seedQuestions(): QuestionDetail[] {
     answers: 1,
     asker: ME,
     mine: true,
+    savedByMe: false,
     createdAt: ago(60 * 26),
   };
   return [
@@ -301,6 +308,9 @@ const LEARN: LearnView = {
           label: 'mechdost_training',
           watchedSeconds: 75,
           completed: true,
+          savedByMe: false,
+          sizeBytes: 3_400_000,
+          lastWatchedAt: null,
         },
         {
           id: '0193a500-0000-7000-8000-000000000052',
@@ -315,6 +325,9 @@ const LEARN: LearnView = {
           label: 'mechdost_training',
           watchedSeconds: 20,
           completed: false,
+          savedByMe: false,
+          sizeBytes: 2_300_000,
+          lastWatchedAt: ago(90),
         },
         {
           id: '0193a500-0000-7000-8000-000000000053',
@@ -329,6 +342,9 @@ const LEARN: LearnView = {
           label: 'mechdost_training',
           watchedSeconds: 0,
           completed: false,
+          savedByMe: false,
+          sizeBytes: 5_200_000,
+          lastWatchedAt: null,
         },
       ],
     },
@@ -351,6 +367,9 @@ const LEARN: LearnView = {
           label: 'mechdost_training',
           watchedSeconds: 0,
           completed: false,
+          savedByMe: false,
+          sizeBytes: 18_000_000,
+          lastWatchedAt: null,
         },
         {
           id: '0193a500-0000-7000-8000-000000000055',
@@ -365,6 +384,9 @@ const LEARN: LearnView = {
           label: 'none',
           watchedSeconds: 0,
           completed: false,
+          savedByMe: false,
+          sizeBytes: 2_100_000,
+          lastWatchedAt: null,
         },
       ],
     },
@@ -383,6 +405,9 @@ const LEARN: LearnView = {
       label: 'none',
       watchedSeconds: 0,
       completed: false,
+      savedByMe: false,
+      sizeBytes: null,
+      lastWatchedAt: null,
     },
     {
       id: '0193a500-0000-7000-8000-000000000057',
@@ -397,6 +422,9 @@ const LEARN: LearnView = {
       label: 'none',
       watchedSeconds: 0,
       completed: false,
+      savedByMe: false,
+      sizeBytes: 9_600_000,
+      lastWatchedAt: null,
     },
   ],
 };
@@ -435,6 +463,8 @@ function seedJobs(): Job[] {
     cityCode: 'RPR',
     status: 'open',
     mine: false,
+    savedByMe: false,
+    employer: { name: 'Suresh Auto Works', nameHi: 'सुरेश ऑटो वर्क्स', verified: true },
     underReview: false,
     expiresAt: new Date(NOW + 20 * 24 * 3_600_000).toISOString(),
   };
@@ -592,6 +622,7 @@ export function demoUstaadClient(): UstaadClient {
     answers: d.answerList.length,
     asker: d.asker,
     mine: d.mine,
+    savedByMe: d.savedByMe,
     createdAt: d.createdAt,
   });
   const find = (code: string) => questions.find((q) => q.code === code);
@@ -618,6 +649,15 @@ export function demoUstaadClient(): UstaadClient {
     return null;
   });
   const allResources = () => [...learn.courses.flatMap((c) => c.resources), ...learn.loose];
+  /** Keep the sample rows' own flag in step so a card shows the state after a reload of the list (spec 23 § 21i-L). */
+  const markSaved = (kind: UstaadSaveKind, id: string, on: boolean) => {
+    for (const q of questions) {
+      if (kind === 'question' && q.id === id) q.savedByMe = on;
+      for (const a of q.answerList) if (kind === 'answer' && a.id === id) a.savedByMe = on;
+    }
+    for (const j of jobs) if (kind === 'job' && j.id === id) j.savedByMe = on;
+    for (const r of allResources()) if (kind === 'lesson' && r.id === id) r.savedByMe = on;
+  };
 
   return {
     sample: true,
@@ -654,6 +694,7 @@ export function demoUstaadClient(): UstaadClient {
             answers: 0,
             asker: ME,
             mine: true,
+            savedByMe: false,
             createdAt: new Date().toISOString(),
           },
           {
@@ -763,6 +804,8 @@ export function demoUstaadClient(): UstaadClient {
         segmentCodes: input.segmentCodes ?? [],
         status: 'open',
         mine: true,
+        savedByMe: false,
+        employer: { name: 'Your garage', nameHi: 'आपका गैराज', verified: true },
         underReview: false,
         expiresAt: new Date(Date.now() + 30 * 24 * 3_600_000).toISOString(),
         createdAt: new Date().toISOString(),
@@ -827,7 +870,11 @@ export function demoUstaadClient(): UstaadClient {
     },
     savedList: (f) => Promise.resolve(saved.list(f)),
     savedSummary: () => Promise.resolve(saved.summary()),
-    setSaved: (kind, id, on) => Promise.resolve(saved.setSaved(kind, id, on)),
+    setSaved: (kind, id, on) => {
+      const r = saved.setSaved(kind, id, on);
+      if (r.ok) markSaved(kind, id, on);
+      return Promise.resolve(r);
+    },
     createCollection: (name) => Promise.resolve(saved.create(name)),
     renameCollection: (id, name, version) => Promise.resolve(saved.rename(id, name, version)),
     deleteCollection: (id) => Promise.resolve(saved.remove(id)),

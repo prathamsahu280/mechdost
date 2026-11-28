@@ -629,6 +629,13 @@ html {
 html:has([data-compare-tray]) {
   scroll-padding-bottom: calc(92px + env(safe-area-inset-bottom) + var(--tray-h, 3.5rem));
 }
+/* A Mechanic Network conversation stacks the 56 px network header, the sticky thread header (about 72 px with the
+   Pehchaan tag on two lines) and, at the bottom, the sticky composer (about 96 px with the voice and photo buttons):
+   a focused message or button never sits under any of them (WCAG 2.4.11). */
+html:has([data-ustaad-thread]) {
+  scroll-padding-top: 144px;
+  scroll-padding-bottom: calc(112px + env(safe-area-inset-bottom));
+}
 html[data-consent-open] {
   scroll-padding-bottom: calc(84px + env(safe-area-inset-bottom) + var(--consent-h, 13rem));
 }

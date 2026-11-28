@@ -43,6 +43,7 @@ import { notifyUstaad } from './notify';
 import { publishUstaadAnswer, publishUstaadQuestion } from './publish';
 import { readUstaadSettingValues } from './settings';
 import { ustaadMediaTextInfo, voiceInfoOf } from './media';
+import { savedIdSet } from './saved-flags';
 
 /** Who is acting: the signed-in user and their member row (the API guard read it fresh). */
 export interface UstaadActor {
@@ -659,8 +660,14 @@ export async function listUstaadQuestions(
     .limit(query.limit + 1);
   const page = rows.slice(0, query.limit);
   const last = page.at(-1);
+  const saved = await savedIdSet(
+    db,
+    me.id,
+    'question',
+    page.map((r) => r.q.id),
+  );
   return {
-    items: page.map((r) => cardOf(r.q, r.asker, r.answers, me.id)),
+    items: page.map((r) => cardOf(r.q, r.asker, r.answers, me.id, saved.has(r.q.id))),
     nextCursor: rows.length > query.limit && last ? encodeCursor(last.q.createdAt, last.q.id) : null,
   };
 }
@@ -670,6 +677,7 @@ function cardOf(
   asker: QuestionCard['asker'],
   answers: number,
   viewerId: string,
+  savedByMe: boolean,
 ): QuestionCard {
   return {
     id: q.id,
@@ -683,6 +691,7 @@ function cardOf(
     answers,
     asker: { ...asker, handle: asker.handle },
     mine: q.askerId === viewerId,
+    savedByMe,
     createdAt: q.createdAt.toISOString(),
   };
 }
@@ -730,6 +739,8 @@ export async function ustaadQuestionDetail(
     .orderBy(desc(ustaadAnswers.helpfulCount), ustaadAnswers.createdAt)
     .limit(200);
   const ids = answers.map((r) => r.a.id);
+  const savedQ = await savedIdSet(db, me.id, 'question', [q.id]);
+  const savedA = await savedIdSet(db, me.id, 'answer', ids);
   const parts =
     ids.length === 0
       ? []
@@ -763,6 +774,7 @@ export async function ustaadQuestionDetail(
       votedByMe: r.voted === true || r.voted === 't',
       isBest: q.bestAnswerId === r.a.id,
       mine: r.a.authorId === me.id,
+      savedByMe: savedA.has(r.a.id),
       author: { ...r.author, handle: r.author.handle },
       parts: parts
         .filter((p) => p.answerId === r.a.id)
@@ -772,7 +784,7 @@ export async function ustaadQuestionDetail(
     .sort((x, y) => Number(y.isBest) - Number(x.isBest));
   const open = q.status === 'open' || q.status === 'answered';
   return {
-    ...cardOf(q, { ...asker, handle: asker.handle }, 0, me.id),
+    ...cardOf(q, { ...asker, handle: asker.handle }, 0, me.id, savedQ.has(q.id)),
     answers: answers.filter((r) => r.a.status === 'visible').length,
     body: q.body,
     bodyOriginal: q.correction === 'none' ? null : q.bodyOriginal,

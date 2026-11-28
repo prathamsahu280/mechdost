@@ -116,10 +116,19 @@ function band(ms: number | null): 'lt15' | '15to60' | '60to180' | 'gt180' {
  * author's captions play as a `<track kind="captions">` (a blob URL from the WebVTT in the DTO, so no cross-origin
  * fetch), and the summary or a visible "No captions" note sits under the video (spec 23 § 10a, WCAG 1.2.2).
  */
-export function VideoTile({ video, poster }: { video: PostMediaView; poster: PostMediaView | undefined }) {
+export function VideoTile({
+  video,
+  poster,
+  onEnded,
+}: {
+  video: PostMediaView;
+  poster: PostMediaView | undefined;
+  /** Called when a video the member played reaches its end (the story viewer moves on). */
+  onEnded?: () => void;
+}) {
   return (
     <div>
-      <VideoPlayer video={video} poster={poster} />
+      <VideoPlayer video={video} poster={poster} onEnded={onEnded} />
       <MediaTextNote summary={video.summary ?? null} captioned={Boolean(video.captionsVtt)} video />
     </div>
   );
@@ -139,7 +148,15 @@ function useCaptionsUrl(vtt: string | null | undefined): string | null {
   return url;
 }
 
-function VideoPlayer({ video, poster }: { video: PostMediaView; poster: PostMediaView | undefined }) {
+function VideoPlayer({
+  video,
+  poster,
+  onEnded,
+}: {
+  video: PostMediaView;
+  poster: PostMediaView | undefined;
+  onEnded: (() => void) | undefined;
+}) {
   const tm = useTranslations('ustaad.media');
   const captionsUrl = useCaptionsUrl(video.captionsVtt);
   const handle = useRef({
@@ -180,6 +197,9 @@ function VideoPlayer({ video, poster }: { video: PostMediaView; poster: PostMedi
         playsInline
         preload="none"
         className="aspect-video w-full bg-navy"
+        onEnded={() => {
+          onEnded?.();
+        }}
         onPlay={() => {
           playback.claim(handle.current);
         }}

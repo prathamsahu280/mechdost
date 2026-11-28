@@ -64,6 +64,9 @@ export interface Job {
   segmentCodes: string[];
   status: string;
   mine: boolean;
+  /** Spec 23 § 21i-L: the viewer's save flag and the business behind the job (name and verified mark only). */
+  savedByMe: boolean;
+  employer: { name: string; nameHi: string | null; verified: boolean } | null;
   underReview: boolean;
   expiresAt: string;
   createdAt: string;

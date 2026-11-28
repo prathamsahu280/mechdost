@@ -2,6 +2,14 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-28 — Mechanic Network leftovers, batch N (builder, branch `worktree-agent-a865c30fc7a1dda35`, NOT merged)
+
+- Built (spec 23 § 21i-L, no migration): N1 `savedByMe` on question/answer/job/lesson views (one batched lookup per list,
+  `saved-flags.ts`); N2 job employer name + "Verified garage"; N3 Learn file size + Continue card; N4 story viewer per the
+  lead ruling (no photo timer, played voice/video moves on, visible Auto next switch, reduced motion never; decision
+  2026-11-28); N5 thread scroll padding + a single polite status region. Tests listed in the spec; decisions, spec 12,
+  design docs updated. Not built: state-audit rows for Learn/Jobs/Saved (no API-mode fixtures), real-browser pass.
+
 ## 2026-11-28 — partner kit accessibility fixes (builder, branch `worktree-agent-a5dbdbe8eee1c5765`, NOT merged)
 
 - Fixed in `components/partner/*`: lane focus ring room, Home/End, bottom-bar scroll padding from bar height + safe
