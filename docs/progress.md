@@ -1538,3 +1538,8 @@ here; CI), fixtures for the other 13 `API-USTAAD-*` rows (join, welcome, partner
 viewer, tag, teaser, messages, thread, network, discover). No product code changed.
 
 - 2026-11-28 batch F (agent branch worktree-agent-a4f087cb5c85717df): F1 master–detail layout is CSS only (no flip after hydration; `WideSwitch` picks only the list content, `isWideNow()` only in effects); F2 workshop Calendar shows free places per hour from the existing `/workshop/profile` + `/workshop/slots` routes (spec 07). Blackout dates not built (no data). Owed: live CLS re-measure of /partner/shop/orders at 1280, real browser look at 1440 and 390 px.
+- 12:40 IST: deploy 3 (c24bb6cd) live. Live lab CLS: /partner/delivery 390 0.40 → 0.005, /notifications 1280 0.45 →
+  0.001 (390: 0), /partner/workshop/profile 0.44 → 0.001, shop orders 0.12 → 0.049, workshop jobs 0.14 → 0.065
+  (master–detail no-flip in batch F should close it). Pushed 5e2b0bd0: batch F (CSS-driven master–detail, calendar
+  "N of M places free" from the existing slots route) + batch G (state-audit fixtures FEED/PROFILE/ME; 13 more
+  API-USTAAD rows still without fixtures).
