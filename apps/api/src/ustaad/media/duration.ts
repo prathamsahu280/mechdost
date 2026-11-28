@@ -2,7 +2,7 @@
  * Container checks without decoding (spec 23 § 10 step 3; SR-13 v1 stand-in, SR-15, AT-UP-4, AT-UP-5). **Allowlists
  * that fail closed** (security review 2026-11-26): v1 cannot remux, so a file may contain only the structures a plain
  * recording needs; anything else (udta, meta, uuid/XMP, ilst, Matroska Tags, Attachments, Chapters, a Title, Ogg
- * comments other than the encoder, or any unknown box or element) refuses it with the friendly MEDIA_LOCATION message
+ * comments other than the encoder, or any unknown box or element) refuses it with the friendly MEDIA_LOCATION message (MP4 udta / meta are accepted whole, location tags included: founder 2026-11-28)
  * ("this video has extra details, like location; record it in the app"). In-app recordings (MediaRecorder) pass;
  * server-side remux/strip is the v2 step (decisions 2026-11-26). Durations come from the structure (MP4: mvhd as a
  * direct child of moov, cross-checked with every tkhd and mdhd; WebM: Info/Duration cross-checked with the last block,
@@ -44,7 +44,8 @@ function find(b: Uint8Array, pattern: readonly number[], from = 0): number {
 const TOP = new Set(['ftyp', 'moov', 'mdat', 'free', 'skip', 'wide']);
 /** Container boxes we descend into and the children each may hold; every other box listed is a leaf we accept. */
 const TREE: Record<string, ReadonlySet<string>> = {
-  // udta / meta are accepted as a whole only after `hasLocation` finds no location data in them (SIM-F6).
+  // udta / meta are accepted as a whole, location tags included (founder 2026-11-28: phone videos are not refused for
+  // location; SIM-F6 had relaxed it to GPS markers only).
   moov: new Set(['mvhd', 'trak', 'udta', 'meta']),
   trak: new Set(['tkhd', 'edts', 'mdia', 'udta', 'meta']),
   edts: new Set(['elst']),
@@ -156,23 +157,6 @@ function tkhdDuration(b: Uint8Array, box: Box): number | null {
   return d === 0xffffffff ? null : d;
 }
 
-/**
- * Location markers inside a metadata box (SIM-F6): the QuickTime/3GPP GPS atom `©xyz`, the 3GPP `loci` box, and the
- * Apple `keys` names (`com.apple.quicktime.location.*`). ffmpeg's own udta (`meta > hdlr + ilst > ©too`) and other
- * tags carry no place and pass. Fails closed for anything that names a location.
- */
-const LOCATION_MARKERS = [
-  [0xa9, ...bytesOf('xyz')],
-  bytesOf('loci'),
-  bytesOf('location'),
-  bytesOf('gps'),
-] as const;
-function hasLocation(b: Uint8Array, box: Box): boolean {
-  // ASCII letters folded to lower case, so `Location`, `GPSLatitude` (XMP) and `LOCI` are caught too.
-  const slice = b.subarray(box.start, box.end).map((c) => (c >= 0x41 && c <= 0x5a ? c + 0x20 : c));
-  return LOCATION_MARKERS.some((m) => find(slice, m) >= 0);
-}
-
 /** Facts from the `moov` box bytes (the whole box, header included). */
 export function mp4Facts(moovBox: Uint8Array): ContainerFacts {
   const top = children(moovBox, 0, moovBox.length);
@@ -182,11 +166,6 @@ export function mp4Facts(moovBox: Uint8Array): ContainerFacts {
   if (tree === 'extra') return EXTRA;
   if (tree === 'unreadable') return UNREADABLE;
   const kids = children(moovBox, moov.start, moov.end) ?? [];
-  const metaBoxes = [
-    ...kids,
-    ...kids.filter((k) => k.type === 'trak').flatMap((t) => children(moovBox, t.start, t.end) ?? []),
-  ].filter((k) => k.type === 'udta' || k.type === 'meta');
-  if (metaBoxes.some((m) => hasLocation(moovBox, m))) return EXTRA;
   const mvhdBox = only(kids, 'mvhd');
   const mvhd = mvhdBox ? timeBox(moovBox, mvhdBox) : null;
   const traks = kids.filter((k) => k.type === 'trak');

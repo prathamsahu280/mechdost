@@ -213,13 +213,12 @@ describe('container facts (AT-UP-4, AT-UP-5; review 2026-11-26: allowlists, fail
     );
   });
 
-  it('refuses real location data: ©xyz, loci, Apple location keys; and unknown boxes inside moov', () => {
-    expect(mp4Facts(moov(...good(), box('udta', box('©xyz', ascii('+21.25+081.63/'))))).problem).toBe(
-      'location_atom',
-    );
-    expect(mp4Facts(moov(...good(), box('udta', box('loci', new Array<number>(20).fill(0))))).problem).toBe(
-      'location_atom',
-    );
+  // Founder 2026-11-28: "don't check at all" — phone videos are no longer refused for location data in udta/meta.
+  it('accepts location data in udta / meta (©xyz, loci, Apple location keys); still refuses unknown boxes in moov', () => {
+    expect(mp4Facts(moov(...good(), box('udta', box('©xyz', ascii('+21.25+081.63/'))))).problem).toBeNull();
+    expect(
+      mp4Facts(moov(...good(), box('udta', box('loci', new Array<number>(20).fill(0))))).problem,
+    ).toBeNull();
     const appleKeys = box('meta', [
       0,
       0,
@@ -227,7 +226,7 @@ describe('container facts (AT-UP-4, AT-UP-5; review 2026-11-26: allowlists, fail
       0,
       ...box('keys', [0, 0, 0, 0, ...be32(1), ...box('mdta', ascii('com.apple.quicktime.location.ISO6709'))]),
     ]);
-    expect(mp4Facts(moov(...good(), appleKeys)).problem).toBe('location_atom');
+    expect(mp4Facts(moov(...good(), appleKeys)).problem).toBeNull();
     expect(mp4Facts(moov(...good(), box('zzzz', [0, 0, 0, 0]))).problem).toBe('location_atom');
   });
 

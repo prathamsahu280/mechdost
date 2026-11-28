@@ -642,7 +642,7 @@ S3 endpoint (PUT), `img-src` / `media-src` the media host; the docs host is only
 3. **Verify after upload** (`…/complete`, in the API worker): `HEAD` must match the declared bytes and mime; the first
    64 KB are read and the **magic bytes** must match the kind (WebP `RIFF…WEBP`, JPEG `FFD8FF`, MP4/M4A `ftyp`, WebM
    `1A45DFA3`, Ogg `OggS`, PDF `%PDF-`); container duration is parsed from the MP4 `mvhd` / WebM `Duration` / Ogg last
-   granule and must be ≤ the cap (+1 s); MP4 location atoms (`©xyz`, `loci`) and any external reference (HLS
+   granule and must be ≤ the cap (+1 s); MP4 location tags are accepted (founder 2026-11-28, see 21i amendment); any external reference (HLS
    playlist, `dref` URL, concat) reject the file (`MEDIA_MISMATCH`). **Images** (≤ 3 MB) are downloaded, the pixel
    count checked from the header before decoding (decompression-bomb guard, as spec 13), re-encoded with the existing
    `sharp` pipeline into `img_1080`, `img_480` and a 24 px LQIP with all metadata gone, written to `ustaad-media`; the
@@ -2230,6 +2230,8 @@ One commit per item, test first. Ids from `D:\mechdost-qa\ustaad-sim-2026-11-27\
   `USTAAD_WORK_WORDS` (en + hi + common spellings: wiring/बिजली → electrical, scanner/स्कैनर → diagnostics …) also match
   members with that work or vehicle code. Keys shorter than two consonants do not use the key match. The key match is a
   scan within the city filter (no index; fine at launch size, revisit with Meilisearch).
+- **Amended 2026-11-28 (founder: "don't check at all"):** `hasLocation` is removed; MP4 `udta`/`meta` are accepted whole,
+  location tags included. Unknown boxes, top-level `uuid`/XMP, fragments and external references still refuse.
 - **SIM-F6 / SIM-P28** (changes the 2026-11-26 "any udta refuses" allowlist rule): `udta` and `meta` are allowed
   inside `moov` and `trak` when they carry no location — `hasLocation` in `apps/api/src/ustaad/media/duration.ts`
   refuses `©xyz`, `loci` and any `location` key name (`com.apple.quicktime.location.*`). ffmpeg's own

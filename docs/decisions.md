@@ -3036,3 +3036,22 @@ look"); V9 (the same lift site-wide) is NOT approved, so everything below is sco
   `bulletScale` helper are deleted (the kit's `bulletGeometry` is tested in `partner-kit.test.ts`). Workshop bullet tiles
   show the city middle through the kit's own line; the empty "not enough workshops" line is the section note.
 - Not built: shop switcher / shop name per order card, per-row stock −/+, "Delivered today" (API gaps listed in spec 07).
+
+## 2026-11-28 — Founder answers to the queued questions (morning, via Remote Control)
+
+- **Q-DC-B11-LIVE:** run the 2-minute live offer-lapse test now (lead runs it and switches everything back).
+- **Q-QB-1:** banned-words starter list stays as seeded; admins edit it in Admin → Mechanic Network.
+- **Q-QB-4 → video location: not checked at all.** Founder, asked why videos are blocked and told that phone videos
+  can carry the exact GPS spot (often a home or garage) and that stripping it on upload was the alternative:
+  "Don't check at all". MP4 `udta` / `meta` boxes are now accepted whole, location tags included
+  (`apps/api/src/ustaad/media/duration.ts`). Still refused (structure / security, not location): unknown boxes,
+  fragmented MP4, external data references, unreadable durations, WebM Tags/Attachments and Ogg comments other than the
+  encoder (in-app recordings never carry these). Images are still re-encoded without EXIF (unchanged).
+  Supersedes the SIM-F6 marker check and the 2026-11-26 "no location atoms" line for MP4.
+- **V9:** apply the light lift (visual-language § 3.8 items 1–7) site-wide, as its own deployed batch.
+- **Q234:** Saved "Send to my WhatsApp" stays posts only; (b) collection limit and names stay code constants; (c) no
+  offline keeping.
+- **Q-STT-1:** no automatic captions now; authors keep typing captions and summaries.
+- **Hindi wording OKs:** `qa.disclaimer`, `track_ustaad_hint`, `media.err_MEDIA_LOCATION` approved as written.
+- Founder also authorised turning the QA Turnstile bypass on for the signed-in live checks ("u have all the
+  permission … turn on bypass mode and then do the tests"); it is removed again after the run.
