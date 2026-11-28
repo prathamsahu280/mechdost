@@ -59,6 +59,13 @@ import { adminRoutingMocks, billPayMocks } from './tier3-fixtures.ts';
 import { slipMocks, staffPortalMocks, tier2PortalMocks } from './tier2-fixtures.ts';
 import { adminRecoMocks, demandMocks, notifyMeMocks, privacyMocks } from './catalogue-tier2-fixtures.ts';
 import { ustaadAdminMocks } from './ustaad-admin-fixtures.ts';
+import { ustaadCreateMocks, ustaadStoryViewerMocks } from './ustaad-compose-fixtures.ts';
+import {
+  ustaadDiscoverMocks,
+  ustaadMessagesMocks,
+  ustaadNetworkMocks,
+  ustaadThreadMocks,
+} from './ustaad-network-fixtures.ts';
 import { ustaadFeedMocks, ustaadMeMocks, ustaadProfileMocks } from './ustaad-social-fixtures.ts';
 import { ustaadJobsMocks, ustaadLearnMocks, ustaadSavedMocks } from './ustaad-member-fixtures.ts';
 import { photoQueueMocks, wishlistMocks } from './storefront-fixtures.ts';
@@ -1835,6 +1842,18 @@ export function mocksFor(c: AuditCase): Mock[] {
       return ustaadProfileMocks();
     case 'API-USTAAD-ME':
       return ustaadMeMocks();
+    case 'API-USTAAD-MESSAGES':
+      return ustaadMessagesMocks();
+    case 'API-USTAAD-THREAD':
+      return ustaadThreadMocks();
+    case 'API-USTAAD-NETWORK':
+      return ustaadNetworkMocks();
+    case 'API-USTAAD-DISCOVER':
+      return ustaadDiscoverMocks();
+    case 'API-USTAAD-CREATE':
+      return ustaadCreateMocks();
+    case 'API-USTAAD-STORY-VIEWER':
+      return ustaadStoryViewerMocks();
     case 'API-USTAAD-LEARN':
       return ustaadLearnMocks();
     case 'API-USTAAD-JOBS':

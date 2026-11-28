@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildCases, type AuditCase } from '../e2e/state-audit/cases.ts';
 import { mocksFor } from '../e2e/state-audit/api-mode/fixtures.ts';
-import { asked } from '../e2e/state-audit/api-mode/ustaad-social-fixtures.ts';
 
 /**
  * API-mode fixtures of the Mechanic Network feed, profile and my-card rows (spec 23 § 21i-L, batch G). Every fixture
@@ -112,10 +111,18 @@ describe('Mechanic Network feed, profile and card rows', () => {
       const me = call(c, 'GET', '/ustaad/me')?.body as { member: unknown };
       expect(me.member).toBeNull();
     }
-    asked.clear();
+    // The "expired" answer is counted per page install: one set of mocks, asked twice (no state between tests).
     for (const c of rows.filter((x) => x.state.feed === 'expired')) {
-      expect(feed(c)).toMatchObject({ status: 410, code: 'USTAAD_FEED_EXPIRED' });
-      expect(feed(c)?.status ?? 200, `${c.id} then ok`).toBe(200);
+      const mock = mocksFor(c).find((m) => m.method === 'GET' && m.path.test('/ustaad/feed'));
+      const ask = () =>
+        mock?.reply({ c, method: 'GET', path: '/ustaad/feed', query: new URLSearchParams(), body: null });
+      expect(ask()).toMatchObject({ status: 410, code: 'USTAAD_FEED_EXPIRED' });
+      expect(ask()?.status ?? 200, `${c.id} then ok`).toBe(200);
+      const again = mocksFor(c).find((m) => m.method === 'GET' && m.path.test('/ustaad/feed'));
+      expect(
+        again?.reply({ c, method: 'GET', path: '/ustaad/feed', query: new URLSearchParams(), body: null }),
+        `${c.id} a retry starts again`,
+      ).toMatchObject({ status: 410 });
     }
     for (const k of ['kinds', 'empty', 'error', 'expired', 'not-member', 'held-own', 'loading'])
       expect(

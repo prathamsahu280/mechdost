@@ -1521,7 +1521,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     page: 'Ustaad composer (/ustaad/create, ?story=1)',
     component:
       'Kind tiles and quick start, recorder / photos (up to 10, before-after roles) / video / PDF / poll / link, smart correction, tag picker (max 5), upload progress, posted and held notes, API errors in words',
-    path: '/ustaad/create',
+    path: (r) => (r.mode === 'story' ? '/ustaad/create?story=1' : '/ustaad/create'),
     scope: 'main',
     strategy: 'pairwise',
     params: [
@@ -1643,7 +1643,12 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     page: 'Ustaad messages (/ustaad/messages), member',
     component:
       'Chats / Requests / Sent tab links, rows with initials, unread dot and "New", muted bell, empty state, Show more; ?to=<handle> request form: rules note, field error, not-found card, existing conversation',
-    path: '/ustaad/messages',
+    path: (r) =>
+      r.to !== 'none'
+        ? '/ustaad/messages?to=somebody'
+        : r.box === 'requests' || r.box === 'sent'
+          ? `/ustaad/messages?box=${r.box}`
+          : '/ustaad/messages',
     scope: 'main',
     strategy: 'pairwise',
     params: [
@@ -1686,7 +1691,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     page: 'Ustaad My network (/ustaad/network), member',
     component:
       'Followers / Following / Connections / Requests / Blocked tab links; Message, Remove, Unfollow, Accept, Decline, Take back, Unblock, Unmute; limits note; empty states; Show more; cap and cooldown words',
-    path: '/ustaad/network',
+    path: (r) => (r.tab === 'followers' ? '/ustaad/network' : `/ustaad/network?tab=${String(r.tab)}`),
     scope: 'main',
     strategy: 'pairwise',
     params: [
@@ -1706,7 +1711,12 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     page: 'Ustaad Discover (/ustaad/discover), member',
     component:
       'Search (submit) with work and level filters; people cards: level chip, verified tick, area and distance band, specialities, helpful / best, New, Follow, Connect, Message; tags; Top this week; no match; Show more',
-    path: '/ustaad/discover',
+    path: (r) =>
+      `/ustaad/discover${
+        { search: '?q=suresh', filters: '?work=battery&level=pakka', 'no-match': '?q=zzzz' }[
+          String(r.discover)
+        ] ?? ''
+      }`,
     scope: 'main',
     strategy: 'pairwise',
     params: [

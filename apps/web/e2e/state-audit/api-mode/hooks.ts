@@ -10,6 +10,7 @@ import { auditMocksFor } from './baseline-fixtures.ts';
 import { clickIfPresent } from './hook-click.ts';
 import { installApi } from './mock-api.ts';
 import { mockFirebase, persistedUser } from './session.ts';
+import { PIXEL } from './ustaad-social-fixtures.ts';
 
 const UID: Readonly<Record<string, string>> = {
   customer: 'audit-customer',
@@ -21,6 +22,69 @@ const PHONE = '9876543210';
 
 const CSV_SAMPLE = ['sku,stock', 'AB-12,1', ''].join(String.fromCharCode(10));
 const settleApi = (page: Page) => page.waitForTimeout(500);
+
+const COMPOSER_TILES = [
+  'voice',
+  'photo',
+  'video',
+  'fix_log',
+  'tip',
+  'before_after',
+  'text',
+  'poll',
+  'link',
+  'document',
+];
+const COMPOSER_MORE = ['text', 'poll', 'link', 'document'];
+const STORY_TILES = ['photo', 'voice', 'video'];
+
+/**
+ * Composer: press the tile of the kind, fill what a headless browser can (text, poll, link, fix log, tip, a photo),
+ * and send when the state names an answer. Voice, video and PDF need media a headless browser cannot make.
+ */
+async function prepareCreate(page: Page, c: AuditCase, notes: string[]): Promise<void> {
+  const form = page.locator('main form');
+  await form.waitFor({ timeout: 5_000 }).catch(() => notes.push('no composer'));
+  const kind = String(c.state.kind);
+  const story = c.state.mode === 'story';
+  const tiles = form.locator('button[aria-pressed]');
+  if (!story && kind !== 'none') {
+    if (COMPOSER_MORE.includes(kind))
+      await clickIfPresent(form.locator('details > summary'), notes, 'no More ways');
+    await clickIfPresent(tiles.nth(COMPOSER_TILES.indexOf(kind)), notes, `no ${kind} tile`);
+  }
+  if (story && STORY_TILES.includes(kind))
+    await clickIfPresent(tiles.nth(STORY_TILES.indexOf(kind)), notes, `no ${kind} tile`);
+  if (c.state.result === 'idle') return;
+  const photo = story ? kind === 'photo' || kind === 'none' : ['photo', 'before_after'].includes(kind);
+  const text = !story && ['text', 'poll', 'link', 'fix_log', 'tip'].includes(kind);
+  if (!photo && !text) {
+    notes.push(`${kind} needs a recording or a file a headless browser cannot make; shown without a send`);
+    return;
+  }
+  if (photo) {
+    const png = { name: 'photo.png', mimeType: 'image/png', buffer: Buffer.from(PIXEL, 'base64') };
+    await form
+      .locator('input[type="file"][accept="image/*"]')
+      .last()
+      .setInputFiles(kind === 'before_after' ? [png, png] : [png])
+      .catch(() => notes.push('no photo input'));
+    await page.waitForTimeout(500);
+  }
+  const fill = async (selector: string, value: string) => {
+    const field = form.locator(selector).first();
+    if ((await field.count()) > 0) await field.fill(value);
+  };
+  await fill('textarea', 'Cleaned the carburettor and the idle is smooth again');
+  await fill('#fix-symptom', 'Does not start in the morning');
+  await fill('#fix-cause', 'Weak battery terminal');
+  await fill('#fix-fix', 'Cleaned and tightened the terminals');
+  await fill('#poll-0', '10W-30');
+  await fill('#poll-1', '20W-40');
+  await fill('input[type="url"]', 'https://www.example.com/manual');
+  await clickIfPresent(form.locator('button[type="submit"]'), notes, 'no send button');
+  await settleApi(page);
+}
 
 /** Opens what the case's state names: a refund's detail, a shop and its panel, the give-up form. */
 async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
@@ -390,6 +454,72 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
     const thumb = main.locator('section[aria-labelledby$="-photos-title"] button').first();
     if ((await thumb.count()) === 0) notes.push('no photo thumbnail');
     else await thumb.click();
+  }
+
+  // Messages: the request form sent empty shows the field error in words.
+  if (c.code === 'API-USTAAD-MESSAGES' && c.state.to === 'form-errors') {
+    const form = main.locator('form');
+    await form.waitFor({ timeout: 5_000 }).catch(() => notes.push('no request form'));
+    await clickIfPresent(form.locator('button[type="submit"]'), notes, 'no send button');
+    await settleApi(page);
+  }
+
+  // Conversation: open the panel the state names. `blocked` is More, Block, then the confirm (the page then shows the
+  // "you blocked" card with Unblock); the other panels need an open conversation (the composer or the More button).
+  if (c.code === 'API-USTAAD-THREAD' && c.state.thread !== 'error') {
+    const track = (name: string) => page.locator(`[data-track="${name}"]`);
+    await track('ustaad_thread_more')
+      .first()
+      .waitFor({ timeout: 5_000 })
+      .catch(() => notes.push('the conversation did not load'));
+    if (c.state.thread === 'blocked') {
+      await clickIfPresent(track('ustaad_thread_more'), notes, 'no More button');
+      await clickIfPresent(track('ustaad_thread_block'), notes, 'no Block button');
+      await clickIfPresent(track('ustaad_thread_block_confirm'), notes, 'no block confirm');
+    } else {
+      const panel = String(c.state.panel);
+      if (panel === 'voice')
+        await clickIfPresent(track('ustaad_message_voice_open'), notes, 'no voice button');
+      if (panel === 'photo')
+        await clickIfPresent(track('ustaad_message_photo_open'), notes, 'no photo button');
+      if (['more', 'report', 'block-confirm'].includes(panel))
+        await clickIfPresent(track('ustaad_thread_more'), notes, 'no More button');
+      if (panel === 'report') await clickIfPresent(track('ustaad_thread_report'), notes, 'no Report button');
+      if (panel === 'block-confirm')
+        await clickIfPresent(track('ustaad_thread_block'), notes, 'no Block button');
+    }
+    await settleApi(page);
+  }
+
+  // Discover: press Connect on the first card; the API answers the daily cap and the words show.
+  if (c.code === 'API-USTAAD-DISCOVER' && c.state.discover === 'cap') {
+    const connect = page.locator('[data-track="ustaad_discover_connect"]');
+    await connect
+      .first()
+      .waitFor({ timeout: 5_000 })
+      .catch(() => notes.push('no Connect button'));
+    await clickIfPresent(connect, notes, 'no Connect button');
+    await settleApi(page);
+  }
+
+  if (c.code === 'API-USTAAD-CREATE') await prepareCreate(page, c, notes);
+
+  // Story viewer: open the first ring; "paused" presses the Auto next switch off.
+  if (c.code === 'API-USTAAD-STORY-VIEWER') {
+    const ring = main.locator('ul li button:has(.story-ring)');
+    await ring
+      .first()
+      .waitFor({ timeout: 5_000 })
+      .catch(() => notes.push('no story ring'));
+    if (await clickIfPresent(ring, notes, 'no story ring')) {
+      const auto = page.locator('dialog[open] button[aria-describedby="story-auto-help"]');
+      await auto
+        .first()
+        .waitFor({ timeout: 5_000 })
+        .catch(() => notes.push('the viewer did not open'));
+      if (c.state.playback === 'paused') await clickIfPresent(auto, notes, 'no Auto next switch');
+    }
+    await settleApi(page);
   }
   return notes;
 }

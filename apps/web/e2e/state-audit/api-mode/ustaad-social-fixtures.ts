@@ -38,10 +38,10 @@ import {
 } from './ustaad-member-fixtures.ts';
 
 /** A 1x1 PNG: every post photo, thumbnail and avatar request answers with it. */
-const PIXEL =
+export const PIXEL =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
-const mediaMocks = (): Mock[] => [
+export const mediaMocks = (): Mock[] => [
   get(/^\/ustaad\/media\/[^/]+\/url$/, SignedUrlResponse, () => ({
     body: {
       url: `${AUDIT_API_ORIGIN}/v1/ustaad/media/pixel`,
@@ -59,7 +59,7 @@ const name = (c: AuditCase, en: string) => (long(c) ? `${en} ${LONG_EN}` : en);
 const nameHi = (c: AuditCase, hi: string) => (long(c) ? `${hi} ${LONG_HI}` : hi);
 
 type Author = PostView['author'];
-const author = (c: AuditCase, n: number, en: string, hi: string, level = 'pakka'): Author => ({
+export const author = (c: AuditCase, n: number, en: string, hi: string, level = 'pakka'): Author => ({
   id: uuid(300 + n),
   handle: `member_${String(n)}`,
   displayName: name(c, en),
@@ -108,7 +108,7 @@ function post(c: AuditCase, a: Author, over: Partial<PostView>): PostView {
   };
 }
 
-const medium = (kind: string, n: number, over: Partial<PostView['media'][number]> = {}) => ({
+export const medium = (kind: string, n: number, over: Partial<PostView['media'][number]> = {}) => ({
   mediaId: uuid(500 + n),
   kind,
   role: null,
@@ -225,9 +225,6 @@ const heldOwn = (c: AuditCase): PostView[] => [
   ...kinds(c).slice(0, 2),
 ];
 
-/** Per case: how many times the For you snapshot has been asked (the first ask is "expired", then it works). */
-export const asked = new Map<string, number>();
-
 function feedItems(c: AuditCase): PostView[] {
   seq = 0;
   switch (c.state.feed) {
@@ -293,6 +290,9 @@ function feedGate(): Mock {
 }
 
 export function ustaadFeedMocks(): Mock[] {
+  // How many times the For you snapshot was asked: the first ask is "expired", then it works. The count lives in this
+  // closure, so it belongs to one page install (one test attempt) and a Playwright retry starts again at zero.
+  let asked = 0;
   return [
     // The gate: a visitor who has not joined sees the join screen, never the feed.
     feedGate(),
@@ -303,9 +303,8 @@ export function ustaadFeedMocks(): Mock[] {
     get(/^\/ustaad\/feed$/, FeedPageDto, (c) => {
       if (c.state.feed === 'error') return failed();
       if (c.state.feed === 'expired') {
-        const n = (asked.get(c.id) ?? 0) + 1;
-        asked.set(c.id, n);
-        if (n === 1) return { status: 410, code: 'USTAAD_FEED_EXPIRED' };
+        asked += 1;
+        if (asked === 1) return { status: 410, code: 'USTAAD_FEED_EXPIRED' };
       }
       const body = { items: feedItems(c), nextCursor: null } satisfies Out<typeof FeedPageDto>;
       return c.state.feed === 'loading' ? { body, delayMs: 15_000 } : { body };

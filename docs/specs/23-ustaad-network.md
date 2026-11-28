@@ -2505,3 +2505,24 @@ No migration. All DTO changes are additive.
   posts" pill (90 s poll; the fresh call answers 0). Guard: `apps/web/test/state-audit-ustaad-social.test.ts`. The other
   `API-USTAAD-*` rows (join, welcome, partners status, attest, post sheets, create, story viewer, tag, teaser, messages,
   thread, network, discover) still have no fixtures.
+- **Batch H (2026-11-28) state-audit fixtures for Messages, Conversation, My network, Discover, Composer, Story viewer.**
+  `API-USTAAD-MESSAGES`, `-THREAD`, `-NETWORK`, `-DISCOVER`, `-CREATE`, `-STORY-VIEWER` now have API-mode fixtures
+  (`api-mode/ustaad-network-fixtures.ts`, `ustaad-compose-fixtures.ts`; every body is typed with the shared schema it
+  is served under, the small write answers are plain objects). The model rows of Messages, Network, Discover and
+  Create now build the address from the state (`?box=`, `?to=somebody`, `?tab=`, `?q=` / `?work=&level=`, `?story=1`).
+  Messages: inbox rows with a text, voice, photo and shared-post preview, unread, muted, the Requests group, requests,
+  sent, empty, Show more, error, the `?to=` request form (empty send shows the field error), not found, existing
+  conversation. Conversation: open (day separators over three IST days, every bubble kind, Sent / Seen), held own
+  message, decide (Accept / Decline), waiting, closed, blocked (More, Block, Yes), older (Show older), error, long en
+  and hi text; panels voice, photo, More, Report, Block confirm are opened by the page set-up. Network: five tabs
+  with empty, one, more, error. Discover: top helpers with tags and top posts, search, filters, no match, more, the
+  daily cap (page set-up presses Connect), error. Composer: the kind tiles pressed by the page set-up; text, poll,
+  link, fix log, tip and one photo are filled and sent for posted, held, daily cap, links locked, unknown tag, and
+  `uploading` holds the file upload 15 s; voice, video, PDF and before-after recordings cannot be made headless and show
+  the composer without a send. Story viewer: photo, voice, video and own story ("Seen by 7"), Auto next running or
+  pressed off. Also: batch G's 410 "asked" map is gone (the count lives in the mock closure of one page install, so a
+  Playwright retry starts again); the guard now asks one set of mocks twice. Guard:
+  `apps/web/test/state-audit-ustaad-network.test.ts` (RED 9 of 10 failing first). **The Playwright run is owed to CI**
+  (no real-mode build here); the hooks' selectors (tile order, `data-track` names, `story-auto-help`) are unrun.
+  Still without fixtures: `API-USTAAD-POST-SHEETS`, `-TEASER`, `-TAG-SAVED`, `-JOIN`, `-WELCOME`, `-ATTEST`,
+  `-PARTNERS-STATUS`.
