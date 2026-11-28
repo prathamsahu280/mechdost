@@ -1553,3 +1553,6 @@ viewer, tag, teaser, messages, thread, network, discover). No product code chang
   "N of M places free" from the existing slots route) + batch G (state-audit fixtures FEED/PROFILE/ME; 13 more
   API-USTAAD rows still without fixtures).
 - 13:25 IST: deploy 4 (5e2b0bd0) live + smoke OK; batch H pushed (f52f7947). LV-10 fix (list skeleton inside the list column) gated: web 258 files / 2397.
+- 14:10 IST: deploy 5 (75586c11) live + smoke OK. QA Turnstile bypass OFF (three lines removed from /opt/mechdost/.env,
+  api restarted, log `qa_turnstile_bypass_off`). Live lab CLS now all under budget: workshop jobs 0.001, shop orders
+  0.001, rider 0.005, notifications 0.001, workshop profile 0.001, calendar 0.001, /shop 0. LV-6/8/9/10 closed.
