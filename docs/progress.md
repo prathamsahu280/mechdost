@@ -1445,6 +1445,18 @@ Done: launcher hides on phones while a field is focused and on `data-launcher-av
   Bench kit motion and light lift, Saved, YouTube embeds) and the partner portals with data — first thing for the next
   session with the founder's OK for a short bypass window.
 
+## 2026-11-28 late (lead, founder on phone)
+
+- **Account menu toggle bug** (founder recording 22:49): second press on the avatar re-opened the menu. Fixed (trigger
+  ref skipped by the outside-press listener), `account-menu-toggle.test.ts`; bell checked (safe), search trigger safe.
+- **Stale "Signed in as" + sessions:** root cause = lead's QA password reset ended the founder's Firebase session; the
+  site session stayed. Research `docs/superpowers/specs/2026-11-28-sessions-devices-research.md` (founder: rough
+  location yes, approximate city fine). Two Sonnet builders running in worktrees: (A+B) stale-session fix + "Sign out
+  of all devices"; (C) device list with rough location (migration 0116, DB-IP Lite, no IP stored).
+- **Founder 22:5x:** a password change must NOT end other sign-ins unless the person opts in ("sign out of other
+  devices" choice on the change-password form). Firebase always revokes refresh tokens on a password change, so this
+  needs a resume path built on the device sessions (C) — planned as follow-up D after A+B and C merge.
+
 ## HANDOVER 2026-11-28 21:25 IST (lead) — read this first next session
 
 **Live on mechdost.com** (last code deploy 5dd21eaa + docs after; smoke OK all evening, 0 errors since 16:56):
