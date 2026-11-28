@@ -38,3 +38,24 @@ Demo: `docs/design/my-garage-2026-11-28/index.html` (also a private artifact for
 New data: papers expiry dates per vehicle; service rules per vehicle type (admin-editable); vehicle id on orders and
 service requests (to fill the service book and spend); last-done km/date per job; reminder jobs + notification
 templates (en+hi); optional document photos (storage + consent). Plate lookup: later, paid provider.
+
+## Round 2 (founder 18:50: "this design is dogshit … modern … theme can be different … did u do a proper visual study")
+
+The first study read page text only; no visual study was done. Round 2 took real screenshots
+(`.playwright-mcp/garage-study/`, not committed):
+
+- **SmartGarrage:** deep-blue hero over real workshop photography, Poppins, orange accent, a "Live now · 3 mechanics on
+  duty" pill, a floating card on the photo ("Next available slot Today 6:46 PM · 1.2 km away · from ₹999 · Grab slot"),
+  big trust numbers (2k+ bikes, 4.8★, 1 mo warranty), price-tagged service cards.
+- **CRED Garage (cred.club/garage):** a cinematic scroll page on true black: vehicles lit like a studio, glowing white
+  display type; app screens use a serif voice line ("you've been a fabulous driver with 0 challans"), a chunky flip
+  counter ("223 days with 0 challan"), a wheel date picker for PUC with the fine spelled out ("₹1,000"), a monthly
+  spend ledger with bars and a delta, and a roller-shutter bay to close.
+
+Redesign (single dark look, MechDost orange as the work light, Bricolage Grotesque + Inter): each vehicle parks in a
+numbered **bay** whose roller shutter rolls up to reveal it under a work light (swipe between bays); 2×2 glowing
+**vitals** (flip-digit odometer, next service ring, insurance and PUC day counts); a lit **road** to the next jobs;
+**next up** with the typical Raipur cost; **fits** shelf; **spends** with monthly bars and the year-on-year delta;
+**service log**; **papers** set with a wheel date picker that names the fine; add-vehicle with paint colour and a
+drive-in plus confetti; milestones every 5,000 km (10,000 km for cars) fire confetti. Not copied: CRED's black/white
+glow type, serif voice and green accent.
