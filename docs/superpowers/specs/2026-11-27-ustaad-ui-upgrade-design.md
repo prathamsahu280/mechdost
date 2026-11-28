@@ -348,6 +348,10 @@ video + one-line caption, 24 h expiry.
 - **Data/API:** existing `GET /ustaad/stories`, `POST /ustaad/stories/{id}/view`. **Events:** existing `ustaad_story_viewed`; new
   `ustaad_story_paused {}`. **Motion:** progress bar is a CSS `transform: scaleX` animation; under reduced motion the
   bar shows steps and stories do **not** auto-advance (WCAG 2.2.2).
+  **Ruling 2026-11-28 (lead, built in spec 23 § 21i-L):** photos never auto-advance (the U1 6 s timer is removed); a
+  voice note or video the member played moves to the next story when it ends; a visible "Auto next" switch turns that
+  off; under reduced motion nothing moves on. `ustaad_story_autonext {on}` replaces `ustaad_story_paused`.
+  **Status 2026-11-28:** § 3.5 Continue + file size, § 3.6 job employer line and the saved-by-me flags are built (21i-L).
 - **Copy (`ustaad.story.*`):** `new` "new / नई", `prev` "Previous / पिछली", `next` "Next / अगली",
   `pause` "Pause / रोको", `play` "Play / चलाओ", `close` "Close / बंद करो".
 

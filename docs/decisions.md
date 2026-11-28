@@ -3021,6 +3021,16 @@ look"); V9 (the same lift site-wide) is NOT approved, so everything below is sco
   are an existing contrast pair).
 - Not decided here: V9 (site-wide lift) stays pending in the visual-language doc § 9.
 
+## 2026-11-28 — Mechanic Network stories: no auto-advance for photos; a played voice or video moves on (lead ruling, batch N)
+
+- The U1 build advanced photo stories after 6 s with a Pause button; the design (§ 3.3) and WCAG 2.2.2 say stories do not
+  auto-advance. Ruling: photo and text stories never move on by themselves; a voice note or video the member played
+  moves to the next story when it ends; a visible "Auto next" switch (`aria-pressed`, On/Off in words) turns that off;
+  under `prefers-reduced-motion` nothing moves on. The timer, the press-and-hold hint and `ustaad_story_paused` sends are
+  gone; new client event `ustaad_story_autonext {on}` (spec 12). Built in spec 23 § 21i-L. No new colours, fonts or radii.
+- Same batch: additive `savedByMe` on question, answer, job and lesson DTOs; `Job.employer` (business name and verified
+  mark only); lesson `sizeBytes` and `lastWatchedAt` for file size and "Continue". No migration.
+
 ## 2026-11-28 — Shop portal split into tabs; workshop kit shim removed (builder, partner portals batch A)
 
 - Shop portal is five tab pages (Today, Orders, Stock & prices, Numbers, My shop) in a `(portal)` route group so the

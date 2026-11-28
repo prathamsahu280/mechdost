@@ -2401,8 +2401,8 @@ Founder 2026-11-28: save more than posts and keep it like WhatsApp/Instagram/Fac
     in those DTOs yet). Events: `ustaad_saved_filter {by, kind?}`, `ustaad_collection_changed {action}` (spec 12).
   - Tests: `apps/web/test/ustaad-saved-client.test.ts` (6), `ustaad-saved-view.test.ts` (7), `ustaad-me-saved.test.ts`
     (2), `ustaad-save-wiring.test.ts` (3), plus `client-messages-coverage` and `panel-dismiss`.
-- **Still not built:** "saved by me" flags on question, answer, job and lesson DTOs (controls start unsaved; the
-  server keeps the truth, a second tap is idempotent); "Send to my WhatsApp" for non-post kinds (founder OK, Q234);
+- **Built later (§ 21i-L):** "saved by me" flags on the question, answer, job and lesson DTOs.
+- **Still not built:** "Send to my WhatsApp" for non-post kinds (founder OK, Q234);
   collection limit and suggested names as admin settings (founder OK); an e2e of the page and sheet.
 
 ## 22. Not built / later
@@ -2433,6 +2433,41 @@ dark elevation scoped under `[data-shell-compact]`; body 16/17 at 1.6, names 16/
 - **Inbox rows** (`messages/thread-list.tsx`): avatar, name + tag, preview (text, or an icon and word: "Voice · 0:12", "Photo", "Shared post"; "You: " prefix for my last message), time, unread dot with the sr-only word "New message". Requests sit in their own group row above the chats ("N message requests", links to `?box=requests`). The API gives **no unread count**, only a boolean, so no count is shown.
 - **API (small, additive)**: `ThreadViewDto.last?: { kind, text (first 80 characters), durationMs, mine } | null`, filled in `threadViews` (`packages/db/src/repo/ustaad/messages.ts`) from the newest message the caller may see (held messages only for their sender, deleted never; one `DISTINCT ON thread_id` pass over `ustaad_messages (thread_id, created_at)`). Test: `ustaad-social.test.ts` "the inbox row carries the kind of the last message…". The demo store (`demo/ustaad-messages.ts`) fills it too.
 - **Announcements and focus**: a polite status line (mounted empty) says "New message from {name}" when a refresh brings messages from the other member (never on first load, never for mine); the thread refetches when the tab becomes visible (no polling). Focus stays in the composer after a send (unchanged: `composer.tsx` `sendText`, panel effect).
-- **Accessibility review** (specialist, read-only): fixes applied: menu `max-h-[40vh]` scroll, `scroll-mt` on focusable thread items, 48 px close-photo width, unread word first in a row's name. Open: global `scroll-padding-top` (96 px) is below the two stacked sticky headers (about 120 px); status text repeats when two arrivals follow each other; Escape on the open More menu only works once focus is inside it; focus after Accept / Decline until the refresh lands.
+- **Accessibility review** (specialist, read-only): fixes applied: menu `max-h-[40vh]` scroll, `scroll-mt` on focusable thread items, 48 px close-photo width, unread word first in a row's name. Fixed in § 21i-L: global `scroll-padding-top` (96 px) was below the two stacked sticky headers (about 120 px); status text repeated when two arrivals followed each other. Still open: Escape on the open More menu only works once focus is inside it; focus after Accept / Decline until the refresh lands.
 - **Not done**: the 150 ms bubble fade-in (no matching existing keyframe), the hold-to-talk mic restyle (recorder internals untouched), `ustaad_voice_speed_changed` (voice batch). No new analytics action except `data-track="ustaad_messages_requests_group"` (covered by the `ustaad_messages_*` prefix in spec 12).
 - Tests: `apps/web/test/ustaad-messages-restyle.test.ts`.
+
+## 21i-L. Leftovers as built (2026-11-28; builder batch N; designs `2026-11-27-ustaad-ui-upgrade-design.md` § 3.3, 3.5, 3.6, 3.7 and `2026-11-28-mechanic-network-saved-design.md`)
+
+No migration. All DTO changes are additive.
+
+- **N1 saved-by-me flags.** `savedByMe: boolean` on `QuestionCard` (so on the detail too), `AnswerView`, `Job` and
+  `LearnResourceView` (shared DTOs; posts already had it). The repositories fill it from `ustaad_saved_items` with one
+  batched lookup per list (`savedIdSet` in `packages/db/src/repo/ustaad/saved-flags.ts`, on the table's primary key
+  `member_id, kind, target_id`; no N+1; kept apart from `saved.ts` to avoid an import cycle with Q&A and jobs). The Save
+  control on the question thread, each answer, the job detail and each lesson now starts from the flag
+  (`apps/web/src/components/ustaad/**`); the browser demo keeps the flag in step on toggle (`demo/ustaad.ts`).
+- **N2 job employer line.** `Job.employer: { name, nameHi, verified } | null`, from the workshop (`workshops.name`,
+  `name_hi`, status `approved`) or the verified trade account (`business_name`) the job was posted for; one lookup per
+  list. Nothing else of the employer (no person, no phone). The job card and the job detail show the business name and
+  "Verified garage" with a check (`ustaad.jobs.verifiedGarage`). The name follows the locale (`nameHi` on `/hi`).
+- **N3 Learn.** `LearnResourceView.sizeBytes` (the hosted file's `declared_bytes`, from the media row; null for links)
+  and `lastWatchedAt` (the member's progress row `updated_at`). The lesson shows its size next to the length with the
+  existing `ustaad.media.sizeKb` / `sizeMb` words (`mediaSizeText`). A "Continue" card at the top names the unfinished
+  hosted video touched last (`lib/ustaad/learn-continue.ts`, pure) and a button that scrolls to and focuses that lesson
+  (event `ustaad_learn_continue_tapped`, already catalogued); nothing plays by itself.
+- **N4 story advance (ruling, lead 2026-11-28, WCAG 2.2.2).** The U1 photo timer is removed. A photo or text story never
+  moves on by itself (Next). A voice note or video the member played moves to the next story when it ends
+  (`onEnded` on `VoiceNote` and `VideoTile`, through a stable ref); never under `prefers-reduced-motion`. A visible
+  "Auto next" switch (`aria-pressed`, the word On/Off beside it) turns that off (event `ustaad_story_autonext { on }`).
+  The progress bar shows steps, not a countdown. The "press and hold to pause" hint is gone; `ustaad_story_paused` is no
+  longer sent (kept in the catalogue). `storyAdvance` is now `on_end | manual`.
+- **N5 Messages accessibility (L323).** Thread pages set `scroll-padding-top: 144px` and a bottom padding for the
+  sticky network header + thread header and the composer (`html:has([data-ustaad-thread])`, `globals.css`). The thread has
+  one polite status region: new messages and "N earlier messages loaded" share it and clear after 5 s, so the next
+  arrival is announced again and the line is not read twice.
+- **Not built:** new state-audit rows for Learn, Jobs and Saved (the API-mode fixtures for those screens do not exist yet;
+  only the story-viewer description changed). A real-browser pass of the story viewer and thread is the lead's.
+- **Tests:** `packages/db/test/ustaad-saved.test.ts` (flags for every kind, per member; employer line),
+  `apps/web/test/ustaad-learn-continue.test.ts`, `ustaad-story-autonext.test.ts`, `ustaad-thread-a11y.test.ts`,
+  `ustaad-save-wiring.test.ts` (updated), `ustaad-u1-shell.test.ts` (story advance table updated).

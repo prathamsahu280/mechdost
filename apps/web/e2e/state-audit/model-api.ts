@@ -1498,7 +1498,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     code: 'API-USTAAD-STORY-VIEWER',
     page: 'Ustaad story viewer (from the ring on /ustaad)',
     component:
-      'Full-screen viewer: progress bars, pause, previous/next, close, Seen by N (own only), reply in messages',
+      'Full-screen viewer: progress steps, Auto next switch (a played voice or video moves on; photos wait), previous/next, close, Seen by N (own only), reply in messages',
     path: '/ustaad',
     scope: 'body',
     strategy: 'pairwise',

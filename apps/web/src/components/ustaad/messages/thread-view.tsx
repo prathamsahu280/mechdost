@@ -51,6 +51,8 @@ import {
  * only on an open conversation. "More" holds mute notices, report and block. Whenever an action replaces the focused
  * control, focus moves to the control that replaces it (accessibility review 2026-11-26).
  */
+/** How long the polite line stays before it is cleared (so the next arrival is announced again). */
+const ANNOUNCE_MS = 5000;
 /** The thread's own header, sticky under the 56 px network header; the composer below sticks to the bottom edge. */
 const STICKY_HEAD =
   'sticky top-14 z-20 -mx-4 grid gap-3 border-b border-line-card bg-surface-raised px-4 py-2 tab:-mx-6 tab:px-6';
@@ -64,12 +66,11 @@ export function ThreadScreen({ id }: { id: string }) {
   const { loaded, reload, refresh, sample } = useSocial((c) => c.messages(id, null), id);
   const [older, setOlder] = useState<{ items: MessageView[]; next: string | null } | null>(null);
   const [olderBusy, setOlderBusy] = useState(false);
-  const [olderNote, setOlderNote] = useState<string | null>(null);
   const [olderError, setOlderError] = useState<string | null>(null);
   const [blocked, setBlocked] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   // One polite line for new messages from the other member; the region is mounted empty first (L-UCE2).
-  const [incomingCount, setIncomingCount] = useState(0);
+  const [announce, setAnnounce] = useState('');
   const knownIds = useRef<Set<string> | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLOListElement>(null);
@@ -102,14 +103,24 @@ export function ThreadScreen({ id }: { id: string }) {
   }, [thread, id, locale]);
   // A new message from the other member is announced once (never on first load, never for my own or older ones).
   const otherName = useMemberName()(thread?.other ?? { displayName: '', displayNameHi: null });
-  const incoming = incomingCount > 0 ? t('newIncomingNote', { name: otherName }) : null;
+  // The line is cleared after a few seconds, so the same words are announced again for the next arrival and are
+  // never left standing in the page for a screen reader's browse mode to read twice.
+  useEffect(() => {
+    if (announce === '') return;
+    const id = window.setTimeout(() => {
+      setAnnounce('');
+    }, ANNOUNCE_MS);
+    return () => {
+      window.clearTimeout(id);
+    };
+  }, [announce]);
   useEffect(() => {
     if (!data) return;
     const ids = [...data.items, ...(older?.items ?? [])];
     const fresh = countIncoming(knownIds.current, ids);
     knownIds.current = new Set(ids.map((m) => m.id));
-    setIncomingCount(fresh);
-  }, [data, older]);
+    if (fresh > 0) setAnnounce(t('newIncomingNote', { name: otherName }));
+  }, [data, older, otherName, t]);
   // Coming back to the tab brings in what arrived meanwhile (no polling; the thread list pings elsewhere).
   useEffect(() => {
     const onVisible = () => {
@@ -130,7 +141,6 @@ export function ThreadScreen({ id }: { id: string }) {
   async function loadOlder() {
     if (!next || olderBusy) return;
     setOlderBusy(true);
-    setOlderNote(null);
     setOlderError(null);
     const r = await (await socialClient(locale)).messages(id, next);
     setOlderBusy(false);
@@ -139,13 +149,13 @@ export function ThreadScreen({ id }: { id: string }) {
       return;
     }
     setOlder({ items: [...(older?.items ?? []), ...r.data.items], next: r.data.nextCursor });
-    setOlderNote(t('moreLoaded', { n: r.data.items.length }));
+    setAnnounce(t('moreLoaded', { n: r.data.items.length }));
     // The button leaves when nothing older is left: focus the conversation instead of losing it.
     if (r.data.nextCursor === null) requestAnimationFrame(() => listRef.current?.focus());
   }
 
   return (
-    <div className="mx-auto grid max-w-2xl gap-3">
+    <div data-ustaad-thread className="mx-auto grid max-w-2xl gap-3">
       {thread ? null : (
         <>
           <Link
@@ -159,8 +169,9 @@ export function ThreadScreen({ id }: { id: string }) {
           <h1 className="sr-only">{t('title')}</h1>
         </>
       )}
+      {/* The one polite region of the thread: new messages and "N earlier messages loaded". */}
       <p role="status" className="sr-only">
-        {incoming ?? ''}
+        {announce}
       </p>
       <SampleNote show={sample} />
       {loaded.state === 'loading' ? <LoadingBlock /> : null}
@@ -192,9 +203,6 @@ export function ThreadScreen({ id }: { id: string }) {
                   {olderBusy ? t('loadingMore') : t('showOlder')}
                 </button>
               ) : null}
-              <p role="status" className="sr-only">
-                {olderNote ?? ''}
-              </p>
               <LiveNote tone="error" text={olderError ? errorText(olderError) : null} />
               <ol
                 ref={listRef}
