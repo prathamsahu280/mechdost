@@ -86,6 +86,10 @@ const TEXT_PAIRS: [fg: string, bg: string][] = [
   ['#ffffff', 'cart'],
   ['cart-badge-text', 'cart-badge'],
   ['accent-soft-text', 'pill'],
+  // Site-wide light lift (V9): selected tint, sunken well, segment track
+  ['selected-fg', 'selected-bg'],
+  ['accent-soft-text', 'surface-alt'],
+  ['muted', 'lift-track'],
   ['muted', 'accent-soft'],
   // Ustaad QA simulation 2026-11-27: WhatsApp share text on its tint (was 3.07:1 in dark)
   ['whatsapp-text', 'whatsapp-bg'],
@@ -145,6 +149,49 @@ describe.each([
 
   it.each(NON_TEXT_PAIRS)('non-text %s on %s ≥ 3:1', (fg, bg) => {
     expect(contrast(theme, fg, bg)).toBeGreaterThanOrEqual(3);
+  });
+});
+
+function contrastOf(theme: Record<string, string>, fg: string, bg: string) {
+  return contrast(theme, fg, bg);
+}
+
+/** Site-wide light lift (visual language § 3.8, founder 2026-11-28 "Yes, whole site", decision V9): light only. */
+describe('site-wide light lift (V9)', () => {
+  it('lifts the page tone and the sunken well in light only', () => {
+    expect(light.bg).toBe('#eef2f7');
+    expect(light['surface-alt']).toBe('#f5f7fa');
+    expect(dark.bg).toBe('#0a1424');
+    expect(dark['surface-alt']).toBe('#0d192b');
+  });
+
+  it('keeps muted >= 5.0 and ink >= 7 on the new tones', () => {
+    expect(contrastOf(light, 'muted', 'bg')).toBeGreaterThanOrEqual(5);
+    expect(contrastOf(light, 'muted', 'surface-alt')).toBeGreaterThanOrEqual(5);
+    expect(contrastOf(light, 'ink', 'bg')).toBeGreaterThanOrEqual(7);
+    expect(contrastOf(light, 'ink', 'surface-alt')).toBeGreaterThanOrEqual(7);
+  });
+
+  it('selected state is the accent-soft pair in light and the old chip pair in dark', () => {
+    expect(light['selected-bg']).toBe(light['accent-soft']);
+    expect(light['selected-fg']).toBe(light['accent-soft-text']);
+    expect(dark['selected-bg']).toBe('#243752');
+    expect(dark['selected-fg']).toBe('#e8eef5');
+    expect(contrastOf(light, 'selected-fg', 'selected-bg')).toBeGreaterThanOrEqual(4.5);
+    expect(contrastOf(dark, 'selected-fg', 'selected-bg')).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('uses one card shadow (hairline + layered) and leaves the dark shadow alone', () => {
+    expect(css).toContain(
+      '--shadow-card: 0 0 0 1px #101f340d, 0 1px 2px #101f340f, 0 10px 28px -18px #101f3433;',
+    );
+    expect(css).toContain('--shadow-tab-bar:');
+    expect(block(":root[data-theme='dark']")).toContain('--shadow-card: 0 4px 16px #00000033;');
+  });
+
+  it('drops the card border colour in light only (the shadow carries the edge)', () => {
+    expect(css).toMatch(/--card-edge:\s*transparent;/);
+    expect(block(":root[data-theme='dark']")).toContain('--card-edge: var(--color-line-card);');
   });
 });
 

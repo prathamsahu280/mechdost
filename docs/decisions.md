@@ -3081,3 +3081,7 @@ look"); V9 (the same lift site-wide) is NOT approved, so everything below is sco
 - **Focus after a tab click** goes to the first visible heading of the new tab (the screen-reader-only `h1` is the
   fallback): sighted keyboard users get a visible focus ring; the Hindi bottom bar's real height is measured.
 - Not built: master–detail at ≥ 1024 px.
+
+## 2026-11-28 — V9 applied: site-wide light lift (builder batch V9)
+
+Founder 2026-11-28 "Yes, whole site" (see "Founder answers" above). Light theme only; dark values unchanged and pinned by `apps/web/test/tokens.test.ts` ("site-wide light lift (V9)"). New or changed values: `--color-bg` `#edf1f5 → #eef2f7`; `--color-surface-alt` `#e2e8ef → #f5f7fa`; `--color-selected-bg` `#fff0e9` and `--color-selected-fg` `#bf3c12` (dark `#243752` / `#e8eef5`, the old chip pair); `--shadow-card`, `--shadow-card-hover`, `--shadow-header` (light values, dark untouched); new `--shadow-tab-bar` (dark = the old `shadow-float`); `--card-edge` (`transparent` light, `--color-line-card` dark); `--radius-inset` 12 px; `--weight-heading-bold` (800 light, 700 dark). Details and contrast numbers: `docs/design-system.md` "Site-wide light lift". Not done in this batch: partner lane-tabs keep their navy selected pill and bordered chips (no tinted track yet), the ustaad floating-sheet feed and metals stay network-only.

@@ -109,7 +109,7 @@ Reference prototype: the approved standalone page `topbar-c-v4.html` (header, ac
 
 ## Additions 2026-11-01 (see decisions)
 
-- **Surfaces (light):** page `#edf1f5`, alt surface `#e2e8ef`, card border `#d3dbe5`, layered card shadow; cards are always white on the tinted page.
+- **Surfaces (light, superseded by "Site-wide light lift (V9)" below):** page `#edf1f5`, alt surface `#e2e8ef`, card border `#d3dbe5`, layered card shadow; cards are always white on the tinted page.
 - **Rating stars:** `--color-star` for the glyph only; the number beside it uses `ink`.
 - **Product artwork:** blueprint plate (`.blueprint` utility) — navy, accent glow, 18px grid; brand chip top-left, SKU bottom-right.
 - **Emoji:** decorative, `aria-hidden`, always beside a text label, from `apps/web/src/lib/emoji.ts` only. **Not in the site chrome since 2026-11-23** (header, footer, dock and menus use lucide line icons; guard `test/chrome-v4.test.ts`); still used for category tiles. Former nav set (retired): Nav 🏠 🛍️ 🔧 🚗 · cart 🛒 · account 👤 · language 🌐 · theme 🌙/☀️ · announcement 📦 🔧 · categories 🛞 🛢️ 🔋 ⚙️ 🌀 🔩 ✨ 🧰 ⚡. Desktop nav/language emoji appear from 1280px so the header never overflows.
@@ -288,3 +288,16 @@ Source: `docs/superpowers/specs/2026-11-27-ustaad-visual-language.md` § 3.3, 3.
   control exists in the network yet; the class is ready).
 - **Type and spacing in the network:** body 16 (Hindi 17) at 1.6 (`data-post-body`), author names 16/800, post padding 16,
   card gap 10, tag 26 px tall (Hindi 28 px) with 13/14 px text, grade lines 2 × 9 px at 90 %.
+
+## Site-wide light lift (V9, applied 2026-11-28; founder: "Yes, whole site")
+
+Light theme only; the dark tokens and dark rendering are unchanged (the tokens test pins the dark values). Token and shared-component changes, no layout redesign, CSS only (JS budget unchanged).
+
+- **Page and well:** `--color-bg` `#eef2f7` (was `#edf1f5`), `--color-surface-alt` `#f5f7fa` (was `#e2e8ef`). Muted on them 5.47 / 5.73, ink 14.74 / 15.44.
+- **One card treatment:** `--shadow-card` = hairline ring + layered lift (`0 0 0 1px #101f340d, 0 1px 2px #101f340f, 0 10px 28px -18px #101f3433`); hover adds the same ring. The 1 px `border-line-card` on a `.shadow-card` element takes `--card-edge` (`transparent` in light, `--color-line-card` in dark), so the width stays (no layout shift) and the shadow's hairline is the edge.
+- **Selected state:** `--color-selected-bg` / `--color-selected-fg` = accent-soft `#fff0e9` / `#bf3c12` (4.88:1) in light; dark keeps its old chip pair `#243752` / `#e8eef5`. Used by the desktop nav's current item (the white chip is gone); filter chips, account and admin nav and the dock already used accent-soft.
+- **Chrome:** `--shadow-header` is now hairline + soft shadow; new `--shadow-tab-bar` is its mirror, used by the partner bottom bar (its grey top rule is the transparent `--card-edge` in light). The shopper dock and header chip already float on `shadow-float` (no grey rule).
+- **Image framing:** `--radius-inset` 12 px for the product card's picture (card 16, padding 12). Workshop cards have no picture, so nothing to frame.
+- **Weight:** `.font-heading.font-bold` takes `--weight-heading-bold` (800 in light, 700 in dark; Hindi stays 700, the loaded Devanagari weight). Prices were already 800.
+- **Segmented control:** `.seg` = tinted track (`--color-lift-track` `#e3e9f1`, muted 5.04) + white thumb on `[aria-pressed=true]` / `[aria-selected=true]` with the layered shadow; applied to the desktop nav track.
+- Not site-wide (unchanged): level metals, stamp, Useful brass, floating-sheet feed.

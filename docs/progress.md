@@ -2,6 +2,10 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-28 — V9 site-wide light lift (builder, branch worktree-agent-afc5863071592c039, NOT merged)
+
+Tokens test RED first (5 failing), then tokens.css + globals.css (site-wide block at the end) + nav-links, partner-tabs, product-photo. Light only; dark pinned by test. Not done: partner lane-tabs tinted selection, workshop card image (no picture exists). See docs/decisions.md "V9 applied".
+
 ## 2026-11-28 — Mechanic Network leftovers, batch N (builder, branch `worktree-agent-a865c30fc7a1dda35`, NOT merged)
 
 - Built (spec 23 § 21i-L, no migration): N1 `savedByMe` on question/answer/job/lesson views (one batched lookup per list,

@@ -40,8 +40,8 @@ export function ProductPhoto({
     size === 'hero'
       ? 'aspect-square rounded-card'
       : size === 'thumb'
-        ? 'aspect-square rounded-tile'
-        : 'aspect-[4/3] rounded-tile';
+        ? 'aspect-square rounded-inset'
+        : 'aspect-[4/3] rounded-inset';
   return (
     <div
       className={`relative flex w-full min-w-0 items-center justify-center overflow-hidden bg-white ${shape} ${className}`}

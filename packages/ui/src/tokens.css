@@ -28,9 +28,12 @@
   --color-line-input: #cad6e3; /* decorative dividers only */
   --color-input-border: #75859a; /* form-field boundaries: ≥3:1 on white (WCAG 1.4.11) */
   --color-muted: #536376;
-  --color-bg: #edf1f5; /* cool concrete grey: white cards sit clearly above it (user 2026-11-01) */
+  --color-bg: #eef2f7; /* navy-tinted off-white (V9, founder 2026-11-28; was #edf1f5): white cards sit above it */
   --color-surface: #ffffff;
-  --color-surface-alt: #e2e8ef;
+  --color-surface-alt: #f5f7fa; /* sunken well (V9; was #e2e8ef) */
+  /* Selected state (V9): the accent-soft pair in light; dark keeps the chip pair it had (#243752 / ink) */
+  --color-selected-bg: #fff0e9;
+  --color-selected-fg: #bf3c12;
   --color-pill: #e8edf3;
   --color-success-bg: #e8f5ed;
   --color-success: #14683c;
@@ -95,9 +98,13 @@
   --radius-pill: 25px;
 
   /* Depth */
-  --shadow-card: 0 1px 2px #101f3412, 0 8px 24px -12px #101f3433;
-  --shadow-card-hover: 0 2px 4px #101f3414, 0 18px 36px -14px #101f3447;
-  --shadow-header: 0 2px 16px #101f3407;
+  /* One card treatment (V9): hairline ring + layered lift; the 1 px line-card border turns transparent via --card-edge */
+  --shadow-card: 0 0 0 1px #101f340d, 0 1px 2px #101f340f, 0 10px 28px -18px #101f3433;
+  --shadow-card-hover: 0 0 0 1px #101f340d, 0 2px 4px #101f3414, 0 18px 36px -14px #101f3447;
+  --shadow-header: 0 1px 0 #101f3414, 0 6px 16px -12px #101f3426;
+  --shadow-tab-bar: 0 -1px 0 #101f3414, 0 -8px 20px -16px #101f3433;
+  --radius-inset: 12px; /* image inside a 16 px card (V9) */
+  --weight-heading-bold: 800;
   --shadow-float: 0 10px 30px -12px #101f3447, 0 2px 6px #101f340f, 0 0 0 1px #101f3412;
   --shadow-dialog: 0 20px 80px #102a4150;
 
@@ -142,6 +149,7 @@
  */
 :root {
   color-scheme: light;
+  --card-edge: transparent; /* the card shadow's hairline is the edge in light (V9) */
 }
 
 :root[data-theme='dark'] {
@@ -196,6 +204,11 @@
   --shadow-card: 0 4px 16px #00000033;
   --shadow-card-hover: 0 16px 28px #00000055;
   --shadow-header: 0 2px 16px #00000040;
+  --shadow-tab-bar: 0 12px 34px -12px #00000099, 0 2px 6px #0000004d, 0 0 0 1px #ffffff0f;
+  --card-edge: var(--color-line-card);
+  --color-selected-bg: #243752;
+  --color-selected-fg: #e8eef5;
+  --weight-heading-bold: 700;
   --color-chip: #243752;
   --color-cart: #d2461a;
   --color-cart-badge: #ffffff;
@@ -257,6 +270,11 @@
     --shadow-card: 0 4px 16px #00000033;
     --shadow-card-hover: 0 16px 28px #00000055;
     --shadow-header: 0 2px 16px #00000040;
+    --shadow-tab-bar: 0 12px 34px -12px #00000099, 0 2px 6px #0000004d, 0 0 0 1px #ffffff0f;
+    --card-edge: var(--color-line-card);
+    --color-selected-bg: #243752;
+    --color-selected-fg: #e8eef5;
+    --weight-heading-bold: 700;
     --color-chip: #243752;
     --color-cart: #d2461a;
     --color-cart-badge: #ffffff;
