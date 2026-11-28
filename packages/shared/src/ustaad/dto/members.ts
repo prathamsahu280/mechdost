@@ -167,8 +167,18 @@ export const MemberViewDto = z.object({
 });
 export type MemberView = z.infer<typeof MemberViewDto>;
 
+/** The one rule for who may answer: an Ustaad always; a Chhotu only while `ustaad.qa.apprentice_can_answer` is on. */
+export function canAnswerQuestions(
+  track: (typeof USTAAD_TRACKS)[number],
+  apprenticeCanAnswer: boolean,
+): boolean {
+  return track === 'ustaad' || apprenticeCanAnswer;
+}
+
 export const MeResponseDto = z.object({
   member: MemberViewDto.nullable(),
   staffPreview: z.boolean(),
+  /** SIM-P7: from the admin setting, so the Home "questions waiting" block follows it. Absent = unknown (shown). */
+  canAnswer: z.boolean().optional(),
 });
 export type MeResponse = z.infer<typeof MeResponseDto>;

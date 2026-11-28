@@ -142,7 +142,7 @@ describe('SIM-P7 / SIM-P9: more coach-mark targets, and no answerer block for a 
       expect(read(page)).toContain("'ustaad.tutorial'");
   });
   it('the Home questions block hides for an apprentice', () => {
-    expect(read('ustaad/common.tsx')).toContain("member?.level === 'apprentice'");
+    expect(read('ustaad/common.tsx')).toContain('canAnswer === false');
     expect(read('../app/[locale]/ustaad/page.tsx')).toContain('<AnswererOnly>');
   });
 });

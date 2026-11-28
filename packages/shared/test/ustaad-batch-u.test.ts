@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { composeNotice, ustaadTopicLabel } from '../src/notice-catalogue';
 import en from '../src/i18n/en.json';
 import hi from '../src/i18n/hi.json';
+import { canAnswerQuestions } from '../src/ustaad/dto/members';
 import { fixableBlockReason, HOLD_SIGNALS, holdSignalsOf } from '../src/ustaad/moderation';
 
 /** Batch U (Mechanic Network sim rows, 2026-11-28): one regression test per row id. */
@@ -34,6 +35,14 @@ describe('SIM-B4: an automatic hold note is worded, not shown as raw codes', () 
       expect(en.ustaad.console[`signal_${s}` as keyof typeof en.ustaad.console]).toBeTypeOf('string');
       expect(hi.ustaad.console[`signal_${s}` as keyof typeof hi.ustaad.console]).toBeTypeOf('string');
     }
+  });
+});
+
+describe('SIM-P7: who may answer follows the admin setting qa.apprentice_can_answer', () => {
+  it('an Ustaad always may; a Chhotu only while the setting is on', () => {
+    expect(canAnswerQuestions('ustaad', false)).toBe(true);
+    expect(canAnswerQuestions('apprentice', false)).toBe(false);
+    expect(canAnswerQuestions('apprentice', true)).toBe(true);
   });
 });
 

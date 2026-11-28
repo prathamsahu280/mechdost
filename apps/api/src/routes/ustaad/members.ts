@@ -6,8 +6,8 @@
  */
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
-import { joinUstaad, leaveUstaad, ustaadMemberOfUser } from '@mechdost/db/repo';
-import { JoinDto, MemberViewDto } from '@mechdost/shared/ustaad/dto/members';
+import { joinUstaad, leaveUstaad, readUstaadSettingValues, ustaadMemberOfUser } from '@mechdost/db/repo';
+import { canAnswerQuestions, JoinDto, MemberViewDto } from '@mechdost/shared/ustaad/dto/members';
 import type { SessionCache } from '../../auth/session-cache';
 import { ApiError } from '../../errors';
 import { log, safeError } from '../../logger';
@@ -19,7 +19,9 @@ import { validationHook } from '../../validation';
 import { errorResponses } from '../schemas';
 import { body, conflict, json } from '../service-schemas';
 
-const Me = z.object({ member: MemberViewDto.nullable(), staffPreview: z.boolean() }).openapi('UstaadMe');
+const Me = z
+  .object({ member: MemberViewDto.nullable(), staffPreview: z.boolean(), canAnswer: z.boolean().optional() })
+  .openapi('UstaadMe');
 
 const me = createRoute({
   method: 'get',
@@ -84,7 +86,17 @@ export function ustaadMemberRoutes(deps: AppDeps, sessions: SessionCache) {
       const active = member && member.status !== 'left' ? member : null;
       if (!active && !isUstaadStaff(c))
         throw new ApiError(404, 'USTAAD_NOT_MEMBER', 'Join the network first');
-      return c.json({ member: active, staffPreview: !active }, 200);
+      const s = await readUstaadSettingValues(deps.db, ['ustaad.qa.apprentice_can_answer']);
+      return c.json(
+        {
+          member: active,
+          staffPreview: !active,
+          ...(active
+            ? { canAnswer: canAnswerQuestions(active.track, s['ustaad.qa.apprentice_can_answer'] === true) }
+            : {}),
+        },
+        200,
+      );
     })
     .openapi(join, async (c) => {
       const auth = c.get('auth');
