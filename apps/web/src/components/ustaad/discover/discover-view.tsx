@@ -16,6 +16,7 @@ import {
 import Form from 'next/form';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
+import { CoachMark } from '../tutorial/coach-mark';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { USTAAD_LEVELS, USTAAD_SEGMENT_CODES, USTAAD_WORK_CODES } from '@mechdost/shared/ustaad/codes';
 import { track } from '@/lib/analytics';
@@ -61,10 +62,15 @@ export function DiscoverView({ filters }: { filters: DiscoverFilters }) {
   return (
     <div className="mx-auto grid max-w-2xl gap-5">
       <header className="grid gap-1">
-        <h1 className="font-heading text-[clamp(24px,5vw,32px)] font-extrabold tracking-[-0.02em] text-ink">
+        <h1
+          id="ustaad-discover-title"
+          tabIndex={-1}
+          className="font-heading text-[clamp(24px,5vw,32px)] font-extrabold tracking-[-0.02em] text-ink focus-visible:outline-3 focus-visible:outline-focus"
+        >
           {t('title')}
         </h1>
         <p className="text-[15px] leading-relaxed text-muted">{t('intro')}</p>
+        <CoachMark target="discover" returnFocusTo="ustaad-discover-title" />
       </header>
       {/* Keyed on the address: Back or "Clear filters" redraws the fields with the shown filters. */}
       <SearchForm key={`${filters.q ?? ''}|${filters.work ?? ''}|${filters.level ?? ''}`} filters={filters} />

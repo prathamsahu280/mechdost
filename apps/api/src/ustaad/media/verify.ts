@@ -64,6 +64,10 @@ export async function completeAndVerify(
   deps: VerifyDeps,
   input: { mediaId: string; memberId: string; parts?: readonly { partNo: number; etag: string }[] },
 ): Promise<UstaadMediaRow> {
+  // SIM-P3: "complete" is safe to repeat. When the first call finished but its answer was lost (a 504 on the phone),
+  // the retry gets the same verified row back instead of a 404, so the phone never re-uploads the file.
+  const done = await ustaadMediaById(deps.db, input.mediaId);
+  if (done?.ownerMemberId === input.memberId && done.status === 'verified') return done;
   const row = await pendingUstaadMediaOf(deps.db, input);
   const kind = row.kind as UstaadMediaKind;
   const q = 'quarantine' as const;

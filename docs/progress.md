@@ -6,7 +6,42 @@
   index; shop-mode reason CHECK). Details and tests: docs/qa/qa-backlog-2026-11-27.md, decisions 2026-11-29, specs 24/03.
   Tests: db `delivery-dc-batch` + `cod-dc-batch`, shared `delivery-dc-batch`, web `delivery-dc-batch`.
 
+## 2026-11-28 night: device list "Where you're signed in" (builder, branch `worktree-agent-a57fb3717659a3206`, NOT merged)
+
+- Built (task C of the sessions research; spec 01 "Devices", 13, 14, 12; decision 2026-11-28): migration 0117 `user_sessions`;
+  `/v1/auth/password` writes a row and puts the key in claim `mds` (staff phone-code step too); auth middleware refuses an
+  ended session with 401 `SESSION_ENDED` on the cache-miss path (60 s), hourly last-active; `routes/devices.ts` (list,
+  sign out one, others, current); rough place from DB-IP City Lite via `maxmind` (optional `GEOIP_CITY_DB`, compose mounts
+  `/opt/mechdost/geoip`); Hindi state/city handling; `devices-card.tsx` after the Security card; events; privacy notice
+  section; state-audit row API-ACC-DEVICES (checklist regenerated).
+- Merge wiring DONE on the branch (2026-11-29, main merged, tests written failing first): revoke-all calls
+  `revokeAllUserSessions(..., 'self_all')`; sign-out reads the ID token before the Firebase sign-out and calls
+  `endCurrentDevice` (1.5 s cap); `SESSION_ENDED` is in `SESSION_INVALID_CODES`; the card links go to
+  `security-signout-all-title`. Still for the lead (older list, items 2 to 6 are done):
+  apply migration 0117 BEFORE deploying; wire `revokeAllUserSessions(db, userId, 'self_all')` into the
+  revoke-all endpoint; call `endCurrentDevice(token)` (`lib/auth/end-current-device.ts`) from `lib/auth/sign-out.ts` with the
+  ID token read before the Firebase sign-out; treat 401 `SESSION_ENDED` like `ID_TOKEN_REVOKED` in the stale-session fix;
+  point the card's links (`#security-title`) at the new "Sign out of all devices" section id; download the GeoIP file on the
+  server (runbook § 5.1).
+- Not done: state-audit api-mode fixtures for API-ACC-DEVICES (row exists, Playwright run owed); real-browser pass;
+  e2e/Lighthouse/axe live runs.
+
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
+
+## 2026-11-29 — Mechanic Network batch U: open simulation rows (builder, branch worktree-agent-a4b911d41b450cd4d, NOT merged)
+
+- Built (spec 23 § 21j, no migration): SIM-P12, P15, F7, P14, P3, P6/P29 (`GET /ustaad/feed/limits`), B4, B10, B11, B12
+  (basis part). Queued with defaults: B9, G14, G15, LEAD-1, P25, P30, P5, P7/P9, LEAD-8, RT3, B12 picker
+  (`docs/questions-for-user.md` Q-U-*). Tests per row id in the spec section. Not run: Playwright state-audit
+  (needs the .next-api build), real-browser pass.
+
+## 2026-11-28 — Stale "Signed in as" fix + "Sign out of all devices" (builder, branch worktree-agent-a4189feed8154e2f9, NOT merged)
+
+- A (bug): `lib/auth/session-ended.ts` + `session-ended-flag.ts` + `SessionEndedNotice`; `currentIdToken` reports a missing Firebase user only after `authStateReady`; `admin-api`/`orders-api` report 401 `TOKEN_REVOKED`; sign-out clean-up extracted to `forgetAccountOnDevice()`. B: `POST /v1/me/sessions/revoke-all` (`routes/sessions.ts`, `db/repo/sign-out-all.ts`), Security-card section, event `account_signed_out_all`, strings `signOutAll*` + `auth.sessionEndedNotice` (en + hi). Docs: spec 01, 12, 13, decisions, Q-SES-1/2 answered, state-audit row API-ACC-SECURITY. Not done: real-browser pass, Playwright state-audit run (owed to CI). The device list is another builder's branch (will touch the same Security card, route registration and analytics.ts: expect small merge conflicts).
+
+## 2026-11-28 — "Use my location" wrong PIN fix (builder, branch worktree-agent-a07d5bcf972a5a678, NOT merged)
+
+Founder: wrong PIN from "use my location" (Sarona: shown 493332, real 492099). OSM postcodes are wrong across Raipur and the nearest MechDost centroid is wrong too (492013), so nothing is auto-filled inside a served city: the finder shows the 5 nearest MechDost PINs as choices (en + hi names), outside served areas the OSM answer stays as fallback. New `GET /v1/geo/pincode-near` (PostGIS KNN, migration **0116** GIST index on `pincodes.centroid`, renumber if another branch took 0116), `ReverseGeocoder` interface in `apps/web/src/lib/geo/`, events `pincode_choice_picked` + `location_detected.choices`. Decisions 2026-11-28, spec 06 + 12, inbox **Q12-B** (Ola Maps or Google key). Next: Q12-B answer, then add the provider behind `selectGeocoder()`.
 
 ## 2026-11-28 — Mechanic Network batch D: state-audit rows + profile restyle (builder, branch worktree-agent-adc9e97b192ec1613, NOT merged)
 
@@ -1459,6 +1494,16 @@ Done: launcher hides on phones while a field is focused and on `data-launcher-av
   site session stayed. Research `docs/superpowers/specs/2026-11-28-sessions-devices-research.md` (founder: rough
   location yes, approximate city fine). Two Sonnet builders running in worktrees: (A+B) stale-session fix + "Sign out
   of all devices"; (C) device list with rough location (migration 0116, DB-IP Lite, no IP stored).
+- **Raipur PIN map (founder 23:15 "build one for raipur … very detailed, covering everything"):** OSM postcodes wrong
+  (493332 for most of Raipur; Sarona is 492099). Research `docs/research/raipur-pincode-map/` found the Department of
+  Posts 2025 PIN boundary GeoJSON via a BharatViz mirror (official data.gov.in/AIKosh copy 404; licence OGD India on
+  the AIKosh page; confirm mirror terms). Verified: Sarona → 492099, Pachpedi Naka → 492001, station → 492009,
+  Mantralaya → 492018. Gaps: no polygons for live PINs 492006/492007/492011/492017 (absent from DoP 2025 too — possible
+  renumbering, ask founder); 492002/492005 are point-like. Review map sent: `docs/research/raipur-pincode-map/map.html`.
+  Next: product layer (pincode_areas PostGIS polygons + point-in-polygon lookup, choice list near borders, admin
+  editor, anonymous correction samples) after the interim builder lands.
+- **Merged + pushed 418e53a5:** stale-session fix (A) and "Sign out of all devices" (B); lead fixed a fail-open found
+  by the security review (no token / 401 now `signed_out`, never success).
 - **Founder 22:5x:** a password change must NOT end other sign-ins unless the person opts in ("sign out of other
   devices" choice on the change-password form). Firebase always revokes refresh tokens on a password change, so this
   needs a resume path built on the device sessions (C) — planned as follow-up D after A+B and C merge.

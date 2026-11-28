@@ -110,7 +110,7 @@ async function customerCode(orderId: string) {
 
 describe('onboarding', () => {
   it('the public application stores name, phone, city and vehicle only', async () => {
-    const r = await submitAgentApplication(w.t(), {
+    await submitAgentApplication(w.t(), {
       name: 'Sunil Verma',
       phone: '+919811112222',
       cityCode: 'RPR',
@@ -119,7 +119,7 @@ describe('onboarding', () => {
     const [app] = await w.db
       .select()
       .from(s.partnerApplications)
-      .where(eq(s.partnerApplications.code, r.code ?? ''));
+      .where(eq(s.partnerApplications.phone, '+919811112222'));
     expect(app).toMatchObject({
       kind: 'delivery_agent',
       vehicleType: 'scooter',

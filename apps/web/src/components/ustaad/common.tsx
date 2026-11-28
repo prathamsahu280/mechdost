@@ -196,6 +196,17 @@ export function BannedGate({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+/**
+ * SIM-P7: blocks that are for members who can answer (the "questions waiting" block on Home) are hidden when the API
+ * says this member cannot (a Chhotu while the admin setting `qa.apprentice_can_answer` is off). Shown while the level is still loading, so the page never jumps
+ * for everyone else.
+ */
+export function AnswererOnly({ children }: { children: ReactNode }) {
+  const { loaded } = useUstaad((c) => c.me(), 'gate-me');
+  if (loaded.state === 'ok' && loaded.data.canAnswer === false) return null;
+  return <>{children}</>;
+}
+
 export function MemberGate({ children }: { children: ReactNode }) {
   const t = useTranslations('ustaad.shell');
   const locale = useLocale();

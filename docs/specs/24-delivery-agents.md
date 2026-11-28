@@ -484,3 +484,11 @@ audited view; suggestions carry `eligible` / `declinedBefore`; `GET /v1/admin/de
 staff set a shop's mode in Requests → "Change a shop's delivery directly" (`PUT /v1/admin/shops/{id}/delivery-mode`,
 shop row has `deliveryMode`); shop-mode reasons by direction; Hindi fields on rider and queue DTOs; a repeat payout
 correction answers `alreadyCorrected`; notices say the new status / document result and open the profile.
+
+**Rider application answers (security review 2026-11-29, DC-F1).** `POST /v1/delivery-agent-applications` answers
+`201 {"status":"received"}` for a new application and for a repeat of the same phone: same body, same status, no
+reference, no flag (test: byte-identical bodies, `apps/api/test/delivery.test.ts`). Dedupe stays the partial unique index
+(`on conflict do nothing`, one statement). The applicant is not given the `PA-…` reference: MechDost calls the typed
+number, and staff see the reference in Admin → Delivery → Applications. Delivering the reference to that phone by the
+notification path (WhatsApp, needs its own event and template) is queued as Q-DC-2; until then the status page cannot be
+used by riders.

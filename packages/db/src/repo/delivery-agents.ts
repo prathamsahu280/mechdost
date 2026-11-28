@@ -97,14 +97,16 @@ async function agentEvent(
 // ── public application ───────────────────────────────────────────────────────────────────────────────────────────
 
 /**
- * A second open application for the same phone makes no duplicate row and answers without a reference
- * (`code: null`, security review 2026-11-29: the endpoint is public, so it must not reveal the first one) (DC-F1/DC-P2). The guarantee is the partial unique index `partner_applications_agent_open_phone`: the
- * insert is `on conflict do nothing`, so two simultaneous submissions still make one row.
+ * The public application. Every answer is the same `{ status: 'received' }`, whether the row is new or the phone already
+ * had an open application: the form is public and the phone is only typed in, so neither a reference nor a status nor a
+ * different answer may tell anyone whether a number applied (security review 2026-11-29; DC-F1/DC-P2). One-per-phone
+ * is the partial unique index `partner_applications_agent_open_phone`: the insert is `on conflict do nothing`, so two
+ * simultaneous submissions still make one row. `created` is for tests and logs only; the route never sends it.
  */
 export async function submitAgentApplication(
   db: Tx,
   input: { name: string; phone: string; cityCode: string; vehicleType: AgentVehicleType },
-): Promise<{ code: string | null; status: string; alreadyApplied: boolean }> {
+): Promise<{ status: 'received'; created: boolean }> {
   return db.transaction(async (tx) => {
     const city = await cityByCode(tx, input.cityCode);
     const code = publicCode('PA', city.code);
@@ -129,7 +131,7 @@ export async function submitAgentApplication(
     // The form is public and the phone is only typed in, so an existing application is never described: no reference,
     // no status (that would tell anyone whether a number applied). The owner finds theirs through the call and the
     // status page with their own reference.
-    if (!row) return { code: null, status: 'new', alreadyApplied: true };
+    if (!row) return { status: 'received', created: false };
     await auditDelivery(tx, {
       actorUserId: null,
       actorRole: 'system',
@@ -148,7 +150,7 @@ export async function submitAgentApplication(
       entityId: row.id,
       version: 1,
     });
-    return { code, status: 'new', alreadyApplied: false };
+    return { status: 'received', created: true };
   });
 }
 

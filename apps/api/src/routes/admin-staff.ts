@@ -1,5 +1,5 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import { grantStaffRole, listStaff, revokeStaffRole } from '@mechdost/db/repo';
+import { grantStaffRole, listStaff, revokeAllUserSessions, revokeStaffRole } from '@mechdost/db/repo';
 import {
   StaffGrantBody,
   StaffGrantCreated,
@@ -85,7 +85,13 @@ export function adminStaffRoutes(deps: AppDeps, cache: SessionCache) {
   app.use(path, requireAllCities('staff:manage'));
 
   /** A removed role must not linger in a session: end the person's Firebase sessions (best effort, logged). */
-  async function endSessions(firebaseUid: string) {
+  async function endSessions(firebaseUid: string, userId: string) {
+    // The device list marks the person's rows ended too (reason staff_role_removed); Firebase ends the tokens.
+    try {
+      await revokeAllUserSessions(deps.db, userId, 'staff_role_removed');
+    } catch (err) {
+      log('error', 'staff_revoke_session_rows_failed', safeError(err));
+    }
     try {
       await deps.passwordAuth?.revokeSessions?.(firebaseUid);
     } catch (err) {
@@ -128,7 +134,7 @@ export function adminStaffRoutes(deps: AppDeps, cache: SessionCache) {
         reason: c.req.valid('json').reason,
       });
       cache.invalidateUser(out.targetUserId);
-      await endSessions(out.targetFirebaseUid);
+      await endSessions(out.targetFirebaseUid, out.targetUserId);
       return c.json({ revoked: true as const }, 200);
     });
 }

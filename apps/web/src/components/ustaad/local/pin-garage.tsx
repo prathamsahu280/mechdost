@@ -31,6 +31,7 @@ import {
   useUstaad,
 } from '../common';
 import { useUploadErrorText } from '../media/upload-error';
+import { CoachMark } from '../tutorial/coach-mark';
 
 const PinMap = dynamic(() => import('./pin-map'), {
   ssr: false,
@@ -180,10 +181,15 @@ export function PinGarage() {
   return (
     <div className="mx-auto grid max-w-2xl gap-5">
       <header>
-        <h1 className="font-heading text-[clamp(24px,5vw,32px)] font-extrabold tracking-[-0.02em] text-ink">
+        <h1
+          id="ustaad-pin-title"
+          tabIndex={-1}
+          className="font-heading text-[clamp(24px,5vw,32px)] font-extrabold tracking-[-0.02em] text-ink focus-visible:outline-3 focus-visible:outline-focus"
+        >
           {t('title')}
         </h1>
         <p className="mt-1 text-[15px] leading-relaxed text-muted">{t('intro')}</p>
+        <CoachMark target="pin" returnFocusTo="ustaad-pin-title" />
       </header>
 
       <SampleNote show={me.sample} />

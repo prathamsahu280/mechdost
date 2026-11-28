@@ -5,7 +5,7 @@
  * the permission and for a city-scoped grant, foreign ids 404, strict bodies, per-user rate limit.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
-import { ensureUser, grantRole } from '@mechdost/db/repo';
+import { ensureUser, grantRole, startUserSession } from '@mechdost/db/repo';
 import * as s from '@mechdost/db/schema';
 import { eq } from '@mechdost/db/testing';
 import { bearer, buildApp, FakePasswordAuthority, type ErrorJson } from './helpers';
@@ -150,6 +150,12 @@ describe('staff and roles', () => {
   it('grant: strict body, reason needed, applies to the person at once, audited; revoke ends it and their sessions', async () => {
     const boss = await person('07', 'super_admin');
     const target = await person('08', null);
+    // a device-list row of the target: the role removal marks it ended (reason staff_role_removed)
+    await startUserSession(ctx.db, {
+      userId: target.id,
+      device: { deviceKind: 'desktop', browser: 'chrome', os: 'windows' },
+      place: null,
+    });
     // the target is refused before the grant (and their session is cached)
     expect((await get('/v1/admin/customers/search?q=ashaverma', target.headers)).status).toBe(403);
 
@@ -194,6 +200,8 @@ describe('staff and roles', () => {
     expect((await post(revoke, boss.headers, { reason: 'x' })).status).toBe(400);
     expect((await post(revoke, boss.headers, { reason: 'moved to sales' })).status).toBe(200);
     expect(passwordAuth.revoked).toContain('pp-08');
+    const ended = await ctx.db.select().from(s.userSessions).where(eq(s.userSessions.userId, target.id));
+    expect(ended.map((r) => r.revokedReason)).toEqual(['staff_role_removed']);
     expect((await get('/v1/admin/customers/search?q=ashaverma', target.headers)).status).toBe(403);
     expect((await post(revoke, boss.headers, { reason: 'moved to sales' })).status).toBe(404);
   });

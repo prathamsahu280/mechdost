@@ -3,7 +3,7 @@ import type { CustomerBlockLevel } from '@mechdost/shared/customers';
 import type { Grant } from '@mechdost/shared/rbac';
 
 interface Entry {
-  value: { user: UserRecord; grants: Grant[]; blocks: CustomerBlockLevel[] };
+  value: { user: UserRecord; grants: Grant[]; blocks: CustomerBlockLevel[]; sessionId: string | null };
   expiresAt: number;
 }
 

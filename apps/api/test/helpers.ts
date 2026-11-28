@@ -4,6 +4,7 @@ import type { Keyring } from '@mechdost/db/crypto';
 import { createApp } from '../src/app';
 import type { AssistantProvider } from '../src/assistant/provider';
 import type { EmailActionLinks } from '../src/auth/email-actions';
+import type { GeoIpLookup } from '../src/auth/geoip';
 import type { PasswordAuthority } from '../src/auth/password-authority';
 import type { TurnstileVerifier } from '../src/auth/turnstile';
 import { TokenError, type TokenVerifier, type VerifiedToken } from '../src/auth/token-verifier';
@@ -40,6 +41,7 @@ export class FakeVerifier implements TokenVerifier {
       signInProvider: 'phone',
       // Most tests act as a fully signed-in staff member; staff-session tests set this to false explicitly.
       staff2fa: true,
+      sessionKey: null,
       ...identity,
     });
     return token;
@@ -82,8 +84,13 @@ export class FakePasswordAuthority implements PasswordAuthority {
     return Promise.resolve(a?.password === password ? a.uid : null);
   }
 
-  customToken(uid: string, claims?: Record<string, boolean>): Promise<string> {
-    return Promise.resolve(`ct:${uid}:${JSON.stringify(claims ?? {})}`);
+  /** Every custom token minted: the full claims, including the device-list session key `mds`. */
+  readonly issued: { uid: string; claims: Record<string, boolean | string> }[] = [];
+  customToken(uid: string, claims?: Record<string, boolean | string>): Promise<string> {
+    this.issued.push({ uid, claims: claims ?? {} });
+    // The returned text shows the boolean claims only (the session key is random); `issued` has it.
+    const shown = Object.fromEntries(Object.entries(claims ?? {}).filter(([, v]) => typeof v === 'boolean'));
+    return Promise.resolve(`ct:${uid}:${JSON.stringify(shown)}`);
   }
 
   readonly revoked: string[] = [];
@@ -176,6 +183,7 @@ export async function buildApp(
     linkPreview?: PreviewDeps | null;
     videoOEmbed?: OEmbedDeps | null;
     usageSources?: UsageSources;
+    geoip?: GeoIpLookup | null;
   } = {},
 ) {
   setLogSink(() => undefined);
@@ -208,6 +216,7 @@ export async function buildApp(
     linkPreview: opts.linkPreview ?? null,
     videoOEmbed: opts.videoOEmbed ?? null,
     ...(opts.usageSources ? { usageSources: opts.usageSources } : {}),
+    geoip: opts.geoip ?? null,
   });
   return { app, db, verifier };
 }

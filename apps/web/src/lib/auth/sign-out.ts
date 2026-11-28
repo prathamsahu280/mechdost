@@ -7,6 +7,8 @@ export const SIGNING_OUT_ATTRIBUTE = 'data-signing-out';
 
 /** The longest the push clean-up may hold the sign-out (slow networks); the Firebase sign-out still runs after it. */
 const PUSH_FORGET_WAIT_MS = 2500;
+/** The longest the ID token read for the device-list notice may take (it is best effort). */
+const END_DEVICE_TOKEN_WAIT_MS = 1500;
 /** If the Firebase sign-out has not finished by then, its saved session is deleted from this browser directly. */
 const FIREBASE_SIGN_OUT_WAIT_MS = 6000;
 /** Where the Firebase web SDK keeps the signed-in user (IndexedDB, with a localStorage fallback). */
@@ -49,16 +51,11 @@ export async function forgetSavedFirebaseSession(): Promise<void> {
 }
 
 /**
- * Sign out of this device: the browser session the screens read, and in real mode (Q69) the Firebase session too
- * (loaded on demand, so pages with a sign-out button do not carry the Firebase SDK).
- *
- * Bug 2026-11-23 (user: "that page's data still shows for a bit after sign out"): the page content is hidden and the
- * session cleared synchronously, the Firebase sign-out is awaited, and then the home page is loaded fresh
- * (`location.replace`), so no data of the signed-out account survives in memory and Back does not return to it.
+ * Forget the signed-in account on this device without touching Firebase or the page: the site's own session, the
+ * recently-viewed list, unsent drafts and (real mode) the cart, wishlist and live state. Shared by the sign-out button
+ * and by "your session ended elsewhere" (`session-ended.ts`), which must not reload the page.
  */
-export async function signOutEverywhere(): Promise<void> {
-  const root = document.documentElement;
-  root.setAttribute(SIGNING_OUT_ATTRIBUTE, '');
+export function forgetAccountOnDevice(): void {
   signOut();
   // Recently viewed (personalisation phase 2) may hold the account's merged list: forget it and the merge mark, so the
   // next person on this browser neither sees it nor sends it to their account (shared devices). Inline keys (same as
@@ -92,10 +89,37 @@ export async function signOutEverywhere(): Promise<void> {
     void import('../wishlist-store').then((m) => {
       m.resetWishlist();
     });
+  }
+}
+
+/**
+ * Sign out of this device: the browser session the screens read, and in real mode (Q69) the Firebase session too
+ * (loaded on demand, so pages with a sign-out button do not carry the Firebase SDK).
+ *
+ * Bug 2026-11-23 (user: "that page's data still shows for a bit after sign out"): the page content is hidden and the
+ * session cleared synchronously, the Firebase sign-out is awaited, and then the home page is loaded fresh
+ * (`location.replace`), so no data of the signed-out account survives in memory and Back does not return to it.
+ */
+export async function signOutEverywhere(): Promise<void> {
+  const root = document.documentElement;
+  root.setAttribute(SIGNING_OUT_ATTRIBUTE, '');
+  forgetAccountOnDevice();
+  if (AUTH_MODE === 'firebase') {
     // Only the push clean-up is capped; the Firebase sign-out itself always runs before the page reloads, and if it
     // cannot finish the saved Firebase session is deleted from this browser directly (security review 2026-11-23:
     // a hanging push request must never leave the account signed in after the reload).
     const firebase = import('./firebase-client').then(async (client) => {
+      // Device list (decision 2026-11-28): tell the API this device is ending, with the ID token read before the
+      // Firebase sign-out. Best effort and capped: a failing or slow token read never holds the sign-out longer.
+      const idToken = await Promise.race([
+        Promise.resolve()
+          .then(() => client.currentIdToken(root.lang))
+          .catch(() => null),
+        wait(END_DEVICE_TOKEN_WAIT_MS).then(() => null),
+      ]);
+      void import('./end-current-device').then((m) => {
+        m.endCurrentDevice(idToken);
+      });
       await Promise.race([
         import('../push/forget-device').then((m) => m.forgetPushDevice(root.lang)).catch(() => undefined),
         wait(PUSH_FORGET_WAIT_MS),

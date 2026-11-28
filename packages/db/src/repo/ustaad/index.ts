@@ -26,6 +26,7 @@ export * from './learn';
 // D part 1 (feed): posts, stories, comments, reactions, tags, previews, feed.
 export * from './posts';
 export * from './stories';
+export * from './compose-limits';
 export * from './comments';
 export * from './reactions';
 // Saved beyond posts + collections (2026-11-28).

@@ -3,6 +3,7 @@ import { redactPath } from './analytics-path';
 import { scrubFreeText } from './privacy';
 import { COUPON_FUNDERS, COUPON_REASONS } from './coupon';
 import { COD_CART_REASONS, COD_PERSON_REASONS } from './cod-eligibility';
+import { DEVICE_BROWSERS, DEVICE_KINDS, DEVICE_OSES } from './devices';
 import { ORDER_CANCEL_REASONS } from './state';
 import { VEHICLE_SEGMENTS } from './vehicle-segments';
 import { RECO_ALGOS, RECO_SURFACES } from './recommendation-limits';
@@ -529,6 +530,8 @@ export interface ServerEventProps extends UstaadServerEventProps, DeliveryServer
   refund_requested_after_close: { refundId: string; paymentId: string; amountPaise: number };
   /** A credit note was issued for a processed refund of an invoiced order. */
   credit_note_issued: { refundId: string; creditNoteNumber: string; totalPaise: number };
+  /** "Sign out of all devices" (founder 2026-11-28): the person ended every session of their own account. No props. */
+  account_signed_out_all: Record<string, never>;
   /** Customer account (design 2026-11-15): codes and flags only; no name, phone, address text or registration. */
   address_saved: { addressId: string; label: string; isDefault: boolean; action: 'created' | 'updated' };
   address_deleted: { addressId: string };
@@ -748,6 +751,18 @@ export const CLIENT_EVENT_SCHEMAS = {
     .strict(),
   // The "Remember products I view on this device" switch (Account -> Privacy).
   recently_viewed_toggled: z.object({ on: z.boolean() }).strict(),
+  // "Where you're signed in" (spec 01 § Devices, 2026-11-28): counts and enum codes only; no place, no User-Agent text.
+  account_devices_viewed: z
+    .object({ count: z.number().int().min(0).max(50), others: z.number().int().min(0).max(50) })
+    .strict(),
+  account_device_signed_out: z
+    .object({
+      deviceKind: z.enum(DEVICE_KINDS),
+      browser: z.enum(DEVICE_BROWSERS),
+      os: z.enum(DEVICE_OSES),
+    })
+    .strict(),
+  account_devices_signed_out_others: z.object({ count: z.number().int().min(0).max(50) }).strict(),
   // Back to a product list put the shopper where they were (`pages` = "Show more" pages open).
   list_position_restored: z.object({ pages: z.number().int().min(1).max(10) }).strict(),
   // `source` is optional so events from tabs opened before comparison existed still pass.
@@ -861,7 +876,21 @@ export const CLIENT_EVENT_SCHEMAS = {
       mode: z.enum(['map', 'satellite']).optional(),
     })
     .strict(),
-  location_detected: z.object({ source: z.enum(['finder', 'map']), pincodeFound: z.boolean() }).strict(),
+  location_detected: z
+    .object({
+      source: z.enum(['finder', 'map']),
+      pincodeFound: z.boolean(),
+      /** How many nearest MechDost PINs were offered to pick from (0 = none: PIN filled or outside served areas). */
+      choices: z.number().int().min(0).max(10).optional(),
+    })
+    .strict(),
+  /**
+   * The person tapped one of the nearest MechDost PINs after "use my location". `rank` 0 = the nearest; how often
+   * it is not 0 tells us whether the nearest post office is a usable guess (spec 06, Sarona 2026-11-28).
+   */
+  pincode_choice_picked: z
+    .object({ rank: z.number().int().min(0).max(9), choices: z.number().int().min(1).max(10) })
+    .strict(),
   admin_site_change: z
     .object({
       area: z.enum([

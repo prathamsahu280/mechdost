@@ -133,18 +133,28 @@ function TakedownForm({ onDone }: { onDone: () => void }) {
   const id = useId();
   const [targetType, setTargetType] = useState<string>('post');
   const [targetId, setTargetId] = useState('');
-  const [basis, setBasis] = useState<string>('court_order');
+  // SIM-B12: no default basis. A legal basis is a decision the staff member makes, never a pre-filled one.
+  const [basis, setBasis] = useState<string>('');
   const [reference, setReference] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<Status>(null);
-  const [bad, setBad] = useState<'id' | 'reference' | null>(null);
+  const [bad, setBad] = useState<'id' | 'reference' | 'basis' | null>(null);
 
   function check(): boolean {
-    const wrong = !UUID.test(targetId.trim()) ? 'id' : reference.trim().length < 3 ? 'reference' : null;
+    const wrong = !UUID.test(targetId.trim())
+      ? 'id'
+      : basis === ''
+        ? 'basis'
+        : reference.trim().length < 3
+          ? 'reference'
+          : null;
     setBad(wrong);
     if (!wrong) return true;
-    setStatus({ tone: 'error', text: c(wrong === 'id' ? 'td_bad_id' : 'td_bad_reference') });
+    setStatus({
+      tone: 'error',
+      text: c(wrong === 'id' ? 'td_bad_id' : wrong === 'basis' ? 'td_bad_basis' : 'td_bad_reference'),
+    });
     document.getElementById(`${id}-${wrong}`)?.focus();
     return false;
   }
@@ -224,12 +234,18 @@ function TakedownForm({ onDone }: { onDone: () => void }) {
         <label className="space-y-1">
           <span className={labelClass}>{c('td_basis')}</span>
           <select
+            id={`${id}-basis`}
+            required
+            aria-invalid={bad === 'basis' ? true : undefined}
             className={portalField}
             value={basis}
             onChange={(e) => {
               setBasis(e.target.value);
             }}
           >
+            <option value="" disabled>
+              {c('td_basis_choose')}
+            </option>
             {TAKEDOWN_BASES.map((b) => (
               <option key={b} value={b}>
                 {c(`basis_${b}`)}

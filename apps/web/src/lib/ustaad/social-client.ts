@@ -1,6 +1,7 @@
 import type {
   CommentInput,
   CommentView,
+  ComposeLimits,
   CreatePost,
   CreateStory,
   FeedPage,
@@ -56,6 +57,8 @@ export interface SocialClient {
   feed(tab: FeedTab, cursor: string | null): Promise<ApiResult<FeedPage>>;
   /** "See new posts" (U1): how many feed candidates arrived after `since` (ISO), capped at 10. */
   fresh(tab: FeedTab, since: string): Promise<ApiResult<{ count: number }>>;
+  /** SIM-P6 / SIM-P29: the live photo limit and the locks, so the composer refuses before any upload. */
+  composeLimits(): Promise<ApiResult<ComposeLimits>>;
   post(id: string): Promise<ApiResult<PostView>>;
   createPost(input: PostInput): Promise<ApiResult<{ id: string; status: string }>>;
   deletePost(id: string): Promise<ApiResult<{ status: string }>>;

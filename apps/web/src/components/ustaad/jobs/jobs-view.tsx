@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { CoachMark } from '../tutorial/coach-mark';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { JOB_ROLES } from '@mechdost/shared/ustaad/codes';
@@ -152,7 +153,11 @@ export function JobsList({ role }: { role: JobRole | null }) {
   return (
     <div className="mx-auto grid max-w-2xl gap-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
-        <h1 className="font-heading text-[clamp(24px,5vw,32px)] font-extrabold tracking-[-0.02em] text-ink">
+        <h1
+          id="ustaad-jobs-title"
+          tabIndex={-1}
+          className="font-heading text-[clamp(24px,5vw,32px)] font-extrabold tracking-[-0.02em] text-ink focus-visible:outline-3 focus-visible:outline-focus"
+        >
           {t('title')}
         </h1>
         <Link
@@ -164,6 +169,7 @@ export function JobsList({ role }: { role: JobRole | null }) {
           {t('postCta')}
         </Link>
       </header>
+      <CoachMark target="jobs" returnFocusTo="ustaad-jobs-title" />
       <ScamLine />
       <RulesLink place="jobs" className="-mt-2" />
 

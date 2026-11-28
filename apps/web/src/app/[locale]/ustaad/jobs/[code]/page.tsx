@@ -23,6 +23,7 @@ export default async function UstaadJobPage({ params }: Props) {
         'ustaad.shell',
         'ustaad.standing',
         'ustaad.jobs',
+        'ustaad.tutorial',
         'ustaad.media',
         'ustaad.labels',
         'ustaad.card',

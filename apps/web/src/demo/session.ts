@@ -22,6 +22,7 @@ import { onboardedSellerApplications, shopSlugForApplication } from './shops';
 import { demoRoleFor, type RealMe } from '@/lib/auth/real-account';
 import { demoStorage } from './store';
 import { writeSignedInHint } from '@/lib/signed-in-hint';
+import { clearSessionEnded } from '@/lib/auth/session-ended-flag';
 import {
   ACCOUNTS,
   accountsSnapshot,
@@ -72,6 +73,7 @@ function startSession(accountId: string) {
   linkApplicantShop(accountId);
   demoStorage.write(SESSION, [{ accountId, signedInAt: new Date().toISOString() }]);
   writeSignedInHint(true);
+  clearSessionEnded();
 }
 
 // ── Password sign-in (decision 2026-11-01): phone OTP once at sign-up, then phone or email + password ────────

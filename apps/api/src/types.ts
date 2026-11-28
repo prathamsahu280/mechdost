@@ -4,6 +4,7 @@ import type { Grant } from '@mechdost/shared/rbac';
 import type { MemberView } from '@mechdost/shared/ustaad/dto/members';
 import type { AssistantProvider } from './assistant/provider';
 import type { EmailActionLinks } from './auth/email-actions';
+import type { GeoIpLookup } from './auth/geoip';
 import type { PasswordAuthority } from './auth/password-authority';
 import type { TokenVerifier, VerifiedToken } from './auth/token-verifier';
 import type { TurnstileVerifier } from './auth/turnstile';
@@ -35,6 +36,8 @@ export interface AppDeps {
   keyring?: Keyring | null;
   /** Password checks + custom tokens (spec 01); null when not configured → sign-in answers 503. */
   passwordAuth?: PasswordAuthority | null;
+  /** Rough place of a sign-in's address for the device list (DB-IP City Lite); null/absent = no places (decision 2026-11-28). */
+  geoip?: GeoIpLookup | null;
   /** One-time codes for the reset and verification emails we send ourselves (decision 2026-11-24); null → those routes answer 503. */
   emailActions?: EmailActionLinks | null;
   /** Bot check on sign-in; null when not configured → sign-in answers 503 (fails closed). */
@@ -74,6 +77,8 @@ export interface AuthContext {
   authTime: number;
   /** Staff grants left out because this session was not made by both staff steps (or is older than a day). */
   staffWithheld: Grant[];
+  /** The device-list row of this sign-in (token claim `mds`); null for sessions without one (earlier sign-ins). */
+  sessionId: string | null;
 }
 
 export interface AppEnv {

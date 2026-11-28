@@ -853,6 +853,25 @@ export function deliveryNoticeWord(
   return word ?? key;
 }
 
+interface TopicTree {
+  segments?: Record<string, string>;
+  ustaad?: { labels?: Record<string, string> };
+}
+
+/**
+ * SIM-F7: a question's work or vehicle code in the reader's language, for bell and push texts ("Engine" / "इंजन"),
+ * never the raw code. An unknown code is returned as it is, so a new code cannot blank a notice.
+ */
+export function ustaadTopicLabel(locale: NoticeLocale, code: string): string {
+  const tree = (locale === 'hi' ? hi : en) as unknown as TopicTree;
+  return (
+    tree.ustaad?.labels?.[`work_${code}`] ??
+    tree.ustaad?.labels?.[`seg_${code}`] ??
+    tree.segments?.[code] ??
+    code
+  );
+}
+
 /** Plain text only: line breaks and control characters become spaces. */
 const plain = (v: string) =>
   v

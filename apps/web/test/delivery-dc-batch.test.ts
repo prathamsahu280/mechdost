@@ -175,10 +175,11 @@ describe('DC-B12 payout correction', () => {
 });
 
 describe('DC-F1 already applied (no enumeration)', () => {
-  it('the apply form shows the same received screen without a reference, never the existing one', () => {
+  it('the apply form shows one received screen with no reference, for a new and a repeated application', () => {
     const f = src('src/components/delivery/agent-apply-form.tsx');
     expect(f).toContain('receivedBodyNoCode');
     expect(f).not.toContain('alreadyApplied');
+    expect(f).not.toContain("t('receivedBody', ");
     for (const m of both) expect(m.deliveryApply?.receivedBodyNoCode).toBeTruthy();
   });
 });

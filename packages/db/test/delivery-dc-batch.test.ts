@@ -58,25 +58,34 @@ async function readyJob() {
 }
 
 describe('DC-F1 / DC-P2 one open delivery application per phone', () => {
-  const apply = (phone: string) =>
-    submitAgentApplication(w.t(), { name: 'Raju QA', phone, cityCode: 'RPR', vehicleType: 'scooter' });
+  const apply = (phone: string, name = 'Raju QA') =>
+    submitAgentApplication(w.t(), { name, phone, cityCode: 'RPR', vehicleType: 'scooter' });
+  const rowsOf = (phone: string) =>
+    w.db
+      .select({
+        id: s.partnerApplications.id,
+        name: s.partnerApplications.name,
+        status: s.partnerApplications.status,
+      })
+      .from(s.partnerApplications)
+      .where(eq(s.partnerApplications.phone, phone));
 
-  it('a second application answers the first reference; two at once still make one row', async () => {
+  it('a new and a repeated application give the identical answer (no enumeration); one row stays', async () => {
     const phone = '+919822220001';
     const first = await apply(phone);
-    expect(first.alreadyApplied).toBe(false);
     const again = await apply(phone);
-    // Security review: a repeat never reveals the first application (no reference, no status).
-    expect(again).toEqual({ code: null, status: 'new', alreadyApplied: true });
-    expect(JSON.stringify(again)).not.toContain(first.code ?? 'x');
+    // Security review: the public answer is the same whether or not the number applied: no reference, no status.
+    expect(JSON.stringify({ status: again.status })).toBe(JSON.stringify({ status: first.status }));
+    expect(first).toMatchObject({ status: 'received', created: true });
+    expect(again).toMatchObject({ status: 'received', created: false });
+    expect(await rowsOf(phone)).toHaveLength(1);
+  });
+
+  it('two at once still make one row', async () => {
     const other = '+919822220002';
     const both = await Promise.all([apply(other), apply(other)]);
-    expect(both.filter((r) => !r.alreadyApplied)).toHaveLength(1);
-    const rows = await w.db
-      .select({ id: s.partnerApplications.id })
-      .from(s.partnerApplications)
-      .where(eq(s.partnerApplications.phone, other));
-    expect(rows).toHaveLength(1);
+    expect(both.filter((r) => r.created)).toHaveLength(1);
+    expect(await rowsOf(other)).toHaveLength(1);
   });
 
   it('the database refuses a duplicate even when the repository is bypassed', async () => {
@@ -92,34 +101,24 @@ describe('DC-F1 / DC-P2 one open delivery application per phone', () => {
 
   it('a decided application frees the number', async () => {
     const phone = '+919822220004';
-    const first = await apply(phone);
+    await apply(phone);
     await w.db
       .update(s.partnerApplications)
       .set({ status: 'rejected' })
-      .where(eq(s.partnerApplications.code, first.code ?? ''));
+      .where(eq(s.partnerApplications.phone, phone));
     const next = await apply(phone);
-    expect(next.alreadyApplied).toBe(false);
-    expect(next.code).not.toBe(first.code);
+    expect(next.created).toBe(true);
+    expect(await rowsOf(phone)).toHaveLength(2);
   });
 
-  it('role leak: another person typing someone else’s number gets nothing about that application', async () => {
+  it('role leak: another person typing someone else’s number learns nothing and changes nothing', async () => {
     const victim = '+919822220005';
-    const mine = await apply(victim);
-    const prober = await submitAgentApplication(w.t(), {
-      name: 'Someone Else',
-      phone: victim,
-      cityCode: 'RPR',
-      vehicleType: 'bike',
-    });
-    expect(prober.code).toBeNull();
-    expect(prober.status).toBe('new');
-    expect(Object.values(prober).join('|')).not.toContain(mine.code ?? 'x');
-    const rows = await w.db
-      .select({ name: s.partnerApplications.name })
-      .from(s.partnerApplications)
-      .where(eq(s.partnerApplications.phone, victim));
-    // The probe changed nothing: still the one original row, not overwritten by the second name.
-    expect(rows).toEqual([{ name: 'Raju QA' }]);
+    await apply(victim);
+    const prober = await apply(victim, 'Someone Else');
+    expect(Object.keys(prober).sort()).toEqual(['created', 'status']);
+    expect(prober.status).toBe('received');
+    // The probe did not overwrite the original row.
+    expect((await rowsOf(victim)).map((r) => r.name)).toEqual(['Raju QA']);
   });
 });
 

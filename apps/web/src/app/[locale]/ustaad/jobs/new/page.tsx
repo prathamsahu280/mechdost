@@ -15,6 +15,7 @@ export default async function UstaadJobNewPage() {
         'ustaad.shell',
         'ustaad.standing',
         'ustaad.jobs',
+        'ustaad.tutorial',
         'ustaad.media',
         'ustaad.labels',
         'ustaad.card',

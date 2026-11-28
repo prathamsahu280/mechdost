@@ -10,6 +10,7 @@ import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
 import {
   commentOnUstaadPost,
+  ustaadComposeLimits,
   countUstaadFreshFeed,
   createUstaadPost,
   createUstaadStory,
@@ -44,6 +45,7 @@ import {
 } from '@mechdost/db/repo';
 import {
   CommentDto,
+  ComposeLimitsDto,
   CommentViewDto,
   CreatePostDto,
   CreateStoryDto,
@@ -98,6 +100,14 @@ const feed = createRoute({
   security: sec,
   request: { query: FeedQueryDto },
   responses: { 200: json(FeedPageDto, 'Feed page'), ...errorResponses },
+});
+const composeLimits = createRoute({
+  method: 'get',
+  path: '/ustaad/feed/limits',
+  tags: ['ustaad'],
+  summary: 'What the composer may offer me now: live photo limit, stories open/locked/off, can I write',
+  security: sec,
+  responses: { 200: json(ComposeLimitsDto, 'Limits'), ...errorResponses },
 });
 const fresh = createRoute({
   method: 'get',
@@ -352,6 +362,7 @@ export function ustaadFeedRoutes(deps: AppDeps) {
   for (const path of [
     '/ustaad/feed',
     '/ustaad/feed/fresh',
+    '/ustaad/feed/limits',
     '/ustaad/posts',
     '/ustaad/posts/*',
     '/ustaad/comments/*',
@@ -370,6 +381,7 @@ export function ustaadFeedRoutes(deps: AppDeps) {
     [
       '/ustaad/feed',
       '/ustaad/feed/fresh',
+      '/ustaad/feed/limits',
       '/ustaad/posts/*',
       '/ustaad/saved',
       '/ustaad/stories',
@@ -449,6 +461,7 @@ export function ustaadFeedRoutes(deps: AppDeps) {
           : await forYouPage(deps.db, snapshots, actor(c), q);
       return c.json(page, 200);
     })
+    .openapi(composeLimits, async (c) => c.json(await ustaadComposeLimits(deps.db, actor(c)), 200))
     .openapi(fresh, async (c) => {
       const q = c.req.valid('query');
       const count = await countUstaadFreshFeed(deps.db, actor(c), { tab: q.tab, since: new Date(q.since) });

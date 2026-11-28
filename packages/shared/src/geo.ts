@@ -33,6 +33,17 @@ export const INDIA_BOUNDS = { minLat: 6, maxLat: 37.5, minLng: 68, maxLng: 97.5 
 /** A PIN code's centroid must lie within this distance of its city's centre (catches a wrong city or a typo). */
 export const PINCODE_MAX_KM_FROM_CITY = 150;
 
+/**
+ * "Use my location" shortlist (spec 06): a position within this distance of an active MechDost PIN centroid of a
+ * live city counts as inside a served area, and the person is offered the nearest PINs to pick from. 8 km covers
+ * Raipur's whole PIN ring (the farthest seed centroid from a central point is about 6 km) without reaching the
+ * next town; beyond it we know nothing better than the map provider.
+ */
+export const PINCODE_NEAR_MAX_KM = 8;
+/** How many nearest PINs the shortlist shows (Sarona's real PIN 492099 is the 4th nearest centroid). */
+export const PINCODE_NEAR_DEFAULT = 5;
+export const PINCODE_NEAR_LIMIT_MAX = 10;
+
 /** A Hindi area name must contain Devanagari (rule 10: "/hi" shows no English place names). */
 export const DEVANAGARI_RE = /[\u0900-\u097F]/;
 

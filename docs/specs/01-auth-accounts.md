@@ -153,6 +153,9 @@ A new account section `wishlist` (real sign-in only; `lib/sections.ts`): saved p
 - **How it works:** `lib/auth/firebase-client.ts` `changePassword`: re-authenticates with the email + password credential the account was linked with at sign-up (phone users have one too; sign-in by phone looks the email up on the API), then `updatePassword`. Firebase is imported on submit only. Rules: the sign-up rules (`passwordProblem`: length, common list, personal data), plus "different from the current one" and "confirm matches". Pure checks and error mapping: `lib/auth/password-change.ts` (unit-tested).
 - **Errors:** wrong current password (`auth/wrong-password`, `auth/invalid-credential`), weak (`auth/weak-password`), too many attempts (`auth/too-many-requests`), requires recent login (sign out and in, then retry), no connection, unavailable. Success: "Password changed."
 - **Sessions:** Firebase ends the account's other sessions when the password changes (their refresh tokens stop working); this browser receives fresh tokens. The API session cache (about a minute) re-checks revocation on load, so no extra endpoint was needed.
+- **Sessions: stale "Signed in as" fixed, "Sign out of all devices" (founder 2026-11-28 23:05; research `docs/superpowers/specs/2026-11-28-sessions-devices-research.md`).**
+  - _Bug and fix (real mode)._ The site keeps its own saved session (`demo/session`) beside the Firebase one. When Firebase ends its session elsewhere (password change on another device, staff role removed, account disabled, "sign out of all devices") the site session used to stay: pages said "Signed in as ..." while every API helper failed with `AUTH_REQUIRED` and "Try again" could never work. Now `lib/auth/session-ended.ts` clears the site session once, without a reload (`forgetAccountOnDevice()` in `lib/auth/sign-out.ts`, the same local clean-up the sign-out button runs) and sets a one-shot note (`lib/auth/session-ended-flag.ts`, `sessionStorage`) that `SessionEndedNotice` shows above the sign-in card ("You were signed out on this device. Sign in again to continue." / Hindi): `PortalGuard`, the login form, the account signed-out card. Two triggers: (1) `currentIdToken()` reports "no Firebase user" **only after `authStateReady()`** finished and only when the site session says signed in (so a page that just loaded, or a sign-in that has not yet written the site session, never triggers it); (2) an API 401 with code `TOKEN_REVOKED` seen by `admin-api` / `orders-api` (loaded on a 401 only) also signs the local Firebase user out. A new sign-in clears the note. No new Firebase import anywhere (JS budget). Tests: `apps/web/test/session-ended.test.ts`, `session-ended-race.test.ts` (regression for this bug).
+  - _Sign out of all devices._ Account -> Profile -> Security, real sign-in only (the demo has no Firebase account, so the section is not rendered there). One line of help, a quiet button, an inline confirm (focus lands on "Keep me signed in"), busy state, errors in a polite live region; on success the normal local sign-out runs (`signOutEverywhere()`, which signs out this device only, hence it follows the API call). API `POST /v1/me/sessions/revoke-all` (`apps/api/src/routes/sessions.ts`): signed in (revocation checked), 5 per hour per user, `PasswordAuthority.revokeSessions(uid)` (503 `UNAVAILABLE` when the deployment has none, nothing written), drops the caller's cached session, then `recordSessionsRevoked` writes `audit_log` `auth.sessions_revoked` (actor = entity = self) and the server event `account_signed_out_all` in one transaction. Other devices are out within about a minute (the 60 s session cache), then show the note above. Includes this device (Q-SES-2); the device list (separate builder) will add per-device and "all other devices" actions. Tests: `apps/api/test/sessions-revoke-all.test.ts`, `apps/web/test/sign-out-all.test.ts`.
 - **Analytics (spec 12):** `click` ids `password_change_ok`, `password_change_failed_<wrong_current|weak|rate|recent|network|unavailable>`, `password_change_invalid_<reason>`; no password or personal data.
 - **Header Sign out:** signed in, a coloured "Sign out" button sits at the top right next to the account link (`components/auth/account-link.tsx`; accent-soft fill, accent-button border, 44 px, icon + text from 640 px except 1024-1279 px, name always accessible). It loads the sign-out code on the click, goes home and shows a short status ("You are signed out."). Account -> Profile and the partner card keep a Sign out button in the same coloured style.
 - **Tests:** `apps/web/test/password-change.test.ts`, `account-security-signout.test.ts`, `signed-in-header-fit.test.ts`, `site-chrome-fit.test.ts`; state-audit row `API-ACC-SECURITY`.
@@ -206,3 +209,49 @@ The assertive alert region is cleared whenever the form-level error clears (step
   - **No false failure.** `turnstile.ts` no longer gives up at 20 s: a widget that is still working is waited for up to 60 s (a visible challenge: until the person is done); after 8 s **from the button press** (not from the early check started while typing) a calm line "Still checking your browser…" (`auth.stillChecking`, en + hi) shows and is announced in the polite live region; a widget `error-callback` or `expired-callback` still fails at once (retried once silently as before).
   - **Warm SMS.** `warmRecaptcha` (`firebase-client.ts`) makes and renders the invisible reCAPTCHA verifier on first touch of the sign-in or phone forms; `sendPhoneCode` reuses it. Warming sends nothing: Firebase asks reCAPTCHA for a token and sends the SMS only inside `sendPhoneCode`, which the staff step calls after the API verified the password. Side effect: the reCAPTCHA script and its inline badge now load on the sign-in, sign-up-phone and forgot-phone forms in real mode for every visitor (on first touch), not only staff.
   - **Timing.** One `auth_timing` event per attempt (spec 12). Tests: `apps/api/test/auth-staff-challenge.test.ts`, `apps/web/test/turnstile-slow-check.test.ts`, `warm-recaptcha.test.ts`, `auth-timing.test.ts`.
+
+## Devices: "Where you're signed in" (built 2026-11-28; research `docs/superpowers/specs/2026-11-28-sessions-devices-research.md`, migration 0117)
+
+Founder-approved 2026-11-28 (option C, rough place yes, "its fine even if its not the very correct city").
+
+- **Table `user_sessions`** (one row per password sign-in; data model in spec 14 "Data model note: sessions and devices"). The raw
+  session key is 256 random bits (base64url) and exists only in the person's Firebase token as the custom claim `mds` (not a
+  reserved Firebase claim; custom-token claims persist into every refreshed ID token, like `staff_2fa`). The row keeps its
+  SHA-256 hash. `POST /v1/auth/password` inserts the row just before minting the custom token, for customers and for the
+  staff phone-code step (the first staff call, password only, writes no row). If the row cannot be written the person still
+  signs in (an "earlier sign-in"); if the token cannot be minted the unissued row is deleted.
+- **Device label**: the User-Agent is read once at sign-in by a dependency-free parser (`packages/shared/src/devices.ts`) into
+  three codes (device kind mobile/tablet/desktop/other, browser Chrome/Safari/Firefox/Edge/Samsung/Opera/other, OS
+  Android/iOS/Windows/macOS/Linux/other). The raw string is never stored. Shown as "Chrome on Android" (brand names stay
+  Latin on /hi; Hindi word order "Android पर Chrome").
+- **Rough place**: DB-IP City Lite (MMDB, CC BY 4.0) read with the `maxmind` reader at sign-in only, in memory. Optional env
+  `GEOIP_CITY_DB`; absent or unreadable = no place, everything else works. The client address comes from the existing
+  trusted-proxy rule (`clientIp`, `TRUSTED_PROXY_HOPS`), nowhere else. Stored: country code, state name, city name (English).
+  **The IP address is never stored.** Display: English "Near Raipur, Chhattisgarh" (state only when there is no city, nothing
+  when there is no match); Hindi: the state from the `gstStates` Hindi names (region name mapped to its GST code in
+  `devices.ts`), the city only when the cities table has a Hindi name for it (`cities.name_hi`), otherwise the city is left
+  out on /hi. Labelled approximate; the DB-IP attribution line shows whenever a place is shown.
+- **Auth middleware** (`apps/api/src/middleware/auth.ts`): the claim is part of the session-cache key. On a cache miss, a
+  token with the claim must find a live row of the same user, else 401 `SESSION_ENDED`. Tokens without the claim (sign-up
+  phone-code sessions, sign-ins from before this release) keep working: "Sign-ins from before today may not be listed", ended
+  only by Sign out of all devices. No extra query per request: the row is read on the cache-miss path only;
+  `last_active_at` is refreshed by a conditional UPDATE at most once an hour, and a failure there is logged, never fails the
+  request. **A device signed out elsewhere is out within about a minute** (the 60 s session cache).
+- **API** (`apps/api/src/routes/devices.ts`, all signed in, `private, no-store`): `GET /v1/me/devices` (own live rows, at most
+  50, newest activity first, current flagged; the hash is never returned), `POST /v1/me/devices/:id/sign-out` (404 for anyone
+  else's or unknown id, 409 `CURRENT_DEVICE` for this device), `POST /v1/me/devices/sign-out-others`,
+  `POST /v1/me/devices/current/sign-out` (best effort; the normal sign-out calls it, helper
+  `apps/web/src/lib/auth/end-current-device.ts`). Rate limit 60 writes per hour per person plus the per-route user limit.
+  Audit rows `auth.device_signed_out`, `auth.devices_signed_out_others`. Repository `packages/db/src/repo/user-sessions.ts`
+  (`revokeAllUserSessions(db, userId, reason)` is exported for "Sign out of all devices"; removing a staff role calls it with
+  `staff_role_removed`).
+- **Web**: `components/account/devices-card.tsx`, lazy, after the Security card, real sign-in only: kind icon, "Chrome on
+  Android", "Near ...", "Active now / 3 hours ago / 2 days ago" (IST dates beyond 30 days), "This device" badge without a
+  button, inline confirm per device, one "Sign out of all other devices" with confirm, one polite status region, empty state
+  with one action, earlier-sign-ins note linking to Security. Strings `devices.*` (en + hi). Events `account_devices_viewed`,
+  `account_device_signed_out`, `account_devices_signed_out_others` (spec 12).
+- **Privacy notice** gains the "Where you are signed in" section (device type, approximate place and last active are kept for
+  security; no IP address), en + hi, `policies.privacy.devices*`.
+- **Tests**: shared `devices.test.ts` (parser, place text en/hi, state codes), db `user-sessions.test.ts` (constraints,
+  ownership, races, last-active), api `devices-api.test.ts` + `geoip.test.ts` (role leak, 404/409, SESSION_ENDED, legacy
+  tokens, rate limit, hourly bump and failure), `admin-people.test.ts` (role removal marks rows), web `devices-card.test.ts`.

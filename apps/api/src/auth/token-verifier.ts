@@ -7,6 +7,9 @@ export interface VerifiedToken extends VerifiedIdentity {
   signInProvider: string;
   /** Made by both staff sign-in steps (password, then a fresh phone code): custom token with `staff_2fa`. */
   staff2fa: boolean;
+  /** The device-list session key from the custom-token claim `mds` (password sign-ins since the device list); null for
+   *  sessions without one (phone-code sessions, sign-ins from before the device list). Raw: never log or store it. */
+  sessionKey: string | null;
 }
 
 export interface VerifyOptions {
