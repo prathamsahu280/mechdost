@@ -28,6 +28,8 @@ export default async function AccountLayout({ children }: { children: ReactNode 
             'homeService',
             // Account -> Privacy (consents, data download, deletion request; design 2026-11-15).
             'privacy',
+            // Account -> Profile -> "Where you're signed in" (device list, 2026-11-28).
+            'devices',
             // Real-sign-in (API) sections: invites, saved places, wishlist, support threads (audit 2026-11-16).
             'shopTier1',
             'accountApi',
