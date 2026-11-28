@@ -603,6 +603,9 @@ export interface ServiceRequestSummary {
   /** The customer has something to decide (a proposal, an estimate or an offer to move a home job): the account badge. */
   waitingForCustomer: boolean;
   serviceMode: ServiceMode;
+  /** The accepted proposal's visit date (IST, YYYY-MM-DD) and start hour; null until a proposal is accepted. */
+  visitDate: string | null;
+  visitHour: number | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -623,6 +626,8 @@ interface SummaryRow {
   pincode: string;
   service_mode: ServiceMode;
   move_pending: boolean;
+  visit_date: string | null;
+  visit_hour: number | null;
   created_at: string | Date;
   updated_at: string | Date;
   sort_key: string;
@@ -631,7 +636,11 @@ interface SummaryRow {
 export const SUMMARY_SELECT = sql.raw(`r.id, r.code, r.status, r.version, w.slug as w_slug, w.name as w_name,
   w.name_hi as w_name_hi, r.vehicle_type, r.vehicle_text, r.services, r.preferred_date::text as preferred_date,
   r.preferred_slot, r.pincode, r.service_mode, r.created_at, r.updated_at,
-  exists (select 1 from service_moves m where m.request_id = r.id and m.status = 'proposed') as move_pending`);
+  exists (select 1 from service_moves m where m.request_id = r.id and m.status = 'proposed') as move_pending,
+  (select p.proposed_date::text from service_proposals p where p.request_id = r.id and p.status = 'accepted'
+    order by p.created_at desc limit 1) as visit_date,
+  (select p.slot_hour from service_proposals p where p.request_id = r.id and p.status = 'accepted'
+    order by p.created_at desc limit 1) as visit_hour`);
 
 export function toSummary(row: SummaryRow, locale: ServiceLocale): ServiceRequestSummary {
   const services =
@@ -656,6 +665,8 @@ export function toSummary(row: SummaryRow, locale: ServiceLocale): ServiceReques
     pincode: row.pincode,
     waitingForCustomer: row.status === 'proposed' || row.status === 'estimate_sent' || row.move_pending,
     serviceMode: row.service_mode,
+    visitDate: row.visit_date ?? null,
+    visitHour: row.visit_hour,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
   };

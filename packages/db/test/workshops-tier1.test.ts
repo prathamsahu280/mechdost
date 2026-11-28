@@ -21,6 +21,7 @@ import {
   getWorkshopProfiles,
   listSlots,
   listWorkshopChanges,
+  listWorkshopRequests,
   proposeSlot,
   receiveVehicle,
   requestWorkshopChange,
@@ -139,6 +140,19 @@ describe('hourly slots', () => {
     const r2 = await request();
     await propose(r2.code, r2.version, 15, 'main');
     expect((await mine(r2.code)).proposal?.slot).toBe('afternoon');
+  });
+
+  it('the workshop job list carries the accepted visit date and hour (calendar agenda, Batch P)', async () => {
+    const r = await request();
+    const v = (await propose(r.code, r.version, 16)).version;
+    const find = async () =>
+      (await listWorkshopRequests(t(), [W.main!.id], 'active', {}, 'en')).items.find(
+        (i) => i.code === r.code,
+      );
+    // A pending proposal is not a visit yet.
+    expect(await find()).toMatchObject({ visitDate: null, visitHour: null });
+    await decideProposal(t(), { userId: f.customer, code: r.code, accept: true, expectedVersion: v });
+    expect(await find()).toMatchObject({ visitDate: DAY, visitHour: 16 });
   });
 
   it('refuses a closed hour, a closed day, an hour already over today, and another workshop id', async () => {

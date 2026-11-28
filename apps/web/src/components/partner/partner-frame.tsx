@@ -12,6 +12,8 @@ import { PartnerTabs, useCurrentTab, type PartnerTab } from './partner-tabs';
 
 /** A link click counts as the cause of the next route change for this long (short, so Back later never steals focus). */
 const USER_NAV_WINDOW_MS = 2000;
+/** How long a tab body that loads late is waited for before focus falls back to the page's h1. */
+const HEADING_WAIT_MS = 3000;
 
 export type PartnerStateTone = 'ok' | 'busy' | 'off';
 
@@ -56,6 +58,7 @@ export function PartnerFrame({
   const headingText = tabs.find((tab) => tab.id === current)?.label ?? railTitle;
   const headingRef = useRef<HTMLHeadingElement>(null);
   const statusRef = useRef<HTMLParagraphElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const prevPath = useRef<string | null>(null);
   const tabClickedAt = useRef(0);
   // A plain primary click on a link inside the frame (a tab or a KPI tile) is the cause of the next route change;
@@ -72,23 +75,68 @@ export function PartnerFrame({
     [onUserNavigate],
   );
 
-  // After a tab the partner picked: focus the new page's heading and say its name once in the polite status. Never on
-  // the first load, and never on back/forward (the tab click is only valid for a few seconds).
+  // After a tab the partner picked: focus the new tab's first visible heading (a `tabIndex -1` h2/h3 with a visible
+  // focus ring), waiting for a tab body that loads late; the screen-reader-only h1 is the fallback, and the polite
+  // status when there is no heading at all. Never on the first load, never on back/forward (the click is only valid for
+  // a few seconds), and never when the partner has already moved focus on by themselves.
   useEffect(() => {
     const byUser = Date.now() - tabClickedAt.current < USER_NAV_WINDOW_MS;
     const move = tabFocusPlan(prevPath.current, pathname, byUser);
     prevPath.current = pathname;
-    if (!move) return;
+    if (!move) return undefined;
     tabClickedAt.current = 0;
-    const target = headingRef.current ?? document.querySelector<HTMLElement>('h1');
-    if (target) {
-      // Focusing the heading makes a screen reader say it: the status is only the fallback, so it is never said twice.
+    const focusStillOnNav = () => {
+      const active = document.activeElement;
+      return !active || active === document.body || Boolean(active.closest('nav'));
+    };
+    const focusOn = (target: HTMLElement) => {
       if (!target.hasAttribute('tabindex')) target.tabIndex = -1;
       target.focus({ preventScroll: true });
-    } else if (statusRef.current) {
-      statusRef.current.textContent = '';
-      statusRef.current.textContent = headingText;
+    };
+    const fallback = () => {
+      if (!focusStillOnNav()) return;
+      const target = headingRef.current ?? document.querySelector<HTMLElement>('h1');
+      if (target) focusOn(target);
+      else if (statusRef.current) {
+        statusRef.current.textContent = '';
+        statusRef.current.textContent = headingText;
+      }
+    };
+    const panel = panelRef.current;
+    const heading = () => panel?.querySelector<HTMLElement>('h2, h3') ?? null;
+    const found = heading();
+    if (found) {
+      if (focusStillOnNav()) focusOn(found);
+      return undefined;
     }
+    if (!panel || typeof MutationObserver === 'undefined') {
+      fallback();
+      return undefined;
+    }
+    let done = false;
+    const finish = (run: () => void) => {
+      if (done) return;
+      done = true;
+      observer.disconnect();
+      window.clearTimeout(timer);
+      run();
+    };
+    const observer = new MutationObserver(() => {
+      const h = heading();
+      if (h)
+        finish(() => {
+          if (focusStillOnNav()) focusOn(h);
+        });
+    });
+    const timer = window.setTimeout(() => {
+      finish(fallback);
+    }, HEADING_WAIT_MS);
+    observer.observe(panel, { childList: true, subtree: true });
+    return () => {
+      done = true;
+      observer.disconnect();
+      window.clearTimeout(timer);
+    };
   }, [pathname, headingText]);
 
   return (
@@ -117,7 +165,13 @@ export function PartnerFrame({
         ) : null}
         <p ref={statusRef} role="status" aria-live="polite" className="sr-only" />
         {strip}
-        {children}
+        <div
+          ref={panelRef}
+          data-partner-panel
+          className="grid min-w-0 gap-5 [&_h2:focus-visible]:outline-3 [&_h2:focus-visible]:outline-offset-2 [&_h2:focus-visible]:outline-focus [&_h3:focus-visible]:outline-3 [&_h3:focus-visible]:outline-offset-2 [&_h3:focus-visible]:outline-focus"
+        >
+          {children}
+        </div>
       </div>
       <PartnerTabs
         portal={portal}

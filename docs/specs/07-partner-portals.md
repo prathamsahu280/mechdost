@@ -382,8 +382,7 @@ line (the old `bulletScale` helper is gone; the kit's `bulletGeometry` replaces 
   demo partner gate, message bundles (now incl. `partnerWorkshop`) and the tab bar live in the layout and stay
   mounted while tabs change. Tabs are links with `aria-current="page"` (48 px): **Today** `/partner/workshop`,
   **Jobs** `/partner/workshop/jobs`, **Numbers** `/partner/workshop/numbers`, **My workshop**
-  `/partner/workshop/profile`. Calendar is not a tab in v1 (needs the accepted date and hour on the list rows,
-  design § 6.4, P1).
+  `/partner/workshop/profile`. Calendar became a tab in Batch P (2026-11-28, below).
 - **Today:** push prompt, name plate, four tiles counted from the `new` and `active` lists (no new API; "20+" when
   another page exists): New requests (amber, "Needs you" in words), Waiting for the customer, In the workshop, Ready
   or to bill; each tile links to its lane. Then New requests (propose or decline) and the roadside offers panel.
@@ -407,9 +406,32 @@ line (the old `bulletScale` helper is gone; the kit's `bulletGeometry` replaces 
   Jobs tab (`legacyWorkshopTarget`, unit-tested in `apps/web/test/workshop-portal-view.test.ts`).
 - **Demo builds:** Today and Jobs show the demo store's requests and jobs; Numbers and My workshop say they open
   with a real sign-in.
-- Not built in this batch: master–detail at ≥ 1024 px, calendar agenda and its API field (P1), saved estimate line
+- Not built in this batch: master–detail at ≥ 1024 px, saved estimate line
   templates (P1), review replies (P2), state-audit row `WS-FRAME` (existing `API-WS-*` rows were pointed at the
   new tabs). Tiles count exactly the lane they open (decisions 2026-11-27 builder rulings).
+
+## Partner portals leftovers, Batch P (2026-11-28)
+
+- **Workshop Calendar tab** (`/partner/workshop/calendar`, `tab_calendar` Calendar / कैलेंडर; order Today · Jobs ·
+  Calendar · Numbers · My workshop): read only. A seven-day strip of date chips (IST, today first; each chip is a link
+  `?day=YYYY-MM-DD`, `aria-current="date"`, the visit count written for screen readers) and the chosen day's visits by
+  hour (24-hour clock, "Time not set" last), each opening its job on the Jobs tab. Data = the workshop's `active`
+  list; the rows gained additive `visitDate` (IST `YYYY-MM-DD`) and `visitHour` (0–23) from the **accepted**
+  `service_proposals` row (subselects in `SUMMARY_SELECT`, indexed by `request_id`; null until a proposal is accepted
+  and for hour-less older proposals; no migration). Counted statuses: `confirmed` … `billed` (paid, cancelled and
+  declined visits drop out). Past-dated jobs still open stay on the Jobs tab, not on the strip. Empty day: one sentence
+  and one action (See new requests). Event `partner_calendar_day_viewed` (spec 12). Demo builds: "opens with a real
+  sign-in" like Numbers. Tests `workshop-calendar.test.ts`, `workshop-portal-view.test.ts`,
+  `packages/db/test/workshops-tier1.test.ts`. Blackout dates and per-hour editing stay P2.
+- **Rider job step rail:** the old 4-segment bar is the shared `StepRail`: Go to the shop · Pick up · Go to the
+  customer · Hand over, "Step n of 4: name" in words, `aria-current="step"`. The step still comes from the real job state
+  (`accepted` → `picked_up`) plus the rider's own "I'm there" tap (`agentStep`); test `rider-step-rail.test.ts`.
+- **Kit a11y follow-ups:** the Hindi bottom-bar labels break inside their tile (`overflow-wrap:anywhere`) and the real
+  bar height (two Hindi lines make it taller than 65 px) is measured by a `ResizeObserver` and set as
+  `--partner-tabbar-h`, so scroll padding stays right at 320 px; after a user tab click focus goes to the new panel's
+  first visible `h2`/`h3` (`tabIndex -1`, visible focus ring; waits up to 3 s for a tab body that loads late, never
+  steals focus the partner already moved, falls back to the hidden `h1`).
+- Not built: master–detail at ≥ 1024 px.
 
 ## Shop portal tabs (2026-11-28, partner portals UI upgrade batch A)
 
@@ -443,6 +465,8 @@ Q-PP-F2 (tabs), F3 (sound on by default), F4 (storefront header stays).
   Numbers; `#prices-title`, `#new-product-title`, `#shop-csv`, `#shop-offers` → Stock; `#shop-team`,
   `#agreement-shop-title` → My shop; `#delivered-title` → Orders, lane Delivered.
 - **Events** (spec 12, reused): `partner_tab_viewed`, `partner_kpi_clicked`, `partner_lane_viewed` with portal `shop`.
+- **As built, Batch P (2026-11-28): "Delivered today".** The fourth tile counts today's delivered rows. `ShopOrder` gained an additive optional `deliveredAt` (ISO; from `orders.delivered_at`, set only on the `done` view's delivered rows, null elsewhere; no migration). The count is by IST business day (`istDateString`, never the device zone) over the first `done` page and reads "N+" when another page exists. String `partnerShop.kpi_delivered_today` ("Delivered today" / "आज पहुँचाए"); tests `shop-today.test.ts`, `packages/db/test/shop-orders.test.ts`. The older "Delivered" wording below is superseded.
+- **As built, Batch P (2026-11-28): stock − / +.** Each "Your prices" row with an inventory row shows `ShopStockStepper` (44 px buttons, labelled with the product name, "{n} held for open orders"). One tap sends the next absolute `onHand` through the existing `PATCH /v1/shops/{shopId}/inventory/{sku}` (`saveShopOffer`, `{version, onHand}`: version compare-and-set, `STOCK_BELOW_RESERVED` guard), then loads the list again: nothing is shown before the server answers; a stale or below-reserved refusal (409) shows a plain message and reloads the row. Buttons are `aria-disabled` while busy (focus stays), the number is a polite `output`. Pure rules in `lib/shop-stock.ts`; event `partner_stock_stepped` (spec 12); strings `partnerShop.stock_*`; test `shop-stock-step.test.ts`.
 - Not built in this batch: shop switcher and shop name on each card (needs the shop on `ShopOrder`, P1), per-row stock
   −/+ (P1), "Delivered today" count (needs a date on the row, P1), master–detail at ≥ 1024 px.
 

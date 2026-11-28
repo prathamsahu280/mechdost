@@ -348,7 +348,7 @@ get you more offers." + one action **Check your stock** (existing copy `shopTier
 | -------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
 | Today / आज                 | `/partner/workshop`            | KPI tiles (new requests · waiting for the customer · in the workshop · ready or to bill); **New requests** (propose or decline) |
 | Jobs / काम                 | `/partner/workshop/jobs?lane=` | `LaneTabs` over the existing `active` and `done` lists (`GET /v1/workshop/requests?view=new                                     | active | done`): Proposed (`proposed`) · Confirmed (`confirmed`) · In the workshop (`vehicle_received`, `estimate_sent`, `approved`, `no_work_approved`, `in_progress`) · Ready & bill (`ready`, `billed`) · Done (`paid`, `completed`, `cancelled`, `rejected`); job cards open in place (deep link `?job=SR-…`) |
-| Calendar / कैलेंडर         | `/partner/workshop/calendar`   | **P1, not in v1** (see § 6.4: needs the proposal date and hour on the list rows)                                                |
+| Calendar / कैलेंडर         | `/partner/workshop/calendar`   | **Built in Batch P (2026-11-28)** (§ 6.4; the list rows carry `visitDate` / `visitHour`)                                        |
 | Numbers / हिसाब            | `/partner/workshop/numbers`    | Performance (owner only; today behind "Show performance")                                                                       |
 | My workshop / मेरी वर्कशॉप | `/partner/workshop/profile`    | My workshop (profile, hours, busy, capacity, menu), Home servicing, Roadside opt-in                                             |
 
@@ -420,7 +420,7 @@ templates") are **[spec, not built]** → P1.
 **[spec 07 "calendar with hourly capacity, blackout dates" — partly built]**: capacity per hour and the hour picker
 exist; a calendar view does not. Proposal: a **read-only agenda** (P1): a 7-day strip (date chips showing the number of
 visits) and, for the chosen day, the confirmed visits by hour with the free capacity written per hour
-(`GET /v1/workshop/slots` already returns `{hour, free}` for a date). **API need:** the list rows
+(`GET /v1/workshop/slots` already returns `{hour, free}` for a date). **As built (Batch P, 2026-11-28): the strip and the day's visits by hour; free capacity per hour is not shown.** **API need (met):** the list rows
 (`ServiceRequestSummaryDto`) carry only the customer's `preferredDate` / `preferredSlot`, not the accepted proposal's
 date and hour, so the agenda needs those two fields on the summary (small API change) or one detail call per job
 (too many calls on slow data). Not in v1.
@@ -574,13 +574,13 @@ delivery events). Pseudonymous; no order codes or names in properties.
 | 8   | BulletBar performance vs city middle                              | shop, workshop                 | med × S         | restyle                               |
 | 9   | Earnings day bars (shop), payout bars (rider)                     | shop, rider                    | med × S         | restyle                               |
 | 10  | Price row with MRP share bar                                      | shop                           | med × S         | restyle                               |
-| 10b | Per-row stock −/+ on the existing inventory PATCH                 | shop                           | med × S         | spec 07, API built, UI not (P1)       |
+| 10b | Per-row stock −/+ on the existing inventory PATCH                 | shop                           | med × S         | built (Batch P, 2026-11-28)           |
 | 11  | Availability segmented choice + hours weekday strip               | shop                           | med × S         | restyle                               |
 | 12  | Hour chips with free capacity in the proposal                     | workshop                       | med × S         | restyle                               |
 | 13  | "Updated n min ago" + offline line                                | all                            | med × XS        | new — small, founder OK               |
 | 14  | Documents rows with status words                                  | rider                          | med × XS        | restyle                               |
 | 15  | Status page step rail                                             | applicants                     | low × XS        | restyle                               |
-| P1  | Workshop calendar agenda (read-only)                              | workshop                       | med × M         | spec 07 calendar, partly built        |
+| P1  | Workshop calendar agenda (read-only)                              | workshop                       | med × M         | built (Batch P, 2026-11-28)           |
 | P1  | "Low stock" filter on Your prices (threshold as an admin setting) | shop                           | med × S         | spec 07 "low-stock alerts", not built |
 | P1  | Saved estimate line templates                                     | workshop                       | med × M         | spec 07, not built (API)              |
 | P1  | Rider per-day stats endpoint + chart                              | rider                          | med × M         | new — founder OK                      |

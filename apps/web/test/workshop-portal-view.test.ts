@@ -146,11 +146,12 @@ describe('hour chips', () => {
 });
 
 describe('tabs and old links after the split', () => {
-  it('has the v1 tabs of the design (no calendar until the API carries the accepted hour)', () => {
-    expect(WORKSHOP_TABS.map((t) => t.key)).toEqual(['today', 'jobs', 'numbers', 'profile']);
+  it('has the tabs of the design, with Calendar after Jobs (Batch P)', () => {
+    expect(WORKSHOP_TABS.map((t) => t.key)).toEqual(['today', 'jobs', 'calendar', 'numbers', 'profile']);
     expect(WORKSHOP_TABS.map((t) => t.path)).toEqual([
       '/partner/workshop',
       '/partner/workshop/jobs',
+      '/partner/workshop/calendar',
       '/partner/workshop/numbers',
       '/partner/workshop/profile',
     ]);

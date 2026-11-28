@@ -230,6 +230,10 @@ export interface PriceRow {
   /** The approved price the shop is paid; null when the product is not on sale from this shop yet. */
   livePaise: number | null;
   onHand: number;
+  /** Units held for open orders (stock cannot go below it); 0 when the row has no inventory yet. */
+  reserved: number;
+  /** The inventory row's version for the stock −/+ (null: not on sale from this shop yet, no stock to change). */
+  version: number | null;
   pendingPaise: number | null;
   /** Reason code of the newest request when it was not approved. */
   rejectedReason: string | null;
@@ -241,6 +245,8 @@ interface OfferIn {
   mrpPaise: number;
   sellingPaise: number;
   onHand: number;
+  reserved?: number;
+  version?: number;
 }
 interface RequestIn {
   sku: string;
@@ -273,11 +279,23 @@ export function priceRows(offers: readonly OfferIn[], requests: readonly Request
       mrpPaise: o.mrpPaise,
       livePaise: o.sellingPaise,
       onHand: o.onHand,
+      reserved: o.reserved ?? 0,
+      version: o.version ?? null,
     }),
   );
   const listed = new Set(offers.map((o) => o.sku));
   for (const r of newest.values())
     if (!listed.has(r.sku) && (r.status === 'pending' || r.status === 'rejected'))
-      rows.push(row({ sku: r.sku, product: r.product, mrpPaise: r.mrpPaise, livePaise: null, onHand: 0 }));
+      rows.push(
+        row({
+          sku: r.sku,
+          product: r.product,
+          mrpPaise: r.mrpPaise,
+          livePaise: null,
+          onHand: 0,
+          reserved: 0,
+          version: null,
+        }),
+      );
   return rows;
 }

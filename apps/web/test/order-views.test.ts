@@ -199,7 +199,15 @@ describe('API errors and shop prices', () => {
   });
 
   it('merges offers with the newest price request per product', () => {
-    const offer = { sku: 'A-1', product: 'Oil', mrpPaise: 50_000, sellingPaise: 44_000, onHand: 7 };
+    const offer = {
+      sku: 'A-1',
+      product: 'Oil',
+      mrpPaise: 50_000,
+      sellingPaise: 44_000,
+      onHand: 7,
+      reserved: 2,
+      version: 3,
+    };
     const req = (sku: string, status: string, requestedPaise: number, reasonCode: string | null = null) => ({
       sku,
       product: sku === 'A-1' ? 'Oil' : 'Filter',
@@ -224,6 +232,8 @@ describe('API errors and shop prices', () => {
         mrpPaise: 50_000,
         livePaise: 44_000,
         onHand: 7,
+        reserved: 2,
+        version: 3,
         pendingPaise: 42_000,
         rejectedReason: null,
       },
@@ -233,6 +243,8 @@ describe('API errors and shop prices', () => {
         mrpPaise: 30_000,
         livePaise: null,
         onHand: 0,
+        reserved: 0,
+        version: null,
         pendingPaise: null,
         rejectedReason: 'other',
       },

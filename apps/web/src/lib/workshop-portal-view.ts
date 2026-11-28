@@ -6,10 +6,11 @@ import type { ServiceRequestStatus } from '@mechdost/shared/state';
  * no i18n runtime: the tabs, the job card and the unit tests share them.
  */
 
-/** The tabs of v1 (§ 6.1). Calendar waits for the accepted date and hour on the list rows (§ 6.4, P1). */
+/** The tabs (§ 6.1). Calendar (Batch P, 2026-11-28) reads the accepted visit date and hour on the list rows (§ 6.4). */
 export const WORKSHOP_TABS = [
   { key: 'today', path: '/partner/workshop' },
   { key: 'jobs', path: '/partner/workshop/jobs' },
+  { key: 'calendar', path: '/partner/workshop/calendar' },
   { key: 'numbers', path: '/partner/workshop/numbers' },
   { key: 'profile', path: '/partner/workshop/profile' },
 ] as const;

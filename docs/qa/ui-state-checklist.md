@@ -201,6 +201,8 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-ORD-REFUNDLINE         | Order page (/orders/{code})                                                                | Refund status line under a part: under review, processing, refunded, declined, failed (+ support link)                                                                                                                                                                          | pairwise | 48       | 0       |
 | API-SHOP-PORTAL            | Shop portal (/partner/shop), real sign-in                                                  | Orders from the API with the give-up form, the shop's warnings, its hours and standing, its agreement                                                                                                                                                                           | pairwise | 63       | 0       |
 | API-SHOP-TIER1             | Shop portal (/partner/shop), real sign-in                                                  | Availability card (open / closed today / busy for hours, owner or staff), "Your team" (only you, members, full, invite waiting, error; owner only), expired offer gone with its empty state, delivery code locked from the server with support, staff list without payout money | pairwise | 43       | 0       |
+| API-SHOP-STOCKSTEP         | Shop portal (/partner/shop/stock), real sign-in                                            | Your prices rows with the stock − / + (44 px buttons named with the product, stock number, units held for open orders), English and Hindi, long product names                                                                                                                   | pairwise | 16       | 0       |
+| API-WS-CALENDAR            | Workshop portal (/partner/workshop/calendar), real sign-in                                 | Calendar tab: seven date chips with visit counts, the chosen day's visits by hour, and the empty day with its one next action                                                                                                                                                   | pairwise | 16       | 0       |
 | API-SHOP-OFFERS            | Shop portal (/partner/shop) → Offers to accept, real sign-in                               | Offers a shop is asked to fund: waiting, accepted, declined, many, long Hindi/English text, error; accept / decline / withdraw; nothing shown when there are none                                                                                                               | pairwise | 48       | 0       |
 | API-SHOP-TIER2             | Shop portal (/partner/shop), real sign-in                                                  | Update stock with a file (idle, checked with problems, checked clean, file refused, applied) and, for the owner, "How your shop is doing" (30 and 90 days, with and without the city median, no data, error)                                                                    | pairwise | 41       | 0       |
 | API-SHOP-STAFF             | Shop portal (/partner/shop), real sign-in                                                  | Team performance and earnings, opened from its toggle: the owner sees every person, the whole shop and the ledger by kind and IST day; a staff member only their own row; with data, nothing to show yet (one next action) and error with retry                                 | pairwise | 24       | 0       |
@@ -251,7 +253,7 @@ no focus ring, page error, axe serious); **P2** polish (targets under 44 px, foc
 | API-USTAAD-NETWORK         | Ustaad My network (/ustaad/network), member                                                | Followers / Following / Connections / Requests / Blocked tab links; Message, Remove, Unfollow, Accept, Decline, Take back, Unblock, Unmute; limits note; empty states; Show more; cap and cooldown words                                                                        | pairwise | 41       | 0       |
 | API-USTAAD-DISCOVER        | Ustaad Discover (/ustaad/discover), member                                                 | Search (submit) with work and level filters; people cards: level chip, verified tick, area and distance band, specialities, helpful / best, New, Follow, Connect, Message; tags; Top this week; no match; Show more                                                             | pairwise | 56       | 0       |
 | API-ADM-APPS-USTAAD        | Admin → Partner applications (/admin/applications), real sign-in                           | Notice "Mechanic applications moved to the Ustaad Network" with the open verification count and the queue link (only for verifying staff while access is open)                                                                                                                  | pairwise | 32       | 0       |
-| **Total**                  |                                                                                            |                                                                                                                                                                                                                                                                                 |          | **6508** | **108** |
+| **Total**                  |                                                                                            |                                                                                                                                                                                                                                                                                 |          | **6540** | **108** |
 
 ## Chrome
 
@@ -5092,6 +5094,52 @@ Pairwise (all pairs of values); 43 states; scope `main`.
 - [ ] API-SHOP-TIER1-041 · 1440px · light · en · shop partner · world=empty · /partner/shop · orders=none · busy=closed · team=error · role=owner · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
 - [ ] API-SHOP-TIER1-042 · 1920px · dark · hi · shop partner · world=empty · /partner/shop · orders=offer · busy=hours · team=only-you · role=owner · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
 - [ ] API-SHOP-TIER1-043 · 390px · light · en · shop partner · world=empty · /partner/shop · orders=staff-view · busy=none · team=full · role=staff · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+
+## Shop portal (/partner/shop/stock), real sign-in
+
+### API-SHOP-STOCKSTEP — Your prices rows with the stock − / + (44 px buttons named with the product, stock number, units held for open orders), English and Hindi, long product names
+
+Pairwise (all pairs of values); 16 states; scope `main`.
+
+- [ ] API-SHOP-STOCKSTEP-001 · 320px · light · en · shop partner · world=empty · /partner/shop/stock · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] API-SHOP-STOCKSTEP-002 · 320px · dark · hi · shop partner · world=empty · /partner/shop/stock · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-SHOP-STOCKSTEP-003 · 390px · light · hi · shop partner · world=empty · /partner/shop/stock · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-SHOP-STOCKSTEP-004 · 390px · dark · en · shop partner · world=empty · /partner/shop/stock · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] API-SHOP-STOCKSTEP-005 · 480px · light · en · shop partner · world=empty · /partner/shop/stock · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] API-SHOP-STOCKSTEP-006 · 480px · dark · hi · shop partner · world=empty · /partner/shop/stock · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-SHOP-STOCKSTEP-007 · 768px · light · en · shop partner · world=empty · /partner/shop/stock · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] API-SHOP-STOCKSTEP-008 · 768px · dark · hi · shop partner · world=empty · /partner/shop/stock · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-SHOP-STOCKSTEP-009 · 1024px · light · en · shop partner · world=empty · /partner/shop/stock · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] API-SHOP-STOCKSTEP-010 · 1024px · dark · hi · shop partner · world=empty · /partner/shop/stock · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-SHOP-STOCKSTEP-011 · 1280px · light · en · shop partner · world=empty · /partner/shop/stock · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] API-SHOP-STOCKSTEP-012 · 1280px · dark · hi · shop partner · world=empty · /partner/shop/stock · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-SHOP-STOCKSTEP-013 · 1440px · light · en · shop partner · world=empty · /partner/shop/stock · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned axe
+- [ ] API-SHOP-STOCKSTEP-014 · 1440px · dark · hi · shop partner · world=empty · /partner/shop/stock · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+- [ ] API-SHOP-STOCKSTEP-015 · 1920px · light · en · shop partner · world=empty · /partner/shop/stock · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console aligned
+- [ ] API-SHOP-STOCKSTEP-016 · 1920px · dark · hi · shop partner · world=empty · /partner/shop/stock · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console aligned hindi
+
+## Workshop portal (/partner/workshop/calendar), real sign-in
+
+### API-WS-CALENDAR — Calendar tab: seven date chips with visit counts, the chosen day's visits by hour, and the empty day with its one next action
+
+Pairwise (all pairs of values); 16 states; scope `main`.
+
+- [ ] API-WS-CALENDAR-001 · 320px · light · en · workshop partner · world=empty · /partner/workshop/calendar · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-CALENDAR-002 · 320px · dark · hi · workshop partner · world=empty · /partner/workshop/calendar · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-CALENDAR-003 · 390px · light · hi · workshop partner · world=empty · /partner/workshop/calendar · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-CALENDAR-004 · 390px · dark · en · workshop partner · world=empty · /partner/workshop/calendar · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-CALENDAR-005 · 480px · light · en · workshop partner · world=empty · /partner/workshop/calendar · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-CALENDAR-006 · 480px · dark · hi · workshop partner · world=empty · /partner/workshop/calendar · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-CALENDAR-007 · 768px · light · en · workshop partner · world=empty · /partner/workshop/calendar · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-CALENDAR-008 · 768px · dark · hi · workshop partner · world=empty · /partner/workshop/calendar · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-CALENDAR-009 · 1024px · light · en · workshop partner · world=empty · /partner/workshop/calendar · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-CALENDAR-010 · 1024px · dark · hi · workshop partner · world=empty · /partner/workshop/calendar · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-CALENDAR-011 · 1280px · light · en · workshop partner · world=empty · /partner/workshop/calendar · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-CALENDAR-012 · 1280px · dark · hi · workshop partner · world=empty · /partner/workshop/calendar · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-CALENDAR-013 · 1440px · light · en · workshop partner · world=empty · /partner/workshop/calendar · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console axe
+- [ ] API-WS-CALENDAR-014 · 1440px · dark · hi · workshop partner · world=empty · /partner/workshop/calendar · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
+- [ ] API-WS-CALENDAR-015 · 1920px · light · en · workshop partner · world=empty · /partner/workshop/calendar · stress=none · asserts: present inside overlap covered clipped tap hscroll focus console
+- [ ] API-WS-CALENDAR-016 · 1920px · dark · hi · workshop partner · world=empty · /partner/workshop/calendar · stress=long-text · asserts: present inside overlap covered clipped tap hscroll focus console hindi
 
 ## Shop portal (/partner/shop) → Offers to accept, real sign-in
 

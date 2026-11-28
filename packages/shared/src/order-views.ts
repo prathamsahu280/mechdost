@@ -41,6 +41,8 @@ export const ShopOrder = z.object({
   givenUpReason: z.string().nullable().optional(),
   /** Active orders: the delivery code was entered wrongly too often (server state; support takes over). */
   deliveryLocked: z.boolean().optional(),
+  /** When the order was delivered (ISO, `delivered` rows only); optional so older API answers still parse. */
+  deliveredAt: z.string().nullable().optional(),
   /** Who delivers (spec 24); optional so older API answers still parse. */
   deliveryMode: z.enum(['agent', 'shop']).optional(),
   /** Agent-mode orders: pickup code, agent, return, switch request (spec 24). */
@@ -78,6 +80,8 @@ export const ShopOffer = z.object({
 });
 export type ShopOfferDto = z.infer<typeof ShopOffer>;
 export const ShopOfferList = z.object({ offers: z.array(ShopOffer) });
+/** The answer of `PATCH /v1/shops/{shopId}/inventory/{sku}`: the offer's new version. */
+export const ShopOfferSaved = z.object({ version: z.number().int() });
 
 /** One row of a shop's own price requests (the API pages them as loose records; these fields are used). */
 export const ShopPriceRequest = z.object({

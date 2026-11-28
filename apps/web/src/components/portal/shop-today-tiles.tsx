@@ -81,7 +81,7 @@ export function ShopTodayTiles({
             id="delivered"
             href="/partner/shop/orders?lane=delivered"
             value={v(counts.delivered)}
-            label={t('kpi_delivered')}
+            label={t('kpi_delivered_today')}
             tone="done"
             icon={<PackageCheck />}
             compact={compact}

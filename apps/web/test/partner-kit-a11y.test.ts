@@ -76,3 +76,22 @@ describe('KpiTile hash links', () => {
     expect(kpi).toMatch(/focusHashTarget\(/);
   });
 });
+
+describe('Batch P follow-ups (2026-11-28)', () => {
+  it('Hindi bottom-bar labels wrap inside their tile and the bar height is measured, not assumed', () => {
+    // A long Devanagari word breaks inside the tile instead of running under its neighbour.
+    expect(tabs).toMatch(/\[overflow-wrap:anywhere\]/);
+    // The two-line Hindi bar is taller than the 65 px the CSS assumes: the real height feeds the scroll padding.
+    expect(tabs).toMatch(/ResizeObserver/);
+    expect(tabs).toMatch(/--partner-tabbar-h/);
+    expect(tabs).toMatch(/removeProperty\('--partner-tabbar-h'\)/);
+  });
+
+  it('after a tab change, focus lands on the visible panel heading (tabIndex -1), not only the hidden h1', () => {
+    expect(frame).toMatch(/data-partner-panel/);
+    expect(frame).toMatch(/MutationObserver/);
+    expect(frame).toMatch(/h2, h3/);
+    expect(frame).toMatch(/tabIndex = -1/);
+    expect(frame).toMatch(/focus-visible/);
+  });
+});

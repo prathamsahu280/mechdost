@@ -28,4 +28,10 @@ export const PARTNER_CLIENT_EVENT_SCHEMAS = {
   partner_offer_alert_played: z.object({ portal, count: z.number().int().min(1).max(50) }).strict(),
   /** A chart was switched to its table view or back. */
   partner_chart_table_toggled: z.object({ portal, chart: code, table: z.boolean() }).strict(),
+  /** A shop tapped − or + on a stock row ("Your prices"); `refused` = the API said no (stale, below reserved). */
+  partner_stock_stepped: z
+    .object({ portal, direction: z.enum(['up', 'down']), result: z.enum(['saved', 'refused']) })
+    .strict(),
+  /** A day of the workshop Calendar strip was shown (0 = today … 6); the day itself is never sent. */
+  partner_calendar_day_viewed: z.object({ portal, offset: z.number().int().min(0).max(6) }).strict(),
 } as const;

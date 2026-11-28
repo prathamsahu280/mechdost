@@ -11,6 +11,7 @@ import { parseRupees } from '@/lib/money-input';
 import { MyShops, type MyShopDto } from '@mechdost/shared/shop-api';
 import { apiErrorKey, priceRows, type PriceRow } from '@/lib/order-views';
 import { ApiListState } from './api-list-state';
+import { ShopStockStepper } from './shop-stock-stepper';
 import { portalCard, portalField, portalPrimary } from './portal-styles';
 
 type Load = { status: 'loading' } | { status: 'error'; code: string } | { status: 'ok'; rows: PriceRow[] };
@@ -198,6 +199,17 @@ function PriceRowCard({
           </p>
         ) : null}
       </form>
+      {row.version !== null ? (
+        <ShopStockStepper
+          shopId={shopId}
+          sku={row.sku}
+          product={row.product}
+          onHand={row.onHand}
+          reserved={row.reserved}
+          version={row.version}
+          onChanged={onSent}
+        />
+      ) : null}
     </li>
   );
 }

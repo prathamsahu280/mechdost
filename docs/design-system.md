@@ -247,8 +247,11 @@ restyle. No new colours, fonts or radii.
   12 px (13 px under `:lang(hi)`, `.partner-tab-label`); the 52 px tile height is unchanged. **Keyboard and focus
   (a11y pass 2026-11-28):** `LaneTabs` has 8 px padding and `scroll-px-2` so the 5 px focus ring is never clipped, and
   Left/Right (wrapping) plus Home/End move between lanes; after a tab the partner clicked, focus moves to the new
-  page's `h1` (`tabIndex -1`, the frame's screen-reader-only tab name, or the layout's own `h1` when `heading={false}`)
-  and the name is said once in the frame's polite status (never on first load or back/forward); a `KpiTile` whose
+  tab's first visible `h2`/`h3` (`tabIndex -1`, a visible focus ring; Batch P, 2026-11-28; waits up to 3 s for a late
+  tab body, never steals focus the partner already moved) and falls back to the page's `h1` (`tabIndex -1`, the
+  frame's screen-reader-only tab name, or the layout's own `h1` when `heading={false}`), then the polite status (never
+  on first load or back/forward); Hindi bar labels break inside their tile and the measured bar height sets
+  `--partner-tabbar-h`; a `KpiTile` whose
   `href` has a `#hash` focuses the target element.
 - **Offer timer:** the countdown text in Manrope 24 px tabular, the nav chip's tread dash as a draining bar
   (`.partner-tread`, `accent-button`; `.partner-tread-urgent`, `warning`, under a minute, with "Hurry" in words); the
