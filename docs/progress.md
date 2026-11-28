@@ -1567,3 +1567,4 @@ viewer, tag, teaser, messages, thread, network, discover). No product code chang
   hangs every ~20–40 min (10:16, 10:57 UTC) — dead pooled connections from the Supavisor transaction pooler; with the fix
   each costs ≤ 120 s on the sweeps' own pool. Follow-up: investigate the pooler (idle limits, postgres.js
   max_lifetime/idle_timeout vs Supavisor), queued.
+- 16:56 IST: deploy of 5dd21eaa (shared pool never replaced; sweeps recycle their own) live; 0 errors, heartbeat OK. Watching for the next sweep_pool_recycled to confirm the relay keeps working.
