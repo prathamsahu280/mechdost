@@ -25,7 +25,7 @@ export default async function DeliveryAgentLayout({ children }: { children: Reac
   // the page title stays in the tab title (metadata) and the strip's heading.
   const t = await getTranslations('deliveryAgent');
   return (
-    <Container className="py-4 tab:py-8">
+    <Container className="min-h-dvh py-4 tab:py-8">
       <h1 className="sr-only">{t('title')}</h1>
       <ClientMessages
         namespaces={['deliveryAgent', 'delivery', 'portal', 'auth', 'partnerKit', 'partnerRider']}

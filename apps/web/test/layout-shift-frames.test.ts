@@ -32,6 +32,33 @@ describe('client-loaded frames keep the footer below the first viewport while lo
     expect(cls).toMatch(/\bmin-h-dvh\b/);
   });
 
+  // Live re-measure after deploy 2 (2026-11-28): the rider portal is not inside PartnerFrame, CLS 0.40 (footer 431 → out).
+  // Live: /partner/shop/orders 1280 CLS 0.12 — the footer was in view (y 767) before the frame mounted.
+  it.each(['partner/shop/(portal)/layout.tsx', 'partner/workshop/layout.tsx'])(
+    'the %s container reserves at least one viewport of height',
+    (file) => {
+      const cls = /<Container className="([^"]+)"/.exec(src(`app/[locale]/${file}`))?.[1] ?? '';
+      expect(cls).toMatch(/\bmin-h-dvh\b/);
+    },
+  );
+
+  it('the rider portal layout reserves at least one viewport of height', () => {
+    const cls =
+      /<Container className="([^"]+)"/.exec(src('app/[locale]/partner/delivery/layout.tsx'))?.[1] ?? '';
+    expect(cls).toMatch(/\bmin-h-dvh\b/);
+  });
+
+  // Live re-measure: /notifications 1280 CLS 0.45 — the one-line "Loading…" list let the preferences sit at y 467, then
+  // 20 notices pushed them 433 px down. The loading body holds most of a viewport.
+  it('the notice list holds its height while loading', () => {
+    const centre = src('components/notices/notice-centre.tsx');
+    const loading =
+      /feed\.status === 'loading' \? \(\s*(?:\/\/[^\n]*\n\s*)?<p role="status" className="([^"]+)"/.exec(
+        centre,
+      )?.[1] ?? '';
+    expect(loading).toMatch(/\bmin-h-\[60vh\]/);
+  });
+
   it('the notification centre page reserves at least one viewport of height', () => {
     const cls = /<Container className="([^"]+)"/.exec(notifications)?.[1] ?? '';
     expect(cls).toMatch(/\bmin-h-dvh\b/);

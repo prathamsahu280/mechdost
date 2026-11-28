@@ -1527,3 +1527,4 @@ C1 LV-6 layout shift: root cause = client-loaded frames render a short loading b
   worked; watch the rate). Batch E (master–detail ≥1024 px, shop Orders + workshop Jobs) merged; web tsc 0, vitest 256
   files / 2372, shared 96 / 1126 (tooling-hooks passes on main; fails only inside worktrees). Pushing C + D + E.
   Watch on live: desktop CLS of the wide layout (useWideLayout is false on first paint).
+- 11:20 IST: CI 642ea842 cancelled at the 20-min job limit (all unit tests passed; cut off in the build step on a slow runner). Unit job limit 20 → 30 min; pushed 106163d4 with LV-8 shop skeleton fix.

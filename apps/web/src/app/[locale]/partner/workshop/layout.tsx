@@ -24,7 +24,7 @@ export async function generateMetadata({
 export default async function WorkshopPortalLayout({ children }: { children: ReactNode }) {
   const t = await getTranslations('portal');
   return (
-    <Container className="py-10 tab:py-14">
+    <Container className="min-h-dvh py-10 tab:py-14">
       <PageIntro eyebrow={t('partnerEyebrow')} line1={t('workshopTitle')} />
       <div className="mt-8">
         <ClientMessages

@@ -135,7 +135,8 @@ export function NoticeCentre() {
           </div>
         </div>
         {feed.status === 'loading' ? (
-          <p role="status" className="px-5 py-6 text-sm text-muted">
+          // Holds most of a viewport while loading so the preferences below never jump (live CLS 0.45, LV-6).
+          <p role="status" className="min-h-[60vh] px-5 py-6 text-sm text-muted">
             {t('loading')}
           </p>
         ) : feed.status === 'error' ? (
