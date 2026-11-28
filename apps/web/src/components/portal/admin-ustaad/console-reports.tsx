@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useLocale } from 'next-intl';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { REPORT_REASONS, REPORT_TARGETS } from '@mechdost/shared/ustaad/codes';
+import { holdSignalsOf } from '@mechdost/shared/ustaad/moderation';
 import {
   ModerationResultDto,
   ReportQueuePageDto,
@@ -292,6 +293,8 @@ function ReportPanel({
     setFocusTitle(true);
   };
   const decisions = queue === 'appealed' ? [] : decisionsFor(d, caps, queue === 'held' ? 'held' : 'open');
+  // SIM-B4: an automatic hold stores its signal codes as the note; staff read them as words.
+  const heldBy = d.source.startsWith('auto_') ? holdSignalsOf(d.note) : null;
 
   return (
     <article aria-labelledby={titleId} className={`${adminCard} space-y-4`}>
@@ -309,7 +312,11 @@ function ReportPanel({
           <dt className="font-bold text-ink">{c('d_reason')}</dt>
           <dd>{c(`reason_${d.reasonCode}`)}</dd>
           <dt className="font-bold text-ink">{c('d_source')}</dt>
-          <dd>{c(`source_${d.source}`)}</dd>
+          <dd>
+            {heldBy?.some((s) => s === 'new_account_media' || s === 'new_account_link')
+              ? c('source_auto_premod')
+              : c(`source_${d.source}`)}
+          </dd>
           <dt className="font-bold text-ink">{c('d_item')}</dt>
           <dd>
             {c(`target_${d.targetType}`)}
@@ -341,7 +348,16 @@ function ReportPanel({
           {d.text ?? c('d_text_none')}
         </blockquote>
       )}
-      {d.note ? (
+      {heldBy ? (
+        <div className="space-y-1">
+          <p className={labelClass}>{c('d_held_because')}</p>
+          <ul className="list-inside list-disc text-sm text-ink">
+            {heldBy.map((s) => (
+              <li key={s}>{c(`signal_${s}`)}</li>
+            ))}
+          </ul>
+        </div>
+      ) : d.note ? (
         <div className="space-y-1">
           <p className={labelClass}>{c('d_note')}</p>
           <p data-user-content className="whitespace-pre-wrap break-words text-sm text-ink">

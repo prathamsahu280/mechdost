@@ -176,7 +176,13 @@ function VerificationCard({ v, onDone }: { v: VerificationQueueItem; onDone: (me
             {c(`level_${v.level}`)} · {v.cityCode} · {when(v.createdAt, false)}
           </p>
         </div>
-        <StatusBadge code={v.status}>{c(`v_status_${v.status}`)}</StatusBadge>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* SIM-B10: a first verification (still Chhotu or pending) and a level review look different. */}
+          <span className="rounded-full bg-pill px-2.5 py-0.5 text-xs font-bold text-ink">
+            {c(v.level === 'apprentice' || v.level === 'ustaad_pending' ? 'v_kind_first' : 'v_kind_level')}
+          </span>
+          <StatusBadge code={v.status}>{c(`v_status_${v.status}`)}</StatusBadge>
+        </div>
       </header>
       <ul className="space-y-1 text-sm text-ink">
         <li>{c('v_asked', { level: c(`level_${v.requestedLevel}`) })}</li>

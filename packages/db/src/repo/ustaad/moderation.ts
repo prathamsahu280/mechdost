@@ -40,6 +40,7 @@ import {
   banNeedsFourEyes,
   clockFor,
   maskContactsInText,
+  fixableBlockReason,
   screenDecision,
   screenTextSignals,
   type ScreenKind,
@@ -182,7 +183,16 @@ export async function explainUstaadScreen(
  * refuse on `block`, then call `openUstaadAutoHoldReport` with the new row's id so the hold reaches the queue.
  */
 export async function screenUstaadContent(tx: Tx, input: ScreenInput): Promise<ScreenOutcome> {
-  return (await explainUstaadScreen(tx, input)).outcome;
+  const verdict = await explainUstaadScreen(tx, input);
+  if (verdict.outcome === 'block') {
+    // SIM-P15: say what to take out. A phone number wins over a plate; anything else stays the generic block.
+    const fix = fixableBlockReason(input.kind, verdict.signals);
+    if (fix === 'phone')
+      throw new ValidationError('A phone number cannot be shared here', 'USTAAD_CONTENT_PHONE');
+    if (fix === 'plate')
+      throw new ValidationError('A number plate cannot be shared here', 'USTAAD_CONTENT_PLATE');
+  }
+  return verdict.outcome;
 }
 
 /**
@@ -436,6 +446,20 @@ async function latestBanEvents(
     .orderBy(ustaadEvents.entityId, desc(ustaadEvents.occurredAt), desc(ustaadEvents.id));
   for (const r of rows) out.set(r.entityId, { kind: r.kind, actorId: r.actorId });
   return out;
+}
+
+/**
+ * SIM-B11: the first of these reports that has a ban proposal still waiting for a second staff member, or null, so
+ * the member card can say "ban proposed" (the proposer and the second approver both see it).
+ */
+export async function pendingUstaadBanAmong(
+  tx: Tx,
+  reportIds: readonly string[],
+): Promise<{ reportId: string; actorId: string | null } | null> {
+  const latest = await latestBanEvents(tx, reportIds);
+  for (const [reportId, ev] of latest)
+    if (ev.kind === 'ban_proposed') return { reportId, actorId: ev.actorId };
+  return null;
 }
 
 async function pendingBanOf(tx: Tx, report: ReportRow) {

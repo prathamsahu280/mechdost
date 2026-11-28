@@ -127,7 +127,7 @@ export function TagScreen({ slug }: { slug: string }) {
           className={tag.followed ? btnQuiet : btnPrimary}
         >
           <UstaadIcon name={tag.followed ? 'check' : 'plus'} />
-          {t('tagFollow')}
+          {tag.followed ? t('tagFollowing') : t('tagFollow')}
         </button>
         <p role="status" className="w-full text-sm text-muted empty:sr-only">
           {status}

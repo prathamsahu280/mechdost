@@ -379,6 +379,9 @@ export const USTAAD_ERRORS = [
   'MOVED_TO_USTAAD',
   // F2 reports and moderation (spec 23 § 21f).
   'USTAAD_CONTENT_BLOCKED',
+  // SIM-P15: the two blocks the author can fix get their own words (a phone number, a number plate).
+  'USTAAD_CONTENT_PHONE',
+  'USTAAD_CONTENT_PLATE',
   'USTAAD_REPORT_SELF',
   'USTAAD_REASON_OFF',
   'USTAAD_BAN_PENDING',

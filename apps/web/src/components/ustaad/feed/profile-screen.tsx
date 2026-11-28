@@ -251,7 +251,7 @@ export function ProfileScreen({ handle }: { handle: string }) {
                 className={`${rel.following ? btnQuiet : btnPrimary} flex-1`}
               >
                 <UstaadIcon name={rel.following ? 'check' : 'plus'} />
-                {t('follow')}
+                {rel.following ? t('following') : t('follow')}
               </button>
               {connectBtn}
               <Link

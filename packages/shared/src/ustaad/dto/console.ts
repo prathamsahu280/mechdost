@@ -66,6 +66,8 @@ export const StaffMemberDetailDto = StaffMemberRowDto.extend({
   openReports: z.number().int(),
   /** Four-eyes: lifting a long or permanent ban waits for a second staff member. */
   pendingUnban: z.object({ proposalId: z.string(), proposedByMe: z.boolean() }).nullable(),
+  /** SIM-B11: a ban proposal waiting for a second staff member (null: none). */
+  pendingBan: z.object({ proposedByMe: z.boolean() }).nullable(),
   strikes: z.array(z.object({ reasonCode: z.string(), status: z.string(), at: z.string() })),
   /** Moderation actions on the member or on anything they wrote, newest first (50). */
   history: z.array(

@@ -247,6 +247,12 @@ function MemberPanel({ memberId, caps }: { memberId: string; caps: ConsoleCaps }
       </section>
 
       {caps.moderate && frozen ? <p className="text-sm text-muted">{c('m_frozen_note')}</p> : null}
+      {m.pendingBan ? (
+        <p className="rounded-tile bg-warning-bg p-3 text-sm font-bold text-warning">
+          <StatusBadge tone="warning">{c('waiting_approval')}</StatusBadge>{' '}
+          {c(m.pendingBan.proposedByMe ? 'm_ban_waiting_yours' : 'm_ban_waiting')}
+        </p>
+      ) : null}
       {caps.moderate && m.pendingUnban ? (
         <PendingUnban m={m} onDone={done} onResult={setResult} />
       ) : caps.moderate && sanctioned && !frozen ? (
@@ -388,7 +394,17 @@ function Sanction({
       <ConfirmDialog
         open={confirming}
         title={c('act_confirm_title')}
-        lead={c('act_confirm_lead')}
+        lead={c('act_confirm_summary', {
+          name: m.displayName,
+          action: c(action === 'ban' ? 'act_ban' : 'act_restrict'),
+          reason: c(`reason_${reason}`),
+          length:
+            action === 'ban'
+              ? days.trim()
+                ? c('act_days_n', { n: Number(days) })
+                : c('act_days_forever')
+              : '',
+        })}
         confirmLabel={c(action === 'ban' ? 'act_ban' : 'act_restrict')}
         backLabel={c('back')}
         onCancel={() => {
