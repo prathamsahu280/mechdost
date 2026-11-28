@@ -3,7 +3,7 @@
 import type { PartnerPortal } from '@mechdost/shared/partner-client-events';
 import { usePathname } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import type { MouseEvent, ReactNode } from 'react';
+import { useEffect, useRef, type MouseEvent, type ReactNode } from 'react';
 import { LocalLink } from '@/components/ui/local-link';
 import { track } from '@/lib/analytics';
 import { localePath } from '@/lib/locale-path';
@@ -32,7 +32,8 @@ export function useCurrentTab(tabs: readonly PartnerTab[]): string | null {
 /**
  * The partner tabs (design 2026-11-27 § 4): a bottom bar under 1024 px (52 px tiles, icon over a word, the
  * `accent-soft` current tile like the storefront dock) and a navy side rail from 1024 px. Links with
- * `aria-current="page"`; Hindi labels may wrap to two lines (no fixed widths).
+ * `aria-current="page"`; Hindi labels may wrap to two lines (no fixed widths; a long word breaks inside its tile and the
+ * measured bar height feeds `--partner-tabbar-h`).
  */
 export function PartnerTabs({
   portal,
@@ -49,6 +50,27 @@ export function PartnerTabs({
   onUserNavigate?: (e: MouseEvent<HTMLElement>) => void;
 }) {
   const current = useCurrentTab(tabs);
+  const barRef = useRef<HTMLElement>(null);
+  // The bar is taller than the 65 px the CSS assumes when a Hindi label wraps to two lines: feed its real height to
+  // the scroll padding so focus is never hidden under it (WCAG 2.4.11).
+  useEffect(() => {
+    const bar = barRef.current;
+    if (variant !== 'bar' || !bar || typeof ResizeObserver === 'undefined') return;
+    const root = document.documentElement;
+    const measure = () => {
+      root.style.setProperty(
+        '--partner-tabbar-h',
+        `${String(Math.ceil(bar.getBoundingClientRect().height))}px`,
+      );
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(bar);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty('--partner-tabbar-h');
+    };
+  }, [variant]);
   const onTab = (id: string) => (e: MouseEvent<HTMLElement>) => {
     onUserNavigate?.(e);
     track('partner_tab_viewed', { portal, tab: id });
@@ -78,6 +100,7 @@ export function PartnerTabs({
   }
   return (
     <nav
+      ref={barRef}
       aria-label={label}
       data-partner-tabbar
       className="fixed inset-x-0 bottom-0 z-40 border-t border-line-card bg-surface/95 px-1.5 pt-1.5 pb-[calc(6px+env(safe-area-inset-bottom))] shadow-float backdrop-blur-[16px] nav:hidden"
@@ -97,7 +120,7 @@ export function PartnerTabs({
               <span aria-hidden="true" className="flex [&_svg]:size-5 [&_svg]:stroke-[1.9]">
                 {tab.icon}
               </span>
-              <span className="partner-tab-label">{tab.label}</span>
+              <span className="partner-tab-label max-w-full [overflow-wrap:anywhere]">{tab.label}</span>
             </LocalLink>
           </li>
         ))}
