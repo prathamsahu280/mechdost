@@ -45,6 +45,9 @@ export function serverReply(method: string, pathname: string, query: URLSearchPa
   const locale = localeOf(query);
 
   // Roadside is on in the launch city (spec 22 "Where it shows"): the header item, SOS tab, home band and footer link.
+  // The Mechanic Network is open for the member rows (Learn, Jobs, Saved): the server guard would 404 otherwise.
+  if (path === '/ustaad-access') return { status: 200, body: { access: 'open' } };
+
   if (path === '/roadside/city') return { status: 200, body: { enabled: true, alwaysOpen: true } };
 
   if (path === '/catalogue/products') {

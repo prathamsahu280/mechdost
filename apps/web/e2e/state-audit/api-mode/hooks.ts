@@ -118,6 +118,14 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
     }
   }
 
+  // Saved (Mechanic Network): press the first collection chip, so the list is the collection's own.
+  if (c.code === 'API-USTAAD-SAVED' && c.state.list === 'collection') {
+    const chip = main.locator('[role="group"]').nth(1).locator('button[aria-pressed]').first();
+    await chip.waitFor({ timeout: 5_000 }).catch(() => notes.push('no collection chip to press'));
+    await clickIfPresent(chip, notes, 'collection chip');
+    await settleApi(page);
+  }
+
   // Exports: ask for the file (done, empty, too large, expired link), or send a range over 180 days.
   if (
     c.code === 'API-ADM-EXPORTS' &&
