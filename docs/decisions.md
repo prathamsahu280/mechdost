@@ -3086,7 +3086,7 @@ look"); V9 (the same lift site-wide) is NOT approved, so everything below is sco
 
 Founder 2026-11-28 "Yes, whole site" (see "Founder answers" above). Light theme only; dark values unchanged and pinned by `apps/web/test/tokens.test.ts` ("site-wide light lift (V9)"). New or changed values: `--color-bg` `#edf1f5 → #eef2f7`; `--color-surface-alt` `#e2e8ef → #f5f7fa`; `--color-selected-bg` `#fff0e9` and `--color-selected-fg` `#bf3c12` (dark `#243752` / `#e8eef5`, the old chip pair); `--shadow-card`, `--shadow-card-hover`, `--shadow-header` (light values, dark untouched); new `--shadow-tab-bar` (dark = the old `shadow-float`); `--card-edge` (`transparent` light, `--color-line-card` dark); `--radius-inset` 12 px; `--weight-heading-bold` (800 light, 700 dark). Details and contrast numbers: `docs/design-system.md` "Site-wide light lift". Not done in this batch: partner lane-tabs keep their navy selected pill and bordered chips (no tinted track yet), the ustaad floating-sheet feed and metals stay network-only.
 
-## 2026-11-28 — QA Turnstile bypass code stays, switched off (founder, Q-SIM-3)
+## 2026-11-28 — QA Turnstile bypass code stays, switched off (founder)
 
 Founder (16:45 IST): "Keep it switched off for future tests". `apps/api/src/auth/qa-turnstile-bypass.ts` and its call in
 `server.ts` stay in the code, dormant: with the three `QA_TURNSTILE_BYPASS_*` variables unset (as now, removed
