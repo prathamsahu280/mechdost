@@ -42,6 +42,22 @@ describe('client-loaded frames keep the footer below the first viewport while lo
     },
   );
 
+  // Live after deploy 4: workshop jobs 1280 CLS 0.065, shop orders 0.049 — the 3-row loading skeleton sat ABOVE the
+  // master–detail grid, so when it went away the whole grid jumped up 232 px. It belongs inside the list column.
+  it.each(['components/portal/workshop-portal-api.tsx', 'components/portal/shop-orders-tab-api.tsx'])(
+    '%s shows the list loading state inside the list column, not above the grid',
+    (file) => {
+      const s = src(file);
+      const header = s.slice(
+        s.lastIndexOf('<LaneTabs', s.indexOf('<MasterDetail')),
+        s.indexOf('<MasterDetail'),
+      );
+      expect(header).not.toMatch(/<ApiListState|\{listState\}/);
+      expect(s).toMatch(/list=\{\s*<>\s*\{listState\}/);
+      expect(s).toMatch(/fullList=\{\s*<>\s*\{listState\}/);
+    },
+  );
+
   it('the rider portal layout reserves at least one viewport of height', () => {
     const cls =
       /<Container className="([^"]+)"/.exec(src('app/[locale]/partner/delivery/layout.tsx'))?.[1] ?? '';

@@ -55,6 +55,16 @@ export function ShopOrdersTabApi() {
   );
   // With an order open a phone shows that order alone: the title, lanes and list state are for ≥ 1024 px then.
   const listChrome = orderCode ? 'hidden nav:grid' : 'grid';
+  // Inside the list column (live CLS 0.065): the skeleton is replaced in place by the rows, the grid never jumps.
+  const listState = (
+    <ApiListState
+      loading={loading}
+      error={lane === 'delivered' || lane === 'given_up' ? done.error : active.error}
+      count={items.length}
+      empty={ps('lane_empty')}
+      onRetry={() => void refresh()}
+    />
+  );
   return (
     <section aria-labelledby="orders-title" className="grid gap-3">
       <div className={`${listChrome} gap-3`}>
@@ -79,13 +89,6 @@ export function ShopOrdersTabApi() {
             };
           })}
         />
-        <ApiListState
-          loading={loading}
-          error={lane === 'delivered' || lane === 'given_up' ? done.error : active.error}
-          count={items.length}
-          empty={ps('lane_empty')}
-          onRetry={() => void refresh()}
-        />
       </div>
       <MasterDetail
         selected={orderCode}
@@ -97,6 +100,7 @@ export function ShopOrdersTabApi() {
         emptyText={ps('detail_empty')}
         list={
           <>
+            {listState}
             {items.length > 0 ? (
               <ul className="grid gap-3">
                 {items.map((o) => (
@@ -119,6 +123,7 @@ export function ShopOrdersTabApi() {
         }
         fullList={
           <>
+            {listState}
             {items.length > 0 ? (
               <ul className="grid gap-3 nav:grid-cols-2">
                 {items.map((o) => (

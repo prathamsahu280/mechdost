@@ -1552,3 +1552,4 @@ viewer, tag, teaser, messages, thread, network, discover). No product code chang
   (master–detail no-flip in batch F should close it). Pushed 5e2b0bd0: batch F (CSS-driven master–detail, calendar
   "N of M places free" from the existing slots route) + batch G (state-audit fixtures FEED/PROFILE/ME; 13 more
   API-USTAAD rows still without fixtures).
+- 13:25 IST: deploy 4 (5e2b0bd0) live + smoke OK; batch H pushed (f52f7947). LV-10 fix (list skeleton inside the list column) gated: web 258 files / 2397.

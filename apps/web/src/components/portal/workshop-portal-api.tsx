@@ -227,6 +227,16 @@ export function WorkshopJobsApi() {
   );
   // With a job open a phone shows that job alone: the title, lanes and list state are for ≥ 1024 px then.
   const listChrome = jobCode ? 'hidden nav:grid' : 'grid';
+  // Inside the list column (live CLS 0.065): the skeleton is replaced in place by the rows, the grid never jumps.
+  const listState = (
+    <ApiListState
+      loading={loading}
+      error={lane === 'done' ? done.error : active.error}
+      count={items.length}
+      empty={pw('lane_empty')}
+      onRetry={() => void refresh()}
+    />
+  );
   return (
     <section aria-labelledby="jobs-title" className="grid gap-3">
       <div className={`${listChrome} gap-3`}>
@@ -248,13 +258,6 @@ export function WorkshopJobsApi() {
             };
           })}
         />
-        <ApiListState
-          loading={loading}
-          error={lane === 'done' ? done.error : active.error}
-          count={items.length}
-          empty={pw('lane_empty')}
-          onRetry={() => void refresh()}
-        />
       </div>
       <MasterDetail
         selected={jobCode}
@@ -266,6 +269,7 @@ export function WorkshopJobsApi() {
         emptyText={pw('detail_empty')}
         list={
           <>
+            {listState}
             {items.length > 0 ? (
               <ul className="grid gap-3">
                 {items.map((r) => (
@@ -288,6 +292,7 @@ export function WorkshopJobsApi() {
         }
         fullList={
           <>
+            {listState}
             {items.length > 0 ? (
               lane === 'done' ? (
                 <DoneList items={items} />
