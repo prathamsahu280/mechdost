@@ -1457,6 +1457,16 @@ Done: launcher hides on phones while a field is focused and on `data-launcher-av
   site session stayed. Research `docs/superpowers/specs/2026-11-28-sessions-devices-research.md` (founder: rough
   location yes, approximate city fine). Two Sonnet builders running in worktrees: (A+B) stale-session fix + "Sign out
   of all devices"; (C) device list with rough location (migration 0116, DB-IP Lite, no IP stored).
+- **Raipur PIN map (founder 23:15 "build one for raipur … very detailed, covering everything"):** OSM postcodes wrong
+  (493332 for most of Raipur; Sarona is 492099). Research `docs/research/raipur-pincode-map/` found the Department of
+  Posts 2025 PIN boundary GeoJSON via a BharatViz mirror (official data.gov.in/AIKosh copy 404; licence OGD India on
+  the AIKosh page; confirm mirror terms). Verified: Sarona → 492099, Pachpedi Naka → 492001, station → 492009,
+  Mantralaya → 492018. Gaps: no polygons for live PINs 492006/492007/492011/492017 (absent from DoP 2025 too — possible
+  renumbering, ask founder); 492002/492005 are point-like. Review map sent: `docs/research/raipur-pincode-map/map.html`.
+  Next: product layer (pincode_areas PostGIS polygons + point-in-polygon lookup, choice list near borders, admin
+  editor, anonymous correction samples) after the interim builder lands.
+- **Merged + pushed 418e53a5:** stale-session fix (A) and "Sign out of all devices" (B); lead fixed a fail-open found
+  by the security review (no token / 401 now `signed_out`, never success).
 - **Founder 22:5x:** a password change must NOT end other sign-ins unless the person opts in ("sign out of other
   devices" choice on the change-password form). Firebase always revokes refresh tokens on a password change, so this
   needs a resume path built on the device sessions (C) — planned as follow-up D after A+B and C merge.
