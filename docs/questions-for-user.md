@@ -645,3 +645,14 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
   test order to rider 06, let it lapse, check the job returns to "Needs an agent", then switch everything back. Needs
   your OK because it switches rider delivery on city-wide for ~10 minutes. Default meanwhile: not run; the heartbeat
   and `sweep_stuck` warning will show any stall.
+
+## 2026-11-28 day (lead)
+
+- **Q-PRF-1 (Decision, P2)** Public member profile: show the "helped N mechanics this week" line (today only on the
+  member's own card)? Needs one extra count on the profile API. Default: not shown.
+- **Q-NTC-1 (Decision, P2)** Notices are written in the account's language when they are created, so a member whose
+  account is English sees English notices on the Hindi site (LV-5). Render them in the page language instead (needs the
+  notice key + params stored, a small migration)? Default: keep as today.
+- **Q-DC-B11-RUN (Input, P1)** The rider offer lapse test needs one prepaid order from test account 01 (agents deliver
+  prepaid only). Place a small one from your phone and say "done"; I run the test and refund it. Default: not run; the
+  root-cause fix (bounded sweeps) is live and watched by `sweep_heartbeat` / `sweep_pool_recycled`.
