@@ -25,7 +25,7 @@ import {
 } from '../../schema';
 import { ForbiddenError, NotFoundError, ValidationError } from '../errors';
 import type { Tx } from '../orders';
-import { pendingUstaadUnban, type UstaadStaff } from './moderation';
+import { pendingUstaadBanAmong, pendingUstaadUnban, type UstaadStaff } from './moderation';
 import { loadUstaadTarget } from './targets';
 
 const iso = (d: Date) => d.toISOString();
@@ -197,18 +197,19 @@ export async function ustaadMemberForStaff(
     .orderBy(desc(ustaadStrikes.createdAt))
     .limit(50);
   const unban = await pendingUstaadUnban(tx, memberId);
-  const [open] = await tx
-    .select({ n: count() })
-    .from(ustaadReports)
-    .where(
-      and(
-        inArray(ustaadReports.status, ['open', 'in_review']),
-        or(
-          and(eq(ustaadReports.targetType, 'member'), eq(ustaadReports.targetId, memberId)),
-          sql`${ustaadReports.targetId} in ${contentOf(memberId)}`,
-        ),
-      ),
-    );
+  const openAbout = and(
+    inArray(ustaadReports.status, ['open', 'in_review']),
+    or(
+      and(eq(ustaadReports.targetType, 'member'), eq(ustaadReports.targetId, memberId)),
+      sql`${ustaadReports.targetId} in ${contentOf(memberId)}`,
+    ),
+  );
+  const [open] = await tx.select({ n: count() }).from(ustaadReports).where(openAbout);
+  const openIds = await tx.select({ id: ustaadReports.id }).from(ustaadReports).where(openAbout).limit(200);
+  const ban = await pendingUstaadBanAmong(
+    tx,
+    openIds.map((r) => r.id),
+  );
   return {
     memberId: m.memberId,
     handle: m.handle,
@@ -225,6 +226,7 @@ export async function ustaadMemberForStaff(
     version: m.version,
     openReports: open?.n ?? 0,
     pendingUnban: unban ? { proposalId: unban.id, proposedByMe: unban.actorId === staff.userId } : null,
+    pendingBan: ban ? { proposedByMe: ban.actorId === staff.userId } : null,
     strikes: strikes.map((s) => ({ reasonCode: s.reasonCode, status: s.status, at: iso(s.createdAt) })),
     history: history.map(({ a, reportCode }) => ({
       action: a.action,

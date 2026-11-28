@@ -176,7 +176,7 @@ afterAll(async () => {
 });
 
 describe('screen in Q&A (F2 replaces the stub)', () => {
-  it('a phone number in a question is refused (USTAAD_CONTENT_BLOCKED)', async () => {
+  it('SIM-P15: a phone number in a question is refused with its own code (USTAAD_CONTENT_PHONE)', async () => {
     await expect(
       askUstaadQuestion(t(), author, {
         title: 'Call me on 98765 43210',
@@ -187,7 +187,21 @@ describe('screen in Q&A (F2 replaces the stub)', () => {
         hideGarage: true,
         idemKey: key(),
       }),
-    ).rejects.toMatchObject({ code: 'USTAAD_CONTENT_BLOCKED' });
+    ).rejects.toMatchObject({ code: 'USTAAD_CONTENT_PHONE' });
+  });
+
+  it('SIM-P15: a number plate in a question is refused with its own code (USTAAD_CONTENT_PLATE)', async () => {
+    await expect(
+      askUstaadQuestion(t(), author, {
+        title: 'Ye gaadi CG04AB1234 nahi chal rahi',
+        correction: 'none',
+        segmentCode: 'two_wheeler',
+        workCode: 'engine',
+        reach: 'city',
+        hideGarage: true,
+        idemKey: key(),
+      }),
+    ).rejects.toMatchObject({ code: 'USTAAD_CONTENT_PLATE' });
   });
 
   it('a UPI id in an answer holds it and opens an auto report in the queue with a clock', async () => {

@@ -108,7 +108,9 @@ export interface SavedFilter {
 export interface UstaadClient {
   /** True for the browser demo: screens show the "sample data" note. */
   readonly sample: boolean;
-  me(): Promise<ApiResult<{ member: MemberView | null; staffPreview: boolean }>>;
+  me(): Promise<
+    ApiResult<{ member: MemberView | null; staffPreview: boolean; canAnswer?: boolean | undefined }>
+  >;
   questions(
     filter: QuestionFilter,
     cursor: string | null,

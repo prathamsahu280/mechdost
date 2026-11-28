@@ -15,6 +15,7 @@ export default async function UstaadPinPage() {
         'ustaad.shell',
         'ustaad.standing',
         'ustaad.local',
+        'ustaad.tutorial',
         'ustaad.media',
         'ustaad.labels',
         'segments',

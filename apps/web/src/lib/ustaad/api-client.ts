@@ -27,7 +27,7 @@ import {
   SaveStateDto,
 } from '@mechdost/shared/ustaad/dto/saved';
 import { authed, type ApiResult, type Schema } from '../orders-api';
-import { baseMime } from './media-core';
+import { baseMime, retryTransient } from './media-core';
 import { track } from '../analytics';
 import type { UstaadClient } from './client';
 
@@ -150,7 +150,10 @@ export function apiUstaadClient(locale: string): UstaadClient {
       onProgress(0);
       const sent = await put(declared.data.put.url, declared.data.put.headers, file, onProgress);
       if (!sent) return { ok: false, status: 0, code: 'NETWORK' };
-      const verified = await send(`/ustaad/media/${declared.data.mediaId}/complete`, Verified, {});
+      // SIM-P3: only this step is retried (the file is already there); the server answers a repeat with the same row.
+      const verified = await retryTransient(() =>
+        send(`/ustaad/media/${declared.data.mediaId}/complete`, Verified, {}),
+      );
       return map(verified, () => ({ mediaId: declared.data.mediaId }));
     },
     mediaUrl: async (id) => map(await get(`/ustaad/media/${id}/url`, Signed), (d) => ({ url: d.url })),

@@ -34,7 +34,9 @@ export function NewThread({ handle }: { handle: string | null }) {
         if (!open.ok && open.status === 404) threadId = null;
         else if (!open.ok) return open;
       }
-      return { ok: true as const, data: { member: found.data, threadId } };
+      // SIM-P14: an accepted connection needs no request, so the form drops the request-only rules.
+      const connected = rel.data.connection?.status === 'accepted';
+      return { ok: true as const, data: { member: found.data, threadId, connected } };
     },
     `to-${handle ?? ''}`,
   );
@@ -84,14 +86,14 @@ export function NewThread({ handle }: { handle: string | null }) {
             </Link>
           </div>
         ) : (
-          <RequestForm member={loaded.data.member} />
+          <RequestForm member={loaded.data.member} connected={loaded.data.connected} />
         )
       ) : null}
     </div>
   );
 }
 
-function RequestForm({ member }: { member: MemberCard }) {
+function RequestForm({ member, connected }: { member: MemberCard; connected: boolean }) {
   const t = useTranslations('ustaad.messages');
   const locale = useLocale();
   const router = useRouter();
@@ -130,16 +132,25 @@ function RequestForm({ member }: { member: MemberCard }) {
         role="note"
         className="grid gap-2 rounded-xl bg-info-bg p-4 text-[15px] leading-relaxed text-ink"
       >
-        <p className="flex items-center gap-2 font-bold">
-          <Info aria-hidden="true" className="size-5 shrink-0 text-info" />
-          {t('rulesTitle')}
-        </p>
-        <ul className="ml-1 grid list-inside list-disc gap-1">
-          <li>{t('rule_one')}</li>
-          <li>{t('rule_text')}</li>
-          <li>{t('rule_noLinks')}</li>
-          <li>{t('rule_newAccount')}</li>
-        </ul>
+        {connected ? (
+          <p className="flex items-center gap-2 font-bold">
+            <Info aria-hidden="true" className="size-5 shrink-0 text-info" />
+            {t('connectedNote')}
+          </p>
+        ) : (
+          <>
+            <p className="flex items-center gap-2 font-bold">
+              <Info aria-hidden="true" className="size-5 shrink-0 text-info" />
+              {t('rulesTitle')}
+            </p>
+            <ul className="ml-1 grid list-inside list-disc gap-1">
+              <li>{t('rule_one')}</li>
+              <li>{t('rule_text')}</li>
+              <li>{t('rule_noLinks')}</li>
+              <li>{t('rule_newAccount')}</li>
+            </ul>
+          </>
+        )}
       </div>
       <div className="grid gap-1.5">
         <label htmlFor={fieldId} className="text-[15px] font-bold text-ink">
@@ -172,7 +183,7 @@ function RequestForm({ member }: { member: MemberCard }) {
           data-track="ustaad_thread_request_send"
         >
           <Send aria-hidden="true" className="size-5" />
-          {busy ? t('working') : t('sendRequest')}
+          {busy ? t('working') : connected ? t('sendMessage') : t('sendRequest')}
         </button>
         <Link
           href={localePath('/ustaad/messages', locale)}

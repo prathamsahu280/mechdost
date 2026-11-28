@@ -32,6 +32,8 @@ progress/decisions/questions; nothing run live). Result: **every P1 is fixed**; 
 
 ## Open — Mechanic Network (batch U)
 
+**2026-11-29 update (batch U builder):** fixed in code (see spec 23 § 21j): SIM-P12, P15, F7, P14, P3, P6, P29, B4, B10, B11, B12 (basis; picker queued). Second pass also fixed P25, P30, P7, P9, RT3. Still open: B9, G14, G15, P5, LEAD-8 (queued Q-U-*); LEAD-1 left to the lead.
+
 | Id          | P   | What is missing                                                                                 |
 | ----------- | --- | ----------------------------------------------------------------------------------------------- |
 | SIM-B4      | P2  | Pre-moderation hold shown as "Other · Word list" with a raw code as the reporter's note         |

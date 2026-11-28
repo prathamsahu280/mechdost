@@ -21,6 +21,7 @@ export default async function UstaadDiscoverPage({ searchParams }: Props) {
         'ustaad.shell',
         'ustaad.standing',
         'ustaad.discover',
+        'ustaad.tutorial',
         'ustaad.messages',
         'ustaad.labels',
         'segments',

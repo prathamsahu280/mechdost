@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import type { TagListItem } from '@mechdost/shared/ustaad/dto/feed';
+import type { ComposeLimits, TagListItem } from '@mechdost/shared/ustaad/dto/feed';
 import { track } from '@/lib/analytics';
 import { localePath } from '@/lib/locale-path';
 import { ustaadClient, type MediaDeclare } from '@/lib/ustaad/client';
@@ -33,7 +33,8 @@ import {
 } from '../media/video-text-fields';
 import { VideoLinkComposerPreview } from '../link-embed/composer-preview';
 
-const MAX_PHOTOS = 10;
+/** Until the live limit (`ustaad.posts.max_photos`, SIM-P29) arrives: the shipped default. The API checks again. */
+const FALLBACK_MAX_PHOTOS = 6;
 const MAX_TAGS = 5;
 const VOICE_MAX_S = 120;
 /** One signed PUT carries at most 16 MB (the resumable path is not built yet, Q-U-DW1). */
@@ -191,6 +192,14 @@ function TagPicker({ value, onChange }: { value: TagListItem[]; onChange: (tags:
  * tags, then one primary button. Files upload with progress before the post is sent; the idempotency key is kept
  * across retries; API refusals (daily cap, links too early, unknown tag…) are shown in words.
  */
+/** The API code a known lock would answer, or null (the same words the API's refusal gets). */
+function lockCode(limits: ComposeLimits, story: boolean): string | null {
+  if (!limits.canWrite) return 'USTAAD_RESTRICTED';
+  if (story && limits.stories === 'locked') return 'USTAAD_STORIES_LOCKED';
+  if (story && limits.stories === 'off') return 'USTAAD_POST_TYPE_OFF';
+  return null;
+}
+
 export function Composer({ story }: { story: boolean }) {
   const t = useTranslations('ustaad.feed');
   const locale = useLocale();
@@ -216,6 +225,8 @@ export function Composer({ story }: { story: boolean }) {
   const [errField, setErrField] = useState<string | null>(null);
   const [done, setDone] = useState<{ id: string; held: boolean } | null>(null);
   const [sample, setSample] = useState(false);
+  // SIM-P6 / SIM-P29: what this member may do now, asked once, so a refusal comes before any upload.
+  const [limits, setLimits] = useState<ComposeLimits | null>(null);
   // QA F-R14: the text survives leaving the page; cleared once the post is sent.
   // A restored draft opens the text type (the body field only shows once a type is picked).
   const restoreDraft = useCallback((d: string) => {
@@ -240,8 +251,10 @@ export function Composer({ story }: { story: boolean }) {
 
   useEffect(() => {
     heading.current?.focus();
-    void client().then((c) => {
+    void client().then(async (c) => {
       setSample(c.sample);
+      const r = await c.composeLimits();
+      if (r.ok) setLimits(r.data);
     });
   }, [client]);
   useEffect(() => {
@@ -263,7 +276,7 @@ export function Composer({ story }: { story: boolean }) {
   const wantsPhotos = effectiveStory ? effectiveStory === 'photo' : kind === 'photo';
   const wantsVoice = effectiveStory ? effectiveStory === 'voice' : kind === 'voice';
   const wantsVideo = effectiveStory ? effectiveStory === 'video' : kind === 'video';
-  const maxPhotos = story ? 1 : template === 'before_after' ? 2 : MAX_PHOTOS;
+  const maxPhotos = story ? 1 : template === 'before_after' ? 2 : (limits?.maxPhotos ?? FALLBACK_MAX_PHOTOS);
 
   async function addPhotos(files: FileList | null) {
     if (!files) return;
@@ -303,6 +316,12 @@ export function Composer({ story }: { story: boolean }) {
     if (busy || (!story && !choice)) return;
     setError(null);
     setErrField(null);
+    // SIM-P6: known locks are refused here, before a single byte is uploaded.
+    const locked = limits ? lockCode(limits, story) : null;
+    if (locked) {
+      setError(errorText(locked));
+      return;
+    }
     setBusy(true);
     try {
       const media: { mediaId: string; role?: 'before' | 'after' }[] = [];
@@ -446,6 +465,11 @@ export function Composer({ story }: { story: boolean }) {
         </Link>
       </header>
       <SampleNote show={sample} />
+      {!done && limits && lockCode(limits, story) ? (
+        <p role="status" className="rounded-xl bg-warning-bg p-3 text-[15px] font-bold text-warning">
+          {errorText(lockCode(limits, story) ?? '')}
+        </p>
+      ) : null}
 
       {done ? (
         <div

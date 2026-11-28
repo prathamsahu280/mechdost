@@ -10,6 +10,7 @@
  * key as the writer (`answer:{id}`).
  */
 import { and, desc, eq, inArray, ne, sql, type SQL } from 'drizzle-orm';
+import { ustaadTopicLabel } from '@mechdost/shared/notice-catalogue';
 import { ustaadQuestionMachine } from '@mechdost/shared/state';
 import { istDateString } from '@mechdost/shared/time';
 import {
@@ -93,11 +94,12 @@ export async function publishUstaadQuestion(tx: Tx, questionId: string): Promise
       userId: target.userId,
       entityId: q.id,
       version: 1,
-      params: {
+      // The topic is a code: it is worded in each Ustaad's own language (SIM-F7), never shown raw.
+      params: (locale) => ({
         memberName: row.displayName,
-        topic: q.workCode ?? q.segmentCode ?? '',
+        topic: ustaadTopicLabel(locale, q.workCode ?? q.segmentCode ?? ''),
         questionCode: q.code,
-      },
+      }),
     });
 }
 

@@ -358,6 +358,7 @@ export const USTAAD_ERRORS = [
   'USTAAD_DAILY_CAP',
   'USTAAD_TAG_LIMIT',
   'USTAAD_DM_NOT_ALLOWED',
+  'USTAAD_DM_CLOSED',
   'USTAAD_EMPLOYER_REQUIRED',
   'USTAAD_SCAM_PHRASE',
   'MEDIA_TOO_LARGE',
@@ -379,6 +380,9 @@ export const USTAAD_ERRORS = [
   'MOVED_TO_USTAAD',
   // F2 reports and moderation (spec 23 § 21f).
   'USTAAD_CONTENT_BLOCKED',
+  // SIM-P15: the two blocks the author can fix get their own words (a phone number, a number plate).
+  'USTAAD_CONTENT_PHONE',
+  'USTAAD_CONTENT_PLATE',
   'USTAAD_REPORT_SELF',
   'USTAAD_REASON_OFF',
   'USTAAD_BAN_PENDING',

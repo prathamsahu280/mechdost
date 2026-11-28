@@ -303,6 +303,7 @@ export function ustaadConsoleMocks(c: AuditCase): Mock[] {
       version: 7,
       openReports: 1,
       pendingUnban: null,
+      pendingBan: null,
       strikes: [
         { reasonCode: 'spam', status: 'active', at: iso(-2 * 1440) },
         { reasonCode: 'abuse', status: 'active', at: iso(-20 * 1440) },

@@ -395,9 +395,9 @@ describe('block and mute (SR-35, § 7.9)', () => {
     const req = await startUstaadThread(t(), b, { memberId: c.memberId, text: 'kaam hai kya' });
     await db.update(s.ustaadMembers).set({ status: 'banned' }).where(eq(s.ustaadMembers.id, b.memberId));
     const sent = await err(sendUstaadMessage(t(), a, open.threadId, { kind: 'text', text: 'suno' }));
-    expect(sent).toMatchObject({ status: 403, code: 'USTAAD_DM_NOT_ALLOWED' });
+    expect(sent).toMatchObject({ status: 403, code: 'USTAAD_DM_CLOSED' }); // SIM-RT3 (c)
     const accepted = await err(moveUstaadThread(t(), c, req.threadId, 'accept'));
-    expect(accepted).toMatchObject({ status: 403, code: 'USTAAD_DM_NOT_ALLOWED' });
+    expect(accepted).toMatchObject({ status: 403, code: 'USTAAD_DM_CLOSED' });
   });
 
   it('mute is one row, idempotent, and listed', async () => {

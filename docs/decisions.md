@@ -3126,6 +3126,16 @@ not the very correct city"). Decided and built (spec 01 "Devices", spec 13, spec
 - **Privacy notice** gains the "Where you are signed in" section (notice dated 28 November 2026).
 - The legacy `sessions` table (identity.ts, never used) is left as it is (PENDING).
 
+## 2026-11-29 - Mechanic Network batch U (builder; no migration)
+
+- The composer's limits come from the server (`GET /ustaad/feed/limits`: live `ustaad.posts.max_photos`, stories
+  open/locked/off, can-write), never a number in the app (rule 8). It is a hint; the create calls still enforce.
+- Media `complete` is idempotent for the owner once verified, so the client may retry that one step.
+- A takedown never pre-selects its legal basis (the old default "Court order" put a legal claim on the record by
+  accident).
+- A phone number or number plate that blocks an item answers `USTAAD_CONTENT_PHONE` / `USTAAD_CONTENT_PLATE` so the
+  author is told what to remove (the word-list reason stays unexplained on purpose; spec 23 § 13).
+
 ## 2026-11-28 — "Use my location" never guesses a PIN inside a served city (founder report: Sarona)
 
 Bug: the finder filled 493332 (OpenStreetMap's postcode, the same for almost all of Raipur; OSM India postcode data is poor; tested Pachpedi Naka, railway station, Tatibandh, Urla). The first fix idea, the nearest MechDost PIN centroid, is also wrong: in Sarona (about 21.216, 81.597) the real PIN is 492099 but the nearest centroid is 492013 (1.8 km); 492099's post office is 5.3 km away. PIN areas are irregular, so **the nearest post office is not a PIN area**.

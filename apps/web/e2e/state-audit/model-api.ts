@@ -1539,7 +1539,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     code: 'API-USTAAD-CREATE',
     page: 'Ustaad composer (/ustaad/create, ?story=1)',
     component:
-      'Kind tiles and quick start, recorder / photos (up to 10, before-after roles) / video / PDF / poll / link, smart correction, tag picker (max 5), upload progress, posted and held notes, API errors in words',
+      'Kind tiles and quick start, recorder / photos (up to the live admin limit, before-after roles) / video / PDF / poll / link, smart correction, tag picker (max 5), upload progress, posted and held notes, API errors in words',
     path: (r) => (r.mode === 'story' ? '/ustaad/create?story=1' : '/ustaad/create'),
     scope: 'main',
     strategy: 'pairwise',

@@ -215,6 +215,11 @@ describe('open', () => {
     expect(me.status).toBe(200);
     expect((me.body.member as { displayName: string }).displayName).toBe('Ramesh Sahu');
     expect(JSON.stringify(me.body)).not.toMatch(/\+91|97000/);
+    // SIM-P7: an Ustaad can always answer; a Chhotu follows the admin setting (off by default).
+    expect(me.body.canAnswer).toBe(true);
+    await ctx.db.update(s.ustaadMembers).set({ track: 'apprentice', level: 'apprentice' });
+    expect((await call(mechanic, 'GET', '/ustaad/me')).body.canAnswer).toBe(false);
+    await ctx.db.update(s.ustaadMembers).set({ track: 'ustaad', level: 'ustaad_pending' });
     expect((await call(mechanic, 'POST', '/ustaad/join', JOIN)).body.error.code).toBe(
       'USTAAD_ALREADY_MEMBER',
     );

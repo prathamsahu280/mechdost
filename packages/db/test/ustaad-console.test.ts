@@ -602,6 +602,13 @@ describe('members for staff', () => {
     });
     expect(out.pendingBan).toBeDefined();
     expect((await ustaadMemberForStaff(t(), cmA, target.memberId)).status).toBe('active');
+    // SIM-B11: the member card shows the pending ban to the proposer and to the second approver.
+    expect((await ustaadMemberForStaff(t(), cmA, target.memberId)).pendingBan).toEqual({
+      proposedByMe: true,
+    });
+    expect((await ustaadMemberForStaff(t(), cmA2, target.memberId)).pendingBan).toEqual({
+      proposedByMe: false,
+    });
     const det = await ustaadReportDetail(t(), cmA2, out.code);
     await expect(
       confirmUstaadBan(t(), cmA, out.code, {

@@ -203,7 +203,7 @@ export function CommentsPanel({ post, onCount }: { post: PostView; onCount: (n: 
     setPhoto(null);
     setMode('text');
     setReplyTo(null);
-    setStatus(r.data.status === 'held' ? t('commentHeld') : t('posted'));
+    setStatus(r.data.status === 'held' ? t('commentHeld') : t('commentPosted'));
     onCount(post.counts.comments + 1);
     refresh();
   }

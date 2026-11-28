@@ -139,6 +139,33 @@ export type ScreenSignal =
   | 'link_denied'
   | 'illegal_modification';
 
+/** Every code an automatic hold can store as its note (SIM-B4: the console words them, never shows the codes). */
+export const HOLD_SIGNALS = [
+  'banned_word',
+  'scam_phrase',
+  'upi_id',
+  'pay_app',
+  'otp_ask',
+  'phone_number',
+  'phone_like',
+  'number_plate',
+  'plate_like',
+  'link',
+  'link_denied',
+  'illegal_modification',
+  'new_account_media',
+  'new_account_link',
+] as const;
+export type HoldSignal = (typeof HOLD_SIGNALS)[number];
+
+/** The signals of an automatic hold's stored note (`a,b`), or null when the note is not made only of known codes. */
+export function holdSignalsOf(note: string | null): HoldSignal[] | null {
+  if (!note) return null;
+  const parts = note.split(',').map((p) => p.trim());
+  const known = new Set<string>(HOLD_SIGNALS);
+  return parts.length > 0 && parts.every((p) => known.has(p)) ? (parts as HoldSignal[]) : null;
+}
+
 export interface ScreenLists {
   banned: readonly string[];
   scamPhrases: readonly string[];
@@ -206,6 +233,14 @@ export interface ScreenVerdict {
   outcome: ScreenOutcome;
   /** Why (for the auto report and the staff queue; never shown to the author). */
   signals: (ScreenSignal | 'new_account_media' | 'new_account_link')[];
+}
+
+/** SIM-P15: which fixable thing blocked an item, so the author is told to remove it (never the word-list reason). */
+export function fixableBlockReason(kind: ScreenKind, signals: readonly string[]): 'phone' | 'plate' | null {
+  if (kind !== 'message' && kind !== 'job' && kind !== 'comment' && signals.includes('phone_number'))
+    return 'phone';
+  if (PUBLIC_KINDS.includes(kind) && signals.includes('number_plate')) return 'plate';
+  return null;
 }
 
 export function screenDecision(

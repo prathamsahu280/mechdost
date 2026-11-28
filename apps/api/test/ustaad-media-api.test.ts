@@ -119,6 +119,17 @@ describe('Ustaad media API', () => {
     expect([...host.objects.keys()].some((k) => k.startsWith('quarantine:') && k.includes(id))).toBe(false);
   });
 
+  it('SIM-P3: a repeated complete answers the same verified row (a lost answer never forces a re-upload)', async () => {
+    const id = await declareAndUpload(owner, photo);
+    const first = await call(owner, 'POST', `/ustaad/media/${id}/complete`, {});
+    const again = await call(owner, 'POST', `/ustaad/media/${id}/complete`, {});
+    expect(first.status).toBe(200);
+    expect(again.status).toBe(200);
+    expect(again.body).toMatchObject({ id, status: 'verified' });
+    // Someone else's repeat is still a 404.
+    expect((await call(other, 'POST', `/ustaad/media/${id}/complete`, {})).status).toBe(404);
+  });
+
   it('another member cannot read unlinked media or complete my upload (404)', async () => {
     const id = await declareAndUpload(owner, photo);
     expect((await call(other, 'POST', `/ustaad/media/${id}/complete`, {})).status).toBe(404);

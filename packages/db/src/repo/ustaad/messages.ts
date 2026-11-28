@@ -85,7 +85,7 @@ async function assertCounterpartReachable(tx: Tx, thread: ThreadRow, me: string)
     .where(eq(ustaadMembers.id, otherOf(thread, me)))
     .limit(1);
   if (!other || other.status === 'banned' || other.status === 'left')
-    throw new ForbiddenError('This conversation is closed', 'USTAAD_DM_NOT_ALLOWED');
+    throw new ForbiddenError('This conversation is closed', 'USTAAD_DM_CLOSED');
 }
 
 /**
@@ -411,8 +411,7 @@ export async function sendUstaadMessage(
     const thread = await myThread(tx, me.id, threadId);
     if (thread.status === 'requested')
       throw new ConflictError('Wait until the request is accepted', 'USTAAD_DM_PENDING');
-    if (thread.status !== 'open')
-      throw new ForbiddenError('This conversation is closed', 'USTAAD_DM_NOT_ALLOWED');
+    if (thread.status !== 'open') throw new ForbiddenError('This conversation is closed', 'USTAAD_DM_CLOSED');
     await assertCounterpartReachable(tx, thread, me.id);
     const c: Content = {
       kind: input.kind,

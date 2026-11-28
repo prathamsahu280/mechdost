@@ -1,4 +1,4 @@
-import { FeedFreshDto, FeedPageDto, PostViewDto } from '@mechdost/shared/ustaad/dto/feed';
+import { ComposeLimitsDto, FeedFreshDto, FeedPageDto, PostViewDto } from '@mechdost/shared/ustaad/dto/feed';
 import { DiscoverPageDto, DiscoverTagsDto, TopPostsDto } from '@mechdost/shared/ustaad/dto/discover';
 import { MessagePageDto, ThreadPageDto } from '@mechdost/shared/ustaad/dto/messages';
 import { ReportCreatedDto } from '@mechdost/shared/ustaad/dto/moderation';
@@ -68,6 +68,7 @@ export function apiSocialClient(locale: string): SocialClient {
     sample: false,
     feed: (tab, cursor) => get(`/ustaad/feed${qs({ tab, cursor })}`, FeedPageDto),
     fresh: (tab, since) => get(`/ustaad/feed/fresh${qs({ tab, since })}`, FeedFreshDto),
+    composeLimits: () => get('/ustaad/feed/limits', ComposeLimitsDto),
     post: (id) => get(`/ustaad/posts/${enc(id)}`, PostViewDto),
     createPost: (input) => send('/ustaad/posts', CreatedResponse, input),
     deletePost: (id) => send(`/ustaad/posts/${enc(id)}`, StatusResponse, undefined, 'DELETE'),
