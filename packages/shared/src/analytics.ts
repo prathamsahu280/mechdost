@@ -861,7 +861,21 @@ export const CLIENT_EVENT_SCHEMAS = {
       mode: z.enum(['map', 'satellite']).optional(),
     })
     .strict(),
-  location_detected: z.object({ source: z.enum(['finder', 'map']), pincodeFound: z.boolean() }).strict(),
+  location_detected: z
+    .object({
+      source: z.enum(['finder', 'map']),
+      pincodeFound: z.boolean(),
+      /** How many nearest MechDost PINs were offered to pick from (0 = none: PIN filled or outside served areas). */
+      choices: z.number().int().min(0).max(10).optional(),
+    })
+    .strict(),
+  /**
+   * The person tapped one of the nearest MechDost PINs after "use my location". `rank` 0 = the nearest; how often
+   * it is not 0 tells us whether the nearest post office is a usable guess (spec 06, Sarona 2026-11-28).
+   */
+  pincode_choice_picked: z
+    .object({ rank: z.number().int().min(0).max(9), choices: z.number().int().min(1).max(10) })
+    .strict(),
   admin_site_change: z
     .object({
       area: z.enum([

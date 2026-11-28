@@ -18,6 +18,7 @@ import { formatPrice } from '@/lib/format';
 import { track } from '@/lib/analytics';
 import { DATA_MODE } from '@/lib/data-mode';
 import { mapUi } from '@/lib/map-ui';
+import { lookupPincode, PincodeChoices, type PinChoice } from './pincode-choices';
 import type { MapPoint } from './workshop-map';
 
 /**
@@ -33,18 +34,6 @@ const WorkshopFinderApi = lazy(() =>
 
 type VehicleFilter = 'any' | VehicleType;
 type Origin = { lat: number; lng: number; source: 'gps' | 'pin'; pin?: string; area?: string } | null;
-
-/** GPS → PIN code through our server (`/api/geo/pincode`); null when unknown or offline. */
-async function lookupPincode(pos: { lat: number; lng: number }) {
-  try {
-    const res = await fetch(`/api/geo/pincode?lat=${pos.lat.toFixed(5)}&lng=${pos.lng.toFixed(5)}`);
-    if (!res.ok) return null;
-    const body = (await res.json()) as { pincode: string | null; area: string | null };
-    return body.pincode ? body : null;
-  } catch {
-    return null;
-  }
-}
 
 /** The workshop finder: on the API in real data mode, else the demo data. */
 export function WorkshopFinder() {
@@ -67,6 +56,7 @@ function DemoWorkshopFinder() {
   const locale = useLocale();
   const mapRef = useRef<HTMLDivElement>(null);
   const [pin, setPin] = useState('');
+  const [choices, setChoices] = useState<PinChoice[]>([]);
   const [vehicle, setVehicle] = useState<VehicleFilter>('any');
   const [evOnly, setEvOnly] = useState(false);
   const [origin, setOrigin] = useState<Origin>(null);
@@ -106,8 +96,14 @@ function DemoWorkshopFinder() {
     setLocationError(false);
     const next = { ...pos, source: 'gps' as const };
     setOrigin(next);
-    void lookupPincode(pos).then((found) => {
-      track('location_detected', { source, pincodeFound: found !== null });
+    setChoices([]);
+    void lookupPincode(pos, locale).then((found) => {
+      track('location_detected', {
+        source,
+        pincodeFound: typeof found?.pincode === 'string',
+        choices: found?.candidates.length ?? 0,
+      });
+      setChoices(found?.candidates ?? []);
       if (!found?.pincode) return;
       const code = found.pincode;
       setPin(code);
@@ -175,6 +171,7 @@ function DemoWorkshopFinder() {
               value={pin}
               placeholder={t('pinPlaceholder')}
               onChange={(e) => {
+                setChoices([]);
                 applyPin(e.target.value.replace(/\D/g, ''));
               }}
               className="mt-1 min-h-11 w-full rounded-input border border-input-border bg-surface px-3 text-[15px] text-ink placeholder:text-muted"
@@ -221,6 +218,14 @@ function DemoWorkshopFinder() {
           />
           {t('evOnly')}
         </label>
+        <PincodeChoices
+          choices={choices}
+          selected={pin}
+          onPick={(code, rank) => {
+            setPin(code); // the position they gave stays; only the PIN field is filled
+            track('pincode_choice_picked', { rank, choices: choices.length });
+          }}
+        />
         {locationError ? <p className="mt-2 text-sm font-bold text-error">{t('locationDenied')}</p> : null}
         {pinUnknown ? (
           <p role="status" className="mt-2 text-sm font-bold text-warning">

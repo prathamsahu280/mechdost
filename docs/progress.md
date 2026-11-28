@@ -2,6 +2,10 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-28 — "Use my location" wrong PIN fix (builder, branch worktree-agent-a07d5bcf972a5a678, NOT merged)
+
+Founder: wrong PIN from "use my location" (Sarona: shown 493332, real 492099). OSM postcodes are wrong across Raipur and the nearest MechDost centroid is wrong too (492013), so nothing is auto-filled inside a served city: the finder shows the 5 nearest MechDost PINs as choices (en + hi names), outside served areas the OSM answer stays as fallback. New `GET /v1/geo/pincode-near` (PostGIS KNN, migration **0116** GIST index on `pincodes.centroid`, renumber if another branch took 0116), `ReverseGeocoder` interface in `apps/web/src/lib/geo/`, events `pincode_choice_picked` + `location_detected.choices`. Decisions 2026-11-28, spec 06 + 12, inbox **Q12-B** (Ola Maps or Google key). Next: Q12-B answer, then add the provider behind `selectGeocoder()`.
+
 ## 2026-11-28 — Mechanic Network batch D: state-audit rows + profile restyle (builder, branch worktree-agent-adc9e97b192ec1613, NOT merged)
 
 - D1: rows API-USTAAD-LEARN / -JOBS / -SAVED (model-api.ts), fixtures in api-mode/ustaad-member-fixtures.ts, server mock

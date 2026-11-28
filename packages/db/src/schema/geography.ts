@@ -107,6 +107,8 @@ export const pincodes = pgTable(
     check('pincodes_source_valid', sql`${t.source} in (${inList(PINCODE_SOURCES)})`),
     index().on(t.cityId),
     index().on(t.stateId),
+    // Nearest-PIN shortlist for "use my location" (KNN `<->` + ST_DWithin, spec 06).
+    index('pincodes_centroid_gix').using('gist', t.centroid),
   ],
 );
 
