@@ -74,3 +74,51 @@ export function pickDay(param: string | null, days: readonly string[]): string {
 
 /** "09:00" on the 24-hour clock: numerals only, so it reads the same in Hindi. */
 export const hourText = (hour: number): string => `${String(hour).padStart(2, '0')}:00`;
+
+/** One open hour of a workshop day: the places it offers and how many are still free (`GET /workshop/slots`). */
+export interface HourSlot {
+  hour: number;
+  capacity: number;
+  free: number;
+}
+
+/** Several workshops' hours added up hour by hour (the agenda already merges all of the owner's workshops). */
+export function combineSlots(lists: readonly (readonly HourSlot[])[]): HourSlot[] {
+  const byHour = new Map<number, HourSlot>();
+  for (const s of lists.flat()) {
+    const at = byHour.get(s.hour);
+    byHour.set(
+      s.hour,
+      at
+        ? { hour: s.hour, capacity: at.capacity + s.capacity, free: at.free + s.free }
+        : { hour: s.hour, capacity: s.capacity, free: s.free },
+    );
+  }
+  return [...byHour.values()].sort((a, b) => a.hour - b.hour);
+}
+
+export interface CapacityGroup<T extends VisitRow> extends AgendaGroup<T> {
+  /** Free places of that hour; absent when the workshop is closed then or for the "time not set" group. */
+  places?: HourSlot;
+}
+
+/** The agenda with each hour's free places, plus open hours that have no visit yet; "time not set" stays last. */
+export function agendaWithCapacity<T extends VisitRow>(
+  agenda: readonly AgendaGroup<T>[],
+  slots: readonly HourSlot[],
+): CapacityGroup<T>[] {
+  const hours = new Set<number>(slots.map((s) => s.hour));
+  for (const g of agenda) if (g.hour !== null) hours.add(g.hour);
+  const rows: CapacityGroup<T>[] = [...hours]
+    .sort((a, b) => a - b)
+    .map((hour) => {
+      const places = slots.find((s) => s.hour === hour);
+      return {
+        hour,
+        jobs: agenda.find((g) => g.hour === hour)?.jobs ?? [],
+        ...(places ? { places } : {}),
+      };
+    });
+  const unset = agenda.find((g) => g.hour === null);
+  return unset ? [...rows, { hour: null, jobs: unset.jobs }] : rows;
+}

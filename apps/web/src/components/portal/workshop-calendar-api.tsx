@@ -1,14 +1,28 @@
 'use client';
 
-import { ServiceRequestPageDto, type ServiceRequestSummary } from '@mechdost/shared/service-api';
+import {
+  ServiceRequestPageDto,
+  WorkshopProfilesDto,
+  WorkshopSlotsDto,
+  type ServiceRequestSummary,
+} from '@mechdost/shared/service-api';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { track } from '@/lib/analytics';
 import { adminApi } from '@/lib/admin-api';
 import { LocalLink } from '@/components/ui/local-link';
 import { requestStatusKey } from '@/lib/service-views';
-import { agendaFor, calendarDays, dayCounts, hourText, pickDay } from '@/lib/workshop-calendar';
+import {
+  agendaFor,
+  agendaWithCapacity,
+  calendarDays,
+  combineSlots,
+  dayCounts,
+  hourText,
+  pickDay,
+  type HourSlot,
+} from '@/lib/workshop-calendar';
 import { ApiListState } from './api-list-state';
 import { portalCard, portalQuiet } from './portal-styles';
 import { useApiList } from './use-api-list';
@@ -25,6 +39,44 @@ function dayText(day: string, locale: string, opts: Intl.DateTimeFormatOptions):
   return new Intl.DateTimeFormat(dateLocale(locale), { ...opts, timeZone: 'UTC' }).format(
     new Date(`${day}T00:00:00Z`),
   );
+}
+
+/**
+ * Free places per open hour of one IST day, added up over the owner's workshops (the same ones the agenda lists).
+ * Reads the existing `GET /workshop/profile` (the workshop ids) and `GET /workshop/slots` (the proposal form's hour
+ * picker reads the same route); both are scoped to the signed-in owner by the API. A failure shows no capacity line.
+ */
+function useDayCapacity(locale: string, day: string): HourSlot[] {
+  const [ids, setIds] = useState<string[]>([]);
+  const [slots, setSlots] = useState<{ day: string; rows: HourSlot[] } | null>(null);
+  useEffect(() => {
+    let live = true;
+    void adminApi(locale, '/workshop/profile', WorkshopProfilesDto).then((res) => {
+      if (live && res.ok) setIds(res.data.workshops.map((w) => w.workshopId));
+    });
+    return () => {
+      live = false;
+    };
+  }, [locale]);
+  useEffect(() => {
+    if (ids.length === 0) return;
+    let live = true;
+    void Promise.all(
+      ids.map((id) =>
+        adminApi(
+          locale,
+          `/workshop/slots?workshopId=${encodeURIComponent(id)}&date=${day}`,
+          WorkshopSlotsDto,
+        ),
+      ),
+    ).then((results) => {
+      if (live) setSlots({ day, rows: combineSlots(results.flatMap((r) => (r.ok ? [r.data.slots] : []))) });
+    });
+    return () => {
+      live = false;
+    };
+  }, [ids, locale, day]);
+  return slots?.day === day ? slots.rows : [];
 }
 
 /**
@@ -63,6 +115,7 @@ export function WorkshopCalendarApi() {
   const day = pickDay(params.get('day'), days);
   const counts = dayCounts(active.items, days);
   const agenda = agendaFor(active.items, day);
+  const hours = agendaWithCapacity(agenda, useDayCapacity(locale, day));
   const shownLoading = active.loading || Boolean(active.next && pages.current < MAX_AUTO_PAGES);
 
   const offset = days.indexOf(day);
@@ -132,32 +185,43 @@ export function WorkshopCalendarApi() {
         }
         onRetry={() => void active.reload()}
       />
-      {agenda.length > 0 ? (
+      {hours.length > 0 ? (
         <ol className="grid gap-3">
-          {agenda.map((g) => (
+          {hours.map((g) => (
             <li key={g.hour ?? 'none'} className="grid gap-2 sm:grid-cols-[4.5rem_1fr]">
               <p className="font-heading text-lg font-extrabold text-ink tabular-nums">
                 {g.hour === null ? t('cal_hour_unset') : hourText(g.hour)}
               </p>
-              <ul className="grid gap-2">
-                {g.jobs.map((j) => (
-                  <li key={j.code}>
-                    <LocalLink
-                      href={`/partner/workshop/jobs?job=${j.code}`}
-                      className={`${portalCard} block !p-4 hover:border-ink/30 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus`}
-                    >
-                      <span className="block font-heading font-extrabold text-ink">{j.code}</span>
-                      <span className="block text-sm text-ink">{j.vehicle.text}</span>
-                      <span className="block text-sm text-muted">
-                        {j.services.map((s) => s.title).join(', ')}
-                      </span>
-                      <span className="mt-1 block text-xs font-bold text-muted">
-                        {rq(requestStatusKey(j.status) as 'stage_requested')}
-                      </span>
-                    </LocalLink>
-                  </li>
-                ))}
-              </ul>
+              <div className="grid gap-2">
+                {g.places ? (
+                  <p className="text-sm font-bold text-muted">
+                    {g.places.capacity === 0
+                      ? t('cal_hour_closed')
+                      : g.places.free > 0
+                        ? t('cal_free', { free: g.places.free, capacity: g.places.capacity })
+                        : t('cal_full', { capacity: g.places.capacity })}
+                  </p>
+                ) : null}
+                <ul className="grid gap-2">
+                  {g.jobs.map((j) => (
+                    <li key={j.code}>
+                      <LocalLink
+                        href={`/partner/workshop/jobs?job=${j.code}`}
+                        className={`${portalCard} block !p-4 hover:border-ink/30 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus`}
+                      >
+                        <span className="block font-heading font-extrabold text-ink">{j.code}</span>
+                        <span className="block text-sm text-ink">{j.vehicle.text}</span>
+                        <span className="block text-sm text-muted">
+                          {j.services.map((s) => s.title).join(', ')}
+                        </span>
+                        <span className="mt-1 block text-xs font-bold text-muted">
+                          {rq(requestStatusKey(j.status) as 'stage_requested')}
+                        </span>
+                      </LocalLink>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </li>
           ))}
         </ol>

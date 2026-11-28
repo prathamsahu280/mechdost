@@ -1536,3 +1536,5 @@ API-mode fixtures for `API-USTAAD-FEED`, `API-USTAAD-PROFILE`, `API-USTAAD-ME` (
 `state-audit-ustaad-social.test.ts`. Spec 23 § 21i-L "Batch G". Owed: the Playwright run of these rows (no real-mode build
 here; CI), fixtures for the other 13 `API-USTAAD-*` rows (join, welcome, partners status, attest, post sheets, create, story
 viewer, tag, teaser, messages, thread, network, discover). No product code changed.
+
+- 2026-11-28 batch F (agent branch worktree-agent-a4f087cb5c85717df): F1 master–detail layout is CSS only (no flip after hydration; `WideSwitch` picks only the list content, `isWideNow()` only in effects); F2 workshop Calendar shows free places per hour from the existing `/workshop/profile` + `/workshop/slots` routes (spec 07). Blackout dates not built (no data). Owed: live CLS re-measure of /partner/shop/orders at 1280, real browser look at 1440 and 390 px.

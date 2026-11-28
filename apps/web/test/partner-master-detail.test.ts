@@ -33,12 +33,31 @@ describe('master-detail wiring', () => {
     const c = src('components/partner/master-detail.tsx');
     expect(c).toMatch(/nav:grid-cols-\[/);
     expect(c).toMatch(/tabIndex=\{-1\}/);
-    expect(c).toMatch(/\(min-width: 1024px\)/);
   });
 
   it('the shop Orders tab and the workshop Jobs tab use it', () => {
     expect(src('components/portal/shop-orders-tab-api.tsx')).toMatch(/MasterDetail/);
     expect(src('components/portal/workshop-portal-api.tsx')).toMatch(/MasterDetail/);
+  });
+
+  it('callers never branch the layout on the viewport: one CSS-driven tree, server HTML equals first paint', () => {
+    for (const f of [
+      'components/portal/shop-orders-tab-api.tsx',
+      'components/portal/workshop-portal-api.tsx',
+    ]) {
+      const c = src(f);
+      expect(c, f).not.toMatch(/useWideLayout/);
+      expect(c, f).not.toMatch(/\bwide\s*[?&]|[?&]\s*!?wide\b|\(\s*!?wide\b|if \(.*\bwide\b/);
+    }
+    const m = src('components/partner/master-detail.tsx');
+    // Grid columns, the detail pane and the two navigation links switch with CSS at the 1024 px `nav:` breakpoint.
+    expect(m).toMatch(/nav:grid-cols-\[22rem_minmax\(0,1fr\)\]/);
+    expect(m).toMatch(/hidden nav:block/);
+    expect(m).toMatch(/nav:hidden/);
+    // No render-time viewport state: the wide check is read only inside effects (focus, analytics).
+    expect(m).not.toMatch(/useSyncExternalStore|useWideLayout/);
+    expect(src('components/partner/wide-layout.tsx')).toMatch(/export function isWideNow/);
+    expect(src('components/partner/wide-layout.tsx')).toMatch(/\(min-width: 1024px\)/);
   });
 
   it('has en and hi strings for the empty pane and the close links', () => {
