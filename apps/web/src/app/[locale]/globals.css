@@ -1118,3 +1118,30 @@ html:has([data-shell-compact]) .ustaad-seg [aria-selected='true'] {
   background-color: var(--color-surface-raised);
   box-shadow: var(--shadow-lift);
 }
+/* Partner lane tabs (links with aria-current): the same track + thumb, through --lane-* tokens that resolve to the
+   old outlined chips with a navy selected chip in dark. */
+.lane-seg {
+  background-color: var(--lane-track);
+  border-radius: var(--radius-pill);
+}
+.lane-tab {
+  background-color: var(--lane-item-bg);
+  border-color: var(--lane-item-edge);
+}
+.lane-tab:not([aria-current='page']):hover {
+  border-color: color-mix(in srgb, var(--color-ink) 30%, transparent);
+}
+.lane-tab[aria-current='page'] {
+  background-color: var(--lane-thumb-bg);
+  border-color: var(--lane-thumb-edge);
+  color: var(--lane-thumb-fg);
+  box-shadow: var(--lane-thumb-shadow);
+}
+.lane-tab-count {
+  background-color: var(--color-pill);
+  color: var(--color-ink);
+}
+.lane-tab[aria-current='page'] .lane-tab-count {
+  background-color: var(--lane-count-on-bg);
+  color: var(--lane-count-on-fg);
+}

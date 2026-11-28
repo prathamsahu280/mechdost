@@ -477,6 +477,7 @@ Q-PP-F2 (tabs), F3 (sound on by default), F4 (storefront header stays).
   status after a user tab click (`tabFocusPlan`, `PartnerFrame heading` prop; the rider layout keeps its own `h1`), and
   `focusHashTarget` for KPI hash links. Details in `docs/design-system.md` "Partner frame"; tests
   `apps/web/test/partner-kit-a11y.test.ts`, `partner-kit.test.ts`.
+- **Layout shift and lane tabs (2026-11-28, batch C):** the partner frame root has `min-h-dvh` so the footer stays below the fold while a tab loads (live CLS 0.27-0.44, LV-6); `LaneTabs` take the V9 segmented look in light (`.lane-seg` track, white thumb; dark unchanged). Test `apps/web/test/layout-shift-frames.test.ts`.
 
 - **Partner kit** (`apps/web/src/components/partner/`, batch 0 owns it; others import from `@/components/partner`):
   `PartnerFrame` + `PartnerStrip` (navy strip with the state in words and Help; bottom tab bar under 1024 px, navy

@@ -31,7 +31,8 @@ export default async function NotificationsPage() {
   if (AUTH_MODE !== 'firebase') notFound();
   const t = await getTranslations('bell');
   return (
-    <Container className="py-10 tab:py-14">
+    // min-h-dvh: the centre loads on the client, so the footer must start below the first viewport (LV-6).
+    <Container className="min-h-dvh py-10 tab:py-14">
       <PageIntro eyebrow="MechDost" line1={t('centreTitle')} lead={t('centreIntro')} />
       <div className="mt-8">
         <ClientMessages namespaces={['bell', 'account']}>

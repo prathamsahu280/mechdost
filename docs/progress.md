@@ -1503,3 +1503,7 @@ is covered by the existing DLV-AGENT-JOBS rows; no fixtures for the refusal stat
 - 10:12 IST: `pnpm check` green (12/12 tasks) on main with batches N + P, worker fix, video rule and live a11y fixes;
   V9 light lift merged (web tsc 0, vitest 252 files / 2346 tests). Pushed 6da59e47; CI run 46108753048 then Deploy.
   Daytime cron every 10 min until 21:00 IST (founder 2026-11-28).
+
+## 2026-11-28 — Batch C (builder; branch worktree-agent-a5055c9d44788b237, NOT merged, not pushed; no migration)
+
+C1 LV-6 layout shift: root cause = client-loaded frames render a short loading body so the footer is in the first viewport, and `PushDevice` returned null until mounted (push-card.tsx). Fix: `min-h-dvh` on the partner frame root and the notifications page, stable min-h placeholder card for `PushDevice`. C2: partner lane tabs get the V9 segmented look (`--lane-*` tokens, dark unchanged). Owed to the lead: live CLS re-measure after deploy (cls.mjs) on /partner/delivery, /partner/workshop/profile, /notifications; signed-in look at lane tabs light and dark.

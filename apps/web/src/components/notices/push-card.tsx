@@ -139,7 +139,17 @@ export function PushDevice() {
   const { phase, setPhase } = useDevice();
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState(false);
-  if (!PUSH_CONFIGURED || phase.kind !== 'ready') return null;
+  if (!PUSH_CONFIGURED) return null;
+  // The browser is probed after mount. Hold the card's place (heading + fixed minimum height) meanwhile so the
+  // preferences below never jump when the answer arrives (LV-6).
+  if (phase.kind === 'checking')
+    return (
+      <section aria-labelledby="push-device-title" aria-busy="true" className={`${card} min-h-40 space-y-2`}>
+        <h2 id="push-device-title" className="font-heading text-base font-extrabold text-ink">
+          {t('deviceHeading')}
+        </h2>
+      </section>
+    );
 
   async function turnOn() {
     setBusy(true);
@@ -166,7 +176,7 @@ export function PushDevice() {
 
   const { env, enabled } = phase;
   return (
-    <section aria-labelledby="push-device-title" className={`${card} space-y-2`}>
+    <section aria-labelledby="push-device-title" className={`${card} min-h-40 space-y-2`}>
       <h2 id="push-device-title" className="font-heading text-base font-extrabold text-ink">
         {t('deviceHeading')}
       </h2>

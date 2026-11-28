@@ -75,6 +75,17 @@
   --shadow-lift-chrome-down: 0 1px 0 #101f3414, 0 6px 16px -12px #101f3426;
   --shadow-lift-chrome-up: 0 -1px 0 #101f3414, 0 -8px 20px -16px #101f3433;
   --shadow-lift-deep: 0 14px 30px -18px #101f3480;
+  /* Partner lane tabs (V9 item 7): tinted track, white thumb with the lift shadow. Dark re-declares them to today's
+     look (no track, outlined chips, navy selected chip). */
+  --lane-track: var(--color-lift-track);
+  --lane-item-bg: transparent;
+  --lane-item-edge: transparent;
+  --lane-thumb-bg: var(--color-surface-raised);
+  --lane-thumb-fg: var(--color-ink);
+  --lane-thumb-edge: transparent;
+  --lane-thumb-shadow: var(--shadow-lift);
+  --lane-count-on-bg: var(--color-pill);
+  --lane-count-on-fg: var(--color-ink);
   --color-hero-copy: #cfd9e5;
   --color-focus: #e65325;
   --color-star: #c27803; /* rating stars: ≥3:1 on white (decision 2026-11-01) */
@@ -199,6 +210,15 @@
   --shadow-lift-chrome-down: 0 1px 0 #ffffff0f;
   --shadow-lift-chrome-up: 0 -1px 0 #ffffff0f;
   --shadow-lift-deep: inset 0 1px 0 #ffffff14, 0 0 0 1px #ffffff0f;
+  --lane-track: transparent;
+  --lane-item-bg: var(--color-surface);
+  --lane-item-edge: var(--color-line-card);
+  --lane-thumb-bg: var(--color-navy);
+  --lane-thumb-fg: #ffffff;
+  --lane-thumb-edge: var(--color-navy);
+  --lane-thumb-shadow: none;
+  --lane-count-on-bg: #ffffff33;
+  --lane-count-on-fg: #ffffff;
   --color-focus: #ff8b59;
   --color-star: #f5b041;
   --shadow-card: 0 4px 16px #00000033;
@@ -265,6 +285,15 @@
     --shadow-lift-chrome-down: 0 1px 0 #ffffff0f;
     --shadow-lift-chrome-up: 0 -1px 0 #ffffff0f;
     --shadow-lift-deep: inset 0 1px 0 #ffffff14, 0 0 0 1px #ffffff0f;
+    --lane-track: transparent;
+    --lane-item-bg: var(--color-surface);
+    --lane-item-edge: var(--color-line-card);
+    --lane-thumb-bg: var(--color-navy);
+    --lane-thumb-fg: #ffffff;
+    --lane-thumb-edge: var(--color-navy);
+    --lane-thumb-shadow: none;
+    --lane-count-on-bg: #ffffff33;
+    --lane-count-on-fg: #ffffff;
     --color-focus: #ff8b59;
     --color-star: #f5b041;
     --shadow-card: 0 4px 16px #00000033;
