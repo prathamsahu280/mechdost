@@ -665,6 +665,9 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
 - **Q-SES-3 — ANSWERED 2026-11-28 22:55:** yes, show a rough location ("any major app shows that"). Plan: DB-IP
   City Lite on the API, place name only (IP never stored), labelled approximate (research § 6).
 
+- **Q-DCP18 (Decision, P3)** Customer order page: show the selling shop's name, or never the shop (MechDost only)?
+  The API returns the seller, the screen does not show it. Default: not shown.
+
 - **Q218-B (Decision, P1) My Garage build scope** (demo `docs/design/my-garage-2026-11-28/index.html`, research
   `docs/superpowers/specs/2026-11-28-my-garage-research.md`): which parts to build first? Default proposal: (1) service
   book from real orders/jobs + fits shelf + km update, (2) road-ahead service due with admin rules, (3) papers expiry +
