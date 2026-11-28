@@ -1658,3 +1658,7 @@ viewer, tag, teaser, messages, thread, network, discover). No product code chang
   max_lifetime/idle_timeout vs Supavisor), queued.
 - 16:56 IST: deploy of 5dd21eaa (shared pool never replaced; sweeps recycle their own) live; 0 errors, heartbeat OK. Watching for the next sweep_pool_recycled to confirm the relay keeps working.
 - 18:35 IST: My Garage research (smartgarrage.com = Hyderabad bike service site; CRED Garage + peers) and an interactive demo (artifact https://claude.ai/artifact/4VjZ7gByBJy6z4QW6d7QHY, copy in docs/design/my-garage-2026-11-28/). Scope question Q218-B queued.
+
+## 2026-11-29 (later) - DC batch merged with main, skills run (builder, branch worktree-agent-a305ffbf411c6c011, NOT merged to main)
+
+- Merged main (sessions 0117 idx 112, pincode 0116 idx 111); migration 0118 is journal idx 113, snapshot regenerated on the merged schema. Public rider application answers `{status:'received'}` for new and repeat (byte-identical, test in apps/api). a11y review fixes (revoke, retry/send-back, shop-mode confirm panels), state-audit row DLV-ADMIN-PANELS, checklist regenerated (6701 items). Two web test failures after the merge belong to main (devices card namespace, ustaad clamped-body).

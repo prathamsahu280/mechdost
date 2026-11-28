@@ -1,6 +1,7 @@
 -- Delivery / COD QA batch DC (2026-11-29). Migration 0118 (0116 pincode index and 0117 user sessions come first).
 -- Idempotent: every statement can run twice. It writes no audit, event or notification rows.
 --
+SET LOCAL lock_timeout = '5s';--> statement-breakpoint
 -- DC-F1 / DC-P2: one open delivery application per phone. Before the unique index is built, every OPEN application
 -- (new / in_review) that has an older open application with the same phone is closed as rejected. The row that stays
 -- open is the one with the smallest (created_at, id) for that phone, the earliest. Closed rows only get status and a

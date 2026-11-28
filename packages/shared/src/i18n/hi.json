@@ -2452,7 +2452,7 @@
     "appReject_documents_invalid": "दस्तावेज़ सत्यापित नहीं हो सके",
     "appReject_duplicate": "दोहराया गया आवेदन",
     "appReject_not_a_business": "पंजीकृत व्यवसाय नहीं",
-    "appReject_vehicle_not_suitable": "गाड़ी हमारी डिलीवरी के लिए ठीक नहीं है",
+    "appReject_vehicle_not_suitable": "वाहन हमारी डिलीवरी के लिए ठीक नहीं है",
     "appReject_cannot_reach": "आवेदक से संपर्क नहीं हो सका",
     "appReject_other": "दूसरा कारण",
     "partnersTab_shop": "दुकानें",

@@ -705,3 +705,6 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
   form, the answer carries no `PA-…` reference. Send the reference to the typed phone by WhatsApp when the channel is
   switched on (needs a new event + template) so riders can follow their application on the status page? Default: no;
   MechDost calls the applicant.
+
+- **Q-DC-3 (Decision, P3) COD request limit editable?** The 5 requests per customer per day is a constant
+  (`COD_REQUESTS_PER_DAY`, spec 03). Make it an admin setting (`checkout.cod_request_daily_limit`)? Default: constant.

@@ -372,7 +372,7 @@ Client events for the portal screens come with the screens.
 `delivery_offer_viewed`, `delivery_offer_answered`, `delivery_job_step`, `delivery_photo_taken`,
 `delivery_contact_tapped`, `delivery_document_submitted`, `delivery_shop_ready_marked`,
 `delivery_shop_return_confirmed`, `delivery_shop_switch_answered`, `delivery_shop_mode_requested`,
-`delivery_rating_submitted`, `delivery_admin_action` (schemas: `packages/shared/src/delivery/client-events.ts`).
+`delivery_rating_submitted`, `delivery_admin_action` (since 2026-11-29 also `action: shop_mode_set`, staff set a shop's delivery mode directly; schemas: `packages/shared/src/delivery/client-events.ts`).
 Codes, counts and booleans only; never a typed code, phone, name or address.
 
 ## Delivery agents web screens (2026-11-27, spec 24)

@@ -378,6 +378,7 @@ function JobDetail({
   const [busy, setBusy] = useState(false);
   // DC-B14: retry and send-back confirm inline with a summary before they act.
   const [decision, setDecision] = useState<'retry_same' | 'retry_other' | 'return' | null>(null);
+  useDisclosureFocus(decision ? `decide-${jobId}` : null);
   const { say, line } = useStatusLine();
   const reload = useCallback(() => {
     void client.job(jobId).then((r) => {
@@ -520,6 +521,7 @@ function JobDetail({
                   </button>
                   <button
                     type="button"
+                    data-disclosure-trigger={`decide-${jobId}`}
                     className={portalQuiet}
                     onClick={() => {
                       setDecision('retry_other');
@@ -531,6 +533,7 @@ function JobDetail({
               )}
               <button
                 type="button"
+                data-disclosure-trigger={`decide-${jobId}`}
                 className={portalPrimary}
                 onClick={() => {
                   setDecision('return');
@@ -548,6 +551,7 @@ function JobDetail({
               <div className="flex gap-2">
                 <button
                   type="button"
+                  data-disclosure-field={`decide-${jobId}`}
                   className={portalPrimary}
                   onClick={() => {
                     const d = decision;
@@ -566,6 +570,7 @@ function JobDetail({
                 </button>
                 <button
                   type="button"
+                  data-panel-cancel={`decide-${jobId}`}
                   className={portalQuiet}
                   onClick={() => {
                     setDecision(null);
@@ -966,7 +971,16 @@ function ApplicationsTab({ client }: { client: AdminDeliveryClient }) {
   const [inviteEmail, setInviteEmail] = useState('');
   const [emailProblem, setEmailProblem] = useState(false);
   const [revoking, setRevoking] = useState<string | null>(null);
-  useDisclosureFocus(rejecting ? `reject-${rejecting}` : inviting ? `invite-${inviting}` : null);
+  useDisclosureFocus(
+    rejecting
+      ? `reject-${rejecting}`
+      : inviting
+        ? `invite-${inviting}`
+        : revoking
+          ? `revoke-${revoking}`
+          : null,
+    'invite-link',
+  );
   const loadApps = useCallback(() => client.applications(null), [client]);
   const loadInvites = useCallback(() => client.invites(), [client]);
   const apps = useList<AgentApplicationView>(client, loadApps);
@@ -1031,7 +1045,7 @@ function ApplicationsTab({ client }: { client: AdminDeliveryClient }) {
     <div className="space-y-4">
       {line}
       {link ? (
-        <div className={`${adminCard} border-success`}>
+        <div tabIndex={-1} data-disclosure-trigger="invite-link" className={`${adminCard} border-success`}>
           <p className="text-sm text-ink">{t('inviteSent', { date: link.until })}</p>
           <p className="mt-1 break-all text-sm font-bold text-ink" lang="en">
             {link.url}
@@ -1122,6 +1136,7 @@ function ApplicationsTab({ client }: { client: AdminDeliveryClient }) {
                       type="email"
                       inputMode="email"
                       autoComplete="off"
+                      spellCheck={false}
                       value={inviteEmail}
                       maxLength={120}
                       aria-invalid={emailProblem || undefined}
@@ -1218,9 +1233,11 @@ function ApplicationsTab({ client }: { client: AdminDeliveryClient }) {
               </span>
               <span className="flex items-center gap-2">
                 <StatusBadge code={i.status}>{t(`inviteStatus_${i.status}`)}</StatusBadge>
-                {i.status === 'sent' && revoking !== i.id ? (
+                {i.status === 'sent' ? (
                   <button
                     type="button"
+                    data-disclosure-trigger={`revoke-${i.id}`}
+                    aria-expanded={revoking === i.id}
                     className={portalQuiet}
                     onClick={() => {
                       setRevoking(i.id);
@@ -1237,11 +1254,17 @@ function ApplicationsTab({ client }: { client: AdminDeliveryClient }) {
                     {t('revokeConfirm', { name: i.name, last4: i.phoneLast4 })}
                   </p>
                   <div className="flex gap-2">
-                    <button type="button" className={portalPrimary} onClick={() => void revoke(i.id)}>
+                    <button
+                      type="button"
+                      data-disclosure-field={`revoke-${i.id}`}
+                      className={portalPrimary}
+                      onClick={() => void revoke(i.id)}
+                    >
                       {t('revoke')}
                     </button>
                     <button
                       type="button"
+                      data-panel-cancel={`revoke-${i.id}`}
                       className={portalQuiet}
                       onClick={() => {
                         setRevoking(null);
@@ -1815,17 +1838,25 @@ function DocumentReview({
             {doc.status !== 'verified' ? (
               // DC-F2: Verify opens only after this session opened the document (the open is audited), so no
               // verification is blind. aria-disabled keeps the button focusable; pressing it says why.
-              <button
-                type="button"
-                aria-disabled={view === null}
-                className={`${portalPrimary} aria-disabled:opacity-60`}
-                onClick={() => {
-                  if (view === null) say(t('docViewFirst'), 'error');
-                  else void decide(true);
-                }}
-              >
-                {t('docVerify')}
-              </button>
+              <>
+                <button
+                  type="button"
+                  aria-disabled={view === null}
+                  aria-describedby={view === null ? `docview-hint-${agentId}-${kind}` : undefined}
+                  className={`${portalPrimary} aria-disabled:opacity-60`}
+                  onClick={() => {
+                    if (view === null) say(t('docViewFirst'), 'error');
+                    else void decide(true);
+                  }}
+                >
+                  {t('docVerify')}
+                </button>
+                {view === null ? (
+                  <span id={`docview-hint-${agentId}-${kind}`} className="sr-only">
+                    {t('docViewFirst')}
+                  </span>
+                ) : null}
+              </>
             ) : null}
             {doc.status !== 'rejected' ? (
               <button
@@ -2022,7 +2053,7 @@ function ShopModeSet({ client }: { client: AdminDeliveryClient }) {
   const [note, setNote] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
-  useDisclosureFocus(open ? 'shop-mode-set' : null);
+  useDisclosureFocus(confirming ? 'shop-mode-confirm' : open ? 'shop-mode-set' : null, 'shop-mode-set');
   const shop = (items ?? []).find((s) => s.id === shopId) ?? null;
   const target = shop ? (shop.mode === 'agents' ? 'self' : 'agents') : null;
   const shown = (s: ShopModeRowView) => (locale === 'hi' && s.nameHi ? s.nameHi : s.name);
@@ -2083,6 +2114,8 @@ function ShopModeSet({ client }: { client: AdminDeliveryClient }) {
         </label>
         <select
           id="shop-mode-set-shop"
+          aria-invalid={problem !== null && shop === null ? true : undefined}
+          aria-describedby={problem !== null && shop === null ? 'shop-mode-set-err' : undefined}
           data-disclosure-field="shop-mode-set"
           value={shopId}
           onChange={(e) => {
@@ -2105,6 +2138,9 @@ function ShopModeSet({ client }: { client: AdminDeliveryClient }) {
         </label>
         <input
           id="shop-mode-set-note"
+          aria-required="true"
+          aria-invalid={problem !== null && shop !== null ? true : undefined}
+          aria-describedby={problem !== null && shop !== null ? 'shop-mode-set-err' : undefined}
           value={note}
           maxLength={300}
           onChange={(e) => {
@@ -2115,7 +2151,7 @@ function ShopModeSet({ client }: { client: AdminDeliveryClient }) {
         />
       </div>
       {problem ? (
-        <p role="alert" className="text-sm font-bold text-error">
+        <p id="shop-mode-set-err" role="alert" className="text-sm font-bold text-error">
           {problem}
         </p>
       ) : null}
@@ -2125,11 +2161,17 @@ function ShopModeSet({ client }: { client: AdminDeliveryClient }) {
             {t('shopModeSetConfirm', { shop: shown(shop), from: m(shop.mode), to: m(target) })}
           </p>
           <div className="flex gap-2">
-            <button type="button" className={portalPrimary} onClick={() => void apply()}>
+            <button
+              type="button"
+              data-disclosure-field="shop-mode-confirm"
+              className={portalPrimary}
+              onClick={() => void apply()}
+            >
               {t('shopModeSetYes')}
             </button>
             <button
               type="button"
+              data-panel-cancel="shop-mode-confirm"
               className={portalQuiet}
               onClick={() => {
                 setConfirming(false);
@@ -2141,7 +2183,12 @@ function ShopModeSet({ client }: { client: AdminDeliveryClient }) {
         </div>
       ) : (
         <div className="flex gap-2">
-          <button type="button" className={portalPrimary} onClick={review}>
+          <button
+            type="button"
+            data-disclosure-trigger="shop-mode-confirm"
+            className={portalPrimary}
+            onClick={review}
+          >
             {t('shopModeReview')}
           </button>
           <button

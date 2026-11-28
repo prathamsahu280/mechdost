@@ -571,3 +571,5 @@ Operations group → **Delivery**: jobs queue with ranked agent suggestions and 
 agents (status with history, documents with an audited view, rating), manual payouts (record, correct with a
 reversing entry, CSV), shop delivery-mode requests and the per-city settings (real builds: Settings → Partners). The
 order card shows the delivery timeline. Spec 24 § Web screens.
+
+**Admin → Delivery (2026-11-29, QA batch DC).** Job filters are outlined chips with open-job counts (`GET /v1/admin/delivery/job-counts`); invite, revoke, retry and send-back confirm inline with a summary; Verify on a rider document is enabled only after the document was opened in this session; Requests tab has "Change a shop's delivery directly". Spec 24 § 21.
