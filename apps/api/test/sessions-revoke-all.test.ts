@@ -4,7 +4,7 @@
  * the analytics event, limited per user, and answers 503 when the deployment has no password authority.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
-import { ensureUser, events } from '@mechdost/db/repo';
+import { ensureUser, events, startUserSession } from '@mechdost/db/repo';
 import * as s from '@mechdost/db/schema';
 import { eq } from '@mechdost/db/testing';
 import { SESSIONS_REVOKE_ALL_RATE } from '../src/routes/sessions';
@@ -72,5 +72,21 @@ describe('POST /v1/me/sessions/revoke-all', () => {
       .from(s.auditLog)
       .where(eq(s.auditLog.action, 'auth.sessions_revoked'));
     expect(audit.filter((r) => r.actorUserId === me.id)).toHaveLength(0);
+  });
+});
+
+describe('device list wiring (decision 2026-11-28)', () => {
+  it('also ends every device-list row of the caller as self_all, and no one else’s', async () => {
+    const me = await person(ctx, '5');
+    const other = await person(ctx, '6');
+    const device = { deviceKind: 'mobile', browser: 'chrome', os: 'android' } as const;
+    await startUserSession(ctx.db, { userId: me.id, device, place: null });
+    await startUserSession(ctx.db, { userId: me.id, device, place: null });
+    await startUserSession(ctx.db, { userId: other.id, device, place: null });
+    expect((await post(ctx, me.headers)).status).toBe(200);
+    const mine = await ctx.db.select().from(s.userSessions).where(eq(s.userSessions.userId, me.id));
+    expect(mine.map((r) => r.revokedReason)).toEqual(['self_all', 'self_all']);
+    const theirs = await ctx.db.select().from(s.userSessions).where(eq(s.userSessions.userId, other.id));
+    expect(theirs.map((r) => r.revokedAt)).toEqual([null]);
   });
 });

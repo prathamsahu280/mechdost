@@ -231,3 +231,14 @@ The pencil link on cards and the product page is convenience only; authority sta
 - **CSP:** `frame-src https://www.youtube-nocookie.com` and `img-src https://i.ytimg.com` only; no YouTube origin in
   `script-src` / `connect-src`. The iframe is sandboxed (`allow-scripts allow-same-origin allow-presentation
 allow-popups`), mounted only after a tap, `strict-origin-when-cross-origin` referrer; no raw user HTML is rendered.
+
+## Sessions and devices (2026-11-28, migration 0117)
+
+Password sign-ins are rows in `user_sessions` (spec 01 "Devices"). The session key is 256-bit CSPRNG (OWASP asks for at least
+128 bits), travels only inside the signed Firebase token, and only its SHA-256 hash is stored. A token whose row is missing,
+ended or another person's is refused with 401 `SESSION_ENDED` on the next session load (cache period 60 s). A person can only
+list or end their own rows (foreign id = 404); the current device cannot be ended through the "other devices" route (409).
+Rate limit `device_write` 60 per hour per person. Data minimisation (DPDP): no IP address and no raw User-Agent are stored; the
+rough place comes from an offline lookup (no third-party call) and is English names only. RLS on, no grants, API-only access.
+Earlier sign-ins without the claim are not listed and are ended only by "Sign out of all devices". New dependency
+`maxmind@5.1.0` (+ `mmdb-lib@3.0.3`, `tiny-lru@13.1.1`): check recorded in `docs/research/security-vulnerabilities.md`.

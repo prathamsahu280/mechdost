@@ -7,7 +7,10 @@ import {
   globalFlagSetting,
   linkApplicantOwner,
   loadGrants,
+  sessionStateByKey,
+  touchSessionActive,
 } from '@mechdost/db/repo';
+import { DEVICE_ACTIVE_REFRESH_MS } from '@mechdost/shared/devices';
 import { isStaffGrant, STAFF_SESSION_MAX_AGE_SECONDS } from '@mechdost/shared/auth';
 import { blockEffects } from '@mechdost/shared/customers';
 import { can, isSellerAccount, type Permission, type Target } from '@mechdost/shared/rbac';
@@ -55,7 +58,9 @@ export function authenticate(
 
     // `authTime` is in the key: token refreshes of one sign-in share the entry, while every new sign-in loads the
     // user's roles, status and blocks again on every instance (a role granted moments ago works on next sign-in).
-    const key = `${identity.firebaseUid}|${String(identity.authTime)}|${identity.phone ?? ''}|${identity.email ?? ''}|${String(identity.emailVerified)}`;
+    // The device-list session (claim `mds`) is part of the key: each sign-in has its own entry, so ending one device
+    // never depends on another's. Only a prefix of the key is used; the entry lives in this instance's memory only.
+    const key = `${identity.firebaseUid}|${String(identity.authTime)}|${identity.phone ?? ''}|${identity.email ?? ''}|${String(identity.emailVerified)}|${identity.sessionKey?.slice(0, 16) ?? ''}`;
     let session = cache.get(key);
     if (!session) {
       // Revocation (sign out everywhere, password reset) and accounts disabled in Firebase are checked whenever
@@ -69,10 +74,29 @@ export function authenticate(
         (await linkApplicantOwner(deps.db, { userId: user.id, phone: identity.phone })) > 0
       )
         log('info', 'applicant_owner_linked', { userId: user.id });
+      // Device list (decision 2026-11-28): a token that carries a session key is valid only while its row is live
+      // and the person's own. Tokens without one (phone-code sessions, sign-ins from before the device list) skip
+      // this. Checked on the cache-miss path only, so an ended device is out within the cache period.
+      let sessionId: string | null = null;
+      if (identity.sessionKey) {
+        const state = await sessionStateByKey(deps.db, identity.sessionKey);
+        if (!state || state.revoked || state.userId !== user.id)
+          throw Unauthorized('SESSION_ENDED', 'This sign-in was ended — sign in again');
+        sessionId = state.id;
+        // Last active, at most hourly: a failure here is logged and never fails the request.
+        if (Date.now() - state.lastActiveAt.getTime() >= DEVICE_ACTIVE_REFRESH_MS) {
+          try {
+            await touchSessionActive(deps.db, state.id);
+          } catch (err) {
+            log('warn', 'session_touch_failed', { message: err instanceof Error ? err.message : 'unknown' });
+          }
+        }
+      }
       session = {
         user,
         grants: await loadGrants(deps.db, user.id),
         blocks: await activeBlockLevels(deps.db, user.id),
+        sessionId,
       };
       cache.set(key, session);
     }
@@ -93,6 +117,7 @@ export function authenticate(
       grants: staffSession ? session.grants : session.grants.filter((g) => !isStaffGrant(g)),
       authTime: identity.authTime,
       staffWithheld,
+      sessionId: session.sessionId,
     });
     await next();
   });

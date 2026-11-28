@@ -119,6 +119,7 @@ const NONE = [
   'service_photos',
   'service_proposals',
   'sessions',
+  'user_sessions',
   'settings',
   'shipments',
   'shop_agreements',

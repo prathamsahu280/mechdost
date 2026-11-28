@@ -113,7 +113,7 @@ export function SecurityCard({ context }: { context: { phone?: string; email?: s
 
   return (
     <section aria-labelledby="security-title" className={`${card} max-w-xl space-y-6`}>
-      <h2 id="security-title" className="font-heading text-xl font-extrabold text-ink">
+      <h2 id="security-title" className="scroll-mt-24 font-heading text-xl font-extrabold text-ink">
         {t('securityTitle')}
       </h2>
       <form noValidate onSubmit={(e) => void onSubmit(e)} aria-labelledby="security-password-title">
@@ -155,7 +155,10 @@ export function SecurityCard({ context }: { context: { phone?: string; email?: s
         </button>
       </form>
       <div className="border-t border-line pt-5" aria-labelledby="security-signout-all-title" role="group">
-        <h3 id="security-signout-all-title" className="font-heading text-base font-extrabold text-ink">
+        <h3
+          id="security-signout-all-title"
+          className="scroll-mt-24 font-heading text-base font-extrabold text-ink"
+        >
           {t('signOutAllTitle')}
         </h3>
         <p className="mt-1 max-w-prose text-sm text-muted">{t('signOutAllHelp')}</p>

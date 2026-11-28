@@ -1,5 +1,5 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import { recordSessionsRevoked } from '@mechdost/db/repo';
+import { recordSessionsRevoked, revokeAllUserSessions } from '@mechdost/db/repo';
 import type { SessionCache } from '../auth/session-cache';
 import { ApiError } from '../errors';
 import { authenticate } from '../middleware/auth';
@@ -52,6 +52,8 @@ export function sessionRoutes(deps: AppDeps, cache: SessionCache) {
     if (!revoke)
       throw new ApiError(503, 'UNAVAILABLE', 'Signing out of all devices is not available right now');
     await revoke(auth.user.firebaseUid);
+    // The device list marks every row of the caller ended too (reason self_all); Firebase ended the tokens above.
+    await revokeAllUserSessions(deps.db, auth.user.id, 'self_all');
     cache.invalidateUser(auth.user.id);
     await recordSessionsRevoked(deps.db, {
       userId: auth.user.id,

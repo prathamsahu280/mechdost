@@ -32,6 +32,7 @@ const SECTIONS = [
   { key: 'photos', emoji: '📷' },
   { key: 'analytics', emoji: '📊' },
   { key: 'errors', emoji: '🛠️' },
+  { key: 'devices', emoji: '📱' },
   { key: 'safe', emoji: '🔒' },
   { key: 'rights', emoji: '✋' },
   // Ustaad Network (spec 23 § 13, 2026-11-26): mechanics only.

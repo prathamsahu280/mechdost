@@ -38,6 +38,7 @@
     "@upstash/redis": "1.40.0",
     "firebase-admin": "14.5.0",
     "hono": "4.13.16",
+    "maxmind": "5.1.0",
     "pdfkit": "0.20.2",
     "sharp": "0.35.5",
     "zod": "4.6.7"

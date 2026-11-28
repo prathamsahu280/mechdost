@@ -179,3 +179,12 @@ Static review of every item against the code (Opus agent, each claim traced end 
 - **Runtime exposure:** loaded only after the person taps "Turn on" (spec 16); talks to `fcmregistrations.googleapis.com` and `firebaseinstallations.googleapis.com` (added to `connect-src` in real mode only, `apps/web/test/csp.test.ts`). The service worker has no Firebase code and fetches nothing.
 - **Server:** `firebase-admin` 14.5.0 `getMessaging().sendEach` (already installed; the 2 moderate transitive findings are the known ones).
 - **Review points:** a token is personal data (never logged or returned by an API; RLS on, anon/authenticated revoked); push payload is title/short body/link only; the worker opens only paths on this site (`safePath`, same rule as the API's `link` CHECK and the catalogue's `noticeLink`).
+
+## Dependency check: `maxmind` 5.1.0 (2026-11-28, device list rough place)
+
+- **Why:** an MMDB reader for the DB-IP City Lite file. The format is small but binary; the official reader (`node-maxmind`, MIT, maintainer runk, first published 2013) is the maintained choice. Writing our own parser was rejected: a parsing bug on a downloaded file is worse than a vetted reader.
+- **Age and release:** 5.1.0 published 2026-11-13 (15 days; `minimumReleaseAge` is 3 days). Maintained: 5.0.6 2026-04-01, 5.0.7 2026-08-01, 5.0.8 2026-11-01, 5.0.9 2026-11-12, 5.1.0 2026-11-13. Exact version pinned.
+- **Dependencies:** `mmdb-lib` 3.0.3 (published 2026-07-30; 3.0.4 and 3.0.5 are newer and not taken), `tiny-lru` 13.1.1 (old, small). No install scripts, no native code, no network access at runtime.
+- **`pnpm audit --prod` after adding it (2026-11-28):** the same 5 findings as before (1 low, 4 moderate), none under `maxmind`, `mmdb-lib` or `tiny-lru`.
+- **Runtime exposure:** reads one local file chosen by the operator (`GEOIP_CITY_DB`), never fetched by the app; `watchForUpdatesNonPersistent` reloads it after the monthly replacement without a restart. A missing or corrupt file is logged once and means "no place". Lookups are synchronous, in memory, only at password sign-in. The address is never stored or logged.
+- **Data:** DB-IP City Lite, CC BY 4.0: the device list shows "IP geolocation by DB-IP" linking https://db-ip.com whenever a place is shown. Accuracy on Indian mobile networks is limited (shared gateways); the screen says "near" and "approximate".
