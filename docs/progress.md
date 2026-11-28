@@ -1515,3 +1515,9 @@ is covered by the existing DLV-AGENT-JOBS rows; no fixtures for the refusal stat
 ## 2026-11-28 — Batch C (builder; branch worktree-agent-a5055c9d44788b237, NOT merged, not pushed; no migration)
 
 C1 LV-6 layout shift: root cause = client-loaded frames render a short loading body so the footer is in the first viewport, and `PushDevice` returned null until mounted (push-card.tsx). Fix: `min-h-dvh` on the partner frame root and the notifications page, stable min-h placeholder card for `PushDevice`. C2: partner lane tabs get the V9 segmented look (`--lane-*` tokens, dark unchanged). Owed to the lead: live CLS re-measure after deploy (cls.mjs) on /partner/delivery, /partner/workshop/profile, /notifications; signed-in look at lane tabs light and dark.
+
+- 10:40 IST: batch C (LV-6 layout shift: PartnerFrame + notifications min-h-dvh, push card holds its place; partner
+  lane tabs V9) and batch D (state-audit rows + fixtures for Learn/Jobs/Saved, `/ustaad/u` profile restyle) audited and
+  merged locally (web tsc 0, vitest 255 files / 2366 tests). Push after Deploy of 6da59e47 finishes. Owed: live CLS
+  re-measure (`scratchpad/qa/cls.mjs`), Playwright run of the new API-USTAAD rows (CI), "helped N" on the public
+  profile needs a DTO field (queue for founder).
