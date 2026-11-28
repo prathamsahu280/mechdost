@@ -79,6 +79,20 @@ Never use the CI token (`SENTRY_AUTH_TOKEN`) here: it can upload releases. To re
 - The dispatcher uses its own 1-connection pool (the other jobs share 2), so exports/copurchase cannot starve it.
 - Error lines from `safeError` now carry `pgCode` (SQLSTATE) and `reason` (the database's or driver's own message of the wrapped cause, max 200 chars, quoted values hidden for data errors; never the query or parameters). A `data_exports_failed` with no `pgCode` and a `reason` like "argument must be of type string" is a driver-side encoding bug, not a database problem.
 
+### Dead pool connections (DC-B11 root cause, live 2026-11-28)
+
+A worker sweep can wait forever on a database connection that died (Supavisor transaction pooler): nothing runs on the
+server, no lock waits, and postgres.js has no client-side query timeout. Live, the delivery offer sweep hung from
+2026-11-28 00:04 UTC for ~4 h (`sweep_stuck`, then silence), so no rider offer expired.
+
+- The delivery offer sweep has its own one-connection pool and a 60 s deadline per run; the short 30 s sweeps (shop
+  accept timer, service requests, roadside offers, pauses, stock holds, ticket auto-close, unpaid orders, network
+  jobs and stories) run through `boundedShared` with a 120 s deadline (`apps/api/src/sweep-pool.ts`).
+- On a timeout the worker logs **`sweep_pool_recycled {sweep, afterMs}`**, drops that pool and opens a fresh one. One
+  now and then is fine; several an hour means the pooler is dropping connections: check Supabase status.
+- `sweep_heartbeat` (every 10 min, delivery) must keep appearing; a `sweep_stuck` without a following
+  `sweep_pool_recycled` means the deadline did not fire: restart the worker (`docker compose restart worker`).
+
 ## Usage & limits (free-plan warnings, founder 2026-11-26)
 
 Founder: "can u list the storage and stuff via these? and like give me warnings when we are about to exceed the free

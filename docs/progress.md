@@ -1459,3 +1459,21 @@ Learn file sizes + continue; job card employer name; profile /u restyle; worksho
 "Delivered today" + per-row stock ±; rider job step rail; story auto-advance on media end; e2e + state-audit rows +
 Hindi crawl for every new screen; partner kit a11y follow-ups (Hindi bar label wrap vs 65 px padding, visible focus
 after tab change); Messages a11y follow-ups (scroll-padding under stacked sticky bars, repeated status text).
+
+## 2026-11-28 morning (lead) — founder answers, video rule, live checks, DC-B11 root cause
+
+- Founder answered the queue (decisions.md 2026-11-28): rider lapse test go, banned words as is, **video location
+  not checked at all** (MP4 udta/meta accepted whole; `ab2b1198`), V9 site-wide light lift go, Saved share posts only,
+  no auto-captions, three Hindi lines OK. Security review flagged the video change (GPS stays in files); founder chose
+  it after the trade-off was explained — offer "strip on upload" again if he changes his mind.
+- QA Turnstile bypass ON 09:00 IST until 13:59 IST (20 entries, fresh key; scratchpad `qa/bypass-today.env`). Test
+  accounts 02, 04, 05, 06, 07, 09 re-signed through the real "Forgot password → phone code" flow (Firebase test
+  numbers, code 123456); the new shared QA password is in the scratchpad `qa/accounts.local.json` only (founder's
+  02/04/05 logins changed with them — tell him).
+- **DC-B11 root cause found live:** worker log `sweep_stuck` 00:06:47 UTC and no heartbeat since; pg_stat_activity
+  showed no active query and 0 waiting locks → the run waited on a dead pooled connection forever (no client-side
+  timeout). Fix: `apps/api/src/sweep-pool.ts` (`runBounded`, `recyclingPool`), delivery sweep own 1-connection pool
+  - 60 s deadline, nine short sweeps via `boundedShared` (120 s) on a recyclable shared pool; log `sweep_pool_recycled`.
+    Test `apps/api/test/sweep-pool.test.ts` (RED seen: module missing; GREEN 5/5). Runbook monitoring § "Dead pool
+    connections". Rider lapse test itself still needs one prepaid order (agents deliver prepaid only; none waiting).
+- Builders running: batch P (partner leftovers) and batch N (network leftovers), Sonnet, worktrees.

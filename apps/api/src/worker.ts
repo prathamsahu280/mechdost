@@ -5,6 +5,7 @@
  */
 import { RSA_PAYMENT_WINDOW_MINUTES } from '@mechdost/shared/rsa';
 import { createDb, createListener } from '@mechdost/db';
+import { recyclingPool, runBounded } from './sweep-pool';
 import { sweepWatch } from './sweep-watch';
 import { loadKeyring, type Keyring } from '@mechdost/db/crypto';
 import { grievanceContactLine } from '@mechdost/shared/company';
@@ -85,7 +86,25 @@ try {
 // Error reports (decision 2026-11-14): no-op without SENTRY_DSN.
 const sentry = await startSentry(config.sentry, 'worker');
 
-const { db, sql } = createDb(config.databaseUrl, { max: 2, transactionPooler: true });
+// `let`: the short 30 s sweeps below run through `boundedShared`, which swaps in a fresh pool when a run hangs on a dead
+// connection (DC-B11 root cause, live 2026-11-28). Closures read the current binding at call time.
+let { db, sql } = createDb(config.databaseUrl, { max: 2, transactionPooler: true });
+let recyclingShared: Promise<void> | null = null;
+const SHARED_SWEEP_DEADLINE_MS = 120_000;
+const boundedShared = <T>(phase: string, work: () => Promise<T>): Promise<T> =>
+  runBounded(SHARED_SWEEP_DEADLINE_MS, phase, work, () => {
+    if (recyclingShared) return recyclingShared;
+    log('warn', 'sweep_pool_recycled', { sweep: phase, afterMs: SHARED_SWEEP_DEADLINE_MS });
+    const old = sql;
+    ({ db, sql } = createDb(config.databaseUrl, { max: 2, transactionPooler: true }));
+    recyclingShared = old
+      .end({ timeout: 0 })
+      .catch(() => undefined)
+      .finally(() => {
+        recyclingShared = null;
+      });
+    return recyclingShared;
+  });
 /**
  * Send-time lookups of the email adapter (template override, company, trust line, bill source): a local
  * statement_timeout plus an app deadline, so a slow or locked query falls back to the safe default text instead of
@@ -188,7 +207,7 @@ let expiring = false;
 const expiryTimer = setInterval(() => {
   if (expiring) return;
   expiring = true;
-  void expireDueAssignments(db)
+  void boundedShared('assignments', () => expireDueAssignments(db))
     .then(({ expired, failed }) => {
       if (expired > 0) log('info', 'assignments_expired', { count: expired });
       for (const f of failed)
@@ -210,7 +229,7 @@ let expiringRequests = false;
 const requestTimer = setInterval(() => {
   if (expiringRequests) return;
   expiringRequests = true;
-  void expireDueServiceRequests(db)
+  void boundedShared('service_requests', () => expireDueServiceRequests(db))
     .then(({ expired, failed }) => {
       if (expired > 0) log('info', 'service_requests_expired', { count: expired });
       for (const f of failed)
@@ -238,12 +257,30 @@ const deliveryWatch = sweepWatch('delivery_offers', {
     log(message === 'sweep_stuck' ? 'warn' : 'info', message, data);
   },
 });
+// Live 2026-11-28 (DC-B11 root cause): a run waited ~4 h on a dead connection of the shared pool (nothing on the
+// server, no lock), so every later run was skipped. The sweep now has its own one-connection pool, a 60 s deadline per
+// run, and a fresh pool after a timeout (`sweep-pool.ts`).
+const deliveryPool = recyclingPool(() => {
+  const c = createDb(config.databaseUrl, { max: 1, transactionPooler: true });
+  return { db: c.db, close: () => c.sql.end({ timeout: 0 }) };
+});
 let deliveryDue = 0;
 const deliveryTimer = setInterval(() => {
   if (!deliveryWatch.begin(Date.now())) return;
   deliveryDue = 0;
-  void expireDueDeliveryOffers(db)
-    .then(async ({ due, expired, failed }) => {
+  void runBounded(
+    60_000,
+    'delivery_offers',
+    async () => {
+      const r = await expireDueDeliveryOffers(deliveryPool.db);
+      return { ...r, resumed: await resumePausedAgents(deliveryPool.db) };
+    },
+    async () => {
+      log('warn', 'sweep_pool_recycled', { sweep: 'delivery_offers', afterMs: 60_000 });
+      await deliveryPool.recycle();
+    },
+  )
+    .then(({ due, expired, failed, resumed }) => {
       deliveryDue = due;
       if (expired > 0) log('info', 'delivery_offers_expired', { count: expired });
       // A due offer that neither expired nor failed would otherwise be silent (DC-B11): say so.
@@ -251,7 +288,6 @@ const deliveryTimer = setInterval(() => {
         log('warn', 'delivery_offers_not_expired', { due, expired, failed: failed.length });
       for (const f of failed)
         log('error', 'delivery_offer_expiry_failed', { offerId: f.offerId, ...safeError(f.error) });
-      const resumed = await resumePausedAgents(db);
       if (resumed > 0) log('info', 'delivery_agents_resumed', { count: resumed });
     })
     .catch((err: unknown) => {
@@ -266,7 +302,7 @@ let expiringRsa = false;
 const rsaTimer = setInterval(() => {
   if (expiringRsa) return;
   expiringRsa = true;
-  void expireDueRsaOffers(db)
+  void boundedShared('rsa_offers', () => expireDueRsaOffers(db))
     .then(async ({ expired, failed }) => {
       if (expired > 0) log('info', 'rsa_offers_expired', { count: expired });
       for (const f of failed)
@@ -292,7 +328,7 @@ let resuming = false;
 const pauseTimer = setInterval(() => {
   if (resuming) return;
   resuming = true;
-  void resumeEndedPauses(db)
+  void boundedShared('pauses', () => resumeEndedPauses(db))
     .then((count) => {
       if (count > 0) log('info', 'pauses_ended', { count });
     })
@@ -311,7 +347,7 @@ let releasing = false;
 const holdTimer = setInterval(() => {
   if (releasing) return;
   releasing = true;
-  void releaseExpiredReservations(db)
+  void boundedShared('reservations', () => releaseExpiredReservations(db))
     .then(({ released, failed }) => {
       if (released > 0) log('info', 'reservations_expired', { count: released });
       for (const f of failed)
@@ -332,7 +368,7 @@ let closingTickets = false;
 const ticketCloseTimer = setInterval(() => {
   if (closingTickets) return;
   closingTickets = true;
-  void autoCloseResolvedTickets(db, new Date())
+  void boundedShared('tickets', () => autoCloseResolvedTickets(db, new Date()))
     .then(({ closed, skipped }) => {
       if (closed > 0 || skipped > 0) log('info', 'support_auto_closed', { closed, skipped });
     })
@@ -351,7 +387,7 @@ let expiringPayments = false;
 const paymentTimer = setInterval(() => {
   if (expiringPayments) return;
   expiringPayments = true;
-  void expireUnpaidOnlineOrders(db)
+  void boundedShared('unpaid_orders', () => expireUnpaidOnlineOrders(db))
     .then(({ closed, failed }) => {
       if (closed > 0) log('info', 'unpaid_orders_expired', { count: closed });
       if (failed > 0) log('error', 'unpaid_orders_expiry_failed', { failedGroups: failed });
@@ -612,7 +648,7 @@ let expiringJobs = false;
 const ustaadJobsTimer = setInterval(() => {
   if (expiringJobs) return;
   expiringJobs = true;
-  void expireUstaadJobs(db)
+  void boundedShared('ustaad_jobs', () => expireUstaadJobs(db))
     .then((n) => {
       if (n > 0) log('info', 'ustaad_jobs_expired', { count: n });
     })
@@ -677,7 +713,7 @@ let expiringStories = false;
 const ustaadStoriesTimer = setInterval(() => {
   if (expiringStories) return;
   expiringStories = true;
-  void expireUstaadStories(db, { limit: 500 })
+  void boundedShared('ustaad_stories', () => expireUstaadStories(db, { limit: 500 }))
     .then((n) => {
       if (n > 0) log('info', 'ustaad_stories_expired', { count: n });
     })
@@ -835,6 +871,7 @@ function shutdown(signal: string) {
         sql.end({ timeout: 5 }),
         notifyConn.sql.end({ timeout: 5 }),
         mailLookups.sql.end({ timeout: 5 }),
+        deliveryPool.close(),
         listener?.end(),
         sentry.flush(),
       ]),
