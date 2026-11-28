@@ -41,6 +41,8 @@ export const ShopOrder = z.object({
   givenUpReason: z.string().nullable().optional(),
   /** Active orders: the delivery code was entered wrongly too often (server state; support takes over). */
   deliveryLocked: z.boolean().optional(),
+  /** When the order was delivered (ISO, `delivered` rows only); optional so older API answers still parse. */
+  deliveredAt: z.string().nullable().optional(),
   /** Who delivers (spec 24); optional so older API answers still parse. */
   deliveryMode: z.enum(['agent', 'shop']).optional(),
   /** Agent-mode orders: pickup code, agent, return, switch request (spec 24). */

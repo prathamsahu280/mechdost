@@ -1,3 +1,4 @@
+import { istDateString } from '@mechdost/shared/time';
 import { countText } from './partner-kit';
 
 /**
@@ -19,8 +20,10 @@ export function shopTodayCounts(input: {
   offers: number;
   active: readonly { status: string; deliveryMode?: 'agent' | 'shop' | undefined }[];
   activeMore: boolean;
-  done: readonly { status: string }[];
+  done: readonly { status: string; deliveredAt?: string | null | undefined }[];
   doneMore: boolean;
+  /** The moment the day is counted in (IST business day, never the device's time zone). */
+  now: Date;
 }): ShopTodayCounts {
   let packing = 0;
   let out = 0;
@@ -30,7 +33,10 @@ export function shopTodayCounts(input: {
     else if (o.deliveryMode === 'agent' && o.status === 'packed') ready += 1;
     else packing += 1;
   }
-  const delivered = input.done.filter((o) => o.status === 'delivered').length;
+  const today = istDateString(input.now);
+  const delivered = input.done.filter(
+    (o) => o.status === 'delivered' && o.deliveredAt && istDateString(new Date(o.deliveredAt)) === today,
+  ).length;
   return {
     newOrders: String(input.offers),
     packing: countText(packing, input.activeMore),

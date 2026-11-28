@@ -98,6 +98,8 @@ export interface ShopOrderItem {
   givenUpReason: string | null;
   assignmentId: string | null;
   expiresAt: Date | null;
+  /** Delivered rows only: when the order was delivered (orders.delivered_at), else null. */
+  deliveredAt: Date | null;
   /** Accepted orders only (null on offers: the customer's details are shared once the shop accepts). */
   address: Record<string, unknown> | null;
   /** Active orders: 5 wrong delivery codes were entered (server state; support takes over). */
@@ -144,6 +146,7 @@ export async function listShopOrders(
     payment_method: string;
     assignment_id: string | null;
     expires_at: string | Date | null;
+    delivered_at?: string | Date | null;
     sort_key: string;
   }>(
     view === 'offers'
@@ -168,13 +171,13 @@ export async function listShopOrders(
           order by o.placed_at limit 100`)
         : await db.execute(sql`
           select u.id, u.code, u.status, u.shop_id, u.version, u.total_paise, u.coin_discount_paise, u.payment_method,
-            u.pincode, u.shipping_address, u.give_up_reason, u.assignment_id, u.expires_at,
+            u.pincode, u.shipping_address, u.give_up_reason, u.assignment_id, u.expires_at, u.delivered_at,
             u.sort_ts::text as sort_key
           from (
             select o.id, o.code, o.status, o.shop_id, o.version, o.total_paise, o.coin_discount_paise,
               (select g.payment_method from order_groups g where g.id = o.group_id) as payment_method,
               o.pincode, o.shipping_address, null::text as give_up_reason,
-              null::uuid as assignment_id, null::timestamptz as expires_at, o.updated_at as sort_ts
+              null::uuid as assignment_id, null::timestamptz as expires_at, o.delivered_at, o.updated_at as sort_ts
             from orders o
             where ${inShops(shopIds, 'o.shop_id')} and o.status in ('delivered', 'cancelled', 'returned')
               and o.updated_at > now() - interval '30 days'
@@ -182,7 +185,8 @@ export async function listShopOrders(
             select o.id, o.code, 'given_up' as status, a.shop_id, o.version, o.total_paise, o.coin_discount_paise,
               (select g.payment_method from order_groups g where g.id = o.group_id) as payment_method,
               o.pincode, o.shipping_address, a.give_up_reason,
-              null::uuid as assignment_id, null::timestamptz as expires_at, a.given_up_at as sort_ts
+              null::uuid as assignment_id, null::timestamptz as expires_at, null::timestamptz as delivered_at,
+              a.given_up_at as sort_ts
             from order_assignments a join orders o on o.id = a.order_id
             where a.status = 'given_up' and ${inShops(shopIds, 'a.shop_id')}
               and a.given_up_at > now() - interval '30 days'
@@ -237,6 +241,7 @@ export async function listShopOrders(
       givenUpReason: r.give_up_reason ?? null,
       assignmentId: r.assignment_id,
       expiresAt: r.expires_at ? new Date(r.expires_at) : null,
+      deliveredAt: r.delivered_at ? new Date(r.delivered_at) : null,
       // Shared only while the shop is fulfilling the order (DPDP minimisation, advisor review 2026-11-03).
       // An agent delivers agent-mode orders, so the shop never needs the customer's address for them.
       address: view === 'active' && !agentMode ? r.shipping_address : null,

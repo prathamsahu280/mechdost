@@ -10362,7 +10362,7 @@
     "kpi_packing": "Packing",
     "kpi_out": "Out for delivery",
     "kpi_ready": "Ready for pickup",
-    "kpi_delivered": "Delivered",
+    "kpi_delivered_today": "Delivered today",
     "tabs_label": "Shop portal",
     "rail_title": "MechDost partner",
     "tab_today": "Today",

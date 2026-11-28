@@ -49,6 +49,7 @@ export function ShopTodayApi() {
   const tt = useTranslations('shopTier1');
   const { flash, show } = useFlash();
   const { offers, active, done, openOffers, refresh, loadedAt } = useShopLists();
+  const now = useNow(60_000);
   // New-order sound + vibration (spec 07 § UI; on by default, Q-PP-F3); the list and the bell say it too.
   const alert = useNewWorkAlert(
     'shop',
@@ -72,6 +73,7 @@ export function ShopTodayApi() {
           activeMore: Boolean(active.next),
           done: done.items,
           doneMore: Boolean(done.next),
+          now: new Date(now),
         })}
       />
 

@@ -443,6 +443,7 @@ Q-PP-F2 (tabs), F3 (sound on by default), F4 (storefront header stays).
   Numbers; `#prices-title`, `#new-product-title`, `#shop-csv`, `#shop-offers` → Stock; `#shop-team`,
   `#agreement-shop-title` → My shop; `#delivered-title` → Orders, lane Delivered.
 - **Events** (spec 12, reused): `partner_tab_viewed`, `partner_kpi_clicked`, `partner_lane_viewed` with portal `shop`.
+- **As built, Batch P (2026-11-28): "Delivered today".** The fourth tile counts today's delivered rows. `ShopOrder` gained an additive optional `deliveredAt` (ISO; from `orders.delivered_at`, set only on the `done` view's delivered rows, null elsewhere; no migration). The count is by IST business day (`istDateString`, never the device zone) over the first `done` page and reads "N+" when another page exists. String `partnerShop.kpi_delivered_today` ("Delivered today" / "आज पहुँचाए"); tests `shop-today.test.ts`, `packages/db/test/shop-orders.test.ts`. The older "Delivered" wording below is superseded.
 - Not built in this batch: shop switcher and shop name on each card (needs the shop on `ShopOrder`, P1), per-row stock
   −/+ (P1), "Delivered today" count (needs a date on the row, P1), master–detail at ≥ 1024 px.
 

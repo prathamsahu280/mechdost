@@ -332,6 +332,10 @@ describe('advisor review fixes (2026-11-03)', () => {
     const done = (await listShopOrders(t(), [shop['Sharma Auto Parts']!], 'done')).items;
     expect(done.length).toBeGreaterThan(0);
     expect(done.every((o) => o.address === null)).toBe(true);
+    // P1 (2026-11-28): delivered rows carry their delivery time for the "Delivered today" tile.
+    const delivered = done.filter((o) => o.status === 'delivered');
+    expect(delivered.length).toBeGreaterThan(0);
+    expect(delivered.every((o) => o.deliveredAt instanceof Date)).toBe(true);
   });
 });
 

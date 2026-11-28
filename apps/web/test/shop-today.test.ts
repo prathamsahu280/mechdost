@@ -8,6 +8,39 @@ const json = (l: string) =>
     readFileSync(new URL(`../../../packages/shared/src/i18n/${l}.json`, import.meta.url), 'utf8'),
   ) as Record<string, Record<string, string>>;
 
+describe('shop Today delivered-today count (P1, design § 5.2)', () => {
+  // 2026-11-28 10:00 IST = 04:30Z; IST midnight is 2026-11-27T18:30Z.
+  const now = new Date('2026-11-28T04:30:00Z');
+  const base = { offers: 0, active: [], activeMore: false, doneMore: false, now };
+  it('counts only rows delivered on the IST day of now', () => {
+    const c = shopTodayCounts({
+      ...base,
+      done: [
+        { status: 'delivered', deliveredAt: '2026-11-27T18:31:00Z' },
+        { status: 'delivered', deliveredAt: '2026-11-28T03:00:00Z' },
+        { status: 'delivered', deliveredAt: '2026-11-27T18:29:00Z' },
+        { status: 'delivered', deliveredAt: null },
+        { status: 'delivered' },
+        { status: 'given_up', deliveredAt: '2026-11-28T03:00:00Z' },
+      ],
+    });
+    expect(c.delivered).toBe('2');
+  });
+  it('says N+ when the first done page is full (more rows exist)', () => {
+    const c = shopTodayCounts({
+      ...base,
+      doneMore: true,
+      done: [{ status: 'delivered', deliveredAt: '2026-11-28T03:00:00Z' }],
+    });
+    expect(c.delivered).toBe('1+');
+  });
+  it('has the Hindi and English tile label', () => {
+    expect(json('en').partnerShop?.kpi_delivered_today).toBe('Delivered today');
+    expect(json('hi').partnerShop?.kpi_delivered_today).toBe('आज पहुँचाए');
+    expect(src('components/portal/shop-today-tiles.tsx')).toMatch(/kpi_delivered_today/);
+  });
+});
+
 describe('shop Today counts (design 2026-11-27 § 5.2)', () => {
   it('splits active orders into packing, ready for pickup and on the way', () => {
     const c = shopTodayCounts({
@@ -20,13 +53,21 @@ describe('shop Today counts (design 2026-11-27 § 5.2)', () => {
         { status: 'shipped' },
       ],
       activeMore: false,
-      done: [{ status: 'delivered' }, { status: 'given_up' }],
+      done: [{ status: 'delivered', deliveredAt: '2026-11-28T03:00:00Z' }, { status: 'given_up' }],
       doneMore: false,
+      now: new Date('2026-11-28T04:30:00Z'),
     });
     expect(c).toEqual({ newOrders: '2', packing: '2', out: '2', readyForPickup: '1', delivered: '1' });
   });
   it('says 20+ when a list has a next page', () => {
-    const c = shopTodayCounts({ offers: 0, active: [], activeMore: true, done: [], doneMore: true });
+    const c = shopTodayCounts({
+      offers: 0,
+      active: [],
+      activeMore: true,
+      done: [],
+      doneMore: true,
+      now: new Date(),
+    });
     expect(c.packing).toBe('0+');
     expect(c.delivered).toBe('0+');
   });

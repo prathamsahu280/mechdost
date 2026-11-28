@@ -63,6 +63,8 @@ const ShopOrder = z
     givenUpReason: z.string().nullable(),
     /** Active orders: five wrong delivery codes were entered (server state). */
     deliveryLocked: z.boolean(),
+    /** Delivered rows: when (ISO); null otherwise. */
+    deliveredAt: z.string().nullable().optional(),
   })
   .openapi('ShopOrder');
 const Changed = z.object({ status: z.string(), version: z.number().int() });
@@ -269,6 +271,7 @@ export function shopOrderRoutes(deps: AppDeps, cache: SessionCache) {
           orders: page.items.map((r) => ({
             ...r,
             expiresAt: r.expiresAt ? r.expiresAt.toISOString() : null,
+            deliveredAt: r.deliveredAt ? r.deliveredAt.toISOString() : null,
           })),
           nextCursor: page.nextCursor,
         },
