@@ -143,7 +143,9 @@ export function PartnerFrame({
     <div
       data-partner-frame={portal}
       onClickCapture={onFrameClick}
-      className="nav:grid nav:grid-cols-[14rem_minmax(0,1fr)] nav:items-start nav:gap-6"
+      // One viewport of height while the tab loads: the site footer starts below the fold, so late data cannot shove it
+      // (LV-6, layout shift 0.27-0.44 live).
+      className="min-h-dvh nav:grid nav:grid-cols-[14rem_minmax(0,1fr)] nav:items-start nav:gap-6"
     >
       <aside className="hidden nav:sticky nav:top-4 nav:block">
         <div className="rounded-card bg-navy-sidebar p-3 text-white shadow-card">

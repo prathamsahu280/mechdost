@@ -1499,3 +1499,7 @@ stock −/+ on Your prices (existing versioned PATCH, event `partner_stock_stepp
 panel heading after a tab click). Not built: master–detail at ≥ 1024 px. Details: spec 07 "Batch P", decisions 2026-11-28.
 Next for the lead: run the state-audit rows API-SHOP-STOCKSTEP / API-WS-CALENDAR (resting states only; the rider rail
 is covered by the existing DLV-AGENT-JOBS rows; no fixtures for the refusal states yet) and a signed-in look at /partner/workshop/calendar with real accepted jobs.
+
+## 2026-11-28 — Batch C (builder; branch worktree-agent-a5055c9d44788b237, NOT merged, not pushed; no migration)
+
+C1 LV-6 layout shift: root cause = client-loaded frames render a short loading body so the footer is in the first viewport, and `PushDevice` returned null until mounted (push-card.tsx). Fix: `min-h-dvh` on the partner frame root and the notifications page, stable min-h placeholder card for `PushDevice`. C2: partner lane tabs get the V9 segmented look (`--lane-*` tokens, dark unchanged). Owed to the lead: live CLS re-measure after deploy (cls.mjs) on /partner/delivery, /partner/workshop/profile, /notifications; signed-in look at lane tabs light and dark.
