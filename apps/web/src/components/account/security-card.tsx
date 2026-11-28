@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useState, type SyntheticEvent } from 'react';
+import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { PasswordField } from '../auth/password-field';
 import { PASSWORD_MAX, PASSWORD_MIN } from '@/demo/passwords';
 import { track } from '@/lib/analytics';
@@ -17,6 +17,7 @@ const quiet =
   'press inline-flex min-h-11 items-center justify-center rounded-button border border-input-border px-4 text-sm font-bold text-ink hover:bg-pill disabled:opacity-60';
 
 type Field = 'current' | 'next' | 'confirm';
+type AllState = 'idle' | 'asking' | 'busy' | { error: string };
 type Outcome = 'idle' | 'changed' | { field: Field | null; text: string };
 
 const FIELD_IDS: Record<Field, string> = {
@@ -40,6 +41,28 @@ export function SecurityCard({ context }: { context: { phone?: string; email?: s
   const locale = useLocale();
   const [outcome, setOutcome] = useState<Outcome>('idle');
   const [busy, setBusy] = useState(false);
+  const [all, setAll] = useState<AllState>('idle');
+  const allButton = useRef<HTMLButtonElement>(null);
+  const keepButton = useRef<HTMLButtonElement>(null);
+  // The confirm step replaces the button: focus lands on the safe choice so keyboard and screen-reader users are not lost.
+  useEffect(() => {
+    if (all === 'asking') keepButton.current?.focus();
+  }, [all]);
+
+  /** "Sign out of all devices" (founder 2026-11-28): the API ends every session, then this device signs out too. */
+  async function onSignOutAll() {
+    setAll('busy');
+    track('click', { id: 'signout_all_confirm', path: window.location.pathname });
+    const { revokeAllSessions } = await import('@/lib/auth/sign-out-all');
+    const res = await revokeAllSessions(locale);
+    if (res.ok) {
+      const { signOutEverywhere } = await import('@/lib/auth/sign-out');
+      await signOutEverywhere();
+      return;
+    }
+    track('click', { id: `signout_all_failed_${res.reason}`, path: window.location.pathname });
+    setAll({ error: t(`signOutAllErr_${res.reason}`) });
+  }
 
   function show(field: Field | null, text: string) {
     setOutcome({ field, text });
@@ -131,6 +154,54 @@ export function SecurityCard({ context }: { context: { phone?: string; email?: s
           {busy ? t('pwBusy') : t('pwSubmit')}
         </button>
       </form>
+      <div className="border-t border-line pt-5" aria-labelledby="security-signout-all-title" role="group">
+        <h3 id="security-signout-all-title" className="font-heading text-base font-extrabold text-ink">
+          {t('signOutAllTitle')}
+        </h3>
+        <p className="mt-1 max-w-prose text-sm text-muted">{t('signOutAllHelp')}</p>
+        {all === 'idle' || typeof all === 'object' ? (
+          <button
+            ref={allButton}
+            type="button"
+            data-track="signout_all_open"
+            onClick={() => {
+              setAll('asking');
+            }}
+            className={`${quiet} mt-4`}
+          >
+            {t('signOutAllButton')}
+          </button>
+        ) : (
+          <div className="mt-4 space-y-3">
+            <p className="max-w-prose text-sm font-bold text-ink">{t('signOutAllSure')}</p>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                disabled={all === 'busy'}
+                onClick={() => void onSignOutAll()}
+                className={`${quiet} border-error text-error`}
+              >
+                {all === 'busy' ? t('signOutAllBusy') : t('signOutAllConfirm')}
+              </button>
+              <button
+                ref={keepButton}
+                type="button"
+                disabled={all === 'busy'}
+                onClick={() => {
+                  setAll('idle');
+                  requestAnimationFrame(() => allButton.current?.focus());
+                }}
+                className={quiet}
+              >
+                {t('signOutAllCancel')}
+              </button>
+            </div>
+          </div>
+        )}
+        <p role="status" aria-live="polite" className="mt-3 min-h-5 text-sm font-bold text-error">
+          {typeof all === 'object' ? all.error : ''}
+        </p>
+      </div>
       <div className="border-t border-line pt-5">
         <h3 className="font-heading text-base font-extrabold text-ink">{p('deleteTitle')}</h3>
         <p className="mt-1 max-w-prose text-sm text-muted">{p('deleteHelp')}</p>

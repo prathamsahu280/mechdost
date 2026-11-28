@@ -49,6 +49,7 @@ import {
   businessPublicRoutes,
 } from './routes/business-applications';
 import { meRoutes } from './routes/me';
+import { sessionRoutes } from './routes/sessions';
 import { partnerAdminRoutes, partnerPublicRoutes, shopOnboardingRoutes } from './routes/partner-onboarding';
 import { shopInventoryRoutes } from './routes/shop-inventory';
 import { shopTeamRoutes } from './routes/shop-team';
@@ -132,6 +133,7 @@ export function createApp(deps: AppDeps) {
   v1.route('/', authRoutes(deps));
   v1.route('/', authEmailRoutes(deps, sessions));
   v1.route('/', meRoutes(deps, sessions));
+  v1.route('/', sessionRoutes(deps, sessions));
   v1.route('/', businessAccountRoutes(deps, sessions));
   v1.route('/', businessPublicRoutes(deps));
   v1.route('/', businessAdminRoutes(deps, sessions));

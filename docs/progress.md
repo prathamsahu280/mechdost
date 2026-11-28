@@ -9,6 +9,14 @@ This file is the single source of truth for **where the build is right now**. It
   (`docs/questions-for-user.md` Q-U-*). Tests per row id in the spec section. Not run: Playwright state-audit
   (needs the .next-api build), real-browser pass.
 
+## 2026-11-28 — Stale "Signed in as" fix + "Sign out of all devices" (builder, branch worktree-agent-a4189feed8154e2f9, NOT merged)
+
+- A (bug): `lib/auth/session-ended.ts` + `session-ended-flag.ts` + `SessionEndedNotice`; `currentIdToken` reports a missing Firebase user only after `authStateReady`; `admin-api`/`orders-api` report 401 `TOKEN_REVOKED`; sign-out clean-up extracted to `forgetAccountOnDevice()`. B: `POST /v1/me/sessions/revoke-all` (`routes/sessions.ts`, `db/repo/sign-out-all.ts`), Security-card section, event `account_signed_out_all`, strings `signOutAll*` + `auth.sessionEndedNotice` (en + hi). Docs: spec 01, 12, 13, decisions, Q-SES-1/2 answered, state-audit row API-ACC-SECURITY. Not done: real-browser pass, Playwright state-audit run (owed to CI). The device list is another builder's branch (will touch the same Security card, route registration and analytics.ts: expect small merge conflicts).
+
+## 2026-11-28 — "Use my location" wrong PIN fix (builder, branch worktree-agent-a07d5bcf972a5a678, NOT merged)
+
+Founder: wrong PIN from "use my location" (Sarona: shown 493332, real 492099). OSM postcodes are wrong across Raipur and the nearest MechDost centroid is wrong too (492013), so nothing is auto-filled inside a served city: the finder shows the 5 nearest MechDost PINs as choices (en + hi names), outside served areas the OSM answer stays as fallback. New `GET /v1/geo/pincode-near` (PostGIS KNN, migration **0116** GIST index on `pincodes.centroid`, renumber if another branch took 0116), `ReverseGeocoder` interface in `apps/web/src/lib/geo/`, events `pincode_choice_picked` + `location_detected.choices`. Decisions 2026-11-28, spec 06 + 12, inbox **Q12-B** (Ola Maps or Google key). Next: Q12-B answer, then add the provider behind `selectGeocoder()`.
+
 ## 2026-11-28 — Mechanic Network batch D: state-audit rows + profile restyle (builder, branch worktree-agent-adc9e97b192ec1613, NOT merged)
 
 - D1: rows API-USTAAD-LEARN / -JOBS / -SAVED (model-api.ts), fixtures in api-mode/ustaad-member-fixtures.ts, server mock
@@ -1460,6 +1468,16 @@ Done: launcher hides on phones while a field is focused and on `data-launcher-av
   site session stayed. Research `docs/superpowers/specs/2026-11-28-sessions-devices-research.md` (founder: rough
   location yes, approximate city fine). Two Sonnet builders running in worktrees: (A+B) stale-session fix + "Sign out
   of all devices"; (C) device list with rough location (migration 0116, DB-IP Lite, no IP stored).
+- **Raipur PIN map (founder 23:15 "build one for raipur … very detailed, covering everything"):** OSM postcodes wrong
+  (493332 for most of Raipur; Sarona is 492099). Research `docs/research/raipur-pincode-map/` found the Department of
+  Posts 2025 PIN boundary GeoJSON via a BharatViz mirror (official data.gov.in/AIKosh copy 404; licence OGD India on
+  the AIKosh page; confirm mirror terms). Verified: Sarona → 492099, Pachpedi Naka → 492001, station → 492009,
+  Mantralaya → 492018. Gaps: no polygons for live PINs 492006/492007/492011/492017 (absent from DoP 2025 too — possible
+  renumbering, ask founder); 492002/492005 are point-like. Review map sent: `docs/research/raipur-pincode-map/map.html`.
+  Next: product layer (pincode_areas PostGIS polygons + point-in-polygon lookup, choice list near borders, admin
+  editor, anonymous correction samples) after the interim builder lands.
+- **Merged + pushed 418e53a5:** stale-session fix (A) and "Sign out of all devices" (B); lead fixed a fail-open found
+  by the security review (no token / 401 now `signed_out`, never success).
 - **Founder 22:5x:** a password change must NOT end other sign-ins unless the person opts in ("sign out of other
   devices" choice on the change-password form). Firebase always revokes refresh tokens on a password change, so this
   needs a resume path built on the device sessions (C) — planned as follow-up D after A+B and C merge.
