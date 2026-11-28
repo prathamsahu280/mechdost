@@ -91,3 +91,21 @@ it touches the auth middleware on every request, so it gets its own design and r
 2. "Sign out of all devices" includes this device (Netflix) or keeps it (Atlassian, needs C)? (default: includes it
    until C exists, then "all other devices")
 3. Device list shows an approximate city? (default: no city, device and last active only — less personal data)
+
+## 6. Rough location (founder 22:55: "yes we should show a rough location")
+
+- **Where from:** mechdost.com is not behind Cloudflare (`Via: 1.1 Caddy` only), so no free location header. Use a
+  local IP-to-city file on the API: **DB-IP City Lite** (MMDB, monthly, CC BY 4.0, attribution "IP data by DB-IP"
+  with a link on the device list) rather than MaxMind GeoLite2 (EULA + licence key). Lookup happens in memory at
+  sign-in; **the IP itself is never stored**, only the place name. New dependency (an MMDB reader) goes through the
+  release-age and advisory checks first.
+- **Accuracy:** Indian mobile networks (Jio, Airtel, Vi) put many users behind shared carrier gateways (CGNAT), so the
+  city is often wrong, sometimes by hundreds of km; mobile errors are 10x worse than broadband. Guidance from the
+  measurement community: state level for mobile, city level only for fixed lines.
+  Sources: [ipregistry CGNAT study](https://ipregistry.co/blog/mobile-ip-geolocation-cgnat),
+  [Internet Society](https://pulse.internetsociety.org/en/blog/why-ip-geolocation-cant-be-trusted-for-mobile-networks-and-the-global-south/),
+  [APNIC 62](https://blog.apnic.net/2026/09/24/ip-geolocation-at-apnic-62-challenges-geofeeds-and-data-quality-perspectives/),
+  [DB-IP Lite](https://db-ip.com/db/lite.php), [ip-location-db](https://github.com/sapics/ip-location-db).
+- **Proposal:** show "Near Raipur, Chhattisgarh" style text, labelled approximate; fall back to the state
+  ("Chhattisgarh") when the lookup has no city, and to nothing when it has no match. Privacy notice gains one line
+  (device type, approximate place and last active are kept for your security; no IP address).

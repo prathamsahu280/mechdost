@@ -662,8 +662,8 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
   change) after? Default: research only until you answer.
 - **Q-SES-2 (Decision, P2)** Until the device list exists, "Sign out of all devices" also signs out this device
   (Firebase cannot keep one). With the list: "all other devices". Default: as described.
-- **Q-SES-3 (Decision, P2)** Device list shows an approximate city? Default: no, device + last active only (less
-  personal data, DPDP minimisation).
+- **Q-SES-3 — ANSWERED 2026-11-28 22:55:** yes, show a rough location ("any major app shows that"). Plan: DB-IP
+  City Lite on the API, place name only (IP never stored), labelled approximate (research § 6).
 
 - **Q218-B (Decision, P1) My Garage build scope** (demo `docs/design/my-garage-2026-11-28/index.html`, research
   `docs/superpowers/specs/2026-11-28-my-garage-research.md`): which parts to build first? Default proposal: (1) service
