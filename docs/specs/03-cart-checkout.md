@@ -302,3 +302,7 @@ Events: `checkout_cod_unavailable_shown`, `cod_request_opened` (client); `cod_re
 (defaults, one pending, CAS, history/audit/events/notice, revoke, expiry, withdraw 404, city scope, self-decision,
 Ustaad, minimums, city override), `apps/api/test/cod-requests.test.ts` (HTTP, role leaks, strict bodies, rate limit),
 `apps/web/test/cod-view.test.ts`, e2e `apps/web/e2e/cod-eligibility.spec.ts`.
+
+**QA batch DC (2026-11-29).** `POST /me/cod/requests` limit (5 a day) counts created requests only (in the repository);
+`eligibility.askAgainAt` (ISO) tells a turned-down customer when they may ask again (checkout and Account → Payments show
+the date in IST); checkout treats every non-shop signed-in role as a buyer.

@@ -672,3 +672,11 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
   `docs/superpowers/specs/2026-11-28-my-garage-research.md`): which parts to build first? Default proposal: (1) service
   book from real orders/jobs + fits shelf + km update, (2) road-ahead service due with admin rules, (3) papers expiry +
   reminders, (4) spend; plate lookup later.
+
+- **Q-DCP19 (Decision, P3) Seed shop phones.** The demo seed shops use +919000000001..4 (Firebase test range); on live
+  the "Call the shop" number of Sharma Auto Parts equals a customer test account. Give the seed shops distinct numbers
+  (changes demo logins in `docs/runbooks/demo.md` and tests), or remove the demo shops from live before real riders
+  onboard? Default: no change; real shops carry their own numbers (edit in Admin → Partners).
+- **Q-DC-1 (Heads-up, P3) 0118 closes duplicate rider applications.** The migration marks older open delivery
+  applications of the same phone as rejected (note "Duplicate application") so the unique index can be built; the
+  earliest stays open. Default: apply as is.

@@ -7,6 +7,9 @@ progress/decisions/questions; nothing run live). Result: **every P1 is fixed**; 
 
 ## Open — delivery, COD, checkout (batch DC)
 
+> 2026-11-29: batch DC built on branch `worktree-agent-a305ffbf411c6c011` (not merged): every row below is fixed except DC-P19
+> (queued as Q-DCP19) and DC-P12's "two rating asks at once" audit note (not touched). Migration 0118.
+
 | Id            | P   | What is missing (file:line at audit time)                                                                                 |
 | ------------- | --- | ------------------------------------------------------------------------------------------------------------------------- |
 | DC-B4         | P2  | Agent invite and revoke act on one click, no confirm or email field: admin-delivery.tsx:912, 1063                         |

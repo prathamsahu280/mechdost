@@ -3092,3 +3092,18 @@ Founder (16:45 IST): "Keep it switched off for future tests". `apps/api/src/auth
 `server.ts` stay in the code, dormant: with the three `QA_TURNSTILE_BYPASS_*` variables unset (as now, removed
 2026-11-28 14:06 IST) it does nothing. Each future use follows docs/runbooks/deploy.md § 7.1 (fresh key, ≤ 12 h window,
 founder OK per run, lines removed afterwards). The 48 h revert in the runbook no longer applies.
+
+## 2026-11-29 — Delivery / COD QA batch DC (rules that changed)
+
+- **One open rider application per phone** (partial unique index `partner_applications_agent_open_phone`, migration 0118):
+  a second submission answers the first reference ("You already applied"). A decided application frees the number.
+- **COD request limit counts created requests only** (5 per rolling 24 h, in `requestCod` under the customer lock);
+  refused attempts (pending, too soon) are not counted. The API-level hit counter was removed for this route.
+- **Checkout buyer** = every signed-in role except a shop (workshop owners, delivery agents, staff with a customer side);
+  the API stays the judge (`SELLER_CANNOT_ORDER`).
+- **Shop delivery-mode reasons by direction** (`SHOP_MODE_REASONS_BY_TARGET`): new codes `no_riders`, `wider_area`,
+  `save_time` for "ask for MechDost delivery partners"; the API and repository refuse a reason of the other direction.
+- **Rider application reject reasons** are their own list (`DELIVERY_APPLICATION_REJECT_REASONS`), `other` needs a note.
+- **Hindi times are 24-hour** on the delivery screens (the hi-IN 12-hour clock prints "pm").
+- Rider job views carry Hindi fields (`nameHi`, `areaHi`, `shopAreaHi`, `shopNameHi`) per rule 10; notices
+  `delivery.status_changed` / `delivery.document_decided` carry what changed and open the profile.

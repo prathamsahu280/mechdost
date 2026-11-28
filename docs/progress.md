@@ -1,5 +1,11 @@
 # Progress ledger — read this first after any context compaction
 
+## 2026-11-29 — Delivery / COD / checkout QA batch DC (builder, branch `worktree-agent-a305ffbf411c6c011`, NOT merged)
+
+- All DC rows fixed except DC-P19 (Q-DCP19). Migration **0118_delivery_dc_batch** (rider duplicate close + partial unique
+  index; shop-mode reason CHECK). Details and tests: docs/qa/qa-backlog-2026-11-27.md, decisions 2026-11-29, specs 24/03.
+  Tests: db `delivery-dc-batch` + `cod-dc-batch`, shared `delivery-dc-batch`, web `delivery-dc-batch`.
+
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
 ## 2026-11-28 — Mechanic Network batch D: state-audit rows + profile restyle (builder, branch worktree-agent-adc9e97b192ec1613, NOT merged)
