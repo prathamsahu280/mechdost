@@ -11,6 +11,8 @@ export const CLAMP_FROM_CHARS = 320;
  * is not a 1,400 px card. The text stays in the page (clamped with CSS, so search-in-page and screen readers still
  * reach all of it); the button only opens the full text and goes away, so its name never changes while it is
  * pressed. Focus moves to the text when it opens. Short text and the post's own page are never clamped.
+ * Every panel opened in place can be closed (no-reload rule): "Show less" (`data-panel-cancel`, Escape through
+ * `PanelDismiss`) clamps the text again and gives focus back to "Read more".
  */
 export function ClampedBody({
   chars,
@@ -27,7 +29,9 @@ export function ClampedBody({
   const [open, setOpen] = useState(false);
   const id = useId();
   const box = useRef<HTMLDivElement>(null);
-  const clipped = clamp && chars > CLAMP_FROM_CHARS && !open;
+  const opener = useRef<HTMLButtonElement>(null);
+  const long = clamp && chars > CLAMP_FROM_CHARS;
+  const clipped = long && !open;
   return (
     <div className={className}>
       <div
@@ -41,9 +45,11 @@ export function ClampedBody({
       </div>
       {clipped ? (
         <button
+          ref={opener}
           type="button"
           aria-expanded="false"
           aria-controls={id}
+          data-disclosure-trigger={id}
           data-track="ustaad_post_read_more"
           onClick={() => {
             setOpen(true);
@@ -52,6 +58,21 @@ export function ClampedBody({
           className="press mt-1 inline-flex min-h-11 items-center rounded text-sm font-bold text-accent-soft-text hover:underline focus-visible:outline-3 focus-visible:outline-focus"
         >
           {t('readMore')}
+        </button>
+      ) : null}
+      {long && open ? (
+        <button
+          type="button"
+          aria-controls={id}
+          data-panel-cancel={id}
+          data-track="ustaad_post_read_less"
+          onClick={() => {
+            setOpen(false);
+            requestAnimationFrame(() => opener.current?.focus());
+          }}
+          className="press mt-1 inline-flex min-h-11 items-center rounded text-sm font-bold text-accent-soft-text hover:underline focus-visible:outline-3 focus-visible:outline-focus"
+        >
+          {t('readLess')}
         </button>
       ) : null}
     </div>

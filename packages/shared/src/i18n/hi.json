@@ -7610,6 +7610,7 @@
       "tagFollow": "टैग फ़ॉलो करें",
       "tagFollowing": "टैग फ़ॉलो कर रहे हैं",
       "readMore": "और पढ़ें",
+      "readLess": "कम दिखाएँ",
       "commentPosted": "कमेंट हो गया।",
       "savedByN": "{count, plural, one {# सदस्य ने सेव किया} other {# सदस्यों ने सेव किया}}",
       "tagFollowingNote": "आप यह टैग फ़ॉलो करते हैं। इसकी पोस्ट आपकी फ़ीड में आएँगी।",

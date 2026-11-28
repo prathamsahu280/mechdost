@@ -7613,6 +7613,7 @@
       "tagFollow": "Follow tag",
       "tagFollowing": "Following tag",
       "readMore": "Read more",
+      "readLess": "Show less",
       "commentPosted": "Comment posted.",
       "savedByN": "{count, plural, one {Saved by # member} other {Saved by # members}}",
       "tagFollowingNote": "You follow this tag. Its posts come to your feed.",

@@ -2424,7 +2424,7 @@ Rows of `docs/qa/backlog-audit-2026-11-28.md` "Open - Mechanic Network (batch U)
 | SIM-B11    | The sanction confirm names the member, action, reason and length; the member card shows "ban proposed, waiting for a second staff member" (`StaffMemberDetail.pendingBan`, both proposer and approver).                                             |
 | SIM-B12    | Takedown form: no pre-filled legal basis (was "Court order"); a basis must be chosen. The item picker is queued (Q-U-B12).                                                                                                                          |
 
-Second pass (2026-11-29, lead review): SIM-P25 (`ClampedBody`: eight lines past 320 characters in feed cards, "Read more"
+Second pass (2026-11-29, lead review): SIM-P25 (`ClampedBody`: eight lines past 320 characters in feed cards, "Read more" and, once open, "Show less" (`data-panel-cancel`, Escape; lead 2026-11-29),
 with `aria-expanded`/`aria-controls`, text stays in the page, focus moves to the text; the post's own page is never
 clamped), SIM-P30 (the author sees "Saved by N members"; `counts.saves` was already in the DTO for the author only),
 SIM-P7 (the Home "questions waiting" block hides for a Chhotu), SIM-P9 (coach marks for `discover`, `jobs` and `pin` on
