@@ -70,6 +70,7 @@ export * from './admin-prices';
 export * from './workshops';
 export * from './service-requests';
 export * from './pincodes';
+export * from './pincode-near';
 export * from './service-jobs';
 export * from './service-timeouts';
 export * from './workshop-slots';

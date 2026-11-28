@@ -6,6 +6,10 @@ This file is the single source of truth for **where the build is right now**. It
 
 - A (bug): `lib/auth/session-ended.ts` + `session-ended-flag.ts` + `SessionEndedNotice`; `currentIdToken` reports a missing Firebase user only after `authStateReady`; `admin-api`/`orders-api` report 401 `TOKEN_REVOKED`; sign-out clean-up extracted to `forgetAccountOnDevice()`. B: `POST /v1/me/sessions/revoke-all` (`routes/sessions.ts`, `db/repo/sign-out-all.ts`), Security-card section, event `account_signed_out_all`, strings `signOutAll*` + `auth.sessionEndedNotice` (en + hi). Docs: spec 01, 12, 13, decisions, Q-SES-1/2 answered, state-audit row API-ACC-SECURITY. Not done: real-browser pass, Playwright state-audit run (owed to CI). The device list is another builder's branch (will touch the same Security card, route registration and analytics.ts: expect small merge conflicts).
 
+## 2026-11-28 — "Use my location" wrong PIN fix (builder, branch worktree-agent-a07d5bcf972a5a678, NOT merged)
+
+Founder: wrong PIN from "use my location" (Sarona: shown 493332, real 492099). OSM postcodes are wrong across Raipur and the nearest MechDost centroid is wrong too (492013), so nothing is auto-filled inside a served city: the finder shows the 5 nearest MechDost PINs as choices (en + hi names), outside served areas the OSM answer stays as fallback. New `GET /v1/geo/pincode-near` (PostGIS KNN, migration **0116** GIST index on `pincodes.centroid`, renumber if another branch took 0116), `ReverseGeocoder` interface in `apps/web/src/lib/geo/`, events `pincode_choice_picked` + `location_detected.choices`. Decisions 2026-11-28, spec 06 + 12, inbox **Q12-B** (Ola Maps or Google key). Next: Q12-B answer, then add the provider behind `selectGeocoder()`.
+
 ## 2026-11-28 — Mechanic Network batch D: state-audit rows + profile restyle (builder, branch worktree-agent-adc9e97b192ec1613, NOT merged)
 
 - D1: rows API-USTAAD-LEARN / -JOBS / -SAVED (model-api.ts), fixtures in api-mode/ustaad-member-fixtures.ts, server mock

@@ -17,6 +17,7 @@ import type { NearbyQuery } from '@/lib/service-api';
 import { fromPaise, serviceErrorKey } from '@/lib/service-views';
 import { BookingFormApi } from './booking-form-api';
 import { HomeAddressPicker, ServiceModeSwitch, useHomeAddresses } from './home-mode-fields';
+import { lookupPincode, PincodeChoices, type PinChoice } from './pincode-choices';
 import type { MapPoint } from './workshop-map';
 
 const WorkshopMap = lazy(() => import('./workshop-map').then((m) => ({ default: m.WorkshopMap })));
@@ -29,18 +30,6 @@ type Results =
   | { kind: 'loading' }
   | { kind: 'error'; code: string }
   | { kind: 'ok'; workshops: PublicWorkshop[] };
-
-/** GPS → PIN code through our server (`/api/geo/pincode`); null when unknown or offline. */
-async function lookupPincode(pos: { lat: number; lng: number }) {
-  try {
-    const res = await fetch(`/api/geo/pincode?lat=${pos.lat.toFixed(5)}&lng=${pos.lng.toFixed(5)}`);
-    if (!res.ok) return null;
-    const body = (await res.json()) as { pincode: string | null };
-    return body.pincode ?? null;
-  } catch {
-    return null;
-  }
-}
 
 /**
  * Location-first workshop finder on the API (real data mode; spec 06, Stream E): PIN code or device location →
@@ -56,6 +45,7 @@ export function WorkshopFinderApi() {
   const locale = useLocale();
   const mapRef = useRef<HTMLDivElement>(null);
   const [pin, setPin] = useState('');
+  const [choices, setChoices] = useState<PinChoice[]>([]);
   const [vehicle, setVehicle] = useState<VehicleFilter>('any');
   const [evOnly, setEvOnly] = useState(false);
   const [gps, setGps] = useState<{ lat: number; lng: number } | null>(null);
@@ -121,9 +111,15 @@ export function WorkshopFinderApi() {
     setSelected(null);
     setLocationError(false);
     setGps(pos);
-    void lookupPincode(pos).then((found) => {
-      track('location_detected', { source, pincodeFound: found !== null });
-      if (found) setPin(found);
+    setChoices([]);
+    void lookupPincode(pos, locale).then((found) => {
+      track('location_detected', {
+        source,
+        pincodeFound: typeof found?.pincode === 'string',
+        choices: found?.candidates.length ?? 0,
+      });
+      if (found?.pincode) setPin(found.pincode);
+      setChoices(found?.candidates ?? []);
     });
   }
 
@@ -221,6 +217,7 @@ export function WorkshopFinderApi() {
                 // Typing a PIN means "search here", not at the device location.
                 setGps(null);
                 setSelected(null);
+                setChoices([]);
                 setPin(e.target.value.replace(/\D/g, ''));
               }}
               className="mt-1 min-h-11 w-full rounded-input border border-input-border bg-surface px-3 text-[15px] text-ink placeholder:text-muted"
@@ -269,6 +266,15 @@ export function WorkshopFinderApi() {
           />
           {t('evOnly')}
         </label>
+        <PincodeChoices
+          choices={choices}
+          selected={pin}
+          onPick={(code, rank) => {
+            // Keep the position they gave (gps) and only fill the PIN field; it stays editable.
+            setPin(code);
+            track('pincode_choice_picked', { rank, choices: choices.length });
+          }}
+        />
         {locationError ? <p className="mt-2 text-sm font-bold text-error">{t('locationDenied')}</p> : null}
         {pinUnknown ? (
           <p role="status" className="mt-2 text-sm font-bold text-warning">

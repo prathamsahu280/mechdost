@@ -3099,3 +3099,9 @@ Founder (16:45 IST): "Keep it switched off for future tests". `apps/api/src/auth
 `server.ts` stay in the code, dormant: with the three `QA_TURNSTILE_BYPASS_*` variables unset (as now, removed
 2026-11-28 14:06 IST) it does nothing. Each future use follows docs/runbooks/deploy.md § 7.1 (fresh key, ≤ 12 h window,
 founder OK per run, lines removed afterwards). The 48 h revert in the runbook no longer applies.
+
+## 2026-11-28 — "Use my location" never guesses a PIN inside a served city (founder report: Sarona)
+
+Bug: the finder filled 493332 (OpenStreetMap's postcode, the same for almost all of Raipur; OSM India postcode data is poor; tested Pachpedi Naka, railway station, Tatibandh, Urla). The first fix idea, the nearest MechDost PIN centroid, is also wrong: in Sarona (about 21.216, 81.597) the real PIN is 492099 but the nearest centroid is 492013 (1.8 km); 492099's post office is 5.3 km away. PIN areas are irregular, so **the nearest post office is not a PIN area**.
+
+Ruling (interim, until Q12-B): inside a served area (within 8 km of an active MechDost PIN centroid of a live city) fill nothing and show the 5 nearest MechDost PINs as choices with area names in the page locale, plus the normal field; record which one was picked (`pincode_choice_picked`). Outside served areas keep the OSM answer, editable. The reverse lookup sits behind a `ReverseGeocoder` interface; a future authoritative provider that names an active MechDost PIN auto-fills it. Spec 06 "Use my location → PIN"; migration 0116 (GIST index on `pincodes.centroid`). Provider choice is still pending decision #7 / inbox **Q12-B** (Ola Maps or Google; both need a founder account and key). The free government PIN boundary GeoJSON returns 404 since May 2026 and the GitHub mirrors have no Raipur. Also fixes Hindi (rule 10): area names now come from our data in the page locale instead of Nominatim's English.

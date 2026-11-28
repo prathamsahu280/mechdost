@@ -850,6 +850,7 @@
     "title": "Where is your vehicle?",
     "pinLabel": "PIN code",
     "pinPlaceholder": "e.g. 492001",
+    "pinWhich": "Which PIN is yours? Tap one, or type it above.",
     "vehicleLabel": "Vehicle type",
     "any": "Any vehicle",
     "twoWheeler": "Bike / scooter",

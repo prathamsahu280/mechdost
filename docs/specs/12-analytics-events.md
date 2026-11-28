@@ -409,3 +409,5 @@ Browser events, `packages/shared/src/partner-client-events.ts` (merged into `CLI
 
 Shop values (2026-11-28, tab split): `tab` = `today | orders | stock | numbers | profile`; `tile` = `new | packing |
 ready | out | delivered`; `lane` = `packing | ready | out | delivered | given_up`. No new events.
+
+Use my location (2026-11-28, spec 06): client `location_detected {source: finder|map, pincodeFound, choices?}` (choices = how many nearest MechDost PINs were offered, 0 = none) and `pincode_choice_picked {rank 0-9, choices 1-10}` (rank 0 = the nearest PIN; how often it is not 0 shows whether nearest-centroid is a usable guess). Never the coordinates or the PIN (pseudonymous).
