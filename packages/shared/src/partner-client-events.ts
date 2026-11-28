@@ -34,4 +34,6 @@ export const PARTNER_CLIENT_EVENT_SCHEMAS = {
     .strict(),
   /** A day of the workshop Calendar strip was shown (0 = today … 6); the day itself is never sent. */
   partner_calendar_day_viewed: z.object({ portal, offset: z.number().int().min(0).max(6) }).strict(),
+  /** A row of the wide master-detail layout (≥ 1024 px) was opened; the order or job code is never sent. */
+  partner_detail_opened: z.object({ portal, kind: z.enum(['order', 'job']) }).strict(),
 } as const;

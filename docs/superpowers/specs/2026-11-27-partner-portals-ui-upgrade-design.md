@@ -1,6 +1,6 @@
 # Partner portals UI upgrade — design (shop, workshop, delivery rider)
 
-Status: **design, waiting for the founder** · Date 2026-11-27 (night) · Founder request (2026-11-27): "the partner shop
+Status: **design, waiting for the founder; master–detail built (Batch E, 2026-11-28)** · Date 2026-11-27 (night) · Founder request (2026-11-27): "the partner shop
 and workshops and other portals could also do a proper ui customization and upgrade, rn its bad make it better with
 proper visualization and better components as well, first study for this too" · Decision entry: decisions.md
 "2026-11-27 (night) — Founder: improvements approved …", item "Partner portals UI upgrade".

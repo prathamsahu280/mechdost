@@ -667,6 +667,38 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     note: `${API_NOTE} Resting state with the mocked job list; days with visits need a fixture with accepted proposals (not added yet).`,
     realApi: true,
   },
+  // ─────────────── Master–detail at ≥ 1024 px (2026-11-28; spec 07) ───────────────
+  {
+    code: 'API-SHOP-MASTERDETAIL',
+    page: 'Shop portal (/partner/shop/orders), real sign-in',
+    component:
+      'Orders tab at 1440 px: the order rows in a fixed 22 rem column and the open order beside them (or the one-sentence empty pane), row focus ring, close link; under 1024 px the stacked cards as before',
+    path: '/partner/shop/orders',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [...env, { name: 'auth', values: ['shop'] }, { name: 'pane', values: ['empty', 'open'] }, stress],
+    sweep: 4,
+    note: `${API_NOTE} Resting state with the mocked order list; the focus moves are unit-tested in partner-master-detail.test.ts.`,
+    realApi: true,
+  },
+  {
+    code: 'API-WS-MASTERDETAIL',
+    page: 'Workshop portal (/partner/workshop/jobs), real sign-in',
+    component:
+      'Jobs tab at 1440 px: the job rows in a fixed 22 rem column and the open job card beside them (or the one-sentence empty pane), row focus ring, close link; under 1024 px the stacked cards as before',
+    path: '/partner/workshop/jobs',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['workshop'] },
+      { name: 'pane', values: ['empty', 'open'] },
+      stress,
+    ],
+    sweep: 4,
+    note: `${API_NOTE} Resting state with the mocked job list.`,
+    realApi: true,
+  },
   // ─────────────── Shop offers to accept (coupons funded by the shop; spec 07; design 2026-11-15) ───────────────
   {
     code: 'API-SHOP-OFFERS',
