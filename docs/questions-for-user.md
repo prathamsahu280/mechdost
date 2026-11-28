@@ -656,3 +656,8 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
 - **Q-DC-B11-RUN (Input, P1)** The rider offer lapse test needs one prepaid order from test account 01 (agents deliver
   prepaid only). Place a small one from your phone and say "done"; I run the test and refund it. Default: not run; the
   root-cause fix (bounded sweeps) is live and watched by `sweep_heartbeat` / `sweep_pool_recycled`.
+
+- **Q218-B (Decision, P1) My Garage build scope** (demo `docs/design/my-garage-2026-11-28/index.html`, research
+  `docs/superpowers/specs/2026-11-28-my-garage-research.md`): which parts to build first? Default proposal: (1) service
+  book from real orders/jobs + fits shelf + km update, (2) road-ahead service due with admin rules, (3) papers expiry +
+  reminders, (4) spend; plate lookup later.

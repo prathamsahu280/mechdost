@@ -1,0 +1,1912 @@
+<title>MechDost My Garage</title>
+<meta name="claude:viewport-fit-sides" content="cover" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=DM+Sans:wght@400;500;700&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap"
+/>
+<style>
+  /* Layout: one phone column (max 460px). Navy "dashboard" hero with the live odometer, then the road strip
+   (km ruler: the vehicle rides toward the next jobs), then next-up, fits shelf, service book stamps, papers, spend. */
+  :root {
+    --bg: #eef2f7;
+    --surface: #ffffff;
+    --sunken: #f5f7fa;
+    --ink: #101f34;
+    --muted: #536376;
+    --line: #dbe2ea;
+    --navy: #101f34;
+    --navy-2: #1b2f4b;
+    --on-navy: #ffffff;
+    --on-navy-muted: #b9c6d8;
+    --accent: #ea5728;
+    --accent-btn: #d94a1d;
+    --accent-soft: #fff0e9;
+    --accent-soft-text: #bf3c12;
+    --brass: #e0a526;
+    --brass-text: #865800;
+    --brass-soft: #fbf1da;
+    --ok: #14683c;
+    --ok-bg: #e8f5ed;
+    --warn: #674e2d;
+    --warn-bg: #fff3df;
+    --bad: #b42318;
+    --bad-bg: #fdecea;
+    --shadow: 0 0 0 1px #101f340d, 0 1px 2px #101f340f, 0 10px 28px -18px #101f3433;
+    --f-head: 'Manrope', 'Noto Sans Devanagari', system-ui, sans-serif;
+    --f-body: 'DM Sans', 'Noto Sans Devanagari', system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --bg: #0a1424;
+      --surface: #101d31;
+      --sunken: #0d192b;
+      --ink: #e8eef5;
+      --muted: #a3b3c7;
+      --line: #233450;
+      --navy: #13233b;
+      --navy-2: #1c3150;
+      --on-navy: #ffffff;
+      --on-navy-muted: #b9c6d8;
+      --accent: #ff7a4d;
+      --accent-btn: #ea5728;
+      --accent-soft: #3a1f14;
+      --accent-soft-text: #ffb38f;
+      --brass: #e0a526;
+      --brass-text: #f2c461;
+      --brass-soft: #2d2311;
+      --ok: #84d6a6;
+      --ok-bg: #0f2a1d;
+      --warn: #f1d29b;
+      --warn-bg: #2d2311;
+      --bad: #ff9282;
+      --bad-bg: #3a1714;
+      --shadow: 0 0 0 1px #ffffff0f, 0 12px 30px -16px #00000099;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme='dark'] {
+    --bg: #0a1424;
+    --surface: #101d31;
+    --sunken: #0d192b;
+    --ink: #e8eef5;
+    --muted: #a3b3c7;
+    --line: #233450;
+    --navy: #13233b;
+    --navy-2: #1c3150;
+    --on-navy: #ffffff;
+    --on-navy-muted: #b9c6d8;
+    --accent: #ff7a4d;
+    --accent-btn: #ea5728;
+    --accent-soft: #3a1f14;
+    --accent-soft-text: #ffb38f;
+    --brass: #e0a526;
+    --brass-text: #f2c461;
+    --brass-soft: #2d2311;
+    --ok: #84d6a6;
+    --ok-bg: #0f2a1d;
+    --warn: #f1d29b;
+    --warn-bg: #2d2311;
+    --bad: #ff9282;
+    --bad-bg: #3a1714;
+    --shadow: 0 0 0 1px #ffffff0f, 0 12px 30px -16px #00000099;
+    color-scheme: dark;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.55 var(--f-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0 0 auto;
+    height: env(safe-area-inset-top, 0px);
+    z-index: 10;
+    background: var(--bg);
+  }
+  button,
+  input,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+  button {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+  .wrap {
+    max-width: 460px;
+    margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 12px 110px;
+    display: grid;
+    gap: 18px;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--f-head);
+    margin: 0;
+    text-wrap: balance;
+  }
+  h2 {
+    font-size: 18px;
+    font-weight: 800;
+  }
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+  .muted {
+    color: var(--muted);
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .spread {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  /* top bar */
+  .top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .top h1 {
+    font-size: 24px;
+    font-weight: 800;
+  }
+  .tools {
+    display: flex;
+    gap: 6px;
+  }
+  .pill {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    border-radius: 999px;
+    min-height: 40px;
+    padding: 0 14px;
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .tag.today {
+    background: var(--ok-bg);
+    color: var(--ok);
+  }
+  .tag.new {
+    background: var(--brass-soft);
+    color: var(--brass-text);
+  }
+  /* vehicle switcher */
+  .switch {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 2px;
+    scrollbar-width: none;
+    margin-inline: -2px;
+  }
+  .switch::-webkit-scrollbar {
+    display: none;
+  }
+  .chip {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 6px 14px 6px 8px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    font-weight: 700;
+    font-size: 13.5px;
+  }
+  .chip svg {
+    width: 30px;
+    height: 22px;
+  }
+  .chip[aria-pressed='true'] {
+    background: var(--accent-soft);
+    border-color: transparent;
+    color: var(--accent-soft-text);
+  }
+  .chip.add {
+    border-style: dashed;
+    color: var(--muted);
+    padding-left: 14px;
+  }
+  /* hero dashboard */
+  .hero {
+    background: radial-gradient(120% 90% at 85% 0%, var(--navy-2), var(--navy) 60%);
+    color: var(--on-navy);
+    border-radius: 24px;
+    padding: 18px 18px 16px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 18px 36px -22px #101f3499;
+  }
+  .hero .name {
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+  .hero .sub {
+    color: var(--on-navy-muted);
+    font-size: 13.5px;
+  }
+  .plate {
+    display: inline-flex;
+    align-items: stretch;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 2px solid #101f34;
+    background: #fff;
+    color: #101f34;
+    font: 800 15px/1 var(--f-head);
+    letter-spacing: 1px;
+    margin-top: 10px;
+  }
+  .plate .ind {
+    background: #1f4fb3;
+    color: #fff;
+    font-size: 8px;
+    letter-spacing: 0.5px;
+    display: grid;
+    place-items: center;
+    padding: 0 5px;
+    line-height: 1.1;
+    text-align: center;
+  }
+  .plate .num {
+    padding: 6px 9px;
+  }
+  .vehicle-art {
+    display: block;
+    width: 100%;
+    max-width: 300px;
+    height: auto;
+    margin: 6px auto 0;
+  }
+  .odo {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 4px;
+  }
+  .odo-label {
+    font-size: 12.5px;
+    color: var(--on-navy-muted);
+  }
+  .drums {
+    display: flex;
+    gap: 3px;
+    margin-top: 4px;
+  }
+  .drum {
+    width: 26px;
+    height: 38px;
+    border-radius: 6px;
+    background: #0b1626;
+    border: 1px solid #ffffff1f;
+    overflow: hidden;
+    position: relative;
+    box-shadow:
+      inset 0 8px 10px -8px #000,
+      inset 0 -8px 10px -8px #000;
+  }
+  .drum:last-child {
+    background: #2a0f05;
+    border-color: #ea572855;
+  }
+  .reel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .reel span {
+    height: 38px;
+    display: grid;
+    place-items: center;
+    font: 800 22px/1 var(--f-head);
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+  }
+  .km-unit {
+    font: 700 13px var(--f-head);
+    color: var(--on-navy-muted);
+    margin-left: 6px;
+    align-self: center;
+  }
+  .btn {
+    min-height: 46px;
+    border: 0;
+    border-radius: 12px;
+    padding: 0 18px;
+    font-weight: 800;
+    font-family: var(--f-head);
+    font-size: 14.5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn.primary {
+    background: var(--accent-btn);
+    color: #fff;
+  }
+  .btn.light {
+    background: #ffffff1a;
+    color: #fff;
+    border: 1px solid #ffffff33;
+  }
+  .btn.ghost {
+    background: var(--sunken);
+    color: var(--ink);
+    border: 1px solid var(--line);
+  }
+  .btn.block {
+    width: 100%;
+  }
+  /* road strip */
+  .road-card {
+    background: var(--surface);
+    border-radius: 20px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+  }
+  .road {
+    position: relative;
+    height: 118px;
+    margin-top: 10px;
+  }
+  .asphalt {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50px;
+    height: 22px;
+    border-radius: 11px;
+    background: var(--sunken);
+    border: 1px solid var(--line);
+  }
+  .asphalt::after {
+    content: '';
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    top: 10px;
+    border-top: 2px dashed var(--line);
+  }
+  .travelled {
+    position: absolute;
+    left: 0;
+    top: 50px;
+    height: 22px;
+    border-radius: 11px;
+    background: linear-gradient(90deg, var(--accent-soft), var(--accent));
+    opacity: 0.9;
+    transition: width 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .rider {
+    position: absolute;
+    top: 22px;
+    transform: translateX(-50%);
+    transition: left 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+    width: 44px;
+    height: 30px;
+  }
+  .stop {
+    position: absolute;
+    top: 78px;
+    transform: translateX(-50%);
+    display: grid;
+    justify-items: center;
+    gap: 2px;
+    background: none;
+    border: 0;
+    padding: 0;
+    min-width: 44px;
+  }
+  .stop .pin {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 3px solid var(--surface);
+    box-shadow: 0 0 0 2px currentColor;
+    background: currentColor;
+  }
+  .stop .lbl {
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.15;
+    text-align: center;
+    max-width: 72px;
+  }
+  .stop .km {
+    font-size: 10.5px;
+    color: var(--muted);
+  }
+  .stop.ok {
+    color: var(--ok);
+  }
+  .stop.soon {
+    color: var(--brass-text);
+  }
+  .stop.due {
+    color: var(--bad);
+  }
+  .scale {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  /* next up */
+  .next {
+    border-radius: 20px;
+    padding: 16px;
+    display: grid;
+    gap: 12px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    border-left: 0;
+  }
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 800;
+    border-radius: 999px;
+    padding: 3px 10px;
+  }
+  .status.due {
+    background: var(--bad-bg);
+    color: var(--bad);
+  }
+  .status.soon {
+    background: var(--warn-bg);
+    color: var(--warn);
+  }
+  .status.ok {
+    background: var(--ok-bg);
+    color: var(--ok);
+  }
+  .next h3 {
+    font-size: 19px;
+    font-weight: 800;
+  }
+  .meter {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--sunken);
+    overflow: hidden;
+    border: 1px solid var(--line);
+  }
+  .meter i {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+    border-radius: 4px;
+    transition: width 0.8s;
+  }
+  /* lists */
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .shelf {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(150px, 46%);
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+  }
+  .product {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 12px;
+    box-shadow: var(--shadow);
+    display: grid;
+    gap: 6px;
+    align-content: start;
+  }
+  .product .art {
+    height: 70px;
+    border-radius: 12px;
+    background: var(--sunken);
+    display: grid;
+    place-items: center;
+  }
+  .product .art svg {
+    width: 48px;
+    height: 48px;
+  }
+  .fit {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--ok);
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  .price {
+    font: 800 16px var(--f-head);
+  }
+  .product .pname {
+    font-weight: 700;
+    font-size: 13.5px;
+    line-height: 1.3;
+  }
+  /* service book */
+  .book {
+    background: var(--surface);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    padding: 6px 16px;
+  }
+  .entry {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px dashed var(--line);
+    align-items: start;
+  }
+  .entry:last-child {
+    border-bottom: 0;
+  }
+  .stamp {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    font: 800 10px/1.1 var(--f-head);
+    transform: rotate(-8deg);
+    padding: 4px;
+  }
+  .stamp.svc {
+    color: var(--accent-soft-text);
+  }
+  .stamp.part {
+    color: var(--ok);
+  }
+  .stamp.mile {
+    color: var(--brass-text);
+    border-style: double;
+    border-width: 4px;
+  }
+  .entry .title {
+    font-weight: 700;
+  }
+  .entry .meta {
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .entry .amt {
+    font: 800 14px var(--f-head);
+    text-align: right;
+    white-space: nowrap;
+  }
+  .filters {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .filters button {
+    min-height: 36px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    padding: 0 12px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .filters button[aria-pressed='true'] {
+    background: var(--accent-soft);
+    color: var(--accent-soft-text);
+    border-color: transparent;
+  }
+  /* papers */
+  .papers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .paper {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 12px;
+    box-shadow: var(--shadow);
+    text-align: left;
+    border: 0;
+    display: grid;
+    gap: 4px;
+    min-height: 96px;
+  }
+  .paper .pk {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  .paper .days {
+    font: 800 22px/1.1 var(--f-head);
+  }
+  .paper .when {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .paper.add .days {
+    font-size: 15px;
+    color: var(--accent-soft-text);
+  }
+  /* spend */
+  .spend {
+    background: var(--surface);
+    border-radius: 20px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+    display: grid;
+    gap: 10px;
+  }
+  .bar-row {
+    display: grid;
+    grid-template-columns: 96px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    font-size: 13px;
+  }
+  .bar {
+    height: 10px;
+    border-radius: 5px;
+    background: var(--sunken);
+    overflow: hidden;
+  }
+  .bar i {
+    display: block;
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.8s;
+  }
+  /* setup ring */
+  .setup {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    background: var(--surface);
+    border-radius: 20px;
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+  }
+  .ring {
+    width: 58px;
+    height: 58px;
+    flex: 0 0 auto;
+  }
+  .setup ul {
+    margin: 6px 0 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    font-size: 12.5px;
+  }
+  .setup li::before {
+    content: '○ ';
+    color: var(--muted);
+  }
+  .setup li.done {
+    color: var(--muted);
+    text-decoration: line-through;
+  }
+  .setup li.done::before {
+    content: '✓ ';
+    color: var(--ok);
+    text-decoration: none;
+    display: inline-block;
+  }
+  /* dock */
+  .dock {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    background: var(--surface);
+    box-shadow:
+      0 -1px 0 var(--line),
+      0 -8px 20px -16px #101f3433;
+    padding: 6px max(10px, env(safe-area-inset-left, 0px)) calc(6px + env(safe-area-inset-bottom, 0px))
+      max(10px, env(safe-area-inset-right, 0px));
+  }
+  .dock nav {
+    max-width: 460px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .dock a {
+    display: grid;
+    justify-items: center;
+    gap: 2px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 6px 0;
+    border-radius: 12px;
+  }
+  .dock a svg {
+    width: 22px;
+    height: 22px;
+  }
+  .dock a[aria-current='page'] {
+    color: var(--accent-soft-text);
+  }
+  .dock a[aria-current='page'] .ico {
+    background: var(--accent-soft);
+    border-radius: 999px;
+    padding: 2px 14px;
+  }
+  /* sheet */
+  .scrim {
+    position: fixed;
+    inset: 0;
+    background: #0a142499;
+    z-index: 30;
+    display: grid;
+    align-items: end;
+    justify-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .scrim.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .sheet {
+    width: 100%;
+    max-width: 480px;
+    background: var(--surface);
+    border-radius: 22px 22px 0 0;
+    padding: 18px max(18px, env(safe-area-inset-left, 0px)) calc(20px + env(safe-area-inset-bottom, 0px));
+    transform: translateY(24px);
+    transition: transform 0.25s;
+    max-height: 88vh;
+    overflow: auto;
+    overscroll-behavior: contain;
+    display: grid;
+    gap: 14px;
+  }
+  .scrim.open .sheet {
+    transform: none;
+  }
+  .sheet h3 {
+    font-size: 20px;
+    font-weight: 800;
+  }
+  .field {
+    display: grid;
+    gap: 6px;
+  }
+  .field label {
+    font-weight: 700;
+    font-size: 13.5px;
+  }
+  .field input,
+  .field select {
+    min-height: 48px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--sunken);
+    padding: 0 12px;
+  }
+  .choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .choices button {
+    min-height: 44px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--sunken);
+    padding: 0 14px;
+    font-weight: 700;
+  }
+  .choices button[aria-pressed='true'] {
+    background: var(--accent-soft);
+    color: var(--accent-soft-text);
+    border-color: var(--accent);
+  }
+  .steps {
+    display: flex;
+    gap: 6px;
+  }
+  .steps i {
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--line);
+  }
+  .steps i.on {
+    background: var(--accent);
+  }
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+    transform: translate(-50%, 20px);
+    background: var(--ink);
+    color: var(--bg);
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 14px;
+    opacity: 0;
+    transition: 0.25s;
+    z-index: 40;
+    max-width: calc(100% - 32px);
+    text-align: center;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  .drive-in {
+    animation: drive 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  @keyframes drive {
+    from {
+      transform: translateX(-60%);
+      opacity: 0;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+  .pop {
+    animation: pop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1);
+  }
+  @keyframes pop {
+    from {
+      transform: scale(0.6) rotate(-20deg);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1) rotate(-8deg);
+      opacity: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+  .note {
+    font-size: 12.5px;
+    color: var(--muted);
+    text-align: center;
+  }
+</style>
+
+<div class="wrap" id="app" lang="en"></div>
+<div class="dock"><nav id="dock" aria-label="Main"></nav></div>
+<div class="scrim" id="scrim" role="presentation">
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"></div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+  (() => {
+    const DAY = 86400000;
+    const TODAY = new Date('2026-11-28T12:00:00+05:30');
+    const fmtDate = (d, hi) =>
+      new Date(d).toLocaleDateString(hi ? 'hi-IN' : 'en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      });
+    const inr = (p) => '₹' + p.toLocaleString('en-IN');
+    const kmf = (n) => n.toLocaleString('en-IN');
+
+    /* ---------- copy (EN / HI) ---------- */
+    const T = {
+      en: {
+        title: 'My Garage',
+        today: 'Works today',
+        neu: 'New, needs building',
+        legendNote: 'Tags show what MechDost already has and what this design adds.',
+        addVehicle: 'Add vehicle',
+        odo: 'Odometer',
+        updateKm: 'Update km',
+        road: 'Road ahead',
+        roadHelp: 'Your vehicle at today’s km, with the next jobs marked on the road. Tap a marker.',
+        nextUp: 'Next up',
+        dueNow: 'Due now',
+        dueSoon: 'Due soon',
+        onTrack: 'On track',
+        inKm: (n) => `in ${kmf(n)} km`,
+        overKm: (n) => `${kmf(n)} km overdue`,
+        orDate: (d) => `or by ${d}`,
+        book: 'Book a service',
+        buy: 'Shop parts that fit',
+        fitsShelf: (m) => `Fits your ${m}`,
+        fits: 'Fits',
+        examplePrices: 'Example prices',
+        book2: 'Service book',
+        all: 'All',
+        services: 'Services',
+        parts: 'Parts',
+        milestones: 'Milestones',
+        papers: 'Papers',
+        papersHelp: 'Add the expiry dates once. We remind you before a fine or a lapse.',
+        daysLeft: (n) => `${n} days left`,
+        expired: (n) => `Expired ${n} days ago`,
+        addDate: 'Add expiry date',
+        insurance: 'Insurance',
+        puc: 'PUC',
+        rc: 'RC',
+        licence: 'Driving licence',
+        spend: 'Spent on this vehicle',
+        thisYear: '2026 so far',
+        setup: 'Garage set-up',
+        setupOf: (a, b) => `${a} of ${b} ready`,
+        sDetails: 'Vehicle details',
+        sKm: 'Km this month',
+        sIns: 'Insurance date',
+        sPuc: 'PUC date',
+        sRc: 'RC date',
+        sRem: 'Reminders on',
+        oil: 'Engine oil',
+        service: 'General service',
+        tyres: 'Tyres',
+        battery: 'Battery',
+        save: 'Save',
+        cancel: 'Cancel',
+        close: 'Close',
+        kmQ: 'What does the odometer show?',
+        kmHint: (n) => `Last saved: ${kmf(n)} km. It can only go up.`,
+        kmErr: 'Enter a number higher than the last saved km.',
+        saved: 'Saved',
+        kmSaved: (n) => `Odometer updated to ${kmf(n)} km`,
+        milestone: (n) => `${kmf(n)} km milestone stamped`,
+        nowDue: (j) => `${j} is due now`,
+        whyDue: (j, every) =>
+          `${j} every ${every}. Based on your last ${j.toLowerCase()} in the service book.`,
+        lastDone: (km, d) => `Last done at ${kmf(km)} km on ${d}`,
+        type: 'Type',
+        make: 'Make',
+        model: 'Model',
+        year: 'Year',
+        fuel: 'Fuel',
+        reg: 'Registration (optional)',
+        next: 'Next',
+        back: 'Back',
+        added: (m) => `${m} parked in your garage`,
+        stepOf: (a, b) => `Step ${a} of ${b}`,
+        limit: 'You can keep up to 10 vehicles.',
+        petrol: 'Petrol',
+        diesel: 'Diesel',
+        cng: 'CNG',
+        electric: 'Electric',
+        w2: '2-wheeler',
+        w3: '3-wheeler',
+        w4: '4-wheeler',
+        home: 'Home',
+        shop: 'Shop',
+        workshops: 'Workshops',
+        garage: 'Garage',
+        remind: 'Remind me',
+        reminderSet: 'Reminder set for 15 and 3 days before',
+        expiryQ: (p) => `${p} expiry date`,
+        pickDate: 'Expiry date',
+        receivedAt: (km) => `Vehicle received at ${kmf(km)} km`,
+        bill: 'Bill',
+        order: 'Order',
+        theme: 'Theme',
+        lang: 'हिंदी',
+        every2w: '3,000 km or 4 months',
+        everyOil: '3,000 km',
+        everyTyre: '25,000 km',
+        everyBat: '3 years',
+        every4w: '10,000 km or 1 year',
+        everyOil4: '10,000 km',
+        everyTyre4: '40,000 km',
+        yearsOld: (n) => `${n} years old`,
+        monthsLeft: (n) => `about ${n} months left`,
+      },
+      hi: {
+        title: 'मेरा गैरेज',
+        today: 'आज काम करता है',
+        neu: 'नया, बनाना है',
+        legendNote: 'टैग बताते हैं कि मैकदोस्त में क्या है और यह डिज़ाइन क्या जोड़ता है।',
+        addVehicle: 'गाड़ी जोड़ें',
+        odo: 'ओडोमीटर',
+        updateKm: 'किमी अपडेट करें',
+        road: 'आगे का रास्ता',
+        roadHelp: 'आज के किमी पर आपकी गाड़ी, और रास्ते पर अगले काम। निशान पर टैप करें।',
+        nextUp: 'अगला काम',
+        dueNow: 'अभी ज़रूरी',
+        dueSoon: 'जल्द ज़रूरी',
+        onTrack: 'ठीक है',
+        inKm: (n) => `${kmf(n)} किमी में`,
+        overKm: (n) => `${kmf(n)} किमी देरी`,
+        orDate: (d) => `या ${d} तक`,
+        book: 'सर्विस बुक करें',
+        buy: 'फिट होने वाले पार्ट्स',
+        fitsShelf: (m) => `आपकी ${m} में फिट`,
+        fits: 'फिट',
+        examplePrices: 'उदाहरण कीमतें',
+        book2: 'सर्विस बुक',
+        all: 'सब',
+        services: 'सर्विस',
+        parts: 'पार्ट्स',
+        milestones: 'पड़ाव',
+        papers: 'काग़ज़ात',
+        papersHelp: 'एक बार तारीख़ डालें। जुर्माने या चूक से पहले हम याद दिलाएँगे।',
+        daysLeft: (n) => `${n} दिन बाकी`,
+        expired: (n) => `${n} दिन पहले ख़त्म`,
+        addDate: 'समाप्ति तारीख़ डालें',
+        insurance: 'बीमा',
+        puc: 'PUC',
+        rc: 'RC',
+        licence: 'ड्राइविंग लाइसेंस',
+        spend: 'इस गाड़ी पर खर्च',
+        thisYear: '2026 में अब तक',
+        setup: 'गैरेज तैयारी',
+        setupOf: (a, b) => `${b} में से ${a} तैयार`,
+        sDetails: 'गाड़ी की जानकारी',
+        sKm: 'इस महीने का किमी',
+        sIns: 'बीमा तारीख़',
+        sPuc: 'PUC तारीख़',
+        sRc: 'RC तारीख़',
+        sRem: 'रिमाइंडर चालू',
+        oil: 'इंजन ऑयल',
+        service: 'जनरल सर्विस',
+        tyres: 'टायर',
+        battery: 'बैटरी',
+        save: 'सेव करें',
+        cancel: 'रद्द करें',
+        close: 'बंद करें',
+        kmQ: 'ओडोमीटर में कितना दिख रहा है?',
+        kmHint: (n) => `पिछली बार: ${kmf(n)} किमी। यह सिर्फ़ बढ़ सकता है।`,
+        kmErr: 'पिछले किमी से बड़ी संख्या डालें।',
+        saved: 'सेव हो गया',
+        kmSaved: (n) => `ओडोमीटर ${kmf(n)} किमी हुआ`,
+        milestone: (n) => `${kmf(n)} किमी का पड़ाव दर्ज`,
+        nowDue: (j) => `${j} अभी ज़रूरी है`,
+        whyDue: (j, every) => `${j} हर ${every}। सर्विस बुक में पिछली बार के हिसाब से।`,
+        lastDone: (km, d) => `पिछली बार ${kmf(km)} किमी पर, ${d}`,
+        type: 'किस्म',
+        make: 'कंपनी',
+        model: 'मॉडल',
+        year: 'साल',
+        fuel: 'ईंधन',
+        reg: 'रजिस्ट्रेशन (ज़रूरी नहीं)',
+        next: 'आगे',
+        back: 'पीछे',
+        added: (m) => `${m} आपके गैरेज में खड़ी है`,
+        stepOf: (a, b) => `${b} में से चरण ${a}`,
+        limit: 'आप 10 गाड़ियाँ रख सकते हैं।',
+        petrol: 'पेट्रोल',
+        diesel: 'डीज़ल',
+        cng: 'CNG',
+        electric: 'इलेक्ट्रिक',
+        w2: 'दोपहिया',
+        w3: 'तिपहिया',
+        w4: 'चारपहिया',
+        home: 'होम',
+        shop: 'शॉप',
+        workshops: 'वर्कशॉप',
+        garage: 'गैरेज',
+        remind: 'याद दिलाएँ',
+        reminderSet: '15 और 3 दिन पहले रिमाइंडर',
+        expiryQ: (p) => `${p} की समाप्ति तारीख़`,
+        pickDate: 'समाप्ति तारीख़',
+        receivedAt: (km) => `गाड़ी ${kmf(km)} किमी पर ली गई`,
+        bill: 'बिल',
+        order: 'ऑर्डर',
+        theme: 'थीम',
+        lang: 'English',
+        every2w: '3,000 किमी या 4 महीने',
+        everyOil: '3,000 किमी',
+        everyTyre: '25,000 किमी',
+        everyBat: '3 साल',
+        every4w: '10,000 किमी या 1 साल',
+        everyOil4: '10,000 किमी',
+        everyTyre4: '40,000 किमी',
+        yearsOld: (n) => `${n} साल पुरानी`,
+        monthsLeft: (n) => `लगभग ${n} महीने बाकी`,
+      },
+    };
+
+    /* ---------- example data (shapes follow MechDost's real records) ---------- */
+    const seed = () => ({
+      lang: 'en',
+      active: 'v1',
+      filter: 'all',
+      vehicles: [
+        {
+          id: 'v1',
+          type: '2W',
+          fuel: 'petrol',
+          make: 'Honda',
+          model: 'Activa 6G',
+          variant: 'DLX',
+          year: 2021,
+          reg: 'CG 04 MK 2817',
+          km: 12180,
+          kmAt: '2026-11-02',
+          last: {
+            oil: [9400, '2026-07-14'],
+            service: [9400, '2026-07-14'],
+            tyres: [0, '2021-03-10'],
+            battery: [0, '2023-02-03'],
+          },
+          papers: { insurance: '2027-01-09', puc: '2026-12-06', rc: null, licence: '2031-05-20' },
+          reminders: true,
+          log: [
+            {
+              k: 'svc',
+              code: 'SR-RPR-2026-7KQ2MD',
+              title: 'General service + oil change',
+              where: 'Sahu Auto Works, Tatibandh',
+              date: '2026-07-14',
+              km: 9400,
+              amt: 1180,
+            },
+            {
+              k: 'part',
+              code: 'MD-RPR-2026-B1195T',
+              title: 'Castrol Activ 4T 20W40, 900 ml',
+              where: 'Delivered',
+              date: '2026-07-10',
+              km: null,
+              amt: 440,
+            },
+            { k: 'mile', title: '10,000 km', date: '2026-08-21', km: 10000 },
+            {
+              k: 'svc',
+              code: 'SR-RPR-2026-2PZ8WA',
+              title: 'Brake shoes replaced (rear)',
+              where: 'Raipur Two Wheeler Care, Pachpedi Naka',
+              date: '2026-03-02',
+              km: 7120,
+              amt: 640,
+            },
+            {
+              k: 'part',
+              code: 'MD-RPR-2026-9HD4KC',
+              title: 'Exide XLTZ4A battery',
+              where: 'Fitted at home',
+              date: '2023-02-03',
+              km: null,
+              amt: 1000,
+            },
+          ],
+          spend: [
+            ['services', 1820],
+            ['parts', 440],
+            ['tyres', 0],
+            ['battery', 0],
+          ],
+        },
+        {
+          id: 'v2',
+          type: '2W',
+          fuel: 'petrol',
+          make: 'Bajaj',
+          model: 'Pulsar 150',
+          variant: 'Twin Disc',
+          year: 2019,
+          reg: 'CG 04 LP 5531',
+          km: 31420,
+          kmAt: '2026-10-11',
+          last: {
+            oil: [28300, '2026-05-30'],
+            service: [28300, '2026-05-30'],
+            tyres: [12000, '2022-01-12'],
+            battery: [0, '2021-11-20'],
+          },
+          papers: { insurance: '2026-12-02', puc: null, rc: '2034-08-14', licence: '2031-05-20' },
+          reminders: false,
+          log: [
+            {
+              k: 'svc',
+              code: 'SR-RPR-2026-4MV1NE',
+              title: 'Chain set + general service',
+              where: 'Sahu Auto Works, Tatibandh',
+              date: '2026-05-30',
+              km: 28300,
+              amt: 2350,
+            },
+            { k: 'mile', title: '30,000 km', date: '2026-08-02', km: 30000 },
+            {
+              k: 'part',
+              code: 'MD-RPR-2025-QW72LA',
+              title: 'MRF Nylogrip Zapper 100/90-17 (rear)',
+              where: 'Delivered',
+              date: '2025-12-19',
+              km: null,
+              amt: 1890,
+            },
+          ],
+          spend: [
+            ['services', 2350],
+            ['parts', 0],
+            ['tyres', 1890],
+            ['battery', 0],
+          ],
+        },
+        {
+          id: 'v3',
+          type: '4W',
+          fuel: 'petrol',
+          make: 'Maruti Suzuki',
+          model: 'Swift',
+          variant: 'VXi',
+          year: 2018,
+          reg: 'CG 04 HT 9012',
+          km: 58900,
+          kmAt: '2026-11-20',
+          last: {
+            oil: [50200, '2026-03-18'],
+            service: [50200, '2026-03-18'],
+            tyres: [20500, '2022-06-01'],
+            battery: [0, '2024-01-15'],
+          },
+          papers: { insurance: '2027-04-22', puc: '2027-02-11', rc: '2033-02-09', licence: '2031-05-20' },
+          reminders: true,
+          log: [
+            {
+              k: 'svc',
+              code: 'SR-RPR-2026-8TT3QB',
+              title: 'Periodic service, 50,000 km',
+              where: 'Shree Car Care, Telibandha',
+              date: '2026-03-18',
+              km: 50200,
+              amt: 5640,
+            },
+            { k: 'mile', title: '50,000 km', date: '2026-02-25', km: 50000 },
+          ],
+          spend: [
+            ['services', 5640],
+            ['parts', 0],
+            ['tyres', 0],
+            ['battery', 0],
+          ],
+        },
+      ],
+    });
+    let S;
+    try {
+      S = JSON.parse(localStorage.getItem('md-garage-demo') || 'null') || seed();
+    } catch {
+      S = seed();
+    }
+    const save = () => {
+      try {
+        localStorage.setItem('md-garage-demo', JSON.stringify(S));
+      } catch {}
+    };
+    const t = () => T[S.lang];
+    const V = () => S.vehicles.find((v) => v.id === S.active) || S.vehicles[0];
+
+    /* ---------- rules (admin-editable in the real build) ---------- */
+    const RULES = {
+      '2W': {
+        oil: { km: 3000, days: 120 },
+        service: { km: 3000, days: 120 },
+        tyres: { km: 25000 },
+        battery: { days: 1095 },
+      },
+      '3W': {
+        oil: { km: 3000, days: 120 },
+        service: { km: 3000, days: 120 },
+        tyres: { km: 25000 },
+        battery: { days: 1095 },
+      },
+      '4W': {
+        oil: { km: 10000, days: 365 },
+        service: { km: 10000, days: 365 },
+        tyres: { km: 40000 },
+        battery: { days: 1095 },
+      },
+    };
+    const everyText = (job, type) => {
+      const L = t();
+      const four = type === '4W';
+      return {
+        oil: four ? L.everyOil4 : L.everyOil,
+        service: four ? L.every4w : L.every2w,
+        tyres: four ? L.everyTyre4 : L.everyTyre,
+        battery: L.everyBat,
+      }[job];
+    };
+    function jobs(v) {
+      const r = RULES[v.type];
+      return ['oil', 'service', 'tyres', 'battery'].map((j) => {
+        const [lastKm, lastDate] = v.last[j];
+        const rule = r[j];
+        const dueKm = rule.km ? lastKm + rule.km : null;
+        const dueDate = rule.days ? new Date(new Date(lastDate).getTime() + rule.days * DAY) : null;
+        const kmLeft = dueKm != null ? dueKm - v.km : Infinity;
+        const daysLeft = dueDate ? Math.round((dueDate - TODAY) / DAY) : Infinity;
+        const frac = Math.min(kmLeft / (rule.km || 1e9), daysLeft / (rule.days || 1e9));
+        const state = kmLeft <= 0 || daysLeft <= 0 ? 'due' : frac < 0.2 ? 'soon' : 'ok';
+        const used = rule.km ? 1 - Math.max(0, kmLeft) / rule.km : 1 - Math.max(0, daysLeft) / rule.days;
+        return {
+          j,
+          lastKm,
+          lastDate,
+          dueKm,
+          dueDate,
+          kmLeft,
+          daysLeft,
+          state,
+          used: Math.min(1, Math.max(0, used)),
+        };
+      });
+    }
+    const rank = { due: 0, soon: 1, ok: 2 };
+
+    /* ---------- vehicle drawings (inline SVG, tinted by tokens) ---------- */
+    function art(type, cls = '') {
+      if (type === '4W')
+        return `<svg class="${cls}" viewBox="0 0 300 120" aria-hidden="true"><path d="M30 86 L44 60 Q52 46 72 44 L118 40 Q140 22 176 22 L210 24 Q232 26 248 46 L270 56 Q284 60 284 74 L284 86 Z" fill="#ffffff14" stroke="#ffffffcc" stroke-width="2.5"/><path d="M126 42 Q146 30 174 30 L204 32 Q220 34 232 48 L126 48 Z" fill="#ffffff22" stroke="#ffffff88" stroke-width="2"/><circle cx="84" cy="88" r="20" fill="#0b1626" stroke="#fff" stroke-width="3"/><circle cx="84" cy="88" r="7" fill="#ea5728"/><circle cx="236" cy="88" r="20" fill="#0b1626" stroke="#fff" stroke-width="3"/><circle cx="236" cy="88" r="7" fill="#ea5728"/><rect x="270" y="64" width="12" height="6" rx="2" fill="#e0a526"/></svg>`;
+      if (type === '3W')
+        return `<svg class="${cls}" viewBox="0 0 300 120" aria-hidden="true"><path d="M70 90 L70 40 Q72 24 96 22 L190 22 Q214 24 222 46 L240 70 L240 90 Z" fill="#ffffff14" stroke="#ffffffcc" stroke-width="2.5"/><path d="M84 30 L150 30 L150 62 L84 62 Z" fill="#ffffff22" stroke="#ffffff88" stroke-width="2"/><circle cx="100" cy="92" r="17" fill="#0b1626" stroke="#fff" stroke-width="3"/><circle cx="100" cy="92" r="6" fill="#ea5728"/><circle cx="226" cy="92" r="17" fill="#0b1626" stroke="#fff" stroke-width="3"/><circle cx="226" cy="92" r="6" fill="#ea5728"/></svg>`;
+      return `<svg class="${cls}" viewBox="0 0 300 120" aria-hidden="true"><path d="M92 88 Q100 56 140 56 L190 56 Q206 40 214 30 L226 30" fill="none" stroke="#ffffffcc" stroke-width="3" stroke-linecap="round"/><path d="M118 60 L176 60 Q196 62 200 80 L130 84 Q112 80 118 60 Z" fill="#ffffff1c" stroke="#ffffffcc" stroke-width="2.5"/><path d="M128 56 Q140 46 166 48" stroke="#e0a526" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M214 30 L236 30" stroke="#fff" stroke-width="4" stroke-linecap="round"/><circle cx="88" cy="90" r="20" fill="#0b1626" stroke="#fff" stroke-width="3"/><circle cx="88" cy="90" r="7" fill="#ea5728"/><circle cx="222" cy="90" r="20" fill="#0b1626" stroke="#fff" stroke-width="3"/><circle cx="222" cy="90" r="7" fill="#ea5728"/></svg>`;
+    }
+    const mini = (type) =>
+      art(type)
+        .replace('viewBox="0 0 300 120"', 'viewBox="40 10 260 105"')
+        .replace(/#ffffffcc|#fff"/g, (m) => (m === '#ffffffcc' ? 'currentColor' : 'currentColor"'))
+        .replace(/#ffffff1c|#ffffff14|#ffffff22|#ffffff88|#0b1626/g, 'none');
+
+    /* ---------- render ---------- */
+    const app = document.getElementById('app');
+    function render() {
+      const L = t();
+      const v = V();
+      const js = jobs(v).sort((a, b) => rank[a.state] - rank[b.state] || a.kmLeft - b.kmLeft);
+      document.documentElement.lang = S.lang === 'hi' ? 'hi' : 'en';
+      const top = js[0];
+      const roadMax = Math.max(
+        ...js.filter((x) => x.dueKm != null && x.dueKm > v.km - 3000).map((x) => x.dueKm),
+        v.km + 1000,
+      );
+      const roadMin = Math.max(
+        0,
+        Math.min(v.km - 2000, ...js.filter((x) => x.dueKm != null).map((x) => x.dueKm)),
+      );
+      const pos = (km) => 4 + ((km - roadMin) / (roadMax - roadMin || 1)) * 92;
+      const papers = ['insurance', 'puc', 'rc', 'licence'];
+      const setupItems = [
+        ['sDetails', true],
+        ['sKm', (TODAY - new Date(v.kmAt)) / DAY < 31],
+        ['sIns', !!v.papers.insurance],
+        ['sPuc', !!v.papers.puc],
+        ['sRc', !!v.papers.rc],
+        ['sRem', v.reminders],
+      ];
+      const done = setupItems.filter((x) => x[1]).length;
+      const spendTotal = v.spend.reduce((a, s) => a + s[1], 0);
+      const maxSpend = Math.max(...v.spend.map((s) => s[1]), 1);
+      const shelf = products(v);
+      const log = v.log.filter(
+        (e) =>
+          S.filter === 'all' ||
+          (S.filter === 'svc' && e.k === 'svc') ||
+          (S.filter === 'part' && e.k === 'part') ||
+          (S.filter === 'mile' && e.k === 'mile'),
+      );
+
+      app.innerHTML = `
+  <header class="top">
+    <h1>${L.title}</h1>
+    <div class="tools"><button class="pill" id="lang" lang="${S.lang === 'hi' ? 'en' : 'hi'}">${L.lang}</button><button class="pill" id="theme" aria-label="${L.theme}">◐</button></div>
+  </header>
+  <p class="legend"><span class="tag today">● ${L.today}</span><span class="tag new">◆ ${L.neu}</span><span>${L.legendNote}</span></p>
+
+  <div class="switch" role="group" aria-label="${L.garage}">
+    ${S.vehicles.map((x) => `<button class="chip" data-veh="${x.id}" aria-pressed="${x.id === v.id}">${mini(x.type)}<span>${x.model}</span></button>`).join('')}
+    <button class="chip add" id="add">＋ ${L.addVehicle}</button>
+  </div>
+
+  <section class="hero" aria-label="${v.make} ${v.model}">
+    <div class="spread"><div><div class="name">${v.make} ${v.model}</div><div class="sub">${[v.variant, v.year, L[v.fuel]].filter(Boolean).join(', ')}</div></div><span class="tag today">●</span></div>
+    ${v.reg ? `<div class="plate" aria-label="${v.reg}"><span class="ind">IND</span><span class="num">${v.reg}</span></div>` : ''}
+    <div id="artbox">${art(v.type, 'vehicle-art')}</div>
+    <div class="odo">
+      <div><div class="odo-label">${L.odo}</div><div class="row"><div class="drums" id="drums" aria-label="${kmf(v.km)} km">${drums(v.km)}</div><span class="km-unit">km</span></div></div>
+      <button class="btn light" id="upd">${L.updateKm}</button>
+    </div>
+  </section>
+
+  <section class="road-card" aria-labelledby="road-h">
+    <div class="spread"><h2 id="road-h">${L.road}</h2><span class="tag new">◆</span></div>
+    <p class="muted" style="margin:4px 0 0;font-size:13px">${L.roadHelp}</p>
+    <div class="road">
+      <div class="asphalt"></div><div class="travelled" style="width:${pos(v.km)}%"></div>
+      <svg class="rider" style="left:${pos(v.km)}%" viewBox="40 10 260 105" aria-hidden="true">${art(v.type)
+        .replace(/<svg[^>]*>|<\/svg>/g, '')
+        .replace(/#ffffffcc|#fff"/g, (m) => (m === '#ffffffcc' ? 'var(--ink)' : 'var(--ink)"'))
+        .replace(/#ffffff1c|#ffffff14|#ffffff22|#ffffff88/g, 'var(--surface)')
+        .replace(/#0b1626/g, 'var(--ink)')}</svg>
+      ${js
+        .filter((x) => x.dueKm != null)
+        .map(
+          (x) =>
+            `<button class="stop ${x.state}" style="left:${Math.min(96, Math.max(4, pos(x.dueKm)))}%" data-job="${x.j}" aria-label="${L[x.j]}: ${x.kmLeft > 0 ? L.inKm(x.kmLeft) : L.overKm(-x.kmLeft)}"><span class="pin"></span><span class="lbl">${L[x.j]}</span><span class="km tnum">${kmf(x.dueKm)}</span></button>`,
+        )
+        .join('')}
+    </div>
+    <div class="scale tnum"><span>${kmf(roadMin)} km</span><span>${kmf(roadMax)} km</span></div>
+  </section>
+
+  <section class="next" aria-labelledby="next-h">
+    <div class="spread"><h2 id="next-h">${L.nextUp}</h2><span class="tag new">◆</span></div>
+    <div class="spread"><h3>${L[top.j]}</h3><span class="status ${top.state}">${top.state === 'due' ? L.dueNow : top.state === 'soon' ? L.dueSoon : L.onTrack}</span></div>
+    <div class="muted tnum">${top.dueKm != null ? (top.kmLeft > 0 ? L.inKm(top.kmLeft) : L.overKm(-top.kmLeft)) : ''}${top.dueDate ? ' ' + (top.dueKm != null ? L.orDate(fmtDate(top.dueDate, S.lang === 'hi')) : L.monthsLeft(Math.max(0, Math.round(top.daysLeft / 30)))) : ''}</div>
+    <div class="meter" aria-hidden="true"><i style="width:${Math.round(top.used * 100)}%"></i></div>
+    <div class="muted" style="font-size:12.5px">${L.lastDone(top.lastKm, fmtDate(top.lastDate, S.lang === 'hi'))}</div>
+    <button class="btn primary block" data-act="${top.j === 'tyres' || top.j === 'battery' ? 'buy' : 'book'}">${top.j === 'tyres' || top.j === 'battery' ? L.buy : L.book} <span class="tag today" style="margin-left:4px">●</span></button>
+  </section>
+
+  <section aria-labelledby="fit-h" style="display:grid;gap:10px">
+    <div class="section-head"><h2 id="fit-h">${L.fitsShelf(v.model)}</h2><span class="tag today">● ${L.examplePrices}</span></div>
+    <div class="shelf">${shelf.map((p) => `<article class="product"><div class="art">${p.icon}</div><div class="fit">✓ ${L.fits} ${v.model}</div><div class="pname">${p.name}</div><div class="price tnum">${inr(p.price)}</div></article>`).join('')}</div>
+  </section>
+
+  <section aria-labelledby="book-h" style="display:grid;gap:10px">
+    <div class="section-head"><h2 id="book-h">${L.book2}</h2><span class="tag today">● / ◆</span></div>
+    <div class="filters" role="group" aria-label="${L.book2}">${[
+      ['all', L.all],
+      ['svc', L.services],
+      ['part', L.parts],
+      ['mile', L.milestones],
+    ]
+      .map(([k, l]) => `<button data-f="${k}" aria-pressed="${S.filter === k}">${l}</button>`)
+      .join('')}</div>
+    <div class="book">${log.map((e) => entry(e)).join('') || `<p class="muted">—</p>`}</div>
+  </section>
+
+  <section aria-labelledby="pap-h" style="display:grid;gap:10px">
+    <div class="section-head"><h2 id="pap-h">${L.papers}</h2><span class="tag new">◆</span></div>
+    <p class="muted" style="margin:0;font-size:13px">${L.papersHelp}</p>
+    <div class="papers">${papers.map((p) => paper(p, v.papers[p])).join('')}</div>
+  </section>
+
+  <section class="spend" aria-labelledby="sp-h">
+    <div class="spread"><h2 id="sp-h">${L.spend}</h2><span class="tag new">◆</span></div>
+    <div class="spread"><span class="muted">${L.thisYear}</span><span class="price tnum">${inr(spendTotal)}</span></div>
+    ${v.spend.map(([k, a]) => `<div class="bar-row"><span>${k === 'services' ? L.services : k === 'parts' ? L.parts : k === 'tyres' ? L.tyres : L.battery}</span><span class="bar"><i style="width:${(a / maxSpend) * 100}%;background:${k === 'services' ? 'var(--accent)' : k === 'parts' ? 'var(--brass)' : 'var(--ok)'}"></i></span><span class="tnum">${inr(a)}</span></div>`).join('')}
+  </section>
+
+  <section class="setup" aria-labelledby="su-h">
+    ${ring(done, setupItems.length)}
+    <div><div class="row"><h2 id="su-h" style="font-size:16px">${L.setup}</h2><span class="tag new">◆</span></div><div class="muted tnum" style="font-size:13px">${L.setupOf(done, setupItems.length)}</div>
+    <ul>${setupItems.map(([k, ok]) => `<li class="${ok ? 'done' : ''}">${L[k]}</li>`).join('')}</ul></div>
+  </section>
+  <p class="note">MechDost · example data for the design review</p>`;
+
+      document.getElementById('dock').innerHTML = [
+        ['home', 'M3 11 12 4l9 7v9H3z'],
+        ['shop', 'M4 7h16l-1.5 12h-13zM8 7a4 4 0 0 1 8 0'],
+        ['workshops', 'M14 6l4-2 2 4-2 4-4-2zM4 20l9-9'],
+        ['garage', 'M3 10 12 4l9 6v10H3zM7 20v-6h10v6'],
+      ]
+        .map(
+          ([k, d]) =>
+            `<a href="#${k === 'garage' ? 'garage' : k}" ${k === 'garage' ? 'aria-current="page"' : ''}><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg></span>${L[k]}</a>`,
+        )
+        .join('');
+    }
+    function drums(km) {
+      const s = String(km).padStart(6, '0');
+      return [...s]
+        .map(
+          (d) =>
+            `<span class="drum"><span class="reel" style="transform:translateY(-${Number(d) * 38}px)">${'0123456789'
+              .split('')
+              .map((n) => `<span>${n}</span>`)
+              .join('')}</span></span>`,
+        )
+        .join('');
+    }
+    function entry(e) {
+      const L = t();
+      const hi = S.lang === 'hi';
+      if (e.k === 'mile')
+        return `<div class="entry"><span class="stamp mile ${e.fresh ? 'pop' : ''}">${kmf(e.km)}<br>km</span><div><div class="title">${L.milestones}: ${e.title}</div><div class="meta">${fmtDate(e.date, hi)}</div></div><span class="tag new">◆</span></div>`;
+      return `<div class="entry"><span class="stamp ${e.k}">${e.k === 'svc' ? 'SERVICE' : 'PART'}<br>${fmtDate(e.date, false).split(' ').slice(1).join(' ')}</span><div><div class="title">${e.title}</div><div class="meta">${e.where}${e.km ? ', ' + L.receivedAt(e.km) : ''}</div><div class="meta">${e.k === 'svc' ? L.bill : L.order} <span lang="en">${e.code}</span>, ${fmtDate(e.date, hi)}</div></div><span class="amt tnum">${inr(e.amt)}</span></div>`;
+    }
+    function paper(p, date) {
+      const L = t();
+      const hi = S.lang === 'hi';
+      if (!date)
+        return `<button class="paper add" data-paper="${p}"><span class="pk">${L[p]}</span><span class="days">＋ ${L.addDate}</span></button>`;
+      const days = Math.round((new Date(date) - TODAY) / DAY);
+      const col = days < 0 ? 'var(--bad)' : days <= 30 ? 'var(--brass-text)' : 'var(--ok)';
+      return `<button class="paper" data-paper="${p}"><span class="pk">${L[p]}</span><span class="days tnum" style="color:${col}">${days < 0 ? L.expired(-days) : L.daysLeft(days)}</span><span class="when">${fmtDate(date, hi)}</span></button>`;
+    }
+    function ring(a, b) {
+      const r = 24,
+        c = 2 * Math.PI * r,
+        f = a / b;
+      return `<svg class="ring" viewBox="0 0 58 58" aria-hidden="true"><circle cx="29" cy="29" r="${r}" fill="none" stroke="var(--sunken)" stroke-width="7"/><circle cx="29" cy="29" r="${r}" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${c * f} ${c}" transform="rotate(-90 29 29)" style="transition:stroke-dasharray .8s"/><text x="29" y="34" text-anchor="middle" font-family="Manrope" font-weight="800" font-size="15" fill="var(--ink)">${a}/${b}</text></svg>`;
+    }
+    function products(v) {
+      const tyre =
+        '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="19" fill="none" stroke="var(--ink)" stroke-width="6"/><circle cx="24" cy="24" r="7" fill="var(--accent)"/></svg>';
+      const bat =
+        '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="14" width="32" height="24" rx="4" fill="none" stroke="var(--ink)" stroke-width="3"/><path d="M15 14v-4h5v4M28 14v-4h5v4" stroke="var(--ink)" stroke-width="3" fill="none"/><path d="M15 26h6M30 23v6M27 26h6" stroke="var(--accent)" stroke-width="3"/></svg>';
+      const oil =
+        '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M16 12h12l4 6v20a3 3 0 0 1-3 3H15a3 3 0 0 1-3-3V18z" fill="none" stroke="var(--ink)" stroke-width="3"/><path d="M20 26q4-6 8 0a4 4 0 0 1-8 0" fill="var(--brass)"/></svg>';
+      if (v.type === '4W')
+        return [
+          { icon: oil, name: 'Castrol GTX 5W30, 3.5 L', price: 2150 },
+          { icon: bat, name: 'Amaron Pro 45 Ah', price: 5899 },
+          { icon: tyre, name: 'CEAT SecuraDrive 185/65 R15', price: 4290 },
+        ];
+      if (v.model.startsWith('Pulsar'))
+        return [
+          { icon: oil, name: 'HP Racer4 20W50, 1 L', price: 395 },
+          { icon: tyre, name: 'MRF Nylogrip Zapper 100/90-17', price: 1890 },
+          { icon: bat, name: 'Amaron Pro Bike 9 Ah', price: 1650 },
+        ];
+      return [
+        { icon: oil, name: 'Castrol Activ 4T 20W40, 900 ml', price: 440 },
+        { icon: bat, name: 'Exide XLTZ4A', price: 1000 },
+        { icon: tyre, name: 'CEAT Milaze 90/100-10', price: 1320 },
+      ];
+    }
+
+    /* ---------- sheets ---------- */
+    const scrim = document.getElementById('scrim'),
+      sheet = document.getElementById('sheet');
+    let lastFocus = null;
+    function openSheet(html, onMount) {
+      lastFocus = document.activeElement;
+      sheet.innerHTML = html;
+      scrim.classList.add('open');
+      (sheet.querySelector('input,button.primary,button') || sheet).focus();
+      onMount && onMount();
+    }
+    function closeSheet() {
+      scrim.classList.remove('open');
+      lastFocus && lastFocus.focus && lastFocus.focus();
+    }
+    scrim.addEventListener('click', (e) => {
+      if (e.target === scrim) closeSheet();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && scrim.classList.contains('open')) closeSheet();
+    });
+    const toast = (msg) => {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toast.t);
+      toast.t = setTimeout(() => el.classList.remove('show'), 2600);
+    };
+
+    function kmSheet() {
+      const L = t();
+      const v = V();
+      openSheet(`<h3 id="sheet-title">${L.kmQ}</h3><div class="field"><label for="km-in">${L.odo} (km)</label><input id="km-in" type="number" inputmode="numeric" min="${v.km + 1}" value="${v.km + 340}"><span class="muted" style="font-size:13px" id="km-hint">${L.kmHint(v.km)}</span></div>
+  <div class="row"><button class="btn ghost" data-close>${L.cancel}</button><button class="btn primary" id="km-save" style="flex:1">${L.save}</button></div>`);
+      sheet.querySelector('#km-save').onclick = () => {
+        const n = Math.round(Number(sheet.querySelector('#km-in').value));
+        if (!(n > v.km)) {
+          const h = sheet.querySelector('#km-hint');
+          h.textContent = L.kmErr;
+          h.style.color = 'var(--bad)';
+          return;
+        }
+        const before = jobs(v)
+          .filter((x) => x.state === 'due')
+          .map((x) => x.j);
+        const step = v.type === '4W' ? 10000 : 5000;
+        const crossed = Math.floor(n / step) > Math.floor(v.km / step) ? Math.floor(n / step) * step : null;
+        v.km = n;
+        v.kmAt = '2026-11-28';
+        if (crossed)
+          v.log.unshift({
+            k: 'mile',
+            title: `${kmf(crossed)} km`,
+            date: '2026-11-28',
+            km: crossed,
+            fresh: true,
+          });
+        save();
+        closeSheet();
+        render();
+        const newly = jobs(v).filter((x) => x.state === 'due' && !before.includes(x.j));
+        toast(crossed ? L.milestone(crossed) : newly.length ? L.nowDue(L[newly[0].j]) : L.kmSaved(n));
+        if (crossed)
+          setTimeout(() => {
+            const m = v.log.find((e) => e.fresh);
+            if (m) {
+              delete m.fresh;
+              save();
+            }
+          }, 1200);
+      };
+    }
+    function jobSheet(j) {
+      const L = t();
+      const v = V();
+      const x = jobs(v).find((y) => y.j === j);
+      openSheet(`<h3 id="sheet-title">${L[j]}</h3><span class="status ${x.state}" style="justify-self:start">${x.state === 'due' ? L.dueNow : x.state === 'soon' ? L.dueSoon : L.onTrack}</span>
+  <p style="margin:0">${x.dueKm != null ? (x.kmLeft > 0 ? L.inKm(x.kmLeft) : L.overKm(-x.kmLeft)) : ''} ${x.dueDate && x.dueKm != null ? L.orDate(fmtDate(x.dueDate, S.lang === 'hi')) : ''}</p>
+  <div class="meter"><i style="width:${Math.round(x.used * 100)}%"></i></div>
+  <p class="muted" style="margin:0;font-size:13.5px">${L.whyDue(L[j], everyText(j, v.type))} ${L.lastDone(x.lastKm, fmtDate(x.lastDate, S.lang === 'hi'))}.</p>
+  <button class="btn primary block" data-act="${j === 'tyres' || j === 'battery' ? 'buy' : 'book'}">${j === 'tyres' || j === 'battery' ? L.buy : L.book}</button><button class="btn ghost block" data-close>${L.close}</button>`);
+    }
+    function paperSheet(p) {
+      const L = t();
+      const v = V();
+      openSheet(`<h3 id="sheet-title">${L.expiryQ(L[p])}</h3><div class="field"><label for="pd">${L.pickDate}</label><input id="pd" type="date" value="${v.papers[p] || '2027-03-15'}"></div>
+  <p class="muted" style="margin:0;font-size:13px">${L.reminderSet}</p><div class="row"><button class="btn ghost" data-close>${L.cancel}</button><button class="btn primary" id="pd-save" style="flex:1">${L.remind}</button></div>`);
+      sheet.querySelector('#pd-save').onclick = () => {
+        const d = sheet.querySelector('#pd').value;
+        if (!d) return;
+        v.papers[p] = d;
+        v.reminders = true;
+        save();
+        closeSheet();
+        render();
+        toast(L.saved);
+      };
+    }
+    function addSheet() {
+      const L = t();
+      if (S.vehicles.length >= 10) {
+        toast(L.limit);
+        return;
+      }
+      const d = { type: '2W', make: 'TVS', model: 'Jupiter', year: 2024, fuel: 'petrol', reg: '' };
+      const makes = {
+        '2W': ['Honda', 'Hero', 'TVS', 'Bajaj', 'Suzuki', 'Royal Enfield'],
+        '3W': ['Bajaj', 'Piaggio', 'Mahindra'],
+        '4W': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Mahindra'],
+      };
+      const models = {
+        Honda: ['Activa 6G', 'Shine 125', 'Dio'],
+        Hero: ['Splendor Plus', 'HF Deluxe', 'Passion Pro'],
+        TVS: ['Jupiter', 'Apache RTR 160', 'XL100'],
+        Bajaj: ['Pulsar 150', 'Platina 110', 'RE Compact'],
+        Suzuki: ['Access 125'],
+        'Royal Enfield': ['Classic 350'],
+        Piaggio: ['Ape City'],
+        Mahindra: ['Treo', 'Bolero'],
+        'Maruti Suzuki': ['Swift', 'Wagon R', 'Alto K10'],
+        Hyundai: ['i20', 'Creta'],
+        Tata: ['Nexon', 'Punch'],
+      };
+      let step = 1;
+      const draw = () => {
+        const ch = (arr, key) =>
+          `<div class="choices">${arr.map(([val, lab]) => `<button data-k="${key}" data-v="${val}" aria-pressed="${String(d[key]) === String(val)}">${lab}</button>`).join('')}</div>`;
+        const body =
+          step === 1
+            ? `<div class="field"><span style="font-weight:700">${L.type}</span>${ch(
+                [
+                  ['2W', L.w2],
+                  ['3W', L.w3],
+                  ['4W', L.w4],
+                ],
+                'type',
+              )}</div><div class="field"><span style="font-weight:700">${L.make}</span>${ch(
+                makes[d.type].map((m) => [m, m]),
+                'make',
+              )}</div>`
+            : step === 2
+              ? `<div class="field"><span style="font-weight:700">${L.model}</span>${ch(
+                  (models[d.make] || ['Other']).map((m) => [m, m]),
+                  'model',
+                )}</div><div class="field"><label for="yr">${L.year}</label><select id="yr">${Array.from(
+                  { length: 16 },
+                  (_, i) => 2026 - i,
+                )
+                  .map((y) => `<option ${y === d.year ? 'selected' : ''}>${y}</option>`)
+                  .join(
+                    '',
+                  )}</select></div><div class="field"><span style="font-weight:700">${L.fuel}</span>${ch(
+                  [
+                    ['petrol', L.petrol],
+                    ['diesel', L.diesel],
+                    ['cng', L.cng],
+                    ['electric', L.electric],
+                  ],
+                  'fuel',
+                )}</div>`
+              : `<div class="field"><label for="rg">${L.reg}</label><input id="rg" placeholder="CG 04 AB 1234" value="${d.reg}" autocomplete="off"></div><div style="text-align:center;color:var(--ink)">${art(
+                  d.type,
+                  'vehicle-art',
+                )
+                  .replace(/#ffffffcc|#fff"/g, (m) => (m === '#ffffffcc' ? 'var(--ink)' : 'var(--ink)"'))
+                  .replace(/#ffffff1c|#ffffff14|#ffffff22|#ffffff88/g, 'var(--sunken)')
+                  .replace(
+                    /#0b1626/g,
+                    'var(--ink)',
+                  )}<div style="font:800 18px var(--f-head)">${d.make} ${d.model}</div><div class="muted">${d.year}, ${L[d.fuel]}</div></div>`;
+        sheet.innerHTML = `<div class="spread"><h3 id="sheet-title">${L.addVehicle}</h3><span class="muted" style="font-size:12.5px">${L.stepOf(step, 3)}</span></div><div class="steps" aria-hidden="true">${[1, 2, 3].map((i) => `<i class="${i <= step ? 'on' : ''}"></i>`).join('')}</div>${body}
+    <div class="row">${step > 1 ? `<button class="btn ghost" id="bk">${L.back}</button>` : `<button class="btn ghost" data-close>${L.cancel}</button>`}<button class="btn primary" id="nx" style="flex:1">${step < 3 ? L.next : L.addVehicle}</button></div>`;
+        sheet.querySelectorAll('[data-k]').forEach(
+          (b) =>
+            (b.onclick = () => {
+              d[b.dataset.k] = b.dataset.v;
+              if (b.dataset.k === 'type') {
+                d.make = makes[d.type][0];
+                d.model = (models[d.make] || ['Other'])[0];
+              }
+              if (b.dataset.k === 'make') d.model = (models[d.make] || ['Other'])[0];
+              draw();
+            }),
+        );
+        const yr = sheet.querySelector('#yr');
+        if (yr) yr.onchange = () => (d.year = Number(yr.value));
+        const rg = sheet.querySelector('#rg');
+        if (rg) rg.oninput = () => (d.reg = rg.value.toUpperCase());
+        const bk = sheet.querySelector('#bk');
+        if (bk)
+          bk.onclick = () => {
+            step--;
+            draw();
+          };
+        sheet.querySelector('#nx').onclick = () => {
+          if (step < 3) {
+            step++;
+            draw();
+            return;
+          }
+          const id = 'v' + Date.now();
+          S.vehicles.push({
+            id,
+            type: d.type,
+            fuel: d.fuel,
+            make: d.make,
+            model: d.model,
+            variant: null,
+            year: d.year,
+            reg: d.reg.trim() || null,
+            km: 0,
+            kmAt: '2026-11-28',
+            last: {
+              oil: [0, '2026-11-28'],
+              service: [0, '2026-11-28'],
+              tyres: [0, '2026-11-28'],
+              battery: [0, '2026-11-28'],
+            },
+            papers: { insurance: null, puc: null, rc: null, licence: null },
+            reminders: false,
+            log: [],
+            spend: [
+              ['services', 0],
+              ['parts', 0],
+              ['tyres', 0],
+              ['battery', 0],
+            ],
+          });
+          S.active = id;
+          save();
+          closeSheet();
+          render();
+          document.getElementById('artbox').firstElementChild.classList.add('drive-in');
+          toast(L.added(d.model));
+        };
+        sheet.querySelector('#nx').focus();
+      };
+      openSheet('', draw);
+    }
+
+    /* ---------- events ---------- */
+    document.addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      if (b.dataset.close !== undefined) return closeSheet();
+      if (b.dataset.veh) {
+        const prev = S.active;
+        S.active = b.dataset.veh;
+        save();
+        render();
+        if (prev !== S.active) document.getElementById('artbox').firstElementChild.classList.add('drive-in');
+        return;
+      }
+      if (b.dataset.job) return jobSheet(b.dataset.job);
+      if (b.dataset.paper) return paperSheet(b.dataset.paper);
+      if (b.dataset.f) {
+        S.filter = b.dataset.f;
+        save();
+        render();
+        return;
+      }
+      if (b.dataset.act) {
+        closeSheet();
+        toast(
+          b.dataset.act === 'book'
+            ? S.lang === 'hi'
+              ? 'वर्कशॉप खोज खुलती है (आज काम करता है)'
+              : 'Opens Find Workshops with this vehicle (works today)'
+            : S.lang === 'hi'
+              ? 'शॉप इस गाड़ी के फिट फ़िल्टर के साथ खुलती है'
+              : 'Opens Shop filtered to parts that fit (works today)',
+        );
+        return;
+      }
+      if (b.id === 'upd') return kmSheet();
+      if (b.id === 'add') return addSheet();
+      if (b.id === 'lang') {
+        S.lang = S.lang === 'en' ? 'hi' : 'en';
+        save();
+        render();
+        return;
+      }
+      if (b.id === 'theme') {
+        const r = document.documentElement;
+        const dark = r.dataset.theme
+          ? r.dataset.theme === 'dark'
+          : matchMedia('(prefers-color-scheme: dark)').matches;
+        r.dataset.theme = dark ? 'light' : 'dark';
+        return;
+      }
+    });
+    render();
+  })();
+</script>
