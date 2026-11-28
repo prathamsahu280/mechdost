@@ -1562,3 +1562,8 @@ viewer, tag, teaser, messages, thread, network, discover). No product code chang
   fell back to slow polling ~20 min). Mitigated 16:08 by `docker compose restart worker` (0 failures after). Fix:
   shared pool is `const`; the nine bounded sweeps run on their own recyclable `sweepPool` passed as an argument
   (`worker-pool-wiring.test.ts` RED → GREEN; api 119 files / 1001 tests). Runbook monitoring updated.
+- 16:38 IST: the same relay failure repeated (old code still live): `sweep_pool_recycled` pauses at 10:57 UTC →
+  `live_relay_failed` ×522; worker restarted again (0 after). Deploy of 5dd21eaa (fix) in progress. Observation: a sweep
+  hangs every ~20–40 min (10:16, 10:57 UTC) — dead pooled connections from the Supavisor transaction pooler; with the fix
+  each costs ≤ 120 s on the sweeps' own pool. Follow-up: investigate the pooler (idle limits, postgres.js
+  max_lifetime/idle_timeout vs Supavisor), queued.
