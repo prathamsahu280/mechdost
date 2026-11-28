@@ -1093,3 +1093,28 @@ html:has([data-shell-compact]) .ustaad-seg [aria-selected='true'] {
   box-shadow: var(--shadow-lift);
 }
 /* end Bench kit lift */
+
+/* Site-wide light lift (V9, founder 2026-11-28 "Yes, whole site"; visual language § 3.8). Every value comes from a token
+   that resolves per theme, so the dark theme renders exactly as before. */
+/* 2. One card treatment: the shadow's hairline is the edge, so the separate 1 px line-card border turns transparent
+   in light (the width stays: no layout shift) and keeps its colour in dark. */
+.shadow-card.border-line-card {
+  border-color: var(--card-edge);
+}
+/* 6. Headings and prices one weight step heavier in light (Manrope 800); Hindi headings stay at the loaded 700. */
+.font-heading.font-bold {
+  font-weight: var(--weight-heading-bold);
+}
+:lang(hi) .font-heading.font-bold {
+  font-weight: 700;
+}
+/* 7. Segmented control: tinted track, white thumb with a layered shadow (portal tabs, toggles). */
+.seg {
+  background-color: var(--color-lift-track);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--color-navy) 7%, transparent);
+}
+.seg [aria-pressed='true'],
+.seg [aria-selected='true'] {
+  background-color: var(--color-surface-raised);
+  box-shadow: var(--shadow-lift);
+}

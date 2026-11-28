@@ -103,7 +103,7 @@ export function PartnerTabs({
       ref={barRef}
       aria-label={label}
       data-partner-tabbar
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-line-card bg-surface/95 px-1.5 pt-1.5 pb-[calc(6px+env(safe-area-inset-bottom))] shadow-float backdrop-blur-[16px] nav:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-[color:var(--card-edge)] bg-surface/95 px-1.5 pt-1.5 pb-[calc(6px+env(safe-area-inset-bottom))] shadow-tab-bar backdrop-blur-[16px] nav:hidden"
     >
       <ul
         className="mx-auto grid max-w-xl gap-1"

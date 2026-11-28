@@ -30,7 +30,7 @@ export function NavLinks({ label, items }: { label: string; items: readonly NavI
   const pathname = canonicalPath(usePathname());
   return (
     <nav aria-label={label} className="mx-auto hidden nav:block">
-      <ul className="flex gap-0.5 rounded-[14px] bg-pill p-1">
+      <ul className="seg flex gap-0.5 rounded-[14px] bg-pill p-1">
         {items.map((item) => {
           const active = isActive(pathname, item.href, item.key === 'home', item.activePrefix);
           return (
@@ -42,7 +42,7 @@ export function NavLinks({ label, items }: { label: string; items: readonly NavI
                 data-track={`nav_${item.key}`}
                 className={`relative flex min-h-10 min-w-10 items-center justify-center gap-[7px] rounded-[10px] px-2.5 text-[13.5px] font-bold whitespace-nowrap transition-[background-color,box-shadow,color] duration-200 ${
                   active
-                    ? 'nav-chip-active bg-chip text-ink'
+                    ? 'nav-chip-active bg-selected-bg text-selected-fg'
                     : item.emphasis
                       ? 'bg-accent-soft text-accent-soft-text hover:bg-accent-soft/70'
                       : 'text-muted hover:text-ink'

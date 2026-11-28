@@ -364,7 +364,7 @@ track 5.04. Ink on the page is 14.74. All other pairs are unchanged (§ 3.2). Th
 posts edge-to-edge for bigger photos. The lifted version trades 40 px of photo width for depth, so this needs a
 decision (**V8**).
 
-### 3.8 Light-mode improvements recommended SITE-WIDE (separate from the network)
+### 3.8 Light-mode improvements recommended SITE-WIDE (separate from the network) — applied 2026-11-28 (V9; see docs/design-system.md)
 
 The founder may want the whole site's light theme lifted. These apply cleanly beyond `/ustaad` (storefront, account,
 partner portals, admin) and need only token changes and shared-component edits, no layout redesign:
