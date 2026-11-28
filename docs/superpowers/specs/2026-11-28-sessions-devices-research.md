@@ -109,3 +109,6 @@ it touches the auth middleware on every request, so it gets its own design and r
 - **Proposal:** show "Near Raipur, Chhattisgarh" style text, labelled approximate; fall back to the state
   ("Chhattisgarh") when the lookup has no city, and to nothing when it has no match. Privacy notice gains one line
   (device type, approximate place and last active are kept for your security; no IP address).
+
+Founder 23:00: "its fine even if its not the very correct city" → show the city when the lookup has one (labelled
+approximate, e.g. "Near Raipur, Chhattisgarh"), state when it has none.
