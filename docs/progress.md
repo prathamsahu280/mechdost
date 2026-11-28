@@ -1522,3 +1522,8 @@ C1 LV-6 layout shift: root cause = client-loaded frames render a short loading b
   re-measure (`scratchpad/qa/cls.mjs`), Playwright run of the new API-USTAAD rows (CI), "helped N" on the public
   profile needs a DTO field (queue for founder).
 - 2026-11-28 batch E (agent branch worktree-agent-a6192aa6c08a1a731): master–detail at ≥ 1024 px for the shop Orders and workshop Jobs tabs (spec 07 "Master–detail"), event `partner_detail_opened`, state-audit rows `API-SHOP-MASTERDETAIL` / `API-WS-MASTERDETAIL`, checklist regenerated. Owed: real 1440 px browser check and the Playwright run of the two rows.
+- 10:55 IST: Deploy of 6da59e47 live and smoke-checked (routes 200, api/web healthy, 0 errors, worker
+  `sweep_heartbeat` delivery_offers runs 20; one `sweep_pool_recycled` on `assignments` at 05:08 UTC — the new guard
+  worked; watch the rate). Batch E (master–detail ≥1024 px, shop Orders + workshop Jobs) merged; web tsc 0, vitest 256
+  files / 2372, shared 96 / 1126 (tooling-hooks passes on main; fails only inside worktrees). Pushing C + D + E.
+  Watch on live: desktop CLS of the wide layout (useWideLayout is false on first paint).
