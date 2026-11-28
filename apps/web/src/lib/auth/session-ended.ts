@@ -14,7 +14,7 @@ import { forgetAccountOnDevice } from './sign-out';
  */
 
 /** API 401 codes that mean "this sign-in is over" (`TokenError` codes the API sends; `TOKEN_EXPIRED` refreshes itself). */
-export const SESSION_INVALID_CODES: ReadonlySet<string> = new Set(['TOKEN_REVOKED']);
+export const SESSION_INVALID_CODES: ReadonlySet<string> = new Set(['TOKEN_REVOKED', 'SESSION_ENDED']);
 
 function endSession(): void {
   forgetAccountOnDevice();

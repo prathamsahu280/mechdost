@@ -97,6 +97,16 @@ describe('session ended elsewhere (regression 2026-11-28 stale "Signed in as")',
     expect(flag.sessionEndedNow()).toBe(true);
   });
 
+  it('a device-list session that was ended elsewhere (SESSION_ENDED) ends this sign-in too', async () => {
+    const { ended, flag } = await load();
+    ended.noteApiAnswer(401, 'SESSION_ENDED');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(state.cleared).toBe(1);
+    expect(state.firebaseSignedOut).toBe(1);
+    expect(flag.sessionEndedNow()).toBe(true);
+    expect(ended.SESSION_INVALID_CODES.has('SESSION_ENDED')).toBe(true);
+  });
+
   it('other answers never end the session (plain sign-in required, forbidden, server errors)', async () => {
     const { ended } = await load();
     ended.noteApiAnswer(401, 'AUTH_REQUIRED');

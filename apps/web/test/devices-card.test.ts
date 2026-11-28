@@ -45,6 +45,20 @@ describe('DevicesCard source guards', () => {
     expect(card).toContain('https://db-ip.com');
     expect(card).toContain('d.current ? null');
   });
+  it('links to ids that exist in the Security card (its heading and the Sign out of all devices section)', () => {
+    const security = src('components/account/security-card.tsx');
+    expect(security).toContain('id="security-title"');
+    expect(security).toContain('id="security-signout-all-title"');
+    expect(card).toContain('href="#security-signout-all-title"');
+    expect(card).toContain('href="#security-title"');
+  });
+  it('after a row disappears focus moves to the card heading (not lost), and anchored headings keep scroll margin', () => {
+    expect(card).toContain('tabIndex={-1}');
+    expect((card.match(/titleRef\.current\?\.focus\(\)/g) ?? []).length).toBeGreaterThanOrEqual(4);
+    const security = src('components/account/security-card.tsx');
+    expect(security).toMatch(/id="security-title" className="scroll-mt-24/);
+    expect(security).toMatch(/id="security-signout-all-title"\s+className="scroll-mt-24/);
+  });
   it('decorative icons are hidden from assistive tech', () => {
     expect(card).toContain('<Icon aria-hidden="true"');
   });

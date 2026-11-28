@@ -65,6 +65,7 @@ export function DevicesCard() {
   const [now, setNow] = useState(0);
   const viewed = useRef(false);
   const yesRef = useRef<HTMLButtonElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
   const opener = useRef<string | null>(null);
 
   const reload = useCallback(async () => {
@@ -128,11 +129,13 @@ export function DevicesCard() {
       setStatus({ text: t('doneOne'), error: false });
       setConfirm(null);
       await reload();
+      titleRef.current?.focus();
       return;
     }
     setStatus({ text: res.status === 404 ? t('errGone') : t('errGeneric'), error: true });
     setConfirm(null);
     if (res.status === 404) await reload();
+    titleRef.current?.focus();
   }
 
   async function endOthers() {
@@ -144,9 +147,11 @@ export function DevicesCard() {
       track('account_devices_signed_out_others', { count: Math.min(50, res.data.signedOut) });
       setStatus({ text: t('doneOthers', { count: res.data.signedOut }), error: false });
       await reload();
+      titleRef.current?.focus();
       return;
     }
     setStatus({ text: t('errGeneric'), error: true });
+    titleRef.current?.focus();
   }
 
   const devices = load.state === 'ready' ? load.devices : [];
@@ -155,7 +160,12 @@ export function DevicesCard() {
 
   return (
     <section aria-labelledby="devices-title" className={`${card} mt-6 max-w-xl space-y-4`}>
-      <h2 id="devices-title" className="font-heading text-xl font-extrabold text-ink">
+      <h2
+        id="devices-title"
+        ref={titleRef}
+        tabIndex={-1}
+        className="font-heading text-xl font-extrabold text-ink"
+      >
         {t('title')}
       </h2>
       <p className="max-w-prose text-sm text-muted">{t('intro')}</p>
@@ -191,7 +201,7 @@ export function DevicesCard() {
               <li key={d.id} className="flex flex-wrap items-center gap-3 py-3">
                 <Icon aria-hidden="true" className="size-6 shrink-0 text-muted" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[15px] font-bold text-ink">
+                  <p className="break-words text-[15px] font-bold text-ink">
                     {label(d)}
                     {d.current ? (
                       <span className="ml-2 inline-block rounded-full bg-pill px-2 py-0.5 align-middle text-xs font-bold text-ink">
@@ -291,7 +301,7 @@ export function DevicesCard() {
 
       <p className="text-sm text-muted">
         {t('legacyNote')} {t('legacyLead')}{' '}
-        <a href="#security-title" className="font-bold text-ink underline">
+        <a href="#security-signout-all-title" className="font-bold text-ink underline">
           {t('legacyLink')}
         </a>
         {t('legacyTail')}

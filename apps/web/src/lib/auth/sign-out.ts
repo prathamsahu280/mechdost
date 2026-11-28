@@ -7,6 +7,8 @@ export const SIGNING_OUT_ATTRIBUTE = 'data-signing-out';
 
 /** The longest the push clean-up may hold the sign-out (slow networks); the Firebase sign-out still runs after it. */
 const PUSH_FORGET_WAIT_MS = 2500;
+/** The longest the ID token read for the device-list notice may take (it is best effort). */
+const END_DEVICE_TOKEN_WAIT_MS = 1500;
 /** If the Firebase sign-out has not finished by then, its saved session is deleted from this browser directly. */
 const FIREBASE_SIGN_OUT_WAIT_MS = 6000;
 /** Where the Firebase web SDK keeps the signed-in user (IndexedDB, with a localStorage fallback). */
@@ -107,6 +109,17 @@ export async function signOutEverywhere(): Promise<void> {
     // cannot finish the saved Firebase session is deleted from this browser directly (security review 2026-11-23:
     // a hanging push request must never leave the account signed in after the reload).
     const firebase = import('./firebase-client').then(async (client) => {
+      // Device list (decision 2026-11-28): tell the API this device is ending, with the ID token read before the
+      // Firebase sign-out. Best effort and capped: a failing or slow token read never holds the sign-out longer.
+      const idToken = await Promise.race([
+        Promise.resolve()
+          .then(() => client.currentIdToken(root.lang))
+          .catch(() => null),
+        wait(END_DEVICE_TOKEN_WAIT_MS).then(() => null),
+      ]);
+      void import('./end-current-device').then((m) => {
+        m.endCurrentDevice(idToken);
+      });
       await Promise.race([
         import('../push/forget-device').then((m) => m.forgetPushDevice(root.lang)).catch(() => undefined),
         wait(PUSH_FORGET_WAIT_MS),

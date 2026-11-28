@@ -8,7 +8,11 @@
   sign out one, others, current); rough place from DB-IP City Lite via `maxmind` (optional `GEOIP_CITY_DB`, compose mounts
   `/opt/mechdost/geoip`); Hindi state/city handling; `devices-card.tsx` after the Security card; events; privacy notice
   section; state-audit row API-ACC-DEVICES (checklist regenerated).
-- Lead at merge: apply migration 0117 BEFORE deploying; wire `revokeAllUserSessions(db, userId, 'self_all')` into the
+- Merge wiring DONE on the branch (2026-11-29, main merged, tests written failing first): revoke-all calls
+  `revokeAllUserSessions(..., 'self_all')`; sign-out reads the ID token before the Firebase sign-out and calls
+  `endCurrentDevice` (1.5 s cap); `SESSION_ENDED` is in `SESSION_INVALID_CODES`; the card links go to
+  `security-signout-all-title`. Still for the lead (older list, items 2 to 6 are done):
+  apply migration 0117 BEFORE deploying; wire `revokeAllUserSessions(db, userId, 'self_all')` into the
   revoke-all endpoint; call `endCurrentDevice(token)` (`lib/auth/end-current-device.ts`) from `lib/auth/sign-out.ts` with the
   ID token read before the Firebase sign-out; treat 401 `SESSION_ENDED` like `ID_TOKEN_REVOKED` in the stale-session fix;
   point the card's links (`#security-title`) at the new "Sign out of all devices" section id; download the GeoIP file on the
