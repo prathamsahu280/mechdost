@@ -1,1620 +1,1636 @@
-<meta charset="utf-8" />
-<title>MechDost My Garage</title>
-<meta name="claude:viewport-fit-sides" content="cover" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link
-  rel="stylesheet"
-  href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap"
-/>
-<style>
-  /* Layout: a night garage. Bay carousel hero (roller shutter rolls up to reveal the vehicle under a work light),
+<!doctype html>
+<html lang="en">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta charset="utf-8" />
+  <title>MechDost My Garage</title>
+  <meta name="claude:viewport-fit-sides" content="cover" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap"
+  />
+  <style>
+    /* Layout: a night garage. Bay carousel hero (roller shutter rolls up to reveal the vehicle under a work light),
    2x2 glowing vitals, a lit road track to the next jobs, then next-up, fits shelf, spends, service log. Single dark look. */
-  :root {
-    color-scheme: dark;
-    --night: #06090f;
-    --bay: #0c1220;
-    --panel: #111a2b;
-    --panel-2: #16223a;
-    --edge: #ffffff14;
-    --edge-2: #ffffff24;
-    --text: #eef3fa;
-    --soft: #9fb0c6;
-    --faint: #6b7d95;
-    --lamp: #ff6a2b;
-    --lamp-2: #ffb347;
-    --lamp-glow: #ff6a2b55;
-    --ok: #3ddc97;
-    --ok-glow: #3ddc9733;
-    --warn: #ffc048;
-    --warn-glow: #ffc04833;
-    --bad: #ff5d5d;
-    --bad-glow: #ff5d5d33;
-    --f-disp: 'Bricolage Grotesque', 'Noto Sans Devanagari', system-ui, sans-serif;
-    --f-body: 'Inter', 'Noto Sans Devanagari', system-ui, sans-serif;
-  }
-  * {
-    box-sizing: border-box;
-  }
-  html,
-  body {
-    background: var(--night);
-  }
-  body {
-    margin: 0;
-    color: var(--text);
-    font: 15px/1.5 var(--f-body);
-    -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
-  }
-  .wrap > * {
-    min-width: 0;
-  }
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0 0 auto;
-    height: env(safe-area-inset-top, 0px);
-    z-index: 10;
-    background: var(--night);
-  }
-  button,
-  input,
-  select {
-    font: inherit;
-    color: inherit;
-  }
-  button {
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-  }
-  :focus-visible {
-    outline: 2px solid var(--lamp-2);
-    outline-offset: 3px;
-    border-radius: 10px;
-  }
-  .wrap {
-    max-width: 440px;
-    margin: 0 auto;
-    padding-left: max(16px, env(safe-area-inset-left, 0px));
-    padding-right: max(16px, env(safe-area-inset-right, 0px));
-    padding-block: 10px 116px;
-    display: grid;
-    gap: 22px;
-  }
-  h1,
-  h2,
-  h3 {
-    font-family: var(--f-disp);
-    margin: 0;
-    text-wrap: balance;
-    letter-spacing: -0.01em;
-  }
-  .tnum {
-    font-variant-numeric: tabular-nums;
-  }
-  .press {
-    transition: transform 0.12s;
-  }
-  .press:active {
-    transform: scale(0.96);
-  }
-  /* top */
-  .top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .brand {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-  }
-  .brand h1 {
-    font-size: 28px;
-    font-weight: 800;
-  }
-  .brand span {
-    color: var(--faint);
-    font-size: 13px;
-  }
-  .icon-btn {
-    min-width: 44px;
-    height: 40px;
-    border-radius: 12px;
-    border: 1px solid var(--edge);
-    background: var(--panel);
-    padding: 0 12px;
-    font-weight: 600;
-    font-size: 13px;
-  }
-  /* bay hero */
-  .bay {
-    position: relative;
-    height: 400px;
-    border-radius: 28px;
-    overflow: hidden;
-    background:
-      radial-gradient(60% 55% at 50% 8%, #ffd9b522, transparent 70%),
-      linear-gradient(180deg, #0e1626 0%, #0a101c 62%, #05080e 100%);
-    border: 1px solid var(--edge);
-    touch-action: pan-y;
-  }
-  .bay::before {
-    content: '';
-    position: absolute;
-    left: 50%;
-    top: -30px;
-    width: 2px;
-    height: 56px;
-    background: #ffffff55;
-    transform: translateX(-50%);
-  }
-  .lamp {
-    position: absolute;
-    left: 50%;
-    top: 22px;
-    width: 120px;
-    height: 10px;
-    border-radius: 6px;
-    transform: translateX(-50%);
-    background: #fff3e3;
-    box-shadow:
-      0 0 18px 4px #ffe3c088,
-      0 0 60px 10px #ff9a5a33;
-  }
-  .cone {
-    position: absolute;
-    left: 50%;
-    top: 28px;
-    width: 520px;
-    height: 330px;
-    transform: translateX(-50%);
-    background: conic-gradient(
-      from 180deg at 50% 0%,
-      transparent 152deg,
-      #ffe8d116 165deg,
-      #ffe8d122 180deg,
-      #ffe8d116 195deg,
-      transparent 208deg
-    );
-    pointer-events: none;
-  }
-  .bayno {
-    position: absolute;
-    right: -6px;
-    top: 58px;
-    font: 800 150px/1 var(--f-disp);
-    color: transparent;
-    -webkit-text-stroke: 1.5px #ffffff17;
-    letter-spacing: -0.04em;
-    pointer-events: none;
-  }
-  .floor {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 120px;
-    background:
-      linear-gradient(180deg, transparent, #000a),
-      repeating-linear-gradient(90deg, transparent 0 79px, #ffffff08 79px 80px);
-  }
-  .puddle {
-    position: absolute;
-    left: 50%;
-    bottom: 92px;
-    width: 300px;
-    height: 34px;
-    transform: translateX(-50%);
-    border-radius: 50%;
-    background: radial-gradient(closest-side, #ffb37a33, transparent);
-    filter: blur(2px);
-  }
-  .veh {
-    position: absolute;
-    left: 50%;
-    bottom: 88px;
-    width: min(380px, 96%);
-    transform: translateX(-50%);
-    filter: drop-shadow(0 18px 18px #000c);
-  }
-  .veh svg {
-    width: 100%;
-    height: auto;
-    display: block;
-  }
-  .veh.in {
-    animation: roll-in 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-  @keyframes roll-in {
-    from {
-      transform: translateX(-140%);
+    :root {
+      color-scheme: dark;
+      --night: #06090f;
+      --bay: #0c1220;
+      --panel: #111a2b;
+      --panel-2: #16223a;
+      --edge: #ffffff14;
+      --edge-2: #ffffff24;
+      --text: #eef3fa;
+      --soft: #9fb0c6;
+      --faint: #6b7d95;
+      --lamp: #ff6a2b;
+      --lamp-2: #ffb347;
+      --lamp-glow: #ff6a2b55;
+      --ok: #3ddc97;
+      --ok-glow: #3ddc9733;
+      --warn: #ffc048;
+      --warn-glow: #ffc04833;
+      --bad: #ff5d5d;
+      --bad-glow: #ff5d5d33;
+      --f-disp: 'Bricolage Grotesque', 'Noto Sans Devanagari', system-ui, sans-serif;
+      --f-body: 'Inter', 'Noto Sans Devanagari', system-ui, sans-serif;
     }
-    to {
+    * {
+      box-sizing: border-box;
+    }
+    html,
+    body {
+      background: var(--night);
+    }
+    body {
+      margin: 0;
+      color: var(--text);
+      font: 15px/1.5 var(--f-body);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    .wrap > * {
+      min-width: 0;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0 0 auto;
+      height: env(safe-area-inset-top, 0px);
+      z-index: 10;
+      background: var(--night);
+    }
+    button,
+    input,
+    select {
+      font: inherit;
+      color: inherit;
+    }
+    button {
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    :focus-visible {
+      outline: 2px solid var(--lamp-2);
+      outline-offset: 3px;
+      border-radius: 10px;
+    }
+    .wrap {
+      max-width: 440px;
+      margin: 0 auto;
+      padding-left: max(16px, env(safe-area-inset-left, 0px));
+      padding-right: max(16px, env(safe-area-inset-right, 0px));
+      padding-block: 10px 116px;
+      display: grid;
+      gap: 22px;
+    }
+    h1,
+    h2,
+    h3 {
+      font-family: var(--f-disp);
+      margin: 0;
+      text-wrap: balance;
+      letter-spacing: -0.01em;
+    }
+    .tnum {
+      font-variant-numeric: tabular-nums;
+    }
+    .press {
+      transition: transform 0.12s;
+    }
+    .press:active {
+      transform: scale(0.96);
+    }
+    /* top */
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+    .brand h1 {
+      font-size: 28px;
+      font-weight: 800;
+    }
+    .brand span {
+      color: var(--faint);
+      font-size: 13px;
+    }
+    .icon-btn {
+      min-width: 44px;
+      height: 40px;
+      border-radius: 12px;
+      border: 1px solid var(--edge);
+      background: var(--panel);
+      padding: 0 12px;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    /* bay hero */
+    .bay {
+      position: relative;
+      height: 400px;
+      border-radius: 28px;
+      overflow: hidden;
+      background:
+        radial-gradient(60% 55% at 50% 8%, #ffd9b522, transparent 70%),
+        linear-gradient(180deg, #0e1626 0%, #0a101c 62%, #05080e 100%);
+      border: 1px solid var(--edge);
+      touch-action: pan-y;
+    }
+    .bay::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: -30px;
+      width: 2px;
+      height: 56px;
+      background: #ffffff55;
       transform: translateX(-50%);
     }
-  }
-  .bay-info {
-    position: absolute;
-    left: 18px;
-    right: 18px;
-    bottom: 16px;
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 12px;
-  }
-  .vname {
-    font: 800 24px/1.1 var(--f-disp);
-  }
-  .vsub {
-    color: var(--soft);
-    font-size: 13px;
-    margin-top: 2px;
-  }
-  .plate {
-    display: inline-flex;
-    border-radius: 6px;
-    overflow: hidden;
-    background: #f5f7fa;
-    color: #0b1220;
-    font: 700 13px/1 var(--f-disp);
-    letter-spacing: 0.8px;
-    border: 1.5px solid #0b1220;
-    box-shadow: 0 4px 14px #0008;
-    margin-top: 8px;
-  }
-  .plate i {
-    font-style: normal;
-    background: #2457c5;
-    color: #fff;
-    font-size: 7.5px;
-    padding: 0 4px;
-    display: grid;
-    place-items: center;
-  }
-  .plate b {
-    padding: 5px 7px;
-  }
-  .shutter {
-    position: absolute;
-    inset: 0;
-    z-index: 4;
-    background: repeating-linear-gradient(180deg, #2a3448 0 13px, #1a2233 13px 15px, #323d53 15px 16px);
-    box-shadow: inset 0 -6px 0 #0b111d;
-    transform: translateY(-100%);
-    pointer-events: none;
-  }
-  .shutter::after {
-    content: '';
-    position: absolute;
-    left: 50%;
-    bottom: 14px;
-    width: 70px;
-    height: 6px;
-    border-radius: 3px;
-    background: #0b111d;
-    transform: translateX(-50%);
-  }
-  .shutter.open {
-    animation: lift 1.1s cubic-bezier(0.65, 0, 0.3, 1) forwards;
-  }
-  @keyframes lift {
-    0% {
-      transform: none;
+    .lamp {
+      position: absolute;
+      left: 50%;
+      top: 22px;
+      width: 120px;
+      height: 10px;
+      border-radius: 6px;
+      transform: translateX(-50%);
+      background: #fff3e3;
+      box-shadow:
+        0 0 18px 4px #ffe3c088,
+        0 0 60px 10px #ff9a5a33;
     }
-    25% {
-      transform: translateY(2%);
+    .cone {
+      position: absolute;
+      left: 50%;
+      top: 28px;
+      width: 520px;
+      height: 330px;
+      transform: translateX(-50%);
+      background: conic-gradient(
+        from 180deg at 50% 0%,
+        transparent 152deg,
+        #ffe8d116 165deg,
+        #ffe8d122 180deg,
+        #ffe8d116 195deg,
+        transparent 208deg
+      );
+      pointer-events: none;
     }
-    100% {
-      transform: translateY(-102%);
+    .bayno {
+      position: absolute;
+      right: -6px;
+      top: 58px;
+      font: 800 150px/1 var(--f-disp);
+      color: transparent;
+      -webkit-text-stroke: 1.5px #ffffff17;
+      letter-spacing: -0.04em;
+      pointer-events: none;
     }
-  }
-  .bay-nav {
-    position: absolute;
-    top: 14px;
-    left: 14px;
-    right: 14px;
-    display: flex;
-    justify-content: space-between;
-    z-index: 3;
-  }
-  .bay-nav button {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 1px solid var(--edge-2);
-    background: #0008;
-    backdrop-filter: blur(8px);
-    display: grid;
-    place-items: center;
-  }
-  .bay-nav button[disabled] {
-    opacity: 0.25;
-  }
-  .dots {
-    display: flex;
-    justify-content: center;
-    gap: 6px;
-    margin-top: -10px;
-  }
-  .dots i {
-    width: 6px;
-    height: 6px;
-    border-radius: 3px;
-    background: var(--edge-2);
-    transition: width 0.3s;
-  }
-  .dots i.on {
-    width: 22px;
-    background: var(--lamp);
-  }
-  /* vitals */
-  .vitals {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-  .vital {
-    position: relative;
-    border: 1px solid var(--edge);
-    background: linear-gradient(180deg, var(--panel-2), var(--panel));
-    border-radius: 20px;
-    padding: 14px;
-    text-align: left;
-    display: grid;
-    gap: 6px;
-    min-height: 118px;
-    overflow: hidden;
-  }
-  .vital::after {
-    content: '';
-    position: absolute;
-    right: -30px;
-    top: -30px;
-    width: 110px;
-    height: 110px;
-    border-radius: 50%;
-    background: var(--glow, transparent);
-    filter: blur(18px);
-  }
-  .vital .k {
-    font-size: 12.5px;
-    color: var(--soft);
-    font-weight: 600;
-  }
-  .vital .v {
-    font: 800 26px/1.05 var(--f-disp);
-  }
-  .vital .s {
-    font-size: 12px;
-    color: var(--faint);
-  }
-  .vital.ok {
-    --glow: var(--ok-glow);
-  }
-  .vital.soon {
-    --glow: var(--warn-glow);
-  }
-  .vital.due {
-    --glow: var(--bad-glow);
-  }
-  .vital .v.ok {
-    color: var(--ok);
-  }
-  .vital .v.soon {
-    color: var(--warn);
-  }
-  .vital .v.due {
-    color: var(--bad);
-  }
-  .flip {
-    display: flex;
-    gap: 2px;
-    min-width: 0;
-  }
-  .flip span {
-    width: clamp(17px, 5vw, 24px);
-    height: 34px;
-    border-radius: 6px;
-    background: linear-gradient(180deg, #1f2b42 0 49%, #0c1322 51%);
-    border: 1px solid #ffffff1a;
-    display: grid;
-    place-items: center;
-    font: 800 21px/1 var(--f-disp);
-    position: relative;
-    box-shadow: 0 4px 8px #0006;
-  }
-  .flip span::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 50%;
-    height: 1px;
-    background: #000a;
-  }
-  .flip span.go {
-    animation: flipd 0.5s cubic-bezier(0.3, 1.4, 0.5, 1);
-  }
-  @keyframes flipd {
-    0% {
-      transform: rotateX(90deg);
+    .floor {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 120px;
+      background:
+        linear-gradient(180deg, transparent, #000a),
+        repeating-linear-gradient(90deg, transparent 0 79px, #ffffff08 79px 80px);
     }
-    100% {
-      transform: none;
+    .puddle {
+      position: absolute;
+      left: 50%;
+      bottom: 92px;
+      width: 300px;
+      height: 34px;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: radial-gradient(closest-side, #ffb37a33, transparent);
+      filter: blur(2px);
     }
-  }
-  .arc {
-    position: absolute;
-    right: 12px;
-    bottom: 12px;
-    width: 42px;
-    height: 42px;
-  }
-  /* road */
-  .card {
-    border: 1px solid var(--edge);
-    background: var(--panel);
-    border-radius: 24px;
-    padding: 16px;
-  }
-  .head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 10px;
-  }
-  .head h2 {
-    font-size: 20px;
-    font-weight: 800;
-  }
-  .head .meta {
-    font-size: 12.5px;
-    color: var(--faint);
-  }
-  .track {
-    position: relative;
-    height: 120px;
-    margin-top: 6px;
-  }
-  .lane {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 54px;
-    height: 4px;
-    border-radius: 2px;
-    background: repeating-linear-gradient(90deg, var(--edge-2) 0 10px, transparent 10px 18px);
-  }
-  .lit {
-    position: absolute;
-    left: 0;
-    top: 53px;
-    height: 6px;
-    border-radius: 3px;
-    background: linear-gradient(90deg, #ff6a2b00, var(--lamp));
-    box-shadow: 0 0 14px var(--lamp-glow);
-    transition: width 1s cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-  .me {
-    position: absolute;
-    top: 28px;
-    transform: translateX(-50%);
-    transition: left 1s cubic-bezier(0.2, 0.8, 0.2, 1);
-    display: grid;
-    justify-items: center;
-  }
-  .me b {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--lamp);
-    box-shadow:
-      0 0 0 6px #ff6a2b33,
-      0 0 22px var(--lamp);
-    margin-top: 16px;
-  }
-  .me span {
-    position: absolute;
-    top: 0;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--lamp-2);
-    white-space: nowrap;
-  }
-  .job {
-    position: absolute;
-    top: 70px;
-    transform: translateX(-50%);
-    display: grid;
-    justify-items: center;
-    gap: 3px;
-    border: 0;
-    background: none;
-    padding: 0;
-    min-width: 48px;
-  }
-  .job i {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: var(--c);
-    box-shadow: 0 0 12px var(--c);
-    margin-top: -22px;
-  }
-  .job .l {
-    font-size: 11.5px;
-    font-weight: 700;
-    color: var(--text);
-    text-align: center;
-    line-height: 1.15;
-  }
-  .job .km {
-    font-size: 10.5px;
-    color: var(--faint);
-  }
-  .job.ok {
-    --c: var(--ok);
-  }
-  .job.soon {
-    --c: var(--warn);
-  }
-  .job.due {
-    --c: var(--bad);
-  }
-  /* next */
-  .next {
-    position: relative;
-    overflow: hidden;
-    border-radius: 24px;
-    padding: 18px;
-    border: 1px solid #ff6a2b44;
-    background: radial-gradient(90% 120% at 100% 0%, #ff6a2b2b, transparent 60%), var(--panel);
-    display: grid;
-    gap: 10px;
-  }
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    font-weight: 700;
-    border-radius: 999px;
-    padding: 4px 10px;
-    background: var(--edge);
-    justify-self: start;
-  }
-  .chip.due {
-    background: var(--bad-glow);
-    color: var(--bad);
-  }
-  .chip.soon {
-    background: var(--warn-glow);
-    color: var(--warn);
-  }
-  .chip.ok {
-    background: var(--ok-glow);
-    color: var(--ok);
-  }
-  .next h3 {
-    font-size: 26px;
-    font-weight: 800;
-    line-height: 1.1;
-  }
-  .next p {
-    margin: 0;
-    color: var(--soft);
-  }
-  .cost {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    font-size: 13px;
-    color: var(--soft);
-    background: #0006;
-    border: 1px solid var(--edge);
-    border-radius: 14px;
-    padding: 10px 12px;
-  }
-  .cost b {
-    font: 800 18px var(--f-disp);
-    color: var(--text);
-  }
-  .btn {
-    min-height: 50px;
-    border: 0;
-    border-radius: 16px;
-    padding: 0 20px;
-    font: 700 15px var(--f-disp);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-  }
-  .btn.go {
-    background: linear-gradient(180deg, #ff7a3d, #e9541f);
-    color: #fff;
-    box-shadow:
-      0 10px 26px -8px #ff6a2b99,
-      inset 0 1px 0 #ffffff40;
-  }
-  .btn.quiet {
-    background: var(--panel-2);
-    border: 1px solid var(--edge-2);
-  }
-  /* shelf */
-  .shelf {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(156px, 48%);
-    gap: 10px;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    padding-bottom: 4px;
-    scrollbar-width: none;
-  }
-  .shelf::-webkit-scrollbar {
-    display: none;
-  }
-  .prod {
-    scroll-snap-align: start;
-    border: 1px solid var(--edge);
-    background: var(--panel);
-    border-radius: 20px;
-    padding: 12px;
-    display: grid;
-    gap: 6px;
-  }
-  .prod .pic {
-    height: 96px;
-    border-radius: 14px;
-    background: radial-gradient(70% 70% at 50% 40%, #ffffff12, transparent), #0b111c;
-    display: grid;
-    place-items: center;
-  }
-  .prod .pic svg {
-    width: 70px;
-    height: 70px;
-    filter: drop-shadow(0 8px 10px #000);
-  }
-  .fit {
-    font-size: 11.5px;
-    font-weight: 700;
-    color: var(--ok);
-  }
-  .pn {
-    font-size: 13.5px;
-    font-weight: 600;
-    line-height: 1.3;
-  }
-  .pp {
-    font: 800 18px var(--f-disp);
-  }
-  /* spends */
-  .big {
-    font: 800 34px/1 var(--f-disp);
-  }
-  .delta {
-    font-size: 12.5px;
-    font-weight: 700;
-    color: var(--ok);
-  }
-  .bars {
-    display: grid;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 2px;
-    align-items: end;
-    height: 110px;
-    margin-top: 14px;
-  }
-  .bars button {
-    border: 0;
-    padding: 0 2px;
-    background: none;
-    display: grid;
-    gap: 4px;
-    align-items: end;
-    height: 100%;
-    min-width: 24px;
-  }
-  .bars i {
-    display: block;
-    border-radius: 6px 6px 3px 3px;
-    background: linear-gradient(180deg, #3a4a66, #222f47);
-    transition:
-      height 0.7s cubic-bezier(0.2, 0.8, 0.2, 1),
-      background 0.2s;
-    min-height: 4px;
-  }
-  .bars button[aria-pressed='true'] i {
-    background: linear-gradient(180deg, var(--lamp-2), var(--lamp));
-    box-shadow: 0 0 16px var(--lamp-glow);
-  }
-  .bars span {
-    font-size: 10px;
-    color: var(--faint);
-  }
-  .split {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-top: 12px;
-  }
-  .split span {
-    font-size: 12px;
-    color: var(--soft);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .split i {
-    width: 8px;
-    height: 8px;
-    border-radius: 2px;
-    display: inline-block;
-  }
-  /* log */
-  .log {
-    display: grid;
-    margin-top: 8px;
-  }
-  .ev {
-    display: grid;
-    grid-template-columns: 40px 1fr auto;
-    gap: 12px;
-    padding: 12px 0;
-    position: relative;
-  }
-  .ev + .ev {
-    border-top: 1px solid var(--edge);
-  }
-  .ev .ic {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    display: grid;
-    place-items: center;
-    background: var(--panel-2);
-    border: 1px solid var(--edge);
-  }
-  .ev .ic svg {
-    width: 20px;
-    height: 20px;
-  }
-  .ev .t {
-    font-weight: 600;
-    line-height: 1.3;
-  }
-  .ev .m {
-    font-size: 12.5px;
-    color: var(--faint);
-  }
-  .ev .a {
-    font: 700 14px var(--f-disp);
-    white-space: nowrap;
-  }
-  .ev.mile .ic {
-    background: #ffb34722;
-    border-color: #ffb34755;
-  }
-  .tabs {
-    display: flex;
-    gap: 6px;
-    margin-top: 10px;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .tabs button {
-    min-height: 36px;
-    border-radius: 999px;
-    border: 1px solid var(--edge);
-    background: transparent;
-    padding: 0 14px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--soft);
-    white-space: nowrap;
-  }
-  .tabs button[aria-pressed='true'] {
-    background: var(--text);
-    color: var(--night);
-    border-color: var(--text);
-  }
-  /* setup */
-  .setup {
-    display: flex;
-    gap: 16px;
-    align-items: center;
-  }
-  .setup ul {
-    margin: 6px 0 0;
-    padding: 0;
-    list-style: none;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  .setup li {
-    font-size: 12px;
-    border-radius: 999px;
-    padding: 4px 10px;
-    border: 1px solid var(--edge-2);
-    color: var(--soft);
-  }
-  .setup li.done {
-    border-color: #3ddc9755;
-    color: var(--ok);
-  }
-  .legend {
-    display: flex;
-    justify-content: center;
-    gap: 14px;
-    font-size: 11.5px;
-    color: var(--faint);
-  }
-  .legend b {
-    font-weight: 600;
-  }
-  .legend i {
-    display: inline-block;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    margin-right: 5px;
-    vertical-align: 1px;
-  }
-  /* dock */
-  .dock {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 20;
-    padding: 0 max(12px, env(safe-area-inset-left, 0px)) calc(10px + env(safe-area-inset-bottom, 0px))
-      max(12px, env(safe-area-inset-right, 0px));
-    pointer-events: none;
-  }
-  .dock nav {
-    pointer-events: auto;
-    max-width: 440px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    background: #111a2bcc;
-    backdrop-filter: blur(16px) saturate(1.3);
-    border: 1px solid var(--edge-2);
-    border-radius: 22px;
-    padding: 6px;
-  }
-  .dock a {
-    display: grid;
-    justify-items: center;
-    gap: 2px;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--faint);
-    text-decoration: none;
-    padding: 6px 0;
-    border-radius: 16px;
-  }
-  .dock a svg {
-    width: 22px;
-    height: 22px;
-  }
-  .dock a[aria-current='page'] {
-    color: var(--text);
-    background: #ffffff10;
-  }
-  .dock a[aria-current='page'] svg {
-    color: var(--lamp);
-  }
-  /* sheets */
-  .scrim {
-    position: fixed;
-    inset: 0;
-    background: #000b;
-    backdrop-filter: blur(4px);
-    z-index: 30;
-    display: grid;
-    align-items: end;
-    justify-items: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s;
-  }
-  .scrim.open {
-    opacity: 1;
-    pointer-events: auto;
-  }
-  .sheet {
-    width: 100%;
-    max-width: 460px;
-    background: linear-gradient(180deg, #16223a, #0e1626);
-    border: 1px solid var(--edge-2);
-    border-bottom: 0;
-    border-radius: 28px 28px 0 0;
-    padding: 10px max(18px, env(safe-area-inset-left, 0px)) calc(22px + env(safe-area-inset-bottom, 0px));
-    transform: translateY(30px);
-    transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
-    max-height: 90vh;
-    overflow: auto;
-    overscroll-behavior: contain;
-    display: grid;
-    gap: 16px;
-  }
-  .sheet::before {
-    content: '';
-    width: 40px;
-    height: 5px;
-    border-radius: 3px;
-    background: var(--edge-2);
-    justify-self: center;
-  }
-  .scrim.open .sheet {
-    transform: none;
-  }
-  .sheet h3 {
-    font-size: 22px;
-    font-weight: 800;
-  }
-  .sheet p {
-    margin: 0;
-    color: var(--soft);
-  }
-  .kmread {
-    font: 800 44px/1 var(--f-disp);
-    text-align: center;
-    letter-spacing: -0.02em;
-  }
-  .quick {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  .quick button,
-  .opt {
-    min-height: 44px;
-    border-radius: 14px;
-    border: 1px solid var(--edge-2);
-    background: var(--panel);
-    padding: 0 14px;
-    font-weight: 600;
-  }
-  .opt[aria-pressed='true'] {
-    border-color: var(--lamp);
-    background: #ff6a2b1f;
-    color: #ffd2bd;
-  }
-  .field {
-    display: grid;
-    gap: 6px;
-  }
-  .field label {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--soft);
-  }
-  .field input {
-    min-height: 52px;
-    border-radius: 14px;
-    border: 1px solid var(--edge-2);
-    background: #0008;
-    padding: 0 14px;
-    font-size: 17px;
-  }
-  .err {
-    color: var(--bad);
-    font-size: 13px;
-    min-height: 1em;
-  }
-  .wheel {
-    position: relative;
-    display: grid;
-    grid-template-columns: 1fr 1.6fr 1.2fr;
-    gap: 6px;
-    height: 200px;
-    border-radius: 18px;
-    background: #0008;
-    border: 1px solid var(--edge);
-    overflow: hidden;
-  }
-  .wheel::before {
-    content: '';
-    position: absolute;
-    left: 8px;
-    right: 8px;
-    top: 80px;
-    height: 40px;
-    border-radius: 12px;
-    background: #ffffff12;
-    pointer-events: none;
-  }
-  .wheel::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(180deg, #0e1626 0, #0e162600 35%, #0e162600 65%, #0e1626 100%);
-    pointer-events: none;
-  }
-  .col {
-    overflow-y: auto;
-    scroll-snap-type: y mandatory;
-    scrollbar-width: none;
-    padding: 80px 0;
-    text-align: center;
-  }
-  .col::-webkit-scrollbar {
-    display: none;
-  }
-  .col div {
-    height: 40px;
-    line-height: 40px;
-    scroll-snap-align: center;
-    font: 600 18px var(--f-disp);
-    color: var(--soft);
-  }
-  .col div.sel {
-    color: var(--text);
-    font-weight: 800;
-  }
-  .fine {
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-    font-size: 13px;
-    color: var(--soft);
-  }
-  .fine b {
-    color: var(--warn);
-  }
-  .steps {
-    display: flex;
-    gap: 6px;
-  }
-  .steps i {
-    flex: 1;
-    height: 4px;
-    border-radius: 2px;
-    background: var(--edge-2);
-  }
-  .steps i.on {
-    background: var(--lamp);
-    box-shadow: 0 0 10px var(--lamp-glow);
-  }
-  .opts {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .toast {
-    position: fixed;
-    left: 50%;
-    bottom: calc(92px + env(safe-area-inset-bottom, 0px));
-    transform: translate(-50%, 16px);
-    background: #f5f7fa;
-    color: #0b1220;
-    padding: 12px 18px;
-    border-radius: 14px;
-    font-weight: 700;
-    font-size: 14px;
-    opacity: 0;
-    transition: 0.25s;
-    z-index: 40;
-    max-width: calc(100% - 32px);
-    text-align: center;
-    box-shadow: 0 12px 30px #000a;
-  }
-  .toast.show {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
-  .confetti {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 35;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      transition: none !important;
-      animation: none !important;
+    .veh {
+      position: absolute;
+      left: 50%;
+      bottom: 88px;
+      width: min(380px, 96%);
+      transform: translateX(-50%);
+      filter: drop-shadow(0 18px 18px #000c);
+    }
+    .veh svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .veh.in {
+      animation: roll-in 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    @keyframes roll-in {
+      from {
+        transform: translateX(-140%);
+      }
+      to {
+        transform: translateX(-50%);
+      }
+    }
+    .bay-info {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 16px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .vname {
+      font: 800 24px/1.1 var(--f-disp);
+    }
+    .vsub {
+      color: var(--soft);
+      font-size: 13px;
+      margin-top: 2px;
+    }
+    .plate {
+      display: inline-flex;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #f5f7fa;
+      color: #0b1220;
+      font: 700 13px/1 var(--f-disp);
+      letter-spacing: 0.8px;
+      border: 1.5px solid #0b1220;
+      box-shadow: 0 4px 14px #0008;
+      margin-top: 8px;
+    }
+    .plate i {
+      font-style: normal;
+      background: #2457c5;
+      color: #fff;
+      font-size: 7.5px;
+      padding: 0 4px;
+      display: grid;
+      place-items: center;
+    }
+    .plate b {
+      padding: 5px 7px;
     }
     .shutter {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      background: repeating-linear-gradient(180deg, #2a3448 0 13px, #1a2233 13px 15px, #323d53 15px 16px);
+      box-shadow: inset 0 -6px 0 #0b111d;
+      transform: translateY(-100%);
+      pointer-events: none;
+    }
+    .shutter::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      bottom: 14px;
+      width: 70px;
+      height: 6px;
+      border-radius: 3px;
+      background: #0b111d;
+      transform: translateX(-50%);
+    }
+    .shutter.open {
+      animation: lift 1.1s cubic-bezier(0.65, 0, 0.3, 1) forwards;
+    }
+    @keyframes lift {
+      0% {
+        transform: none;
+      }
+      25% {
+        transform: translateY(2%);
+      }
+      100% {
+        transform: translateY(-102%);
+      }
+    }
+    .bay-nav {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      justify-content: space-between;
+      z-index: 3;
+    }
+    .bay-nav button {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--edge-2);
+      background: #0008;
+      backdrop-filter: blur(8px);
+      display: grid;
+      place-items: center;
+    }
+    .bay-nav button[disabled] {
+      opacity: 0.25;
+    }
+    .dots {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-top: -10px;
+    }
+    .dots i {
+      width: 6px;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--edge-2);
+      transition: width 0.3s;
+    }
+    .dots i.on {
+      width: 22px;
+      background: var(--lamp);
+    }
+    /* vitals */
+    .vitals {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .vital {
+      position: relative;
+      border: 1px solid var(--edge);
+      background: linear-gradient(180deg, var(--panel-2), var(--panel));
+      border-radius: 20px;
+      padding: 14px;
+      text-align: left;
+      display: grid;
+      gap: 6px;
+      min-height: 118px;
+      overflow: hidden;
+    }
+    .vital::after {
+      content: '';
+      position: absolute;
+      right: -30px;
+      top: -30px;
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      background: var(--glow, transparent);
+      filter: blur(18px);
+    }
+    .vital .k {
+      font-size: 12.5px;
+      color: var(--soft);
+      font-weight: 600;
+    }
+    .vital .v {
+      font: 800 26px/1.05 var(--f-disp);
+    }
+    .vital .s {
+      font-size: 12px;
+      color: var(--faint);
+    }
+    .vital.ok {
+      --glow: var(--ok-glow);
+    }
+    .vital.soon {
+      --glow: var(--warn-glow);
+    }
+    .vital.due {
+      --glow: var(--bad-glow);
+    }
+    .vital .v.ok {
+      color: var(--ok);
+    }
+    .vital .v.soon {
+      color: var(--warn);
+    }
+    .vital .v.due {
+      color: var(--bad);
+    }
+    .flip {
+      display: flex;
+      gap: 2px;
+      min-width: 0;
+    }
+    .flip span {
+      width: clamp(17px, 5vw, 24px);
+      height: 34px;
+      border-radius: 6px;
+      background: linear-gradient(180deg, #1f2b42 0 49%, #0c1322 51%);
+      border: 1px solid #ffffff1a;
+      display: grid;
+      place-items: center;
+      font: 800 21px/1 var(--f-disp);
+      position: relative;
+      box-shadow: 0 4px 8px #0006;
+    }
+    .flip span::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 1px;
+      background: #000a;
+    }
+    .flip span.go {
+      animation: flipd 0.5s cubic-bezier(0.3, 1.4, 0.5, 1);
+    }
+    @keyframes flipd {
+      0% {
+        transform: rotateX(90deg);
+      }
+      100% {
+        transform: none;
+      }
+    }
+    .arc {
+      position: absolute;
+      right: 12px;
+      bottom: 12px;
+      width: 42px;
+      height: 42px;
+    }
+    /* road */
+    .card {
+      border: 1px solid var(--edge);
+      background: var(--panel);
+      border-radius: 24px;
+      padding: 16px;
+    }
+    .head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .head h2 {
+      font-size: 20px;
+      font-weight: 800;
+    }
+    .head .meta {
+      font-size: 12.5px;
+      color: var(--faint);
+    }
+    .track {
+      position: relative;
+      height: 120px;
+      margin-top: 6px;
+    }
+    .lane {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 54px;
+      height: 4px;
+      border-radius: 2px;
+      background: repeating-linear-gradient(90deg, var(--edge-2) 0 10px, transparent 10px 18px);
+    }
+    .lit {
+      position: absolute;
+      left: 0;
+      top: 53px;
+      height: 6px;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #ff6a2b00, var(--lamp));
+      box-shadow: 0 0 14px var(--lamp-glow);
+      transition: width 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .me {
+      position: absolute;
+      top: 28px;
+      transform: translateX(-50%);
+      transition: left 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+      display: grid;
+      justify-items: center;
+    }
+    .me b {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--lamp);
+      box-shadow:
+        0 0 0 6px #ff6a2b33,
+        0 0 22px var(--lamp);
+      margin-top: 16px;
+    }
+    .me span {
+      position: absolute;
+      top: 0;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--lamp-2);
+      white-space: nowrap;
+    }
+    .job {
+      position: absolute;
+      top: 70px;
+      transform: translateX(-50%);
+      display: grid;
+      justify-items: center;
+      gap: 3px;
+      border: 0;
+      background: none;
+      padding: 0;
+      min-width: 48px;
+    }
+    .job i {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--c);
+      box-shadow: 0 0 12px var(--c);
+      margin-top: -22px;
+    }
+    .job .l {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text);
+      text-align: center;
+      line-height: 1.15;
+    }
+    .job .km {
+      font-size: 10.5px;
+      color: var(--faint);
+    }
+    .job.ok {
+      --c: var(--ok);
+    }
+    .job.soon {
+      --c: var(--warn);
+    }
+    .job.due {
+      --c: var(--bad);
+    }
+    /* next */
+    .next {
+      position: relative;
+      overflow: hidden;
+      border-radius: 24px;
+      padding: 18px;
+      border: 1px solid #ff6a2b44;
+      background: radial-gradient(90% 120% at 100% 0%, #ff6a2b2b, transparent 60%), var(--panel);
+      display: grid;
+      gap: 10px;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 4px 10px;
+      background: var(--edge);
+      justify-self: start;
+    }
+    .chip.due {
+      background: var(--bad-glow);
+      color: var(--bad);
+    }
+    .chip.soon {
+      background: var(--warn-glow);
+      color: var(--warn);
+    }
+    .chip.ok {
+      background: var(--ok-glow);
+      color: var(--ok);
+    }
+    .next h3 {
+      font-size: 26px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+    .next p {
+      margin: 0;
+      color: var(--soft);
+    }
+    .cost {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      font-size: 13px;
+      color: var(--soft);
+      background: #0006;
+      border: 1px solid var(--edge);
+      border-radius: 14px;
+      padding: 10px 12px;
+    }
+    .cost b {
+      font: 800 18px var(--f-disp);
+      color: var(--text);
+    }
+    .btn {
+      min-height: 50px;
+      border: 0;
+      border-radius: 16px;
+      padding: 0 20px;
+      font: 700 15px var(--f-disp);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+    }
+    .btn.go {
+      background: linear-gradient(180deg, #ff7a3d, #e9541f);
+      color: #fff;
+      box-shadow:
+        0 10px 26px -8px #ff6a2b99,
+        inset 0 1px 0 #ffffff40;
+    }
+    .btn.quiet {
+      background: var(--panel-2);
+      border: 1px solid var(--edge-2);
+    }
+    /* shelf */
+    .shelf {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(156px, 48%);
+      gap: 10px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+    .shelf::-webkit-scrollbar {
       display: none;
     }
-  }
-</style>
-
-<div class="wrap" id="app"></div>
-<div class="dock"><nav id="dock" aria-label="Main"></nav></div>
-<div class="scrim" id="scrim">
-  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"></div>
-</div>
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
-<canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
-
-<script>
-  (() => {
-    const DAY = 864e5,
-      TODAY = new Date('2026-11-28T12:00:00+05:30');
-    const kmf = (n) => Math.round(n).toLocaleString('en-IN');
-    const inr = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
-    const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const MONTHS_HI = ['जन', 'फ़र', 'मार्च', 'अप्रै', 'मई', 'जून', 'जुल', 'अग', 'सित', 'अक्टू', 'नव', 'दिस'];
-    const fmt = (d, hi) => {
-      d = new Date(d);
-      return `${d.getDate()} ${(hi ? MONTHS_HI : MONTHS_EN)[d.getMonth()]} ${d.getFullYear()}`;
-    };
-
-    const T = {
-      en: {
-        garage: 'Garage',
-        bays: (a) => `${a} of 10 bays`,
-        odo: 'Odometer',
-        tapUpdate: 'Tap to update',
-        nextSvc: 'Next service',
-        kmLeft: (n) => `${kmf(n)} km left`,
-        kmOver: (n) => `${kmf(n)} km over`,
-        insurance: 'Insurance',
-        puc: 'PUC',
-        rc: 'RC',
-        licence: 'Licence',
-        days: (n) => (n < 0 ? `${-n}d ago` : `${n} days`),
-        expires: (d) => `Expires ${d}`,
-        expired: 'Expired',
-        add: 'Add date',
-        road: 'Road ahead',
-        roadMeta: 'Tap a stop',
-        you: 'You',
-        oil: 'Engine oil',
-        service: 'Service',
-        tyres: 'Tyres',
-        battery: 'Battery',
-        dueNow: 'Due now',
-        soon: 'Due soon',
-        ok: 'On track',
-        next: 'Next up',
-        byKm: (n) => `in ${kmf(n)} km`,
-        overKm: (n) => `${kmf(n)} km overdue`,
-        orBy: (d) => `or by ${d}`,
-        why: (j, ev) => `${j} every ${ev}. Counted from your last visit in the service log.`,
-        estCost: 'Typical cost in Raipur',
-        est: 'estimate from past bills',
-        book: 'Book a workshop',
-        shopFit: 'Shop parts that fit',
-        fits: (m) => `Fits ${m}`,
-        forYour: (m) => `Made for your ${m}`,
-        ex: 'Example prices',
-        spends: 'Spends',
-        thisYear: 'This year',
-        vsLast: (n) => (n <= 0 ? `↓ ${inr(-n)} vs last year` : `↑ ${inr(n)} vs last year`),
-        svcs: 'Services',
-        parts: 'Parts',
-        tyresB: 'Tyres',
-        batteryB: 'Battery',
-        log: 'Service log',
-        all: 'All',
-        svcT: 'Services',
-        partT: 'Parts',
-        mileT: 'Milestones',
-        received: (k) => `at ${kmf(k)} km`,
-        bill: 'Bill',
-        order: 'Order',
-        setup: 'Garage set-up',
-        setupOf: (a, b) => `${a}/${b}`,
-        sDetails: 'Details',
-        sKm: 'Km this month',
-        sIns: 'Insurance',
-        sPuc: 'PUC',
-        sRc: 'RC',
-        sRem: 'Reminders',
-        legendToday: 'Works today',
-        legendNew: 'New design',
-        kmQ: 'Update odometer',
-        kmHelp: (n) => `Last saved ${kmf(n)} km. Read it off the meter.`,
-        kmErr: 'Enter more than the last saved km.',
-        save: 'Save',
-        cancel: 'Cancel',
-        close: 'Close',
-        kmSaved: (n) => `Odometer set to ${kmf(n)} km`,
-        mile: (n) => `${kmf(n)} km. Milestone unlocked.`,
-        nowDue: (j) => `${j} is due now`,
-        paperQ: (p) => `${p} expiry date`,
-        fine: (p, f) =>
-          `Riding without a valid ${p} can cost <b>${f}</b>. We remind you 15 and 3 days before.`,
-        remind: 'Set reminder',
-        remSet: 'Reminder set',
-        addV: 'Add vehicle',
-        step: (a, b) => `Step ${a} of ${b}`,
-        type: 'Type',
-        make: 'Make',
-        model: 'Model',
-        year: 'Year',
-        fuel: 'Fuel',
-        reg: 'Number plate (optional)',
-        nextB: 'Next',
-        back: 'Back',
-        park: 'Park in bay',
-        parked: (m, b) => `${m} parked in bay ${b}`,
-        w2: 'Scooter / bike',
-        w3: 'Auto',
-        w4: 'Car',
-        petrol: 'Petrol',
-        diesel: 'Diesel',
-        cng: 'CNG',
-        ev: 'Electric',
-        limit: 'All 10 bays are full.',
-        home: 'Home',
-        shop: 'Shop',
-        workshops: 'Workshops',
-        lang: 'हिंदी',
-        opensBook: 'Opens Find Workshops with this vehicle (works today)',
-        opensShop: 'Opens Shop filtered to parts that fit (works today)',
-        ev2w: '3,000 km or 4 months',
-        evOil: '3,000 km',
-        evTyre: '25,000 km',
-        evBat: '3 years',
-        ev4w: '10,000 km or 1 year',
-        evOil4: '10,000 km',
-        evTyre4: '40,000 km',
-        prev: 'Previous bay',
-        nextBay: 'Next bay',
-        monthSpend: (m, a) => `${m}: ${a}`,
-      },
-      hi: {
-        garage: 'गैरेज',
-        bays: (a) => `10 में से ${a} बे`,
-        odo: 'ओडोमीटर',
-        tapUpdate: 'अपडेट के लिए टैप करें',
-        nextSvc: 'अगली सर्विस',
-        kmLeft: (n) => `${kmf(n)} किमी बाकी`,
-        kmOver: (n) => `${kmf(n)} किमी ज़्यादा`,
-        insurance: 'बीमा',
-        puc: 'PUC',
-        rc: 'RC',
-        licence: 'लाइसेंस',
-        days: (n) => (n < 0 ? `${-n} दिन पहले` : `${n} दिन`),
-        expires: (d) => `${d} को ख़त्म`,
-        expired: 'ख़त्म',
-        add: 'तारीख़ डालें',
-        road: 'आगे का रास्ता',
-        roadMeta: 'पड़ाव पर टैप करें',
-        you: 'आप',
-        oil: 'इंजन ऑयल',
-        service: 'सर्विस',
-        tyres: 'टायर',
-        battery: 'बैटरी',
-        dueNow: 'अभी ज़रूरी',
-        soon: 'जल्द ज़रूरी',
-        ok: 'ठीक है',
-        next: 'अगला काम',
-        byKm: (n) => `${kmf(n)} किमी में`,
-        overKm: (n) => `${kmf(n)} किमी देरी`,
-        orBy: (d) => `या ${d} तक`,
-        why: (j, ev) => `${j} हर ${ev}। सर्विस लॉग की पिछली विज़िट से गिना गया।`,
-        estCost: 'रायपुर में आम ख़र्च',
-        est: 'पिछले बिलों से अनुमान',
-        book: 'वर्कशॉप बुक करें',
-        shopFit: 'फ़िट होने वाले पार्ट्स',
-        fits: (m) => `${m} में फ़िट`,
-        forYour: (m) => `आपकी ${m} के लिए`,
-        ex: 'उदाहरण कीमतें',
-        spends: 'ख़र्च',
-        thisYear: 'इस साल',
-        vsLast: (n) => (n <= 0 ? `↓ पिछले साल से ${inr(-n)} कम` : `↑ पिछले साल से ${inr(n)} ज़्यादा`),
-        svcs: 'सर्विस',
-        parts: 'पार्ट्स',
-        tyresB: 'टायर',
-        batteryB: 'बैटरी',
-        log: 'सर्विस लॉग',
-        all: 'सब',
-        svcT: 'सर्विस',
-        partT: 'पार्ट्स',
-        mileT: 'पड़ाव',
-        received: (k) => `${kmf(k)} किमी पर`,
-        bill: 'बिल',
-        order: 'ऑर्डर',
-        setup: 'गैरेज तैयारी',
-        setupOf: (a, b) => `${a}/${b}`,
-        sDetails: 'जानकारी',
-        sKm: 'इस महीने किमी',
-        sIns: 'बीमा',
-        sPuc: 'PUC',
-        sRc: 'RC',
-        sRem: 'रिमाइंडर',
-        legendToday: 'आज काम करता है',
-        legendNew: 'नया डिज़ाइन',
-        kmQ: 'ओडोमीटर अपडेट करें',
-        kmHelp: (n) => `पिछली बार ${kmf(n)} किमी। मीटर से पढ़कर डालें।`,
-        kmErr: 'पिछले किमी से ज़्यादा डालें।',
-        save: 'सेव करें',
-        cancel: 'रद्द करें',
-        close: 'बंद करें',
-        kmSaved: (n) => `ओडोमीटर ${kmf(n)} किमी`,
-        mile: (n) => `${kmf(n)} किमी। नया पड़ाव!`,
-        nowDue: (j) => `${j} अभी ज़रूरी है`,
-        paperQ: (p) => `${p} की समाप्ति तारीख़`,
-        fine: (p, f) =>
-          `बिना वैध ${p} के चलाने पर <b>${f}</b> तक जुर्माना हो सकता है। हम 15 और 3 दिन पहले याद दिलाएँगे।`,
-        remind: 'रिमाइंडर लगाएँ',
-        remSet: 'रिमाइंडर लग गया',
-        addV: 'गाड़ी जोड़ें',
-        step: (a, b) => `${b} में से चरण ${a}`,
-        type: 'किस्म',
-        make: 'कंपनी',
-        model: 'मॉडल',
-        year: 'साल',
-        fuel: 'ईंधन',
-        reg: 'नंबर प्लेट (ज़रूरी नहीं)',
-        nextB: 'आगे',
-        back: 'पीछे',
-        park: 'बे में खड़ी करें',
-        parked: (m, b) => `${m} बे ${b} में खड़ी है`,
-        w2: 'स्कूटर / बाइक',
-        w3: 'ऑटो',
-        w4: 'कार',
-        petrol: 'पेट्रोल',
-        diesel: 'डीज़ल',
-        cng: 'CNG',
-        ev: 'इलेक्ट्रिक',
-        limit: 'सभी 10 बे भरे हैं।',
-        home: 'होम',
-        shop: 'शॉप',
-        workshops: 'वर्कशॉप',
-        lang: 'English',
-        opensBook: 'इस गाड़ी के साथ वर्कशॉप खोज खुलती है (आज काम करता है)',
-        opensShop: 'फ़िट होने वाले पार्ट्स के साथ शॉप खुलती है (आज काम करता है)',
-        ev2w: '3,000 किमी या 4 महीने',
-        evOil: '3,000 किमी',
-        evTyre: '25,000 किमी',
-        evBat: '3 साल',
-        ev4w: '10,000 किमी या 1 साल',
-        evOil4: '10,000 किमी',
-        evTyre4: '40,000 किमी',
-        prev: 'पिछला बे',
-        nextBay: 'अगला बे',
-        monthSpend: (m, a) => `${m}: ${a}`,
-      },
-    };
-
-    const seed = () => ({
-      lang: 'en',
-      i: 0,
-      tab: 'all',
-      month: 10,
-      vehicles: [
-        {
-          type: '2W',
-          kind: 'scooter',
-          make: 'Honda',
-          model: 'Activa 6G',
-          variant: 'DLX',
-          year: 2021,
-          fuel: 'petrol',
-          reg: 'CG 04 MK 2817',
-          km: 12180,
-          kmAt: '2026-11-02',
-          paint: ['#c9d3e0', '#7d8ca3'],
-          last: {
-            oil: [9400, '2026-07-14'],
-            service: [9400, '2026-07-14'],
-            tyres: [0, '2021-03-10'],
-            battery: [0, '2023-02-03'],
-          },
-          papers: { insurance: '2027-01-09', puc: '2026-12-06', rc: null, licence: '2031-05-20' },
-          reminders: true,
-          months: [0, 0, 640, 0, 0, 0, 1620, 0, 0, 0, 0, 0],
-          lastYear: 3150,
-          split: { svcs: 1820, parts: 440, tyresB: 0, batteryB: 0 },
-          log: [
-            {
-              k: 'svc',
-              t: 'General service + oil change',
-              w: 'Sahu Auto Works, Tatibandh',
-              d: '2026-07-14',
-              km: 9400,
-              a: 1180,
-              c: 'SR-RPR-2026-7KQ2MD',
-            },
-            {
-              k: 'part',
-              t: 'Castrol Activ 4T 20W40, 900 ml',
-              w: 'Delivered home',
-              d: '2026-07-10',
-              a: 440,
-              c: 'MD-RPR-2026-B1195T',
-            },
-            { k: 'mile', t: '10,000 km', d: '2026-08-21', km: 10000 },
-            {
-              k: 'svc',
-              t: 'Rear brake shoes replaced',
-              w: 'Raipur Two Wheeler Care, Pachpedi Naka',
-              d: '2026-03-02',
-              km: 7120,
-              a: 640,
-              c: 'SR-RPR-2026-2PZ8WA',
-            },
-            {
-              k: 'part',
-              t: 'Exide XLTZ4A battery',
-              w: 'Fitted at home',
-              d: '2023-02-03',
-              a: 1000,
-              c: 'MD-RPR-2023-9HD4KC',
-            },
-          ],
-        },
-        {
-          type: '2W',
-          kind: 'bike',
-          make: 'Bajaj',
-          model: 'Pulsar 150',
-          variant: 'Twin Disc',
-          year: 2019,
-          fuel: 'petrol',
-          reg: 'CG 04 LP 5531',
-          km: 31420,
-          kmAt: '2026-10-11',
-          paint: ['#d1342f', '#5c1513'],
-          last: {
-            oil: [28300, '2026-05-30'],
-            service: [28300, '2026-05-30'],
-            tyres: [12000, '2022-01-12'],
-            battery: [0, '2021-11-20'],
-          },
-          papers: { insurance: '2026-12-02', puc: null, rc: '2034-08-14', licence: '2031-05-20' },
-          reminders: false,
-          months: [0, 0, 0, 0, 2350, 0, 0, 0, 0, 0, 0, 0],
-          lastYear: 5240,
-          split: { svcs: 2350, parts: 0, tyresB: 1890, batteryB: 0 },
-          log: [
-            {
-              k: 'svc',
-              t: 'Chain set + general service',
-              w: 'Sahu Auto Works, Tatibandh',
-              d: '2026-05-30',
-              km: 28300,
-              a: 2350,
-              c: 'SR-RPR-2026-4MV1NE',
-            },
-            { k: 'mile', t: '30,000 km', d: '2026-08-02', km: 30000 },
-            {
-              k: 'part',
-              t: 'MRF Nylogrip Zapper 100/90-17',
-              w: 'Delivered home',
-              d: '2025-12-19',
-              a: 1890,
-              c: 'MD-RPR-2025-QW72LA',
-            },
-          ],
-        },
-        {
-          type: '4W',
-          kind: 'car',
-          make: 'Maruti Suzuki',
-          model: 'Swift',
-          variant: 'VXi',
-          year: 2018,
-          fuel: 'petrol',
-          reg: 'CG 04 HT 9012',
-          km: 58900,
-          kmAt: '2026-11-20',
-          paint: ['#e9eef5', '#8b98ab'],
-          last: {
-            oil: [50200, '2026-03-18'],
-            service: [50200, '2026-03-18'],
-            tyres: [20500, '2022-06-01'],
-            battery: [0, '2024-01-15'],
-          },
-          papers: { insurance: '2027-04-22', puc: '2027-02-11', rc: '2033-02-09', licence: '2031-05-20' },
-          reminders: true,
-          months: [0, 0, 5640, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          lastYear: 9800,
-          split: { svcs: 5640, parts: 0, tyresB: 0, batteryB: 0 },
-          log: [
-            {
-              k: 'svc',
-              t: 'Periodic service, 50,000 km',
-              w: 'Shree Car Care, Telibandha',
-              d: '2026-03-18',
-              km: 50200,
-              a: 5640,
-              c: 'SR-RPR-2026-8TT3QB',
-            },
-            { k: 'mile', t: '50,000 km', d: '2026-02-25', km: 50000 },
-          ],
-        },
-      ],
-    });
-    let S;
-    try {
-      S = JSON.parse(localStorage.getItem('md-garage-v2') || 'null') || seed();
-    } catch {
-      S = seed();
+    .prod {
+      scroll-snap-align: start;
+      border: 1px solid var(--edge);
+      background: var(--panel);
+      border-radius: 20px;
+      padding: 12px;
+      display: grid;
+      gap: 6px;
     }
-    const save = () => {
+    .prod .pic {
+      height: 96px;
+      border-radius: 14px;
+      background: radial-gradient(70% 70% at 50% 40%, #ffffff12, transparent), #0b111c;
+      display: grid;
+      place-items: center;
+    }
+    .prod .pic svg {
+      width: 70px;
+      height: 70px;
+      filter: drop-shadow(0 8px 10px #000);
+    }
+    .fit {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--ok);
+    }
+    .pn {
+      font-size: 13.5px;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+    .pp {
+      font: 800 18px var(--f-disp);
+    }
+    /* spends */
+    .big {
+      font: 800 34px/1 var(--f-disp);
+    }
+    .delta {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--ok);
+    }
+    .bars {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 2px;
+      align-items: end;
+      height: 110px;
+      margin-top: 14px;
+    }
+    .bars button {
+      border: 0;
+      padding: 0 2px;
+      background: none;
+      display: grid;
+      gap: 4px;
+      align-items: end;
+      height: 100%;
+      min-width: 24px;
+    }
+    .bars i {
+      display: block;
+      border-radius: 6px 6px 3px 3px;
+      background: linear-gradient(180deg, #3a4a66, #222f47);
+      transition:
+        height 0.7s cubic-bezier(0.2, 0.8, 0.2, 1),
+        background 0.2s;
+      min-height: 4px;
+    }
+    .bars button[aria-pressed='true'] i {
+      background: linear-gradient(180deg, var(--lamp-2), var(--lamp));
+      box-shadow: 0 0 16px var(--lamp-glow);
+    }
+    .bars span {
+      font-size: 10px;
+      color: var(--faint);
+    }
+    .split {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .split span {
+      font-size: 12px;
+      color: var(--soft);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .split i {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+    /* log */
+    .log {
+      display: grid;
+      margin-top: 8px;
+    }
+    .ev {
+      display: grid;
+      grid-template-columns: 40px 1fr auto;
+      gap: 12px;
+      padding: 12px 0;
+      position: relative;
+    }
+    .ev + .ev {
+      border-top: 1px solid var(--edge);
+    }
+    .ev .ic {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: var(--panel-2);
+      border: 1px solid var(--edge);
+    }
+    .ev .ic svg {
+      width: 20px;
+      height: 20px;
+    }
+    .ev .t {
+      font-weight: 600;
+      line-height: 1.3;
+    }
+    .ev .m {
+      font-size: 12.5px;
+      color: var(--faint);
+    }
+    .ev .a {
+      font: 700 14px var(--f-disp);
+      white-space: nowrap;
+    }
+    .ev.mile .ic {
+      background: #ffb34722;
+      border-color: #ffb34755;
+    }
+    .tabs {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tabs button {
+      min-height: 36px;
+      border-radius: 999px;
+      border: 1px solid var(--edge);
+      background: transparent;
+      padding: 0 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--soft);
+      white-space: nowrap;
+    }
+    .tabs button[aria-pressed='true'] {
+      background: var(--text);
+      color: var(--night);
+      border-color: var(--text);
+    }
+    /* setup */
+    .setup {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .setup ul {
+      margin: 6px 0 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .setup li {
+      font-size: 12px;
+      border-radius: 999px;
+      padding: 4px 10px;
+      border: 1px solid var(--edge-2);
+      color: var(--soft);
+    }
+    .setup li.done {
+      border-color: #3ddc9755;
+      color: var(--ok);
+    }
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      font-size: 11.5px;
+      color: var(--faint);
+    }
+    .legend b {
+      font-weight: 600;
+    }
+    .legend i {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      margin-right: 5px;
+      vertical-align: 1px;
+    }
+    /* dock */
+    .dock {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 20;
+      padding: 0 max(12px, env(safe-area-inset-left, 0px)) calc(10px + env(safe-area-inset-bottom, 0px))
+        max(12px, env(safe-area-inset-right, 0px));
+      pointer-events: none;
+    }
+    .dock nav {
+      pointer-events: auto;
+      max-width: 440px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      background: #111a2bcc;
+      backdrop-filter: blur(16px) saturate(1.3);
+      border: 1px solid var(--edge-2);
+      border-radius: 22px;
+      padding: 6px;
+    }
+    .dock a {
+      display: grid;
+      justify-items: center;
+      gap: 2px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--faint);
+      text-decoration: none;
+      padding: 6px 0;
+      border-radius: 16px;
+    }
+    .dock a svg {
+      width: 22px;
+      height: 22px;
+    }
+    .dock a[aria-current='page'] {
+      color: var(--text);
+      background: #ffffff10;
+    }
+    .dock a[aria-current='page'] svg {
+      color: var(--lamp);
+    }
+    /* sheets */
+    .scrim {
+      position: fixed;
+      inset: 0;
+      background: #000b;
+      backdrop-filter: blur(4px);
+      z-index: 30;
+      display: grid;
+      align-items: end;
+      justify-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .scrim.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .sheet {
+      width: 100%;
+      max-width: 460px;
+      background: linear-gradient(180deg, #16223a, #0e1626);
+      border: 1px solid var(--edge-2);
+      border-bottom: 0;
+      border-radius: 28px 28px 0 0;
+      padding: 10px max(18px, env(safe-area-inset-left, 0px)) calc(22px + env(safe-area-inset-bottom, 0px));
+      transform: translateY(30px);
+      transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+      max-height: 90vh;
+      overflow: auto;
+      overscroll-behavior: contain;
+      display: grid;
+      gap: 16px;
+    }
+    .sheet::before {
+      content: '';
+      width: 40px;
+      height: 5px;
+      border-radius: 3px;
+      background: var(--edge-2);
+      justify-self: center;
+    }
+    .scrim.open .sheet {
+      transform: none;
+    }
+    .sheet h3 {
+      font-size: 22px;
+      font-weight: 800;
+    }
+    .sheet p {
+      margin: 0;
+      color: var(--soft);
+    }
+    .kmread {
+      font: 800 44px/1 var(--f-disp);
+      text-align: center;
+      letter-spacing: -0.02em;
+    }
+    .quick {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .quick button,
+    .opt {
+      min-height: 44px;
+      border-radius: 14px;
+      border: 1px solid var(--edge-2);
+      background: var(--panel);
+      padding: 0 14px;
+      font-weight: 600;
+    }
+    .opt[aria-pressed='true'] {
+      border-color: var(--lamp);
+      background: #ff6a2b1f;
+      color: #ffd2bd;
+    }
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+    .field label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--soft);
+    }
+    .field input {
+      min-height: 52px;
+      border-radius: 14px;
+      border: 1px solid var(--edge-2);
+      background: #0008;
+      padding: 0 14px;
+      font-size: 17px;
+    }
+    .err {
+      color: var(--bad);
+      font-size: 13px;
+      min-height: 1em;
+    }
+    .wheel {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 1.6fr 1.2fr;
+      gap: 6px;
+      height: 200px;
+      border-radius: 18px;
+      background: #0008;
+      border: 1px solid var(--edge);
+      overflow: hidden;
+    }
+    .wheel::before {
+      content: '';
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      top: 80px;
+      height: 40px;
+      border-radius: 12px;
+      background: #ffffff12;
+      pointer-events: none;
+    }
+    .wheel::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, #0e1626 0, #0e162600 35%, #0e162600 65%, #0e1626 100%);
+      pointer-events: none;
+    }
+    .col {
+      overflow-y: auto;
+      scroll-snap-type: y mandatory;
+      scrollbar-width: none;
+      padding: 80px 0;
+      text-align: center;
+    }
+    .col::-webkit-scrollbar {
+      display: none;
+    }
+    .col div {
+      height: 40px;
+      line-height: 40px;
+      scroll-snap-align: center;
+      font: 600 18px var(--f-disp);
+      color: var(--soft);
+    }
+    .col div.sel {
+      color: var(--text);
+      font-weight: 800;
+    }
+    .fine {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      font-size: 13px;
+      color: var(--soft);
+    }
+    .fine b {
+      color: var(--warn);
+    }
+    .steps {
+      display: flex;
+      gap: 6px;
+    }
+    .steps i {
+      flex: 1;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--edge-2);
+    }
+    .steps i.on {
+      background: var(--lamp);
+      box-shadow: 0 0 10px var(--lamp-glow);
+    }
+    .opts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+      transform: translate(-50%, 16px);
+      background: #f5f7fa;
+      color: #0b1220;
+      padding: 12px 18px;
+      border-radius: 14px;
+      font-weight: 700;
+      font-size: 14px;
+      opacity: 0;
+      transition: 0.25s;
+      z-index: 40;
+      max-width: calc(100% - 32px);
+      text-align: center;
+      box-shadow: 0 12px 30px #000a;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+    .confetti {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 35;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        transition: none !important;
+        animation: none !important;
+      }
+      .shutter {
+        display: none;
+      }
+    }
+  </style>
+
+  <div class="wrap" id="app"></div>
+  <div class="dock"><nav id="dock" aria-label="Main"></nav></div>
+  <div class="scrim" id="scrim">
+    <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"></div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
+
+  <script>
+    (() => {
+      const DAY = 864e5,
+        TODAY = new Date('2026-11-28T12:00:00+05:30');
+      const kmf = (n) => Math.round(n).toLocaleString('en-IN');
+      const inr = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
+      const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const MONTHS_HI = [
+        'जन',
+        'फ़र',
+        'मार्च',
+        'अप्रै',
+        'मई',
+        'जून',
+        'जुल',
+        'अग',
+        'सित',
+        'अक्टू',
+        'नव',
+        'दिस',
+      ];
+      const fmt = (d, hi) => {
+        d = new Date(d);
+        return `${d.getDate()} ${(hi ? MONTHS_HI : MONTHS_EN)[d.getMonth()]} ${d.getFullYear()}`;
+      };
+
+      const T = {
+        en: {
+          garage: 'Garage',
+          bays: (a) => `${a} of 10 bays`,
+          odo: 'Odometer',
+          tapUpdate: 'Tap to update',
+          nextSvc: 'Next service',
+          kmLeft: (n) => `${kmf(n)} km left`,
+          kmOver: (n) => `${kmf(n)} km over`,
+          insurance: 'Insurance',
+          puc: 'PUC',
+          rc: 'RC',
+          licence: 'Licence',
+          days: (n) => (n < 0 ? `${-n}d ago` : `${n} days`),
+          expires: (d) => `Expires ${d}`,
+          expired: 'Expired',
+          add: 'Add date',
+          road: 'Road ahead',
+          roadMeta: 'Tap a stop',
+          you: 'You',
+          oil: 'Engine oil',
+          service: 'Service',
+          tyres: 'Tyres',
+          battery: 'Battery',
+          dueNow: 'Due now',
+          soon: 'Due soon',
+          ok: 'On track',
+          next: 'Next up',
+          byKm: (n) => `in ${kmf(n)} km`,
+          overKm: (n) => `${kmf(n)} km overdue`,
+          orBy: (d) => `or by ${d}`,
+          why: (j, ev) => `${j} every ${ev}. Counted from your last visit in the service log.`,
+          estCost: 'Typical cost in Raipur',
+          est: 'estimate from past bills',
+          book: 'Book a workshop',
+          shopFit: 'Shop parts that fit',
+          fits: (m) => `Fits ${m}`,
+          forYour: (m) => `Made for your ${m}`,
+          ex: 'Example prices',
+          spends: 'Spends',
+          thisYear: 'This year',
+          vsLast: (n) => (n <= 0 ? `↓ ${inr(-n)} vs last year` : `↑ ${inr(n)} vs last year`),
+          svcs: 'Services',
+          parts: 'Parts',
+          tyresB: 'Tyres',
+          batteryB: 'Battery',
+          log: 'Service log',
+          all: 'All',
+          svcT: 'Services',
+          partT: 'Parts',
+          mileT: 'Milestones',
+          received: (k) => `at ${kmf(k)} km`,
+          bill: 'Bill',
+          order: 'Order',
+          setup: 'Garage set-up',
+          setupOf: (a, b) => `${a}/${b}`,
+          sDetails: 'Details',
+          sKm: 'Km this month',
+          sIns: 'Insurance',
+          sPuc: 'PUC',
+          sRc: 'RC',
+          sRem: 'Reminders',
+          legendToday: 'Works today',
+          legendNew: 'New design',
+          kmQ: 'Update odometer',
+          kmHelp: (n) => `Last saved ${kmf(n)} km. Read it off the meter.`,
+          kmErr: 'Enter more than the last saved km.',
+          save: 'Save',
+          cancel: 'Cancel',
+          close: 'Close',
+          kmSaved: (n) => `Odometer set to ${kmf(n)} km`,
+          mile: (n) => `${kmf(n)} km. Milestone unlocked.`,
+          nowDue: (j) => `${j} is due now`,
+          paperQ: (p) => `${p} expiry date`,
+          fine: (p, f) =>
+            `Riding without a valid ${p} can cost <b>${f}</b>. We remind you 15 and 3 days before.`,
+          remind: 'Set reminder',
+          remSet: 'Reminder set',
+          addV: 'Add vehicle',
+          step: (a, b) => `Step ${a} of ${b}`,
+          type: 'Type',
+          make: 'Make',
+          model: 'Model',
+          year: 'Year',
+          fuel: 'Fuel',
+          reg: 'Number plate (optional)',
+          nextB: 'Next',
+          back: 'Back',
+          park: 'Park in bay',
+          parked: (m, b) => `${m} parked in bay ${b}`,
+          w2: 'Scooter / bike',
+          w3: 'Auto',
+          w4: 'Car',
+          petrol: 'Petrol',
+          diesel: 'Diesel',
+          cng: 'CNG',
+          ev: 'Electric',
+          limit: 'All 10 bays are full.',
+          home: 'Home',
+          shop: 'Shop',
+          workshops: 'Workshops',
+          lang: 'हिंदी',
+          opensBook: 'Opens Find Workshops with this vehicle (works today)',
+          opensShop: 'Opens Shop filtered to parts that fit (works today)',
+          ev2w: '3,000 km or 4 months',
+          evOil: '3,000 km',
+          evTyre: '25,000 km',
+          evBat: '3 years',
+          ev4w: '10,000 km or 1 year',
+          evOil4: '10,000 km',
+          evTyre4: '40,000 km',
+          prev: 'Previous bay',
+          nextBay: 'Next bay',
+          monthSpend: (m, a) => `${m}: ${a}`,
+        },
+        hi: {
+          garage: 'गैरेज',
+          bays: (a) => `10 में से ${a} बे`,
+          odo: 'ओडोमीटर',
+          tapUpdate: 'अपडेट के लिए टैप करें',
+          nextSvc: 'अगली सर्विस',
+          kmLeft: (n) => `${kmf(n)} किमी बाकी`,
+          kmOver: (n) => `${kmf(n)} किमी ज़्यादा`,
+          insurance: 'बीमा',
+          puc: 'PUC',
+          rc: 'RC',
+          licence: 'लाइसेंस',
+          days: (n) => (n < 0 ? `${-n} दिन पहले` : `${n} दिन`),
+          expires: (d) => `${d} को ख़त्म`,
+          expired: 'ख़त्म',
+          add: 'तारीख़ डालें',
+          road: 'आगे का रास्ता',
+          roadMeta: 'पड़ाव पर टैप करें',
+          you: 'आप',
+          oil: 'इंजन ऑयल',
+          service: 'सर्विस',
+          tyres: 'टायर',
+          battery: 'बैटरी',
+          dueNow: 'अभी ज़रूरी',
+          soon: 'जल्द ज़रूरी',
+          ok: 'ठीक है',
+          next: 'अगला काम',
+          byKm: (n) => `${kmf(n)} किमी में`,
+          overKm: (n) => `${kmf(n)} किमी देरी`,
+          orBy: (d) => `या ${d} तक`,
+          why: (j, ev) => `${j} हर ${ev}। सर्विस लॉग की पिछली विज़िट से गिना गया।`,
+          estCost: 'रायपुर में आम ख़र्च',
+          est: 'पिछले बिलों से अनुमान',
+          book: 'वर्कशॉप बुक करें',
+          shopFit: 'फ़िट होने वाले पार्ट्स',
+          fits: (m) => `${m} में फ़िट`,
+          forYour: (m) => `आपकी ${m} के लिए`,
+          ex: 'उदाहरण कीमतें',
+          spends: 'ख़र्च',
+          thisYear: 'इस साल',
+          vsLast: (n) => (n <= 0 ? `↓ पिछले साल से ${inr(-n)} कम` : `↑ पिछले साल से ${inr(n)} ज़्यादा`),
+          svcs: 'सर्विस',
+          parts: 'पार्ट्स',
+          tyresB: 'टायर',
+          batteryB: 'बैटरी',
+          log: 'सर्विस लॉग',
+          all: 'सब',
+          svcT: 'सर्विस',
+          partT: 'पार्ट्स',
+          mileT: 'पड़ाव',
+          received: (k) => `${kmf(k)} किमी पर`,
+          bill: 'बिल',
+          order: 'ऑर्डर',
+          setup: 'गैरेज तैयारी',
+          setupOf: (a, b) => `${a}/${b}`,
+          sDetails: 'जानकारी',
+          sKm: 'इस महीने किमी',
+          sIns: 'बीमा',
+          sPuc: 'PUC',
+          sRc: 'RC',
+          sRem: 'रिमाइंडर',
+          legendToday: 'आज काम करता है',
+          legendNew: 'नया डिज़ाइन',
+          kmQ: 'ओडोमीटर अपडेट करें',
+          kmHelp: (n) => `पिछली बार ${kmf(n)} किमी। मीटर से पढ़कर डालें।`,
+          kmErr: 'पिछले किमी से ज़्यादा डालें।',
+          save: 'सेव करें',
+          cancel: 'रद्द करें',
+          close: 'बंद करें',
+          kmSaved: (n) => `ओडोमीटर ${kmf(n)} किमी`,
+          mile: (n) => `${kmf(n)} किमी। नया पड़ाव!`,
+          nowDue: (j) => `${j} अभी ज़रूरी है`,
+          paperQ: (p) => `${p} की समाप्ति तारीख़`,
+          fine: (p, f) =>
+            `बिना वैध ${p} के चलाने पर <b>${f}</b> तक जुर्माना हो सकता है। हम 15 और 3 दिन पहले याद दिलाएँगे।`,
+          remind: 'रिमाइंडर लगाएँ',
+          remSet: 'रिमाइंडर लग गया',
+          addV: 'गाड़ी जोड़ें',
+          step: (a, b) => `${b} में से चरण ${a}`,
+          type: 'किस्म',
+          make: 'कंपनी',
+          model: 'मॉडल',
+          year: 'साल',
+          fuel: 'ईंधन',
+          reg: 'नंबर प्लेट (ज़रूरी नहीं)',
+          nextB: 'आगे',
+          back: 'पीछे',
+          park: 'बे में खड़ी करें',
+          parked: (m, b) => `${m} बे ${b} में खड़ी है`,
+          w2: 'स्कूटर / बाइक',
+          w3: 'ऑटो',
+          w4: 'कार',
+          petrol: 'पेट्रोल',
+          diesel: 'डीज़ल',
+          cng: 'CNG',
+          ev: 'इलेक्ट्रिक',
+          limit: 'सभी 10 बे भरे हैं।',
+          home: 'होम',
+          shop: 'शॉप',
+          workshops: 'वर्कशॉप',
+          lang: 'English',
+          opensBook: 'इस गाड़ी के साथ वर्कशॉप खोज खुलती है (आज काम करता है)',
+          opensShop: 'फ़िट होने वाले पार्ट्स के साथ शॉप खुलती है (आज काम करता है)',
+          ev2w: '3,000 किमी या 4 महीने',
+          evOil: '3,000 किमी',
+          evTyre: '25,000 किमी',
+          evBat: '3 साल',
+          ev4w: '10,000 किमी या 1 साल',
+          evOil4: '10,000 किमी',
+          evTyre4: '40,000 किमी',
+          prev: 'पिछला बे',
+          nextBay: 'अगला बे',
+          monthSpend: (m, a) => `${m}: ${a}`,
+        },
+      };
+
+      const seed = () => ({
+        lang: 'en',
+        i: 0,
+        tab: 'all',
+        month: 10,
+        vehicles: [
+          {
+            type: '2W',
+            kind: 'scooter',
+            make: 'Honda',
+            model: 'Activa 6G',
+            variant: 'DLX',
+            year: 2021,
+            fuel: 'petrol',
+            reg: 'CG 04 MK 2817',
+            km: 12180,
+            kmAt: '2026-11-02',
+            paint: ['#c9d3e0', '#7d8ca3'],
+            last: {
+              oil: [9400, '2026-07-14'],
+              service: [9400, '2026-07-14'],
+              tyres: [0, '2021-03-10'],
+              battery: [0, '2023-02-03'],
+            },
+            papers: { insurance: '2027-01-09', puc: '2026-12-06', rc: null, licence: '2031-05-20' },
+            reminders: true,
+            months: [0, 0, 640, 0, 0, 0, 1620, 0, 0, 0, 0, 0],
+            lastYear: 3150,
+            split: { svcs: 1820, parts: 440, tyresB: 0, batteryB: 0 },
+            log: [
+              {
+                k: 'svc',
+                t: 'General service + oil change',
+                w: 'Sahu Auto Works, Tatibandh',
+                d: '2026-07-14',
+                km: 9400,
+                a: 1180,
+                c: 'SR-RPR-2026-7KQ2MD',
+              },
+              {
+                k: 'part',
+                t: 'Castrol Activ 4T 20W40, 900 ml',
+                w: 'Delivered home',
+                d: '2026-07-10',
+                a: 440,
+                c: 'MD-RPR-2026-B1195T',
+              },
+              { k: 'mile', t: '10,000 km', d: '2026-08-21', km: 10000 },
+              {
+                k: 'svc',
+                t: 'Rear brake shoes replaced',
+                w: 'Raipur Two Wheeler Care, Pachpedi Naka',
+                d: '2026-03-02',
+                km: 7120,
+                a: 640,
+                c: 'SR-RPR-2026-2PZ8WA',
+              },
+              {
+                k: 'part',
+                t: 'Exide XLTZ4A battery',
+                w: 'Fitted at home',
+                d: '2023-02-03',
+                a: 1000,
+                c: 'MD-RPR-2023-9HD4KC',
+              },
+            ],
+          },
+          {
+            type: '2W',
+            kind: 'bike',
+            make: 'Bajaj',
+            model: 'Pulsar 150',
+            variant: 'Twin Disc',
+            year: 2019,
+            fuel: 'petrol',
+            reg: 'CG 04 LP 5531',
+            km: 31420,
+            kmAt: '2026-10-11',
+            paint: ['#d1342f', '#5c1513'],
+            last: {
+              oil: [28300, '2026-05-30'],
+              service: [28300, '2026-05-30'],
+              tyres: [12000, '2022-01-12'],
+              battery: [0, '2021-11-20'],
+            },
+            papers: { insurance: '2026-12-02', puc: null, rc: '2034-08-14', licence: '2031-05-20' },
+            reminders: false,
+            months: [0, 0, 0, 0, 2350, 0, 0, 0, 0, 0, 0, 0],
+            lastYear: 5240,
+            split: { svcs: 2350, parts: 0, tyresB: 1890, batteryB: 0 },
+            log: [
+              {
+                k: 'svc',
+                t: 'Chain set + general service',
+                w: 'Sahu Auto Works, Tatibandh',
+                d: '2026-05-30',
+                km: 28300,
+                a: 2350,
+                c: 'SR-RPR-2026-4MV1NE',
+              },
+              { k: 'mile', t: '30,000 km', d: '2026-08-02', km: 30000 },
+              {
+                k: 'part',
+                t: 'MRF Nylogrip Zapper 100/90-17',
+                w: 'Delivered home',
+                d: '2025-12-19',
+                a: 1890,
+                c: 'MD-RPR-2025-QW72LA',
+              },
+            ],
+          },
+          {
+            type: '4W',
+            kind: 'car',
+            make: 'Maruti Suzuki',
+            model: 'Swift',
+            variant: 'VXi',
+            year: 2018,
+            fuel: 'petrol',
+            reg: 'CG 04 HT 9012',
+            km: 58900,
+            kmAt: '2026-11-20',
+            paint: ['#e9eef5', '#8b98ab'],
+            last: {
+              oil: [50200, '2026-03-18'],
+              service: [50200, '2026-03-18'],
+              tyres: [20500, '2022-06-01'],
+              battery: [0, '2024-01-15'],
+            },
+            papers: { insurance: '2027-04-22', puc: '2027-02-11', rc: '2033-02-09', licence: '2031-05-20' },
+            reminders: true,
+            months: [0, 0, 5640, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            lastYear: 9800,
+            split: { svcs: 5640, parts: 0, tyresB: 0, batteryB: 0 },
+            log: [
+              {
+                k: 'svc',
+                t: 'Periodic service, 50,000 km',
+                w: 'Shree Car Care, Telibandha',
+                d: '2026-03-18',
+                km: 50200,
+                a: 5640,
+                c: 'SR-RPR-2026-8TT3QB',
+              },
+              { k: 'mile', t: '50,000 km', d: '2026-02-25', km: 50000 },
+            ],
+          },
+        ],
+      });
+      let S;
       try {
-        localStorage.setItem('md-garage-v2', JSON.stringify(S));
-      } catch {}
-    };
-    const L = () => T[S.lang],
-      hi = () => S.lang === 'hi',
-      V = () => S.vehicles[S.i];
+        S = JSON.parse(localStorage.getItem('md-garage-v2') || 'null') || seed();
+      } catch {
+        S = seed();
+      }
+      const save = () => {
+        try {
+          localStorage.setItem('md-garage-v2', JSON.stringify(S));
+        } catch {}
+      };
+      const L = () => T[S.lang],
+        hi = () => S.lang === 'hi',
+        V = () => S.vehicles[S.i];
 
-    const RULES = {
-      '2W': {
-        oil: { km: 3000, days: 120 },
-        service: { km: 3000, days: 120 },
-        tyres: { km: 25000 },
-        battery: { days: 1095 },
-      },
-      '3W': {
-        oil: { km: 3000, days: 120 },
-        service: { km: 3000, days: 120 },
-        tyres: { km: 25000 },
-        battery: { days: 1095 },
-      },
-      '4W': {
-        oil: { km: 10000, days: 365 },
-        service: { km: 10000, days: 365 },
-        tyres: { km: 40000 },
-        battery: { days: 1095 },
-      },
-    };
-    const COST = {
-      '2W': { oil: 450, service: 950, tyres: 1600, battery: 1300 },
-      '3W': { oil: 600, service: 1400, tyres: 2200, battery: 3500 },
-      '4W': { oil: 2200, service: 4500, tyres: 4300, battery: 5900 },
-    };
-    const every = (j, t) => {
-      const l = L(),
-        f = t === '4W';
-      return {
-        oil: f ? l.evOil4 : l.evOil,
-        service: f ? l.ev4w : l.ev2w,
-        tyres: f ? l.evTyre4 : l.evTyre,
-        battery: l.evBat,
-      }[j];
-    };
-    function jobs(v) {
-      const r = RULES[v.type];
-      return ['oil', 'service', 'tyres', 'battery']
-        .map((j) => {
-          const [lk, ld] = v.last[j],
-            rule = r[j];
-          const dueKm = rule.km ? lk + rule.km : null,
-            dueDate = rule.days ? new Date(+new Date(ld) + rule.days * DAY) : null;
-          const kmLeft = dueKm != null ? dueKm - v.km : Infinity,
-            daysLeft = dueDate ? Math.round((dueDate - TODAY) / DAY) : Infinity;
-          const frac = Math.min(kmLeft / (rule.km || 1e9), daysLeft / (rule.days || 1e9));
-          const st = kmLeft <= 0 || daysLeft <= 0 ? 'due' : frac < 0.2 ? 'soon' : 'ok';
-          const used = rule.km ? 1 - Math.max(0, kmLeft) / rule.km : 1 - Math.max(0, daysLeft) / rule.days;
-          return { j, lk, ld, dueKm, dueDate, kmLeft, daysLeft, st, used: Math.min(1, Math.max(0, used)) };
-        })
-        .sort(
-          (a, b) =>
-            ({ due: 0, soon: 1, ok: 2 })[a.st] - { due: 0, soon: 1, ok: 2 }[b.st] || a.kmLeft - b.kmLeft,
-        );
-    }
-    const paperDays = (d) => (d ? Math.round((new Date(d) - TODAY) / DAY) : null);
-    const pState = (n) => (n == null ? '' : n < 0 ? 'due' : n <= 30 ? 'soon' : 'ok');
+      const RULES = {
+        '2W': {
+          oil: { km: 3000, days: 120 },
+          service: { km: 3000, days: 120 },
+          tyres: { km: 25000 },
+          battery: { days: 1095 },
+        },
+        '3W': {
+          oil: { km: 3000, days: 120 },
+          service: { km: 3000, days: 120 },
+          tyres: { km: 25000 },
+          battery: { days: 1095 },
+        },
+        '4W': {
+          oil: { km: 10000, days: 365 },
+          service: { km: 10000, days: 365 },
+          tyres: { km: 40000 },
+          battery: { days: 1095 },
+        },
+      };
+      const COST = {
+        '2W': { oil: 450, service: 950, tyres: 1600, battery: 1300 },
+        '3W': { oil: 600, service: 1400, tyres: 2200, battery: 3500 },
+        '4W': { oil: 2200, service: 4500, tyres: 4300, battery: 5900 },
+      };
+      const every = (j, t) => {
+        const l = L(),
+          f = t === '4W';
+        return {
+          oil: f ? l.evOil4 : l.evOil,
+          service: f ? l.ev4w : l.ev2w,
+          tyres: f ? l.evTyre4 : l.evTyre,
+          battery: l.evBat,
+        }[j];
+      };
+      function jobs(v) {
+        const r = RULES[v.type];
+        return ['oil', 'service', 'tyres', 'battery']
+          .map((j) => {
+            const [lk, ld] = v.last[j],
+              rule = r[j];
+            const dueKm = rule.km ? lk + rule.km : null,
+              dueDate = rule.days ? new Date(+new Date(ld) + rule.days * DAY) : null;
+            const kmLeft = dueKm != null ? dueKm - v.km : Infinity,
+              daysLeft = dueDate ? Math.round((dueDate - TODAY) / DAY) : Infinity;
+            const frac = Math.min(kmLeft / (rule.km || 1e9), daysLeft / (rule.days || 1e9));
+            const st = kmLeft <= 0 || daysLeft <= 0 ? 'due' : frac < 0.2 ? 'soon' : 'ok';
+            const used = rule.km ? 1 - Math.max(0, kmLeft) / rule.km : 1 - Math.max(0, daysLeft) / rule.days;
+            return { j, lk, ld, dueKm, dueDate, kmLeft, daysLeft, st, used: Math.min(1, Math.max(0, used)) };
+          })
+          .sort(
+            (a, b) =>
+              ({ due: 0, soon: 1, ok: 2 })[a.st] - { due: 0, soon: 1, ok: 2 }[b.st] || a.kmLeft - b.kmLeft,
+          );
+      }
+      const paperDays = (d) => (d ? Math.round((new Date(d) - TODAY) / DAY) : null);
+      const pState = (n) => (n == null ? '' : n < 0 ? 'due' : n <= 30 ? 'soon' : 'ok');
 
-    /* ---------- vehicle renders (SVG with paint gradients) ---------- */
-    function render3(v, id = 'g') {
-      const [c1, c2] = v.paint;
-      const defs = `<defs><linearGradient id="${id}b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient>
+      /* ---------- vehicle renders (SVG with paint gradients) ---------- */
+      function render3(v, id = 'g') {
+        const [c1, c2] = v.paint;
+        const defs = `<defs><linearGradient id="${id}b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient>
   <linearGradient id="${id}s" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".0"/><stop offset=".5" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
   <radialGradient id="${id}t" cx=".5" cy=".5" r=".5"><stop offset=".55" stop-color="#14161b"/><stop offset=".8" stop-color="#2a2e36"/><stop offset="1" stop-color="#0b0c0f"/></radialGradient>
   <radialGradient id="${id}r" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#e9edf3"/><stop offset="1" stop-color="#6f7886"/></radialGradient></defs>`;
-      const wheel = (x, y, r) =>
-        `<g><circle cx="${x}" cy="${y}" r="${r}" fill="url(#${id}t)"/><circle cx="${x}" cy="${y}" r="${r * 0.55}" fill="url(#${id}r)"/>${[0, 60, 120].map((a) => `<rect x="${x - 1.5}" y="${y - r * 0.5}" width="3" height="${r}" rx="1.5" fill="#3a404b" transform="rotate(${a} ${x} ${y})"/>`).join('')}<circle cx="${x}" cy="${y}" r="${r * 0.16}" fill="#20242b"/><circle cx="${x}" cy="${y}" r="${r * 0.5}" fill="none" stroke="#c94c1d" stroke-width="2" opacity=".0"/></g>`;
-      if (v.kind === 'car')
-        return `<svg viewBox="0 0 340 150" aria-hidden="true">${defs}
+        const wheel = (x, y, r) =>
+          `<g><circle cx="${x}" cy="${y}" r="${r}" fill="url(#${id}t)"/><circle cx="${x}" cy="${y}" r="${r * 0.55}" fill="url(#${id}r)"/>${[0, 60, 120].map((a) => `<rect x="${x - 1.5}" y="${y - r * 0.5}" width="3" height="${r}" rx="1.5" fill="#3a404b" transform="rotate(${a} ${x} ${y})"/>`).join('')}<circle cx="${x}" cy="${y}" r="${r * 0.16}" fill="#20242b"/><circle cx="${x}" cy="${y}" r="${r * 0.5}" fill="none" stroke="#c94c1d" stroke-width="2" opacity=".0"/></g>`;
+        if (v.kind === 'car')
+          return `<svg viewBox="0 0 340 150" aria-hidden="true">${defs}
     <path d="M18 104 Q16 86 34 80 L70 72 Q96 48 136 40 L206 38 Q240 40 266 62 L300 70 Q324 76 324 94 L326 106 Q326 114 316 116 L30 116 Q18 115 18 104Z" fill="url(#${id}b)"/>
     <path d="M100 70 Q122 50 150 46 L196 45 Q222 47 244 66 Z" fill="#0d1726" opacity=".92"/>
     <path d="M172 46 L174 68" stroke="${c2}" stroke-width="5"/>
@@ -1622,8 +1638,8 @@
     <path d="M30 98 L320 100" stroke="#00000033" stroke-width="2"/>
     <rect x="304" y="82" width="18" height="7" rx="3" fill="#ffe7b3"/><rect x="18" y="86" width="12" height="7" rx="3" fill="#ff4a3d"/>
     ${wheel(84, 114, 24)}${wheel(262, 114, 24)}</svg>`;
-      if (v.kind === 'bike')
-        return `<svg viewBox="0 0 340 170" aria-hidden="true">${defs}
+        if (v.kind === 'bike')
+          return `<svg viewBox="0 0 340 170" aria-hidden="true">${defs}
     <path d="M168 60 L222 60 L246 38 L262 38" stroke="#2a2f38" stroke-width="5" fill="none" stroke-linecap="round"/>
     <path d="M120 70 Q150 50 196 56 L214 62 Q218 84 196 92 L132 96 Q112 92 120 70Z" fill="url(#${id}b)"/>
     <path d="M132 66 Q162 54 200 60" stroke="url(#${id}s)" stroke-width="3" fill="none"/>
@@ -1633,7 +1649,7 @@
     <path d="M100 120 L150 100" stroke="#596170" stroke-width="5" stroke-linecap="round"/>
     <rect x="250" y="34" width="20" height="12" rx="4" fill="#ffe7b3"/>
     ${wheel(92, 122, 32)}${wheel(258, 122, 32)}</svg>`;
-      return `<svg viewBox="0 0 340 170" aria-hidden="true">${defs}
+        return `<svg viewBox="0 0 340 170" aria-hidden="true">${defs}
     <path d="M222 46 L246 40" stroke="#2a2f38" stroke-width="6" stroke-linecap="round"/>
     <path d="M214 46 Q236 88 250 120" stroke="#9aa3b1" stroke-width="6" stroke-linecap="round"/>
     <path d="M206 44 Q226 46 232 70 L238 104 Q230 116 214 114 L206 70Z" fill="url(#${id}b)"/>
@@ -1642,88 +1658,88 @@
     <path d="M112 92 Q160 82 206 90" stroke="url(#${id}s)" stroke-width="3" fill="none"/>
     <rect x="228" y="52" width="14" height="10" rx="4" fill="#ffe7b3"/><rect x="96" y="96" width="8" height="8" rx="2" fill="#ff4a3d"/>
     ${wheel(118, 128, 24)}${wheel(246, 128, 24)}</svg>`;
-    }
-    const ICONS = {
-      svc: '<svg viewBox="0 0 24 24" fill="none" stroke="#ff9a62" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0 5 5L12 19l-3 1 1-3 7.7-7.7"/><path d="M3 21l6-6"/></svg>',
-      part: '<svg viewBox="0 0 24 24" fill="none" stroke="#3ddc97" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>',
-      mile: '<svg viewBox="0 0 24 24" fill="none" stroke="#ffb347" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>',
-    };
-    function prodArt(k) {
-      if (k === 'oil')
-        return '<svg viewBox="0 0 70 70"><defs><linearGradient id="po" x1="0" x2="1"><stop offset="0" stop-color="#1f7a3a"/><stop offset=".5" stop-color="#2fae58"/><stop offset="1" stop-color="#14552a"/></linearGradient></defs><path d="M24 14h16l6 9v34a4 4 0 0 1-4 4H22a4 4 0 0 1-4-4V23z" fill="url(#po)"/><rect x="26" y="8" width="10" height="7" rx="2" fill="#d32f2f"/><rect x="22" y="32" width="24" height="14" rx="3" fill="#fff" opacity=".9"/><rect x="25" y="36" width="14" height="2.5" fill="#1f7a3a"/></svg>';
-      if (k === 'battery')
-        return '<svg viewBox="0 0 70 70"><defs><linearGradient id="pb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e53935"/><stop offset="1" stop-color="#8e1c1a"/></linearGradient></defs><rect x="12" y="22" width="46" height="34" rx="5" fill="url(#pb)"/><rect x="12" y="22" width="46" height="9" rx="4" fill="#222"/><rect x="18" y="15" width="8" height="8" rx="2" fill="#bbb"/><rect x="44" y="15" width="8" height="8" rx="2" fill="#bbb"/><text x="35" y="47" text-anchor="middle" font-size="9" font-weight="800" fill="#fff" font-family="Inter">12V</text></svg>';
-      return (
-        '<svg viewBox="0 0 70 70"><defs><radialGradient id="pt"><stop offset=".55" stop-color="#14161b"/><stop offset=".8" stop-color="#2f343d"/><stop offset="1" stop-color="#0b0c0f"/></radialGradient></defs><circle cx="35" cy="35" r="28" fill="url(#pt)"/><circle cx="35" cy="35" r="13" fill="#c6ccd5"/><circle cx="35" cy="35" r="4" fill="#3a404b"/>' +
-        [0, 30, 60, 90, 120, 150]
-          .map(
-            (a) =>
-              `<rect x="33.5" y="7" width="3" height="7" rx="1" fill="#444a55" transform="rotate(${a} 35 35)"/>`,
-          )
-          .join('') +
-        '</svg>'
-      );
-    }
-    function products(v) {
-      if (v.type === '4W')
-        return [
-          ['oil', 'Castrol GTX 5W30, 3.5 L', 2150],
-          ['battery', 'Amaron Pro 45 Ah', 5899],
-          ['tyre', 'CEAT SecuraDrive 185/65 R15', 4290],
-        ];
-      if (v.kind === 'bike')
-        return [
-          ['oil', 'HP Racer4 20W50, 1 L', 395],
-          ['tyre', 'MRF Nylogrip Zapper 100/90-17', 1890],
-          ['battery', 'Amaron Pro Bike 9 Ah', 1650],
-        ];
-      return [
-        ['oil', 'Castrol Activ 4T 20W40, 900 ml', 440],
-        ['battery', 'Exide XLTZ4A', 1000],
-        ['tyre', 'CEAT Milaze 90/100-10', 1320],
-      ];
-    }
-    const FINE = { insurance: '₹2,000', puc: '₹10,000', rc: '₹5,000', licence: '₹5,000' };
-
-    /* ---------- render ---------- */
-    const app = document.getElementById('app');
-    function ring(frac, color) {
-      const r = 17,
-        c = 2 * Math.PI * r;
-      return `<svg class="arc" viewBox="0 0 42 42" aria-hidden="true"><circle cx="21" cy="21" r="${r}" fill="none" stroke="#ffffff14" stroke-width="5"/><circle cx="21" cy="21" r="${r}" fill="none" stroke="${color}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${c * frac} ${c}" transform="rotate(-90 21 21)" style="filter:drop-shadow(0 0 4px ${color})"/></svg>`;
-    }
-    function render(opts = {}) {
-      const l = L(),
-        v = V(),
-        js = jobs(v),
-        top = js[0];
-      document.documentElement.lang = hi() ? 'hi' : 'en';
-      const svc = js.find((x) => x.j === 'service');
-      const total = v.months.reduce((a, b) => a + b, 0),
-        maxM = Math.max(...v.months, 1);
-      const kmJobs = js.filter((x) => x.dueKm != null);
-      const lo = Math.max(0, Math.min(v.km - 1500, ...kmJobs.map((x) => x.dueKm))),
-        hiK = Math.max(v.km + 800, ...kmJobs.filter((x) => x.dueKm < v.km + 30000).map((x) => x.dueKm));
-      const pos = (k) => 6 + ((k - lo) / (hiK - lo || 1)) * 88;
-      const setupItems = [
-        ['sDetails', true],
-        ['sKm', (TODAY - new Date(v.kmAt)) / DAY < 31],
-        ['sIns', !!v.papers.insurance],
-        ['sPuc', !!v.papers.puc],
-        ['sRc', !!v.papers.rc],
-        ['sRem', v.reminders],
-      ];
-      const done = setupItems.filter((x) => x[1]).length;
-      const log = v.log.filter((e) => S.tab === 'all' || e.k === S.tab);
-      const statusWord = (st) => (st === 'due' ? l.dueNow : st === 'soon' ? l.soon : l.ok);
-      const vital = (p) => {
-        const n = paperDays(v.papers[p]);
-        const st = pState(n);
-        return `<button class="vital press ${st}" data-paper="${p}"><span class="k">${l[p]}</span>${n == null ? `<span class="v" style="font-size:18px;color:#ffd2bd">+ ${l.add}</span><span class="s">&nbsp;</span>` : `<span class="v tnum ${st}">${n < 0 ? l.expired : l.days(n)}</span><span class="s">${n < 0 ? l.days(n) : l.expires(fmt(v.papers[p], hi()))}</span>`}</button>`;
+      }
+      const ICONS = {
+        svc: '<svg viewBox="0 0 24 24" fill="none" stroke="#ff9a62" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0 5 5L12 19l-3 1 1-3 7.7-7.7"/><path d="M3 21l6-6"/></svg>',
+        part: '<svg viewBox="0 0 24 24" fill="none" stroke="#3ddc97" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>',
+        mile: '<svg viewBox="0 0 24 24" fill="none" stroke="#ffb347" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>',
       };
-      const cost = COST[v.type][top.j];
+      function prodArt(k) {
+        if (k === 'oil')
+          return '<svg viewBox="0 0 70 70"><defs><linearGradient id="po" x1="0" x2="1"><stop offset="0" stop-color="#1f7a3a"/><stop offset=".5" stop-color="#2fae58"/><stop offset="1" stop-color="#14552a"/></linearGradient></defs><path d="M24 14h16l6 9v34a4 4 0 0 1-4 4H22a4 4 0 0 1-4-4V23z" fill="url(#po)"/><rect x="26" y="8" width="10" height="7" rx="2" fill="#d32f2f"/><rect x="22" y="32" width="24" height="14" rx="3" fill="#fff" opacity=".9"/><rect x="25" y="36" width="14" height="2.5" fill="#1f7a3a"/></svg>';
+        if (k === 'battery')
+          return '<svg viewBox="0 0 70 70"><defs><linearGradient id="pb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e53935"/><stop offset="1" stop-color="#8e1c1a"/></linearGradient></defs><rect x="12" y="22" width="46" height="34" rx="5" fill="url(#pb)"/><rect x="12" y="22" width="46" height="9" rx="4" fill="#222"/><rect x="18" y="15" width="8" height="8" rx="2" fill="#bbb"/><rect x="44" y="15" width="8" height="8" rx="2" fill="#bbb"/><text x="35" y="47" text-anchor="middle" font-size="9" font-weight="800" fill="#fff" font-family="Inter">12V</text></svg>';
+        return (
+          '<svg viewBox="0 0 70 70"><defs><radialGradient id="pt"><stop offset=".55" stop-color="#14161b"/><stop offset=".8" stop-color="#2f343d"/><stop offset="1" stop-color="#0b0c0f"/></radialGradient></defs><circle cx="35" cy="35" r="28" fill="url(#pt)"/><circle cx="35" cy="35" r="13" fill="#c6ccd5"/><circle cx="35" cy="35" r="4" fill="#3a404b"/>' +
+          [0, 30, 60, 90, 120, 150]
+            .map(
+              (a) =>
+                `<rect x="33.5" y="7" width="3" height="7" rx="1" fill="#444a55" transform="rotate(${a} 35 35)"/>`,
+            )
+            .join('') +
+          '</svg>'
+        );
+      }
+      function products(v) {
+        if (v.type === '4W')
+          return [
+            ['oil', 'Castrol GTX 5W30, 3.5 L', 2150],
+            ['battery', 'Amaron Pro 45 Ah', 5899],
+            ['tyre', 'CEAT SecuraDrive 185/65 R15', 4290],
+          ];
+        if (v.kind === 'bike')
+          return [
+            ['oil', 'HP Racer4 20W50, 1 L', 395],
+            ['tyre', 'MRF Nylogrip Zapper 100/90-17', 1890],
+            ['battery', 'Amaron Pro Bike 9 Ah', 1650],
+          ];
+        return [
+          ['oil', 'Castrol Activ 4T 20W40, 900 ml', 440],
+          ['battery', 'Exide XLTZ4A', 1000],
+          ['tyre', 'CEAT Milaze 90/100-10', 1320],
+        ];
+      }
+      const FINE = { insurance: '₹2,000', puc: '₹10,000', rc: '₹5,000', licence: '₹5,000' };
 
-      app.innerHTML = `
+      /* ---------- render ---------- */
+      const app = document.getElementById('app');
+      function ring(frac, color) {
+        const r = 17,
+          c = 2 * Math.PI * r;
+        return `<svg class="arc" viewBox="0 0 42 42" aria-hidden="true"><circle cx="21" cy="21" r="${r}" fill="none" stroke="#ffffff14" stroke-width="5"/><circle cx="21" cy="21" r="${r}" fill="none" stroke="${color}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${c * frac} ${c}" transform="rotate(-90 21 21)" style="filter:drop-shadow(0 0 4px ${color})"/></svg>`;
+      }
+      function render(opts = {}) {
+        const l = L(),
+          v = V(),
+          js = jobs(v),
+          top = js[0];
+        document.documentElement.lang = hi() ? 'hi' : 'en';
+        const svc = js.find((x) => x.j === 'service');
+        const total = v.months.reduce((a, b) => a + b, 0),
+          maxM = Math.max(...v.months, 1);
+        const kmJobs = js.filter((x) => x.dueKm != null);
+        const lo = Math.max(0, Math.min(v.km - 1500, ...kmJobs.map((x) => x.dueKm))),
+          hiK = Math.max(v.km + 800, ...kmJobs.filter((x) => x.dueKm < v.km + 30000).map((x) => x.dueKm));
+        const pos = (k) => 6 + ((k - lo) / (hiK - lo || 1)) * 88;
+        const setupItems = [
+          ['sDetails', true],
+          ['sKm', (TODAY - new Date(v.kmAt)) / DAY < 31],
+          ['sIns', !!v.papers.insurance],
+          ['sPuc', !!v.papers.puc],
+          ['sRc', !!v.papers.rc],
+          ['sRem', v.reminders],
+        ];
+        const done = setupItems.filter((x) => x[1]).length;
+        const log = v.log.filter((e) => S.tab === 'all' || e.k === S.tab);
+        const statusWord = (st) => (st === 'due' ? l.dueNow : st === 'soon' ? l.soon : l.ok);
+        const vital = (p) => {
+          const n = paperDays(v.papers[p]);
+          const st = pState(n);
+          return `<button class="vital press ${st}" data-paper="${p}"><span class="k">${l[p]}</span>${n == null ? `<span class="v" style="font-size:18px;color:#ffd2bd">+ ${l.add}</span><span class="s">&nbsp;</span>` : `<span class="v tnum ${st}">${n < 0 ? l.expired : l.days(n)}</span><span class="s">${n < 0 ? l.days(n) : l.expires(fmt(v.papers[p], hi()))}</span>`}</button>`;
+        };
+        const cost = COST[v.type][top.j];
+
+        app.innerHTML = `
   <header class="top">
     <div class="brand"><h1>${l.garage}</h1><span class="tnum">${l.bays(S.vehicles.length)}</span></div>
     <div style="display:flex;gap:6px"><button class="icon-btn press" id="lang">${l.lang}</button><button class="icon-btn press" id="add" aria-label="${l.addV}">＋</button></div>
@@ -1823,172 +1839,173 @@
   <p class="legend"><span><i style="background:#3ddc97"></i><b>${l.legendToday}:</b> fits shelf, booking, shop, history</span></p>
   <p class="legend" style="margin-top:-14px"><span><i style="background:#ffb347"></i><b>${l.legendNew}:</b> bays, vitals, road, papers, spends</span></p>`;
 
-      document.getElementById('dock').innerHTML = [
-        ['home', 'M3 11 12 4l9 7v9H3z'],
-        ['shop', 'M4 7h16l-1.5 12h-13zM8 7a4 4 0 0 1 8 0'],
-        ['workshops', 'M14 6l4-2 2 4-2 4-4-2zM4 20l9-9'],
-        ['garage', 'M3 10 12 4l9 6v10H3zM7 20v-6h10v6M7 17h10'],
-      ]
-        .map(
-          ([k, d]) =>
-            `<a href="#${k}" ${k === 'garage' ? 'aria-current="page"' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>${l[k]}</a>`,
-        )
-        .join('');
-      if (opts.shutter) {
-        const sh = document.getElementById('shutter');
-        sh.style.transform = 'none';
-        requestAnimationFrame(() => {
-          sh.classList.add('open');
-        });
+        document.getElementById('dock').innerHTML = [
+          ['home', 'M3 11 12 4l9 7v9H3z'],
+          ['shop', 'M4 7h16l-1.5 12h-13zM8 7a4 4 0 0 1 8 0'],
+          ['workshops', 'M14 6l4-2 2 4-2 4-4-2zM4 20l9-9'],
+          ['garage', 'M3 10 12 4l9 6v10H3zM7 20v-6h10v6M7 17h10'],
+        ]
+          .map(
+            ([k, d]) =>
+              `<a href="#${k}" ${k === 'garage' ? 'aria-current="page"' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>${l[k]}</a>`,
+          )
+          .join('');
+        if (opts.shutter) {
+          const sh = document.getElementById('shutter');
+          sh.style.transform = 'none';
+          requestAnimationFrame(() => {
+            sh.classList.add('open');
+          });
+        }
+        if (opts.flipFrom != null) {
+          const old = String(opts.flipFrom).padStart(6, '0');
+          document.querySelectorAll('#flip span').forEach((s, k) => {
+            if (s.textContent !== old[k]) {
+              s.style.animationDelay = k * 60 + 'ms';
+              s.classList.add('go');
+            }
+          });
+        }
       }
-      if (opts.flipFrom != null) {
-        const old = String(opts.flipFrom).padStart(6, '0');
-        document.querySelectorAll('#flip span').forEach((s, k) => {
-          if (s.textContent !== old[k]) {
-            s.style.animationDelay = k * 60 + 'ms';
-            s.classList.add('go');
-          }
-        });
+
+      /* ---------- sheets ---------- */
+      const scrim = document.getElementById('scrim'),
+        sheet = document.getElementById('sheet');
+      let back = null;
+      function open(html, mount) {
+        back = document.activeElement;
+        sheet.innerHTML = html;
+        scrim.classList.add('open');
+        mount && mount();
+        (sheet.querySelector('input,.btn.go') || sheet).focus();
       }
-    }
+      function close() {
+        scrim.classList.remove('open');
+        back && back.focus && back.focus();
+      }
+      scrim.addEventListener('click', (e) => {
+        if (e.target === scrim) close();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && scrim.classList.contains('open')) close();
+      });
+      const toast = (m) => {
+        const t = document.getElementById('toast');
+        t.textContent = m;
+        t.classList.add('show');
+        clearTimeout(toast.h);
+        toast.h = setTimeout(() => t.classList.remove('show'), 2600);
+      };
 
-    /* ---------- sheets ---------- */
-    const scrim = document.getElementById('scrim'),
-      sheet = document.getElementById('sheet');
-    let back = null;
-    function open(html, mount) {
-      back = document.activeElement;
-      sheet.innerHTML = html;
-      scrim.classList.add('open');
-      mount && mount();
-      (sheet.querySelector('input,.btn.go') || sheet).focus();
-    }
-    function close() {
-      scrim.classList.remove('open');
-      back && back.focus && back.focus();
-    }
-    scrim.addEventListener('click', (e) => {
-      if (e.target === scrim) close();
-    });
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && scrim.classList.contains('open')) close();
-    });
-    const toast = (m) => {
-      const t = document.getElementById('toast');
-      t.textContent = m;
-      t.classList.add('show');
-      clearTimeout(toast.h);
-      toast.h = setTimeout(() => t.classList.remove('show'), 2600);
-    };
+      function confetti() {
+        if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        const c = document.getElementById('confetti'),
+          x = c.getContext('2d');
+        c.width = innerWidth;
+        c.height = innerHeight;
+        const ps = Array.from({ length: 90 }, () => ({
+          x: innerWidth / 2,
+          y: innerHeight * 0.35,
+          vx: (Math.random() - 0.5) * 12,
+          vy: -Math.random() * 12 - 4,
+          r: Math.random() * 6 + 3,
+          c: ['#ff6a2b', '#ffb347', '#3ddc97', '#eef3fa'][Math.floor(Math.random() * 4)],
+          a: Math.random() * 6,
+        }));
+        let f = 0;
+        (function step() {
+          x.clearRect(0, 0, c.width, c.height);
+          ps.forEach((p) => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.35;
+            p.a += 0.2;
+            x.save();
+            x.translate(p.x, p.y);
+            x.rotate(p.a);
+            x.fillStyle = p.c;
+            x.fillRect(-p.r / 2, -p.r / 4, p.r, p.r / 2);
+            x.restore();
+          });
+          if (++f < 90) requestAnimationFrame(step);
+          else x.clearRect(0, 0, c.width, c.height);
+        })();
+      }
 
-    function confetti() {
-      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      const c = document.getElementById('confetti'),
-        x = c.getContext('2d');
-      c.width = innerWidth;
-      c.height = innerHeight;
-      const ps = Array.from({ length: 90 }, () => ({
-        x: innerWidth / 2,
-        y: innerHeight * 0.35,
-        vx: (Math.random() - 0.5) * 12,
-        vy: -Math.random() * 12 - 4,
-        r: Math.random() * 6 + 3,
-        c: ['#ff6a2b', '#ffb347', '#3ddc97', '#eef3fa'][Math.floor(Math.random() * 4)],
-        a: Math.random() * 6,
-      }));
-      let f = 0;
-      (function step() {
-        x.clearRect(0, 0, c.width, c.height);
-        ps.forEach((p) => {
-          p.x += p.vx;
-          p.y += p.vy;
-          p.vy += 0.35;
-          p.a += 0.2;
-          x.save();
-          x.translate(p.x, p.y);
-          x.rotate(p.a);
-          x.fillStyle = p.c;
-          x.fillRect(-p.r / 2, -p.r / 4, p.r, p.r / 2);
-          x.restore();
-        });
-        if (++f < 90) requestAnimationFrame(step);
-        else x.clearRect(0, 0, c.width, c.height);
-      })();
-    }
-
-    function kmSheet() {
-      const l = L(),
-        v = V();
-      let val = v.km + 340;
-      open(
-        `<h3 id="sheet-title">${l.kmQ}</h3><p>${l.kmHelp(v.km)}</p><div class="kmread tnum" id="kr">${kmf(val)} <span style="font-size:18px;color:var(--faint)">km</span></div>
+      function kmSheet() {
+        const l = L(),
+          v = V();
+        let val = v.km + 340;
+        open(
+          `<h3 id="sheet-title">${l.kmQ}</h3><p>${l.kmHelp(v.km)}</p><div class="kmread tnum" id="kr">${kmf(val)} <span style="font-size:18px;color:var(--faint)">km</span></div>
     <div class="quick">${[100, 500, 1000].map((n) => `<button class="press" data-q="${n}">+${kmf(n)}</button>`).join('')}</div>
     <div class="field"><label for="kmi">${l.odo} (km)</label><input id="kmi" type="number" inputmode="numeric" value="${val}"><span class="err" id="ke"></span></div>
     <button class="btn go press" id="ks">${l.save}</button><button class="btn quiet press" data-close>${l.cancel}</button>`,
-        () => {
-          const inp = sheet.querySelector('#kmi'),
-            kr = sheet.querySelector('#kr');
-          const upd = () => {
-            kr.firstChild.nodeValue = kmf(Number(inp.value) || 0) + ' ';
-          };
-          inp.oninput = upd;
-          sheet.querySelectorAll('[data-q]').forEach(
-            (b) =>
-              (b.onclick = () => {
-                inp.value = (Number(inp.value) || v.km) + Number(b.dataset.q);
-                upd();
-              }),
-          );
-          sheet.querySelector('#ks').onclick = () => {
-            const n = Math.round(Number(inp.value));
-            if (!(n > v.km)) {
-              sheet.querySelector('#ke').textContent = l.kmErr;
-              return;
-            }
-            const before = jobs(v)
-                .filter((x) => x.st === 'due')
-                .map((x) => x.j),
-              old = v.km;
-            const step = v.type === '4W' ? 10000 : 5000,
-              crossed = Math.floor(n / step) > Math.floor(old / step) ? Math.floor(n / step) * step : null;
-            v.km = n;
-            v.kmAt = '2026-11-28';
-            if (crossed) v.log.unshift({ k: 'mile', t: `${kmf(crossed)} km`, d: '2026-11-28', km: crossed });
-            save();
-            close();
-            render({ flipFrom: old });
-            const newly = jobs(v).filter((x) => x.st === 'due' && !before.includes(x.j));
-            if (crossed) {
-              confetti();
-              toast(l.mile(crossed));
-            } else toast(newly.length ? l.nowDue(l[newly[0].j]) : l.kmSaved(n));
-          };
-        },
-      );
-    }
-    function jobSheet(j) {
-      const l = L(),
-        v = V(),
-        x = jobs(v).find((y) => y.j === j),
-        col = x.st === 'due' ? '#ff5d5d' : x.st === 'soon' ? '#ffc048' : '#3ddc97';
-      open(`<span class="chip ${x.st}">● ${x.st === 'due' ? l.dueNow : x.st === 'soon' ? l.soon : l.ok}</span><h3 id="sheet-title">${l[j]}</h3>
+          () => {
+            const inp = sheet.querySelector('#kmi'),
+              kr = sheet.querySelector('#kr');
+            const upd = () => {
+              kr.firstChild.nodeValue = kmf(Number(inp.value) || 0) + ' ';
+            };
+            inp.oninput = upd;
+            sheet.querySelectorAll('[data-q]').forEach(
+              (b) =>
+                (b.onclick = () => {
+                  inp.value = (Number(inp.value) || v.km) + Number(b.dataset.q);
+                  upd();
+                }),
+            );
+            sheet.querySelector('#ks').onclick = () => {
+              const n = Math.round(Number(inp.value));
+              if (!(n > v.km)) {
+                sheet.querySelector('#ke').textContent = l.kmErr;
+                return;
+              }
+              const before = jobs(v)
+                  .filter((x) => x.st === 'due')
+                  .map((x) => x.j),
+                old = v.km;
+              const step = v.type === '4W' ? 10000 : 5000,
+                crossed = Math.floor(n / step) > Math.floor(old / step) ? Math.floor(n / step) * step : null;
+              v.km = n;
+              v.kmAt = '2026-11-28';
+              if (crossed)
+                v.log.unshift({ k: 'mile', t: `${kmf(crossed)} km`, d: '2026-11-28', km: crossed });
+              save();
+              close();
+              render({ flipFrom: old });
+              const newly = jobs(v).filter((x) => x.st === 'due' && !before.includes(x.j));
+              if (crossed) {
+                confetti();
+                toast(l.mile(crossed));
+              } else toast(newly.length ? l.nowDue(l[newly[0].j]) : l.kmSaved(n));
+            };
+          },
+        );
+      }
+      function jobSheet(j) {
+        const l = L(),
+          v = V(),
+          x = jobs(v).find((y) => y.j === j),
+          col = x.st === 'due' ? '#ff5d5d' : x.st === 'soon' ? '#ffc048' : '#3ddc97';
+        open(`<span class="chip ${x.st}">● ${x.st === 'due' ? l.dueNow : x.st === 'soon' ? l.soon : l.ok}</span><h3 id="sheet-title">${l[j]}</h3>
     <div style="position:relative;height:10px;border-radius:5px;background:#ffffff12;overflow:hidden"><i style="position:absolute;inset:0 auto 0 0;width:${Math.round(x.used * 100)}%;background:${col};box-shadow:0 0 12px ${col};border-radius:5px"></i></div>
     <p class="tnum">${x.dueKm != null ? (x.kmLeft > 0 ? l.byKm(x.kmLeft) : l.overKm(-x.kmLeft)) : ''} ${x.dueDate ? l.orBy(fmt(x.dueDate, hi())) : ''}</p>
     <p style="font-size:13.5px">${l.why(l[j], every(j, v.type))}</p>
     <div class="cost"><span>${l.estCost} <b class="tnum">${inr(COST[v.type][j])}</b></span></div>
     <button class="btn go press" data-act="${j === 'tyres' || j === 'battery' ? 'shop' : 'book'}">${j === 'tyres' || j === 'battery' ? l.shopFit : l.book}</button><button class="btn quiet press" data-close>${l.close}</button>`);
-    }
-    function paperSheet(p) {
-      const l = L(),
-        v = V(),
-        cur = new Date(v.papers[p] || '2027-03-15');
-      const years = Array.from({ length: 12 }, (_, k) => 2024 + k),
-        months = hi() ? MONTHS_HI : MONTHS_EN;
-      const sel = { d: cur.getDate(), m: cur.getMonth(), y: cur.getFullYear() };
-      const col = (key, arr, lab) =>
-        `<div class="col" data-col="${key}" tabindex="0" aria-label="${lab}">${arr.map((a, k) => `<div data-v="${key === 'm' ? k : a}">${key === 'm' ? months[k] : a}</div>`).join('')}</div>`;
-      open(
-        `<h3 id="sheet-title">${l.paperQ(l[p])}</h3>
+      }
+      function paperSheet(p) {
+        const l = L(),
+          v = V(),
+          cur = new Date(v.papers[p] || '2027-03-15');
+        const years = Array.from({ length: 12 }, (_, k) => 2024 + k),
+          months = hi() ? MONTHS_HI : MONTHS_EN;
+        const sel = { d: cur.getDate(), m: cur.getMonth(), y: cur.getFullYear() };
+        const col = (key, arr, lab) =>
+          `<div class="col" data-col="${key}" tabindex="0" aria-label="${lab}">${arr.map((a, k) => `<div data-v="${key === 'm' ? k : a}">${key === 'm' ? months[k] : a}</div>`).join('')}</div>`;
+        open(
+          `<h3 id="sheet-title">${l.paperQ(l[p])}</h3>
     <div class="wheel">${col(
       'd',
       Array.from({ length: 31 }, (_, k) => k + 1),
@@ -1996,251 +2013,252 @@
     )}${col('m', months, 'month')}${col('y', years, 'year')}</div>
     <div class="fine"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffc048" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01M10.3 3.9 2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg><span>${l.fine(l[p], FINE[p])}</span></div>
     <button class="btn go press" id="ps">${l.remind}</button><button class="btn quiet press" data-close>${l.cancel}</button>`,
-        () => {
-          sheet.querySelectorAll('.col').forEach((c) => {
-            const key = c.dataset.col,
-              items = [...c.children];
-            const idx = items.findIndex((it) => Number(it.dataset.v) === sel[key]);
-            c.scrollTop = Math.max(0, idx) * 40;
-            const mark = () => {
-              const k = Math.round(c.scrollTop / 40);
-              items.forEach((it, n) => it.classList.toggle('sel', n === k));
-              if (items[k]) sel[key] = Number(items[k].dataset.v);
+          () => {
+            sheet.querySelectorAll('.col').forEach((c) => {
+              const key = c.dataset.col,
+                items = [...c.children];
+              const idx = items.findIndex((it) => Number(it.dataset.v) === sel[key]);
+              c.scrollTop = Math.max(0, idx) * 40;
+              const mark = () => {
+                const k = Math.round(c.scrollTop / 40);
+                items.forEach((it, n) => it.classList.toggle('sel', n === k));
+                if (items[k]) sel[key] = Number(items[k].dataset.v);
+              };
+              mark();
+              c.addEventListener('scroll', () => {
+                clearTimeout(c.t);
+                c.t = setTimeout(mark, 60);
+              });
+              c.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  c.scrollTop += e.key === 'ArrowDown' ? 40 : -40;
+                }
+              });
+              items.forEach(
+                (it, n) =>
+                  (it.onclick = () => {
+                    c.scrollTo({ top: n * 40, behavior: 'smooth' });
+                  }),
+              );
+            });
+            sheet.querySelector('#ps').onclick = () => {
+              const d = new Date(sel.y, sel.m, Math.min(sel.d, new Date(sel.y, sel.m + 1, 0).getDate()));
+              v.papers[p] =
+                `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+              v.reminders = true;
+              save();
+              close();
+              render();
+              toast(l.remSet);
             };
-            mark();
-            c.addEventListener('scroll', () => {
-              clearTimeout(c.t);
-              c.t = setTimeout(mark, 60);
-            });
-            c.addEventListener('keydown', (e) => {
-              if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-                e.preventDefault();
-                c.scrollTop += e.key === 'ArrowDown' ? 40 : -40;
-              }
-            });
-            items.forEach(
-              (it, n) =>
-                (it.onclick = () => {
-                  c.scrollTo({ top: n * 40, behavior: 'smooth' });
-                }),
-            );
-          });
-          sheet.querySelector('#ps').onclick = () => {
-            const d = new Date(sel.y, sel.m, Math.min(sel.d, new Date(sel.y, sel.m + 1, 0).getDate()));
-            v.papers[p] =
-              `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-            v.reminders = true;
-            save();
-            close();
-            render();
-            toast(l.remSet);
-          };
-        },
-      );
-    }
-    function addSheet() {
-      const l = L();
-      if (S.vehicles.length >= 10) return toast(l.limit);
-      const makes = {
-        '2W': ['Honda', 'Hero', 'TVS', 'Bajaj', 'Royal Enfield', 'Suzuki'],
-        '3W': ['Bajaj', 'Piaggio', 'Mahindra'],
-        '4W': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Mahindra'],
-      };
-      const models = {
-        Honda: [
-          ['Activa 6G', 'scooter'],
-          ['Shine 125', 'bike'],
-        ],
-        Hero: [
-          ['Splendor Plus', 'bike'],
-          ['Pleasure+', 'scooter'],
-        ],
-        TVS: [
-          ['Jupiter', 'scooter'],
-          ['Apache RTR 160', 'bike'],
-        ],
-        Bajaj: [
-          ['Pulsar 150', 'bike'],
-          ['Platina 110', 'bike'],
-          ['RE Compact', 'car'],
-        ],
-        'Royal Enfield': [['Classic 350', 'bike']],
-        Suzuki: [['Access 125', 'scooter']],
-        Piaggio: [['Ape City', 'car']],
-        Mahindra: [
-          ['Treo', 'car'],
-          ['Bolero', 'car'],
-        ],
-        'Maruti Suzuki': [
-          ['Swift', 'car'],
-          ['Wagon R', 'car'],
-        ],
-        Hyundai: [
-          ['i20', 'car'],
-          ['Creta', 'car'],
-        ],
-        Tata: [
-          ['Nexon', 'car'],
-          ['Punch', 'car'],
-        ],
-      };
-      const paints = [
-        ['#ff8a3d', '#9c3b0e'],
-        ['#2f6fe4', '#0f2c6b'],
-        ['#e9eef5', '#8b98ab'],
-        ['#2b2f38', '#0d0f13'],
-        ['#d1342f', '#5c1513'],
-      ];
-      const d = {
-        type: '2W',
-        make: 'TVS',
-        model: 'Jupiter',
-        kind: 'scooter',
-        year: 2024,
-        fuel: 'petrol',
-        reg: '',
-        paint: 0,
-      };
-      let step = 1;
-      const draw = () => {
-        const opt = (key, val, lab) =>
-          `<button class="opt press" data-k="${key}" data-v="${val}" aria-pressed="${String(d[key]) === String(val)}">${lab}</button>`;
-        const body =
-          step === 1
-            ? `<div class="field"><label>${l.type}</label><div class="opts">${opt('type', '2W', l.w2)}${opt('type', '3W', l.w3)}${opt('type', '4W', l.w4)}</div></div><div class="field"><label>${l.make}</label><div class="opts">${makes[d.type].map((m) => opt('make', m, m)).join('')}</div></div>`
-            : step === 2
-              ? `<div class="field"><label>${l.model}</label><div class="opts">${(models[d.make] || [['Other', 'bike']]).map(([m]) => opt('model', m, m)).join('')}</div></div><div class="field"><label>${l.year}</label><div class="opts">${[2026, 2025, 2024, 2022, 2020, 2018].map((y) => opt('year', y, y)).join('')}</div></div><div class="field"><label>${l.fuel}</label><div class="opts">${['petrol', 'diesel', 'cng', 'ev'].map((f) => opt('fuel', f, l[f])).join('')}</div></div>`
-              : `<div style="background:radial-gradient(60% 80% at 50% 20%,#ffe8d11a,transparent),#0a101c;border-radius:20px;padding:10px 20px 4px;border:1px solid var(--edge)">${render3({ kind: d.kind, paint: paints[d.paint] }, 'pv')}</div>
+          },
+        );
+      }
+      function addSheet() {
+        const l = L();
+        if (S.vehicles.length >= 10) return toast(l.limit);
+        const makes = {
+          '2W': ['Honda', 'Hero', 'TVS', 'Bajaj', 'Royal Enfield', 'Suzuki'],
+          '3W': ['Bajaj', 'Piaggio', 'Mahindra'],
+          '4W': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Mahindra'],
+        };
+        const models = {
+          Honda: [
+            ['Activa 6G', 'scooter'],
+            ['Shine 125', 'bike'],
+          ],
+          Hero: [
+            ['Splendor Plus', 'bike'],
+            ['Pleasure+', 'scooter'],
+          ],
+          TVS: [
+            ['Jupiter', 'scooter'],
+            ['Apache RTR 160', 'bike'],
+          ],
+          Bajaj: [
+            ['Pulsar 150', 'bike'],
+            ['Platina 110', 'bike'],
+            ['RE Compact', 'car'],
+          ],
+          'Royal Enfield': [['Classic 350', 'bike']],
+          Suzuki: [['Access 125', 'scooter']],
+          Piaggio: [['Ape City', 'car']],
+          Mahindra: [
+            ['Treo', 'car'],
+            ['Bolero', 'car'],
+          ],
+          'Maruti Suzuki': [
+            ['Swift', 'car'],
+            ['Wagon R', 'car'],
+          ],
+          Hyundai: [
+            ['i20', 'car'],
+            ['Creta', 'car'],
+          ],
+          Tata: [
+            ['Nexon', 'car'],
+            ['Punch', 'car'],
+          ],
+        };
+        const paints = [
+          ['#ff8a3d', '#9c3b0e'],
+          ['#2f6fe4', '#0f2c6b'],
+          ['#e9eef5', '#8b98ab'],
+          ['#2b2f38', '#0d0f13'],
+          ['#d1342f', '#5c1513'],
+        ];
+        const d = {
+          type: '2W',
+          make: 'TVS',
+          model: 'Jupiter',
+          kind: 'scooter',
+          year: 2024,
+          fuel: 'petrol',
+          reg: '',
+          paint: 0,
+        };
+        let step = 1;
+        const draw = () => {
+          const opt = (key, val, lab) =>
+            `<button class="opt press" data-k="${key}" data-v="${val}" aria-pressed="${String(d[key]) === String(val)}">${lab}</button>`;
+          const body =
+            step === 1
+              ? `<div class="field"><label>${l.type}</label><div class="opts">${opt('type', '2W', l.w2)}${opt('type', '3W', l.w3)}${opt('type', '4W', l.w4)}</div></div><div class="field"><label>${l.make}</label><div class="opts">${makes[d.type].map((m) => opt('make', m, m)).join('')}</div></div>`
+              : step === 2
+                ? `<div class="field"><label>${l.model}</label><div class="opts">${(models[d.make] || [['Other', 'bike']]).map(([m]) => opt('model', m, m)).join('')}</div></div><div class="field"><label>${l.year}</label><div class="opts">${[2026, 2025, 2024, 2022, 2020, 2018].map((y) => opt('year', y, y)).join('')}</div></div><div class="field"><label>${l.fuel}</label><div class="opts">${['petrol', 'diesel', 'cng', 'ev'].map((f) => opt('fuel', f, l[f])).join('')}</div></div>`
+                : `<div style="background:radial-gradient(60% 80% at 50% 20%,#ffe8d11a,transparent),#0a101c;border-radius:20px;padding:10px 20px 4px;border:1px solid var(--edge)">${render3({ kind: d.kind, paint: paints[d.paint] }, 'pv')}</div>
         <div class="opts" style="justify-content:center">${paints.map((p, n) => `<button class="press" data-k="paint" data-v="${n}" aria-pressed="${d.paint === n}" aria-label="Colour ${n + 1}" style="width:36px;height:36px;border-radius:50%;border:2px solid ${d.paint === n ? '#fff' : 'transparent'};background:linear-gradient(135deg,${p[0]},${p[1]})"></button>`).join('')}</div>
         <div class="field"><label for="rg">${l.reg}</label><input id="rg" placeholder="CG 04 AB 1234" value="${d.reg}" autocomplete="off"></div>`;
-        sheet.innerHTML = `<div class="head"><h3 id="sheet-title">${l.addV}</h3><span class="meta">${l.step(step, 3)}</span></div><div class="steps">${[1, 2, 3].map((k) => `<i class="${k <= step ? 'on' : ''}"></i>`).join('')}</div>${body}
+          sheet.innerHTML = `<div class="head"><h3 id="sheet-title">${l.addV}</h3><span class="meta">${l.step(step, 3)}</span></div><div class="steps">${[1, 2, 3].map((k) => `<i class="${k <= step ? 'on' : ''}"></i>`).join('')}</div>${body}
       <button class="btn go press" id="nx">${step < 3 ? l.nextB : l.park}</button>${step > 1 ? `<button class="btn quiet press" id="bk">${l.back}</button>` : `<button class="btn quiet press" data-close>${l.cancel}</button>`}`;
-        sheet.querySelectorAll('[data-k]').forEach(
-          (b) =>
-            (b.onclick = () => {
-              const k = b.dataset.k;
-              d[k] = k === 'year' || k === 'paint' ? Number(b.dataset.v) : b.dataset.v;
-              if (k === 'type') {
-                d.make = makes[d.type][0];
-              }
-              if (k === 'type' || k === 'make') {
-                const m = (models[d.make] || [['Other', 'bike']])[0];
-                d.model = m[0];
-                d.kind = d.type === '4W' ? 'car' : m[1];
-              }
-              if (k === 'model') {
-                const m = (models[d.make] || []).find((x) => x[0] === d.model);
-                d.kind = d.type === '4W' ? 'car' : m ? m[1] : 'bike';
-              }
+          sheet.querySelectorAll('[data-k]').forEach(
+            (b) =>
+              (b.onclick = () => {
+                const k = b.dataset.k;
+                d[k] = k === 'year' || k === 'paint' ? Number(b.dataset.v) : b.dataset.v;
+                if (k === 'type') {
+                  d.make = makes[d.type][0];
+                }
+                if (k === 'type' || k === 'make') {
+                  const m = (models[d.make] || [['Other', 'bike']])[0];
+                  d.model = m[0];
+                  d.kind = d.type === '4W' ? 'car' : m[1];
+                }
+                if (k === 'model') {
+                  const m = (models[d.make] || []).find((x) => x[0] === d.model);
+                  d.kind = d.type === '4W' ? 'car' : m ? m[1] : 'bike';
+                }
+                draw();
+              }),
+          );
+          const rg = sheet.querySelector('#rg');
+          if (rg)
+            rg.oninput = () => {
+              d.reg = rg.value.toUpperCase();
+            };
+          const bk = sheet.querySelector('#bk');
+          if (bk)
+            bk.onclick = () => {
+              step--;
               draw();
-            }),
-        );
-        const rg = sheet.querySelector('#rg');
-        if (rg)
-          rg.oninput = () => {
-            d.reg = rg.value.toUpperCase();
+            };
+          sheet.querySelector('#nx').onclick = () => {
+            if (step < 3) {
+              step++;
+              return draw();
+            }
+            S.vehicles.push({
+              type: d.type,
+              kind: d.kind,
+              make: d.make,
+              model: d.model,
+              variant: null,
+              year: d.year,
+              fuel: d.fuel,
+              reg: d.reg.trim() || null,
+              km: 0,
+              kmAt: '2026-11-28',
+              paint: paints[d.paint],
+              last: {
+                oil: [0, '2026-11-28'],
+                service: [0, '2026-11-28'],
+                tyres: [0, '2026-11-28'],
+                battery: [0, '2026-11-28'],
+              },
+              papers: { insurance: null, puc: null, rc: null, licence: null },
+              reminders: false,
+              months: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+              lastYear: 0,
+              split: { svcs: 0, parts: 0, tyresB: 0, batteryB: 0 },
+              log: [],
+            });
+            S.i = S.vehicles.length - 1;
+            save();
+            close();
+            render({ shutter: true, drive: true });
+            confetti();
+            toast(l.parked(d.model, String(S.i + 1).padStart(2, '0')));
           };
-        const bk = sheet.querySelector('#bk');
-        if (bk)
-          bk.onclick = () => {
-            step--;
-            draw();
-          };
-        sheet.querySelector('#nx').onclick = () => {
-          if (step < 3) {
-            step++;
-            return draw();
-          }
-          S.vehicles.push({
-            type: d.type,
-            kind: d.kind,
-            make: d.make,
-            model: d.model,
-            variant: null,
-            year: d.year,
-            fuel: d.fuel,
-            reg: d.reg.trim() || null,
-            km: 0,
-            kmAt: '2026-11-28',
-            paint: paints[d.paint],
-            last: {
-              oil: [0, '2026-11-28'],
-              service: [0, '2026-11-28'],
-              tyres: [0, '2026-11-28'],
-              battery: [0, '2026-11-28'],
-            },
-            papers: { insurance: null, puc: null, rc: null, licence: null },
-            reminders: false,
-            months: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            lastYear: 0,
-            split: { svcs: 0, parts: 0, tyresB: 0, batteryB: 0 },
-            log: [],
-          });
-          S.i = S.vehicles.length - 1;
-          save();
-          close();
-          render({ shutter: true, drive: true });
-          confetti();
-          toast(l.parked(d.model, String(S.i + 1).padStart(2, '0')));
+          sheet.querySelector('#nx').focus();
         };
-        sheet.querySelector('#nx').focus();
-      };
-      open('', draw);
-    }
+        open('', draw);
+      }
 
-    /* ---------- events ---------- */
-    const go = (k) => {
-      if (k < 0 || k >= S.vehicles.length || k === S.i) return;
-      S.i = k;
-      S.month = null;
-      save();
+      /* ---------- events ---------- */
+      const go = (k) => {
+        if (k < 0 || k >= S.vehicles.length || k === S.i) return;
+        S.i = k;
+        S.month = null;
+        save();
+        render({ shutter: true });
+      };
+      document.addEventListener('click', (e) => {
+        const b = e.target.closest('button');
+        if (!b) return;
+        if (b.dataset.close !== undefined) return close();
+        if (b.id === 'prev') return go(S.i - 1);
+        if (b.id === 'nextb') return go(S.i + 1);
+        if (b.id === 'odo') return kmSheet();
+        if (b.id === 'add') return addSheet();
+        if (b.id === 'lang') {
+          S.lang = hi() ? 'en' : 'hi';
+          save();
+          return render();
+        }
+        if (b.dataset.job) return jobSheet(b.dataset.job);
+        if (b.dataset.paper) return paperSheet(b.dataset.paper);
+        if (b.dataset.tab) {
+          S.tab = b.dataset.tab;
+          save();
+          return render();
+        }
+        if (b.dataset.m != null) {
+          const m = Number(b.dataset.m);
+          S.month = S.month === m ? null : m;
+          save();
+          return render();
+        }
+        if (b.dataset.act) {
+          close();
+          return toast(b.dataset.act === 'book' ? L().opensBook : L().opensShop);
+        }
+      });
+      let sx = null;
+      app.addEventListener(
+        'touchstart',
+        (e) => {
+          if (e.target.closest('#bay')) sx = e.touches[0].clientX;
+        },
+        { passive: true },
+      );
+      app.addEventListener('touchend', (e) => {
+        if (sx == null) return;
+        const dx = e.changedTouches[0].clientX - sx;
+        sx = null;
+        if (Math.abs(dx) > 50) go(S.i + (dx < 0 ? 1 : -1));
+      });
       render({ shutter: true });
-    };
-    document.addEventListener('click', (e) => {
-      const b = e.target.closest('button');
-      if (!b) return;
-      if (b.dataset.close !== undefined) return close();
-      if (b.id === 'prev') return go(S.i - 1);
-      if (b.id === 'nextb') return go(S.i + 1);
-      if (b.id === 'odo') return kmSheet();
-      if (b.id === 'add') return addSheet();
-      if (b.id === 'lang') {
-        S.lang = hi() ? 'en' : 'hi';
-        save();
-        return render();
-      }
-      if (b.dataset.job) return jobSheet(b.dataset.job);
-      if (b.dataset.paper) return paperSheet(b.dataset.paper);
-      if (b.dataset.tab) {
-        S.tab = b.dataset.tab;
-        save();
-        return render();
-      }
-      if (b.dataset.m != null) {
-        const m = Number(b.dataset.m);
-        S.month = S.month === m ? null : m;
-        save();
-        return render();
-      }
-      if (b.dataset.act) {
-        close();
-        return toast(b.dataset.act === 'book' ? L().opensBook : L().opensShop);
-      }
-    });
-    let sx = null;
-    app.addEventListener(
-      'touchstart',
-      (e) => {
-        if (e.target.closest('#bay')) sx = e.touches[0].clientX;
-      },
-      { passive: true },
-    );
-    app.addEventListener('touchend', (e) => {
-      if (sx == null) return;
-      const dx = e.changedTouches[0].clientX - sx;
-      sx = null;
-      if (Math.abs(dx) > 50) go(S.i + (dx < 0 ? 1 : -1));
-    });
-    render({ shutter: true });
-  })();
-</script>
+    })();
+  </script>
+</html>
