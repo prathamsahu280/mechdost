@@ -1528,3 +1528,11 @@ C1 LV-6 layout shift: root cause = client-loaded frames render a short loading b
   files / 2372, shared 96 / 1126 (tooling-hooks passes on main; fails only inside worktrees). Pushing C + D + E.
   Watch on live: desktop CLS of the wide layout (useWideLayout is false on first paint).
 - 11:20 IST: CI 642ea842 cancelled at the 20-min job limit (all unit tests passed; cut off in the build step on a slow runner). Unit job limit 20 → 30 min; pushed 106163d4 with LV-8 shop skeleton fix.
+
+## 2026-11-28 — Batch G (builder; branch worktree-agent-ad9ff902b2e2c7662, NOT merged, not pushed; test-only)
+
+API-mode fixtures for `API-USTAAD-FEED`, `API-USTAAD-PROFILE`, `API-USTAAD-ME` (`ustaad-social-fixtures.ts`, new
+`Reply.delayMs` for loading, a page set-up hook for the hidden Sponsored card); guard test
+`state-audit-ustaad-social.test.ts`. Spec 23 § 21i-L "Batch G". Owed: the Playwright run of these rows (no real-mode build
+here; CI), fixtures for the other 13 `API-USTAAD-*` rows (join, welcome, partners status, attest, post sheets, create, story
+viewer, tag, teaser, messages, thread, network, discover). No product code changed.

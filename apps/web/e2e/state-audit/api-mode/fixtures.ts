@@ -59,6 +59,7 @@ import { adminRoutingMocks, billPayMocks } from './tier3-fixtures.ts';
 import { slipMocks, staffPortalMocks, tier2PortalMocks } from './tier2-fixtures.ts';
 import { adminRecoMocks, demandMocks, notifyMeMocks, privacyMocks } from './catalogue-tier2-fixtures.ts';
 import { ustaadAdminMocks } from './ustaad-admin-fixtures.ts';
+import { ustaadFeedMocks, ustaadMeMocks, ustaadProfileMocks } from './ustaad-social-fixtures.ts';
 import { ustaadJobsMocks, ustaadLearnMocks, ustaadSavedMocks } from './ustaad-member-fixtures.ts';
 import { photoQueueMocks, wishlistMocks } from './storefront-fixtures.ts';
 import { roadsideTrackMocks } from './roadside-fixtures.ts';
@@ -1828,6 +1829,12 @@ export function mocksFor(c: AuditCase): Mock[] {
     case 'API-ADM-USTAAD':
     case 'API-ADM-USTAAD-CONSOLE':
       return [meMock(), ...ustaadAdminMocks(c)];
+    case 'API-USTAAD-FEED':
+      return ustaadFeedMocks();
+    case 'API-USTAAD-PROFILE':
+      return ustaadProfileMocks();
+    case 'API-USTAAD-ME':
+      return ustaadMeMocks();
     case 'API-USTAAD-LEARN':
       return ustaadLearnMocks();
     case 'API-USTAAD-JOBS':

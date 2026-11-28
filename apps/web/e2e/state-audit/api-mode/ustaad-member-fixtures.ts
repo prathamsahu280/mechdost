@@ -16,15 +16,16 @@ import { MyCardDto } from '@mechdost/shared/ustaad/dto/verification';
 import type { AuditCase } from '../cases.ts';
 import type { Mock, Reply } from './mock-api.ts';
 
-const uuid = (n: number) => `00000000-0000-7000-8000-${String(1200 + n).padStart(12, '0')}`;
-const iso = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString();
-const long = (c: AuditCase) => c.state.stress === 'long-text';
-const LONG_EN =
+export const uuid = (n: number) => `00000000-0000-7000-8000-${String(1200 + n).padStart(12, '0')}`;
+export const iso = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString();
+export const long = (c: AuditCase) => c.state.stress === 'long-text';
+export const LONG_EN =
   'Complete engine overhaul and electrical diagnosis for every two wheeler and four wheeler garage';
-const LONG_HI = 'हर दोपहिया और चारपहिया गैराज के लिए पूरा इंजन ओवरहाल और बिजली की जाँच का लंबा पाठ्यक्रम';
+export const LONG_HI =
+  'हर दोपहिया और चारपहिया गैराज के लिए पूरा इंजन ओवरहाल और बिजली की जाँच का लंबा पाठ्यक्रम';
 
-type Out<S extends { parse(value: unknown): unknown }> = ReturnType<S['parse']>;
-const get = (
+export type Out<S extends { parse(value: unknown): unknown }> = ReturnType<S['parse']>;
+export const get = (
   path: RegExp,
   schema: { parse(value: unknown): unknown },
   body: (c: AuditCase, q: URLSearchParams) => Reply,
@@ -34,9 +35,9 @@ const get = (
   schema,
   reply: ({ c, query }) => body(c, query),
 });
-const failed = (): Reply => ({ status: 500, code: 'INTERNAL' });
+export const failed = (): Reply => ({ status: 500, code: 'INTERNAL' });
 
-const MEMBER = {
+export const MEMBER = {
   id: uuid(1),
   handle: 'ramesh_rpr',
   displayName: 'Ramesh Sahu',
@@ -63,12 +64,12 @@ const MEMBER = {
   version: 1,
 } satisfies Out<typeof MeResponseDto>['member'];
 
-const meMember = (): Mock =>
+export const meMember = (): Mock =>
   get(/^\/ustaad\/me$/, MeResponseDto, () => ({
     body: { member: MEMBER, staffPreview: false } satisfies Out<typeof MeResponseDto>,
   }));
 
-const group = {
+export const group = {
   minFollowers: 0,
   minBestAnswers: 0,
   minHelpfulPct: 0,

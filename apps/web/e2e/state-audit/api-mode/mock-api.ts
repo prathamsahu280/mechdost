@@ -18,6 +18,8 @@ export interface Reply {
   details?: unknown;
   /** A binary body (the photo images): base64 and its content type. Skips the schema check. */
   raw?: { contentType: string; base64: string };
+  /** Hold the answer back this long (a loading state the shot catches before the data arrives). */
+  delayMs?: number;
 }
 
 export interface MockCtx {
@@ -78,6 +80,7 @@ export async function installApi(page: Page, c: AuditCase, mocks: readonly Mock[
     }
     const reply = mock.reply({ c, method, path, query: url.searchParams, body });
     const status = reply.status ?? 200;
+    if (reply.delayMs) await new Promise((r) => setTimeout(r, reply.delayMs));
     if (reply.raw && status < 400)
       return route.fulfill({
         status,

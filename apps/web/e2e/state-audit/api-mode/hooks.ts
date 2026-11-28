@@ -118,6 +118,15 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
     }
   }
 
+  // Feed (Mechanic Network): hide the Sponsored card (open "Hide this", pick the first reason), so the list shows without it.
+  if (c.code === 'API-USTAAD-FEED' && c.state.promo === 'hidden') {
+    const ad = main.locator('aside[aria-label]').first();
+    await ad.waitFor({ timeout: 5_000 }).catch(() => notes.push('no Sponsored card to hide'));
+    await clickIfPresent(ad.locator('button'), notes, 'Hide this');
+    await clickIfPresent(ad.locator('fieldset button'), notes, 'hide reason');
+    await settleApi(page);
+  }
+
   // Saved (Mechanic Network): press the first collection chip, so the list is the collection's own.
   if (c.code === 'API-USTAAD-SAVED' && c.state.list === 'collection') {
     const chip = main.locator('[role="group"]').nth(1).locator('button[aria-pressed]').first();

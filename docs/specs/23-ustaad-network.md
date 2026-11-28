@@ -2492,3 +2492,16 @@ No migration. All DTO changes are additive.
 - **Tests:** `packages/db/test/ustaad-saved.test.ts` (flags for every kind, per member; employer line),
   `apps/web/test/ustaad-learn-continue.test.ts`, `ustaad-story-autonext.test.ts`, `ustaad-thread-a11y.test.ts`,
   `ustaad-save-wiring.test.ts` (updated), `ustaad-u1-shell.test.ts` (story advance table updated).
+
+- **Batch G (2026-11-28) state-audit fixtures for Feed, Profile and My card.** `API-USTAAD-FEED`, `API-USTAAD-PROFILE` and
+  `API-USTAAD-ME` now have API-mode fixtures (`apps/web/e2e/state-audit/api-mode/ustaad-social-fixtures.ts`, every body
+  typed with the shared schema it is served under). Feed: a post of every kind (voice, video with captions, photo, text,
+  poll, link, YouTube link, fix log, tip, before/after, document), story rings (seen and unseen), the Sponsored card
+  (`promo=served`; `hidden` = the page set-up in `hooks.ts` presses Hide this and a reason), empty, error, the 410
+  snapshot refresh (first ask answers 410, then the list), not a member, own held post, like counts shown or hidden, and
+  `loading` (the new `Reply.delayMs` holds the feed answer 15 s). Profile: own and other, following, requested, incoming,
+  connected (with a thread), muted, gone (404), counts hidden, verified chip on or off, long en and hi names. My card:
+  Chhotu, Ustaad to verify, Pakka, Master, no badges, error, "helped N" at 0 and 7. Not reachable in a shot: the "New
+  posts" pill (90 s poll; the fresh call answers 0). Guard: `apps/web/test/state-audit-ustaad-social.test.ts`. The other
+  `API-USTAAD-*` rows (join, welcome, partners status, attest, post sheets, create, story viewer, tag, teaser, messages,
+  thread, network, discover) still have no fixtures.
