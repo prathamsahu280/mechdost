@@ -1,5 +1,21 @@
 # Progress ledger — read this first after any context compaction
 
+## 2026-11-28 night: device list "Where you're signed in" (builder, branch `worktree-agent-a57fb3717659a3206`, NOT merged)
+
+- Built (task C of the sessions research; spec 01 "Devices", 13, 14, 12; decision 2026-11-28): migration 0116 `user_sessions`;
+  `/v1/auth/password` writes a row and puts the key in claim `mds` (staff phone-code step too); auth middleware refuses an
+  ended session with 401 `SESSION_ENDED` on the cache-miss path (60 s), hourly last-active; `routes/devices.ts` (list,
+  sign out one, others, current); rough place from DB-IP City Lite via `maxmind` (optional `GEOIP_CITY_DB`, compose mounts
+  `/opt/mechdost/geoip`); Hindi state/city handling; `devices-card.tsx` after the Security card; events; privacy notice
+  section; state-audit row API-ACC-DEVICES (checklist regenerated).
+- Lead at merge: apply migration 0116 BEFORE deploying; wire `revokeAllUserSessions(db, userId, 'self_all')` into the
+  revoke-all endpoint; call `endCurrentDevice(token)` (`lib/auth/end-current-device.ts`) from `lib/auth/sign-out.ts` with the
+  ID token read before the Firebase sign-out; treat 401 `SESSION_ENDED` like `ID_TOKEN_REVOKED` in the stale-session fix;
+  point the card's links (`#security-title`) at the new "Sign out of all devices" section id; download the GeoIP file on the
+  server (runbook § 5.1).
+- Not done: state-audit api-mode fixtures for API-ACC-DEVICES (row exists, Playwright run owed); real-browser pass;
+  e2e/Lighthouse/axe live runs.
+
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
 ## 2026-11-28 — Mechanic Network batch D: state-audit rows + profile restyle (builder, branch worktree-agent-adc9e97b192ec1613, NOT merged)

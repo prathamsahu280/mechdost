@@ -261,6 +261,31 @@ All commands run on the server (`ssh ubuntu@13.207.157.3`, then `cd /opt/mechdos
 | Free disk                    | `docker image prune -af` (keeps the running images). Every deploy now does this before the pull and after the stack is up, and logs `df -h /` both times (incident 2026-11-15: the 19 GB disk filled with old release images after ~8 deploys in a day; the pull failed with "no space left on device" and the old release kept running) |
 | Certificates                 | `docker compose logs caddy \| grep -i -E "certificate\|acme"`                                                                                                                                                                                                                                                                            |
 
+### 5.1 GeoIP file for the device list's rough place (2026-11-28)
+
+The "Where you're signed in" list shows "Near Raipur, Chhattisgarh" from the free **DB-IP City Lite** file (CC BY 4.0, credit
+shown on the screen). The file is not in git and not downloaded by the app: you put it on the server, once, then monthly.
+Without it everything works and no place is shown. The compose file mounts `/opt/mechdost/geoip` read-only into the API as
+`/geoip` and sets `GEOIP_CITY_DB=/geoip/dbip-city-lite.mmdb`.
+
+```
+cd /opt/mechdost && mkdir -p geoip && cd geoip
+M=$(date +%Y-%m)    # the file for the current month is published on the 1st; use the previous month before it exists
+curl -fL -o dbip-city-lite.mmdb.gz "https://download.db-ip.com/free/dbip-city-lite-$M.mmdb.gz"
+gunzip -f dbip-city-lite.mmdb.gz && ls -l dbip-city-lite.mmdb
+docker compose restart api   # first time only; later refreshes are picked up by the running API without a restart
+```
+
+- **Refresh monthly** (same commands; replace the file in place). The API watches the file and reloads it.
+- If the download page changes, get the "IP to City Lite" MMDB from https://db-ip.com/db/download/ip-to-city-lite.
+- Check: `docker compose logs api | grep geoip` shows `geoip_ready` (or `geoip_unavailable` with the reason).
+- The mapping from the compose file: if `geoip/` did not exist when the API started, Docker created it empty; download the
+  file and restart the API once.
+
+**Migration 0116 (user_sessions) must be applied BEFORE the deploy** that contains the device list (§ 6): the sign-in route
+writes a row on every password sign-in and logs `session_row_failed` (sign-in still works, as an "earlier sign-in") if the
+table is missing.
+
 ## 6. Database migrations (manual, before deploying code that needs them)
 
 The database is Supabase, and nothing on the server touches the schema. When a commit adds a migration (`packages/db/drizzle/NNNN_*.sql`):

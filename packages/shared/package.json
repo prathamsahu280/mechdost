@@ -41,6 +41,7 @@
     "./exports": "./src/exports.ts",
     "./error-scrub": "./src/error-scrub.ts",
     "./settings": "./src/settings.ts",
+    "./devices": "./src/devices.ts",
     "./usage": "./src/usage.ts",
     "./usage-copy": "./src/usage-copy.ts",
     "./content": "./src/content.ts",

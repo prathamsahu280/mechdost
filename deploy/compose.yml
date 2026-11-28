@@ -102,9 +102,13 @@ services:
       GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/firebase-admin.json
       # verify-full TLS to Supabase (production refuses anything less): the public Supabase Root 2021 CA.
       DATABASE_CA_CERT: /run/secrets/supabase-ca.crt
+      # Device list rough place (decision 2026-11-28): the DB-IP City Lite file, downloaded by hand into
+      # /opt/mechdost/geoip/ (runbook § 5.1). A missing file only means no place is shown.
+      GEOIP_CITY_DB: /geoip/dbip-city-lite.mmdb
     volumes:
       - ./supabase-ca-2021.crt:/run/secrets/supabase-ca.crt:ro
       - ./firebase-admin.json:/run/secrets/firebase-admin.json:ro
+      - ./geoip:/geoip:ro
     depends_on:
       - srh
     expose:

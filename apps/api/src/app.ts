@@ -80,6 +80,7 @@ import { workshopAdminRoutes, workshopPublicRoutes } from './routes/workshops';
 import { reviewPublicRoutes, reviewRoutes } from './routes/reviews';
 import { recommendationRoutes } from './routes/recommendations';
 import { recentlyViewedRoutes } from './routes/recently-viewed';
+import { deviceRoutes } from './routes/devices';
 import { privacyRoutes } from './routes/privacy';
 import { pincodeWaitlistRoutes } from './routes/pincode-waitlist';
 import { adminUstaadConsoleRoutes } from './routes/admin-ustaad-console';
@@ -202,6 +203,7 @@ export function createApp(deps: AppDeps) {
   v1.route('/', reviewPublicRoutes(deps));
   v1.route('/', recommendationRoutes(deps, sessions));
   v1.route('/', recentlyViewedRoutes(deps, sessions));
+  v1.route('/', deviceRoutes(deps, sessions));
   v1.route('/', privacyRoutes(deps, sessions));
   v1.route('/', pincodeWaitlistRoutes(deps, sessions));
   v1.route('/', reviewRoutes(deps, sessions));

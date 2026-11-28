@@ -1,7 +1,14 @@
 import { createHash } from 'node:crypto';
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import { findPasswordAccount, recordSignInAudit, recordStaffSignIn } from '@mechdost/db/repo';
+import {
+  discardUnissuedSession,
+  findPasswordAccount,
+  recordSignInAudit,
+  recordStaffSignIn,
+  startUserSession,
+} from '@mechdost/db/repo';
 import { parseSignInIdentifier, STAFF_2FA_CLAIM, STAFF_CODE_MAX_AGE_SECONDS } from '@mechdost/shared/auth';
+import { parseUserAgent, SESSION_CLAIM } from '@mechdost/shared/devices';
 import { PASSWORD_CHANGE_WINDOW_MS } from '../auth/email-actions';
 import { announcePasswordChange } from '../auth/password-notice';
 import { readStaffChallenge, signStaffChallenge, STAFF_CHALLENGE_TTL_SECONDS } from '../auth/staff-challenge';
@@ -184,7 +191,7 @@ export function authRoutes(deps: AppDeps) {
     }
 
     await closed(() => deps.rateLimiter.reset(SIGN_IN_FAILURES, key));
-    let claims: Record<string, boolean> | undefined;
+    let claims: Record<string, boolean | string> | undefined;
     if (account.staff) {
       if (!phoneToken || !account.phone) {
         const staffChallenge =
@@ -228,11 +235,28 @@ export function authRoutes(deps: AppDeps) {
       await recordStaffSignIn(deps.db, account.userId);
     }
 
+    // Device list (decision 2026-11-28): this sign-in becomes a row, and its raw key travels in the token claim `mds`
+    // (the staff phone-code step comes through here too). The place is looked up from the proxy-derived client address
+    // in memory and only its names are kept; the address and User-Agent are not stored. Best effort: if the row cannot
+    // be written the person still signs in, as an "earlier sign-in" without a row.
+    let sessionKey: string | null = null;
+    try {
+      sessionKey = await startUserSession(deps.db, {
+        userId: account.userId,
+        device: parseUserAgent(c.req.header('user-agent')),
+        place: deps.geoip?.lookup(ip) ?? null,
+      });
+      claims = { ...claims, [SESSION_CLAIM]: sessionKey };
+    } catch (err) {
+      log('error', 'session_row_failed', safeError(err));
+    }
+
     let customToken: string;
     try {
       customToken = await passwordAuth.customToken(account.firebaseUid, claims);
     } catch (err) {
       log('error', 'custom_token_failed', safeError(err));
+      if (sessionKey) await discardUnissuedSession(deps.db, sessionKey).catch(() => undefined);
       throw unavailable();
     }
     // Catch-up for the "password changed" notice (decision 2026-11-24): the page call can be blocked or never made,

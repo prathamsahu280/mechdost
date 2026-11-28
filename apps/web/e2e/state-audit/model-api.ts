@@ -294,6 +294,25 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     realApi: true,
   },
   {
+    code: 'API-ACC-DEVICES',
+    page: 'Account → Profile → Where you’re signed in, real sign-in (2026-11-28)',
+    component:
+      'Devices card after Security: loading, error with retry, empty (nothing listed yet, one next action), only this device ("This device" badge, no button), several devices with rough place ("Near Raipur, Chhattisgarh", state only, none), last active, inline sign-out confirm and busy, one "Sign out of all other devices" with confirm, result in the status region, earlier-sign-ins note, DB-IP credit when a place shows',
+    path: '/account/profile',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [
+      ...env,
+      { name: 'auth', values: ['customer'] },
+      { name: 'devices', values: ['error', 'empty', 'this-only', 'several', 'confirming', 'busy'] },
+      { name: 'place', values: ['city', 'state-only', 'none'] },
+      stress,
+    ],
+    sweep: 8,
+    note: API_NOTE,
+    realApi: true,
+  },
+  {
     code: 'API-ACC-NOTIFYME',
     page: 'Account → Addresses with an unserved PIN, real sign-in',
     component:

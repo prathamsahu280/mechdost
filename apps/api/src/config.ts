@@ -36,6 +36,8 @@ const schema = z
     /** Proxies in front of the API that append to X-Forwarded-For (Cloud Run LB = 1, + Cloudflare = 2). */
     TRUSTED_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(0),
     /** Set by Cloud Run on every service; used only to refuse a non-production NODE_ENV there (review C3). */
+    /** Path of the DB-IP City Lite .mmdb file for the device list's rough place (decision 2026-11-28); unset = no places. */
+    GEOIP_CITY_DB: z.string().min(1).optional(),
     K_SERVICE: z.string().optional(),
     API_DOCS: z.enum(['on', 'off']).optional(),
     ANTHROPIC_API_KEY: z.string().min(20).optional(),
@@ -349,6 +351,7 @@ function toConfig(env: z.infer<typeof schema>) {
         ? { url: env.UPSTASH_REDIS_REST_URL, token: env.UPSTASH_REDIS_REST_TOKEN }
         : null,
     trustedProxyHops: env.TRUSTED_PROXY_HOPS,
+    geoipCityDb: env.GEOIP_CITY_DB ?? null,
     apiDocs: env.API_DOCS ? env.API_DOCS === 'on' : env.NODE_ENV !== 'production',
     razorpay:
       env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET

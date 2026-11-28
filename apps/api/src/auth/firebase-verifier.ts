@@ -1,4 +1,5 @@
 import { STAFF_2FA_CLAIM } from '@mechdost/shared/auth';
+import { SESSION_CLAIM } from '@mechdost/shared/devices';
 import { getAuth } from 'firebase-admin/auth';
 import { firebaseAdminApp } from './firebase-app';
 import { TokenError, type TokenVerifier, type VerifiedToken } from './token-verifier';
@@ -47,6 +48,10 @@ export function createFirebaseVerifier(projectId: string, keyFile: string | null
           authTime: decoded.auth_time,
           signInProvider: provider,
           staff2fa: provider === 'custom' && decoded[STAFF_2FA_CLAIM] === true,
+          sessionKey:
+            provider === 'custom' && typeof decoded[SESSION_CLAIM] === 'string' && decoded[SESSION_CLAIM]
+              ? decoded[SESSION_CLAIM]
+              : null,
         };
       } catch (err) {
         if (err instanceof TokenError) throw err;

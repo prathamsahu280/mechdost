@@ -19,6 +19,7 @@ import { defaultOEmbedDeps } from './ustaad/video-oembed';
 import { createGeminiCorrection } from './ustaad/correction/gemini';
 import { createFirebaseEmailActionLinks } from './auth/email-actions';
 import { createFirebaseVerifier } from './auth/firebase-verifier';
+import { openGeoIp } from './auth/geoip';
 import { createFirebasePasswordAuthority } from './auth/password-authority';
 import { qaTurnstileBypassFromEnv } from './auth/qa-turnstile-bypass';
 import { createTurnstileVerifier } from './auth/turnstile';
@@ -102,6 +103,8 @@ const app = createApp({
   db,
   verifier: createFirebaseVerifier(config.firebaseProjectId, config.firebaseKeyFile),
   rateLimiter,
+  // Device list places (decision 2026-11-28): null without GEOIP_CITY_DB or when the file cannot be read.
+  geoip: await openGeoIp(config.geoipCityDb),
   assistant: config.assistant ? createAnthropicProvider(config.assistant) : null,
   // Ustaad smart correction (spec 23 § 11): an LLM only when SMART_CORRECTION_PROVIDER names one; else the word list.
   smartCorrection: !config.smartCorrection

@@ -657,12 +657,12 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
   prepaid only). Place a small one from your phone and say "done"; I run the test and refund it. Default: not run; the
   root-cause fix (bounded sweeps) is live and watched by `sweep_heartbeat` / `sweep_pool_recycled`.
 
-- **Q-SES-1 (Decision, P1) Sessions** (research `docs/superpowers/specs/2026-11-28-sessions-devices-research.md`):
+- **Q-SES-1 - ANSWERED 2026-11-28 23:05 (A + B now, C approved) Sessions** (research `docs/superpowers/specs/2026-11-28-sessions-devices-research.md`):
   fix the stale "Signed in as" (A, bug) and add "Sign out of all devices" (B) now, device list (C, new table + auth
   change) after? Default: research only until you answer.
 - **Q-SES-2 (Decision, P2)** Until the device list exists, "Sign out of all devices" also signs out this device
   (Firebase cannot keep one). With the list: "all other devices". Default: as described.
-- **Q-SES-3 — ANSWERED 2026-11-28 22:55:** yes, show a rough location ("any major app shows that"). Plan: DB-IP
+- **Q-SES-3 - ANSWERED 2026-11-28 22:55, built as C in decision 2026-11-28 "Device list":** yes, show a rough location ("any major app shows that"; "its fine even if its not the very correct city"). DB-IP
   City Lite on the API, place name only (IP never stored), labelled approximate (research § 6).
 
 - **Q218-B (Decision, P1) My Garage build scope** (demo `docs/design/my-garage-2026-11-28/index.html`, research

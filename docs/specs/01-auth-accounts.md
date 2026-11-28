@@ -206,3 +206,49 @@ The assertive alert region is cleared whenever the form-level error clears (step
   - **No false failure.** `turnstile.ts` no longer gives up at 20 s: a widget that is still working is waited for up to 60 s (a visible challenge: until the person is done); after 8 s **from the button press** (not from the early check started while typing) a calm line "Still checking your browser…" (`auth.stillChecking`, en + hi) shows and is announced in the polite live region; a widget `error-callback` or `expired-callback` still fails at once (retried once silently as before).
   - **Warm SMS.** `warmRecaptcha` (`firebase-client.ts`) makes and renders the invisible reCAPTCHA verifier on first touch of the sign-in or phone forms; `sendPhoneCode` reuses it. Warming sends nothing: Firebase asks reCAPTCHA for a token and sends the SMS only inside `sendPhoneCode`, which the staff step calls after the API verified the password. Side effect: the reCAPTCHA script and its inline badge now load on the sign-in, sign-up-phone and forgot-phone forms in real mode for every visitor (on first touch), not only staff.
   - **Timing.** One `auth_timing` event per attempt (spec 12). Tests: `apps/api/test/auth-staff-challenge.test.ts`, `apps/web/test/turnstile-slow-check.test.ts`, `warm-recaptcha.test.ts`, `auth-timing.test.ts`.
+
+## Devices: "Where you're signed in" (built 2026-11-28; research `docs/superpowers/specs/2026-11-28-sessions-devices-research.md`, migration 0116)
+
+Founder-approved 2026-11-28 (option C, rough place yes, "its fine even if its not the very correct city").
+
+- **Table `user_sessions`** (one row per password sign-in; data model in spec 14 "Data model note: sessions and devices"). The raw
+  session key is 256 random bits (base64url) and exists only in the person's Firebase token as the custom claim `mds` (not a
+  reserved Firebase claim; custom-token claims persist into every refreshed ID token, like `staff_2fa`). The row keeps its
+  SHA-256 hash. `POST /v1/auth/password` inserts the row just before minting the custom token, for customers and for the
+  staff phone-code step (the first staff call, password only, writes no row). If the row cannot be written the person still
+  signs in (an "earlier sign-in"); if the token cannot be minted the unissued row is deleted.
+- **Device label**: the User-Agent is read once at sign-in by a dependency-free parser (`packages/shared/src/devices.ts`) into
+  three codes (device kind mobile/tablet/desktop/other, browser Chrome/Safari/Firefox/Edge/Samsung/Opera/other, OS
+  Android/iOS/Windows/macOS/Linux/other). The raw string is never stored. Shown as "Chrome on Android" (brand names stay
+  Latin on /hi; Hindi word order "Android पर Chrome").
+- **Rough place**: DB-IP City Lite (MMDB, CC BY 4.0) read with the `maxmind` reader at sign-in only, in memory. Optional env
+  `GEOIP_CITY_DB`; absent or unreadable = no place, everything else works. The client address comes from the existing
+  trusted-proxy rule (`clientIp`, `TRUSTED_PROXY_HOPS`), nowhere else. Stored: country code, state name, city name (English).
+  **The IP address is never stored.** Display: English "Near Raipur, Chhattisgarh" (state only when there is no city, nothing
+  when there is no match); Hindi: the state from the `gstStates` Hindi names (region name mapped to its GST code in
+  `devices.ts`), the city only when the cities table has a Hindi name for it (`cities.name_hi`), otherwise the city is left
+  out on /hi. Labelled approximate; the DB-IP attribution line shows whenever a place is shown.
+- **Auth middleware** (`apps/api/src/middleware/auth.ts`): the claim is part of the session-cache key. On a cache miss, a
+  token with the claim must find a live row of the same user, else 401 `SESSION_ENDED`. Tokens without the claim (sign-up
+  phone-code sessions, sign-ins from before this release) keep working: "Sign-ins from before today may not be listed", ended
+  only by Sign out of all devices. No extra query per request: the row is read on the cache-miss path only;
+  `last_active_at` is refreshed by a conditional UPDATE at most once an hour, and a failure there is logged, never fails the
+  request. **A device signed out elsewhere is out within about a minute** (the 60 s session cache).
+- **API** (`apps/api/src/routes/devices.ts`, all signed in, `private, no-store`): `GET /v1/me/devices` (own live rows, at most
+  50, newest activity first, current flagged; the hash is never returned), `POST /v1/me/devices/:id/sign-out` (404 for anyone
+  else's or unknown id, 409 `CURRENT_DEVICE` for this device), `POST /v1/me/devices/sign-out-others`,
+  `POST /v1/me/devices/current/sign-out` (best effort; the normal sign-out calls it, helper
+  `apps/web/src/lib/auth/end-current-device.ts`). Rate limit 60 writes per hour per person plus the per-route user limit.
+  Audit rows `auth.device_signed_out`, `auth.devices_signed_out_others`. Repository `packages/db/src/repo/user-sessions.ts`
+  (`revokeAllUserSessions(db, userId, reason)` is exported for "Sign out of all devices"; removing a staff role calls it with
+  `staff_role_removed`).
+- **Web**: `components/account/devices-card.tsx`, lazy, after the Security card, real sign-in only: kind icon, "Chrome on
+  Android", "Near ...", "Active now / 3 hours ago / 2 days ago" (IST dates beyond 30 days), "This device" badge without a
+  button, inline confirm per device, one "Sign out of all other devices" with confirm, one polite status region, empty state
+  with one action, earlier-sign-ins note linking to Security. Strings `devices.*` (en + hi). Events `account_devices_viewed`,
+  `account_device_signed_out`, `account_devices_signed_out_others` (spec 12).
+- **Privacy notice** gains the "Where you are signed in" section (device type, approximate place and last active are kept for
+  security; no IP address), en + hi, `policies.privacy.devices*`.
+- **Tests**: shared `devices.test.ts` (parser, place text en/hi, state codes), db `user-sessions.test.ts` (constraints,
+  ownership, races, last-active), api `devices-api.test.ts` + `geoip.test.ts` (role leak, 404/409, SESSION_ENDED, legacy
+  tokens, rate limit, hourly bump and failure), `admin-people.test.ts` (role removal marks rows), web `devices-card.test.ts`.

@@ -408,3 +408,10 @@ Browser events, `packages/shared/src/partner-client-events.ts` (merged into `CLI
 
 Shop values (2026-11-28, tab split): `tab` = `today | orders | stock | numbers | profile`; `tile` = `new | packing |
 ready | out | delivered`; `lane` = `packing | ready | out | delivered | given_up`. No new events.
+
+## Device list events (2026-11-28)
+
+Client events (typed in `packages/shared/src/analytics.ts`, emitted by `components/account/devices-card.tsx`; pseudonymous, no
+place and no User-Agent text): `account_devices_viewed {count, others}` (once per card load), `account_device_signed_out
+{deviceKind, browser, os}` (enum codes), `account_devices_signed_out_others {count}`. The server side is the audit log
+(`auth.device_signed_out`, `auth.devices_signed_out_others`).

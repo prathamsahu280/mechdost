@@ -19,6 +19,7 @@ import type { ApiResult } from '@/lib/orders-api';
 // The map pin step loads MapLibre only when an address form opens (design 2026-11-15: home servicing).
 const NotifyMe = lazy(() => import('./notify-me').then((m) => ({ default: m.NotifyMe })));
 const SecurityCard = lazy(() => import('./security-card').then((m) => ({ default: m.SecurityCard })));
+const DevicesCard = lazy(() => import('./devices-card').then((m) => ({ default: m.DevicesCard })));
 const AddressPinMap = lazy(() => import('./address-pin-map').then((m) => ({ default: m.AddressPinMap })));
 
 const card = 'rounded-card border border-line-card bg-surface p-5 shadow-card tab:p-6';
@@ -949,6 +950,9 @@ export function ProfileApi({ footer }: { footer: ReactNode }) {
             ...(me.name ? { name: me.name } : {}),
           }}
         />
+      </Suspense>
+      <Suspense fallback={null}>
+        <DevicesCard />
       </Suspense>
     </section>
   );

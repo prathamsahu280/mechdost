@@ -262,3 +262,16 @@ State: `rsa_requests` moves only through `rsaMachine` as a conditional UPDATE on
 - Order CHECKs accept `ready_for_pickup`, `returned` and actor `delivery_agent`; `orders_agent_states` keeps agent-only
   states to agent mode; a returned order needs a delivery failure reason.
 - Idempotency: payouts by `idem_key`; refunds by the existing refund keys (`delivery_returned`).
+
+## Data model note: sessions and devices (migration `0116_user_sessions`, 2026-11-28)
+
+Table `user_sessions`: uuid v7 `id`; `user_id` FK users ON DELETE CASCADE; `key_hash` text unique with CHECK 64 lower-case hex;
+`device_kind`, `browser`, `os` text with CHECK lists from `packages/shared/src/devices.ts`; `country_code` CHECK `^[A-Z]{2}$`
+or null; `region`, `city` English names or null; `last_active_at`; `revoked_at` + `revoked_reason` (CHECK: both set or both
+null; reason in `self_device`, `self_others`, `self_all`, `staff_role_removed`, `password_changed`); `version`, `created_at`,
+`updated_at`. RLS on, anon/authenticated revoked (`none` in the RLS inventory), `bump_version` + `touch_updated_at` triggers.
+Indexes: unique `key_hash`; partial `(user_id, last_active_at desc) WHERE revoked_at IS NULL` for the list. Never stored: IP
+address, raw User-Agent, raw session key. Ending a session is a conditional UPDATE guarded by `revoked_at IS NULL` (the
+state), not by a client version, because the trigger bumps `version` on the hourly last-active refresh too. ML-ready: enums
+for device, browser, OS and reason; UTC timestamps. The older unused `sessions` table (identity.ts) is superseded and left in
+place (PENDING DECISIONS). Audit actions: `auth.device_signed_out`, `auth.devices_signed_out_others`.
