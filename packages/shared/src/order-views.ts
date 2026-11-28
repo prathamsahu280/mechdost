@@ -80,6 +80,8 @@ export const ShopOffer = z.object({
 });
 export type ShopOfferDto = z.infer<typeof ShopOffer>;
 export const ShopOfferList = z.object({ offers: z.array(ShopOffer) });
+/** The answer of `PATCH /v1/shops/{shopId}/inventory/{sku}`: the offer's new version. */
+export const ShopOfferSaved = z.object({ version: z.number().int() });
 
 /** One row of a shop's own price requests (the API pages them as loose records; these fields are used). */
 export const ShopPriceRequest = z.object({

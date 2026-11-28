@@ -392,14 +392,15 @@ snake_case words only, never codes, names or amounts. The workshop click id `wor
 Browser events, `packages/shared/src/partner-client-events.ts` (merged into `CLIENT_EVENT_SCHEMAS`). `portal` ∈
 `shop | workshop | rider`; ids are lower-case codes (`^[a-z][a-z0-9_]{0,39}$`), never order codes or names.
 
-| Event                         | Props                      | When                                                   |
-| ----------------------------- | -------------------------- | ------------------------------------------------------ |
-| `partner_tab_viewed`          | `portal`, `tab`            | A tab in the partner tab bar or side rail is opened    |
-| `partner_kpi_clicked`         | `portal`, `tile`           | A Today number tile is tapped                          |
-| `partner_lane_viewed`         | `portal`, `lane`           | A lane tab (order/job state) is opened                 |
-| `partner_sound_enabled`       | `portal`, `on`             | Order sound unlocked, turned off or on again           |
-| `partner_offer_alert_played`  | `portal`, `count` (1–50)   | The new-work alert fired for fresh work (visible page) |
-| `partner_chart_table_toggled` | `portal`, `chart`, `table` | A partner chart switched to its table view or back     |
+| Event                         | Props                                                             | When                                                                                                      |
+| ----------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `partner_tab_viewed`          | `portal`, `tab`                                                   | A tab in the partner tab bar or side rail is opened                                                       |
+| `partner_kpi_clicked`         | `portal`, `tile`                                                  | A Today number tile is tapped                                                                             |
+| `partner_lane_viewed`         | `portal`, `lane`                                                  | A lane tab (order/job state) is opened                                                                    |
+| `partner_sound_enabled`       | `portal`, `on`                                                    | Order sound unlocked, turned off or on again                                                              |
+| `partner_offer_alert_played`  | `portal`, `count` (1–50)                                          | The new-work alert fired for fresh work (visible page)                                                    |
+| `partner_chart_table_toggled` | `portal`, `chart`, `table`                                        | A partner chart switched to its table view or back                                                        |
+| `partner_stock_stepped`       | `portal`, `direction` (`up`/`down`), `result` (`saved`/`refused`) | A shop tapped − or + on a stock row (Batch P); the server write is the existing `inventory_updated` event |
 
 Shop values (2026-11-28, tab split): `tab` = `today | orders | stock | numbers | profile`; `tile` = `new | packing |
 ready | out | delivered`; `lane` = `packing | ready | out | delivered | given_up`. No new events.
