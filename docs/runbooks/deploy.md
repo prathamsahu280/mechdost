@@ -313,8 +313,7 @@ restart — check the window before restarting). Restart the API
 
 **Turn off:** delete the three lines, restart the API, confirm `qa_turnstile_bypass_off`. After `UNTIL` it is off by
 itself (a restart then logs `qa_turnstile_bypass_expired`: clear the lines; only some of the three set logs
-`qa_turnstile_bypass_incomplete` and stays off). Record both times in the run's settings ledger. Revert the code within 48 h
-unless the founder keeps it dormant (Q-SIM-3): `git revert` the bypass commit, or by hand: delete
+`qa_turnstile_bypass_incomplete` and stays off). Record both times in the run's settings ledger. The founder chose to keep the code dormant (Q-SIM-3, decision 2026-11-28), so it is not reverted; to remove it later: `git revert` the bypass commit, or by hand: delete
 `apps/api/src/auth/qa-turnstile-bypass.ts` **and** `apps/api/test/qa-turnstile-bypass.test.ts`, unwrap the verifier in
 `server.ts`, drop the three names from `.env.example`, `deploy/env.server.example` and this section (the `verifyFor`
 interface can stay).

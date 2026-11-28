@@ -513,7 +513,7 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
   (the second-approver rule needs a third person); tonight those steps stop at the expected `FOUR_EYES` refusal.
 - ~~**Q-SIM-2**~~ **Answered 2026-11-27 (founder): keep the test content.** test content is KEPT for the founder's morning review (founder 2026-11-27); afterwards keep any as
   starter content or purge all? Default: keep until the founder decides.
-- **Q-SIM-3:** after the run, leave the preview-testers list in place (for real beta mechanics later) or empty it?
+- **Q-SIM-3:** after the run, leave the preview-testers list in place (for real beta mechanics later) or empty it? **ANSWERED 2026-11-28: keep it, switched off (decisions.md)**
   Default: the 9 test accounts stay listed until the founder decides; the QA sign-in bypass is removed regardless.
 - **Q-SIM-4:** build the four P0 member screens the plan found missing (give vouches, workshop owner's "Confirm your
 
