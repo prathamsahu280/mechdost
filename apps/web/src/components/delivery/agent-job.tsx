@@ -10,6 +10,7 @@ import { MapPin, Phone } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
+import { StepRail } from '@/components/partner';
 import { LocalLink } from '@/components/ui/local-link';
 import { track } from '@/lib/analytics';
 import { useLiveReload } from '@/lib/delivery/use-delivery-client';
@@ -137,7 +138,7 @@ function JobBody({ job, onChanged: reload }: { job: AgentJobDetailView; onChange
         <p className="text-sm font-bold text-muted">{t('jobTitle', { code: job.orderCode })}</p>
         {step ? (
           <>
-            <StepBar step={step} />
+            <JobStepRail step={step} />
             <h2
               id="job-step-title"
               ref={heading}
@@ -238,23 +239,17 @@ function JobBody({ job, onChanged: reload }: { job: AgentJobDetailView; onChange
   );
 }
 
-function StepBar({ step }: { step: 1 | 2 | 3 | 4 }) {
+/**
+ * The four steps of a job as the shared rail (design 2026-11-27 § 7): Go to the shop, Pick up, Go to the customer,
+ * Hand over. The step follows the job's real state (`accepted` → `picked_up`) and the rider's own "I'm there" tap
+ * (`agentStep`); the rail says "Step n of 4: name" in words and marks the current step `aria-current="step"`.
+ */
+function JobStepRail({ step }: { step: 1 | 2 | 3 | 4 }) {
   const t = useTranslations('deliveryAgent');
-  const names = ['step_shop', 'step_pickup', 'step_customer', 'step_deliver'] as const;
+  const names = [t('step_shop'), t('step_pickup'), t('step_customer'), t('step_deliver')];
   return (
     <div className="mt-2">
-      <p className="text-sm font-bold text-ink">{t('stepOf', { n: step })}</p>
-      <ol aria-label={t('stepsLabel')} className="mt-2 grid grid-cols-4 gap-1">
-        {names.map((n, i) => (
-          <li
-            key={n}
-            aria-current={i + 1 === step ? 'step' : undefined}
-            className={`h-2 rounded-pill ${i + 1 <= step ? 'bg-accent-button' : 'border border-input-border bg-surface'}`}
-          >
-            <span className="sr-only">{t(n)}</span>
-          </li>
-        ))}
-      </ol>
+      <StepRail label={t('stepsLabel')} steps={names} current={step - 1} />
     </div>
   );
 }
