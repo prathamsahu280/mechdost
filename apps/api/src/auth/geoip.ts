@@ -18,10 +18,10 @@ const MAX_NAME = 80;
 const clean = (v: string | undefined) => {
   const s = v
     ?.normalize('NFC')
-    .replace(/[\u0000-\u001f\u007f]/g, '')
+    .replace(/\p{Cc}/gu, '')
     .trim()
     .slice(0, MAX_NAME);
-  return s ? s : null;
+  return s === undefined || s === '' ? null : s;
 };
 
 /** Reads one record into the stored shape; exported for tests that use a fake reader. */

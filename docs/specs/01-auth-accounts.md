@@ -207,7 +207,7 @@ The assertive alert region is cleared whenever the form-level error clears (step
   - **Warm SMS.** `warmRecaptcha` (`firebase-client.ts`) makes and renders the invisible reCAPTCHA verifier on first touch of the sign-in or phone forms; `sendPhoneCode` reuses it. Warming sends nothing: Firebase asks reCAPTCHA for a token and sends the SMS only inside `sendPhoneCode`, which the staff step calls after the API verified the password. Side effect: the reCAPTCHA script and its inline badge now load on the sign-in, sign-up-phone and forgot-phone forms in real mode for every visitor (on first touch), not only staff.
   - **Timing.** One `auth_timing` event per attempt (spec 12). Tests: `apps/api/test/auth-staff-challenge.test.ts`, `apps/web/test/turnstile-slow-check.test.ts`, `warm-recaptcha.test.ts`, `auth-timing.test.ts`.
 
-## Devices: "Where you're signed in" (built 2026-11-28; research `docs/superpowers/specs/2026-11-28-sessions-devices-research.md`, migration 0116)
+## Devices: "Where you're signed in" (built 2026-11-28; research `docs/superpowers/specs/2026-11-28-sessions-devices-research.md`, migration 0117)
 
 Founder-approved 2026-11-28 (option C, rough place yes, "its fine even if its not the very correct city").
 

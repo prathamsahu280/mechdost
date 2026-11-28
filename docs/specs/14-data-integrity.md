@@ -263,7 +263,7 @@ State: `rsa_requests` moves only through `rsaMachine` as a conditional UPDATE on
   states to agent mode; a returned order needs a delivery failure reason.
 - Idempotency: payouts by `idem_key`; refunds by the existing refund keys (`delivery_returned`).
 
-## Data model note: sessions and devices (migration `0116_user_sessions`, 2026-11-28)
+## Data model note: sessions and devices (migration `0117_user_sessions`, 2026-11-28)
 
 Table `user_sessions`: uuid v7 `id`; `user_id` FK users ON DELETE CASCADE; `key_hash` text unique with CHECK 64 lower-case hex;
 `device_kind`, `browser`, `os` text with CHECK lists from `packages/shared/src/devices.ts`; `country_code` CHECK `^[A-Z]{2}$`

@@ -3094,7 +3094,7 @@ Founder (16:45 IST): "Keep it switched off for future tests". `apps/api/src/auth
 2026-11-28 14:06 IST) it does nothing. Each future use follows docs/runbooks/deploy.md § 7.1 (fresh key, ≤ 12 h window,
 founder OK per run, lines removed afterwards). The 48 h revert in the runbook no longer applies.
 
-## 2026-11-28 — Device list "Where you're signed in" (founder-approved 23:05 IST; builder, migration 0116)
+## 2026-11-28 — Device list "Where you're signed in" (founder-approved 23:05 IST; builder, migration 0117)
 
 Founder: option C of `docs/superpowers/specs/2026-11-28-sessions-devices-research.md`, rough place yes ("its fine even if its
 not the very correct city"). Decided and built (spec 01 "Devices", spec 13, spec 14, spec 12):

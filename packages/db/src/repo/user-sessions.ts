@@ -14,7 +14,7 @@ import { ConflictError, NotFoundError } from './errors';
 import type { Tx } from './orders';
 
 /**
- * Password sign-ins as rows (spec 01 § Devices, decision 2026-11-28; table `user_sessions`, migration 0116).
+ * Password sign-ins as rows (spec 01 § Devices, decision 2026-11-28; table `user_sessions`, migration 0117).
  *
  * - The raw session key (256-bit CSPRNG, base64url) goes into the person's Firebase token only; the row keeps its
  *   SHA-256 hash, so a database read cannot be replayed as a session.

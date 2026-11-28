@@ -3,7 +3,7 @@ import type { CityResponse } from 'maxmind';
 import { geoIpFromReader, openGeoIp, placeOf } from '../src/auth/geoip';
 import { setLogSink } from '../src/logger';
 
-const record = (over: Partial<CityResponse>): CityResponse => over as CityResponse;
+const record = (over: object): CityResponse => over;
 
 describe('placeOf (DB-IP City Lite record → stored place)', () => {
   it('reads country, state and city in English', () => {
@@ -13,12 +13,12 @@ describe('placeOf (DB-IP City Lite record → stored place)', () => {
           country: { iso_code: 'IN' },
           subdivisions: [{ names: { en: 'Chhattisgarh' } }],
           city: { names: { en: 'Raipur' } },
-        } as never),
+        }),
       ),
     ).toEqual({ countryCode: 'IN', region: 'Chhattisgarh', city: 'Raipur' });
   });
   it('keeps a state without a city, and returns null for nothing usable', () => {
-    expect(placeOf(record({ subdivisions: [{ names: { en: 'Odisha' } }] } as never))).toEqual({
+    expect(placeOf(record({ subdivisions: [{ names: { en: 'Odisha' } }] }))).toEqual({
       countryCode: null,
       region: 'Odisha',
       city: null,
@@ -28,7 +28,7 @@ describe('placeOf (DB-IP City Lite record → stored place)', () => {
   });
   it('drops a malformed country code and control characters', () => {
     expect(
-      placeOf(record({ country: { iso_code: 'india' }, city: { names: { en: 'Ra\u0000ipur ' } } } as never)),
+      placeOf(record({ country: { iso_code: 'india' }, city: { names: { en: 'Ra\u0000ipur ' } } })),
     ).toEqual({ countryCode: null, region: null, city: 'Raipur' });
   });
 });
@@ -36,7 +36,7 @@ describe('placeOf (DB-IP City Lite record → stored place)', () => {
 describe('geoIpFromReader', () => {
   const reader = {
     get: (ip: string) => {
-      if (ip === '1.2.3.4') return record({ city: { names: { en: 'Pune' } } } as never);
+      if (ip === '1.2.3.4') return record({ city: { names: { en: 'Pune' } } });
       throw new Error('bad');
     },
   };

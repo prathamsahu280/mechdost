@@ -58,7 +58,8 @@ export function DevicesCard() {
   const locale = useLocale();
   const lang = locale === 'hi' ? 'hi' : 'en';
   const [load, setLoad] = useState<Load>({ state: 'loading' });
-  const [confirm, setConfirm] = useState<string | 'others' | null>(null);
+  // A device id, the word "others" (the bulk confirm), or nothing.
+  const [confirm, setConfirm] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<{ text: string; error: boolean }>({ text: '', error: false });
   const [now, setNow] = useState(0);

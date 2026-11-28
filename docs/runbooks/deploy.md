@@ -282,7 +282,7 @@ docker compose restart api   # first time only; later refreshes are picked up by
 - The mapping from the compose file: if `geoip/` did not exist when the API started, Docker created it empty; download the
   file and restart the API once.
 
-**Migration 0116 (user_sessions) must be applied BEFORE the deploy** that contains the device list (§ 6): the sign-in route
+**Migration 0117 (user_sessions) must be applied BEFORE the deploy** that contains the device list (§ 6): the sign-in route
 writes a row on every password sign-in and logs `session_row_failed` (sign-in still works, as an "earlier sign-in") if the
 table is missing.
 

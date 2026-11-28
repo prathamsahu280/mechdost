@@ -46,7 +46,7 @@ beforeAll(async () => {
   ({ db } = await createTestDb());
 });
 
-describe('user_sessions (migration 0116)', () => {
+describe('user_sessions (migration 0117)', () => {
   it('stores only the hash of the key, never the key, an address or the raw user agent', async () => {
     const u = await freshUser();
     const key = await startUserSession(t(), { userId: u, device, place: rashtra });
