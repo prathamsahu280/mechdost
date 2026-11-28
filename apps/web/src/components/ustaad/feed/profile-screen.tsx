@@ -6,17 +6,19 @@ import { useEffect, useRef, useState } from 'react';
 import type { ProfileView } from '@mechdost/shared/ustaad/dto/social';
 import { localePath } from '@/lib/locale-path';
 import { btnPrimary, btnQuiet, card, LoadFailed, LoadingBlock, SampleNote, useCodeLabel } from '../common';
+import { PehchaanTag } from '../common/pehchaan-tag';
 import { UstaadIcon } from '../shell/icons';
 import { PostList } from './feed-list';
 import { ReportForm } from './post-menu';
 import { Sheet } from './sheet';
 import { Avatar, useMemberName, useSocial, useSocialAction, useSocialError } from './social-common';
 
+/** One count of the Me stat row (design § 3.8): the word above, the number below; wraps after three. */
 function Stat({ value, label }: { value: number; label: string }) {
   return (
-    <div className="grid justify-items-center rounded-2xl bg-surface-alt px-2 py-3 text-center">
-      <span className="font-heading text-xl font-extrabold text-ink tabular-nums">{value}</span>
-      <span className="text-xs font-bold text-muted">{label}</span>
+    <div className="grid min-w-0 content-start gap-0.5 px-1 text-center">
+      <dt className="text-xs leading-snug break-words text-muted">{label}</dt>
+      <dd className="font-heading text-xl font-extrabold text-ink tabular-nums">{value}</dd>
     </div>
   );
 }
@@ -176,30 +178,29 @@ export function ProfileScreen({ handle }: { handle: string }) {
     <div className="grid gap-4">
       <SampleNote show={sample} />
       <section aria-labelledby="profile-name" className={`${card} grid gap-4`}>
-        <div className="flex items-center gap-4">
+        <div className="flex items-start gap-4">
           <Avatar name={who} id={p.member.id} size={72} />
-          <div className="min-w-0 flex-1">
+          <div className="grid min-w-0 flex-1 gap-1">
             <h1
               id="profile-name"
-              className="font-heading text-[clamp(22px,5vw,28px)] font-extrabold text-ink"
+              className="font-heading text-base leading-snug font-extrabold break-words text-ink"
             >
               <span data-user-content>{who}</span>
             </h1>
-            <p className="mt-1 flex flex-wrap items-center gap-2 text-sm">
-              {l.has(`lvl_${p.member.level}` as 'lvl_naya') ? (
-                <span className="rounded-full bg-pill px-2.5 py-0.5 font-bold text-ink">
-                  {l(`lvl_${p.member.level}` as 'lvl_naya')}
-                </span>
-              ) : null}
+            <p className="text-sm text-muted">
+              <span data-user-content>@{p.member.handle}</span>
+            </p>
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <PehchaanTag level={p.member.level} size="md" interactive={false} />
               {p.member.verified ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-success-bg px-2.5 py-0.5 font-bold text-success">
+                <span className="inline-flex min-h-8 items-center gap-1 rounded-full bg-success-bg px-2.5 font-bold text-success">
                   <UstaadIcon name="check" size={16} />
                   {t('verified')}
                 </span>
               ) : null}
               {rel?.followsMe ? <span className="text-muted">{t('followsYou')}</span> : null}
-            </p>
-            <p className="mt-1 flex items-center gap-1 text-sm text-muted">
+            </div>
+            <p className="flex items-center gap-1 text-sm text-muted">
               <UstaadIcon name="pin" size={16} />
               <span data-user-content={locale === 'hi' && p.member.areaLabelHi ? undefined : true}>
                 {area}
@@ -208,13 +209,13 @@ export function ProfileScreen({ handle }: { handle: string }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
+        <dl className="grid grid-cols-3 gap-y-3 rounded-card border border-line-card bg-surface py-3 [&>div]:border-l [&>div]:border-line-card [&>div:nth-child(3n+1)]:border-l-0">
           <Stat value={p.helpfulAnswers} label={t('statHelpful')} />
           <Stat value={p.bestAnswers} label={t('statBest')} />
           <Stat value={p.posts} label={t('statPosts')} />
           {p.followers !== null ? <Stat value={p.followers} label={t('statFollowers')} /> : null}
           {p.following !== null ? <Stat value={p.following} label={t('statFollowing')} /> : null}
-        </div>
+        </dl>
 
         {p.specialities.length > 0 ? (
           <div>

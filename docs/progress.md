@@ -2,6 +2,14 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-28 — Mechanic Network batch D: state-audit rows + profile restyle (builder, branch worktree-agent-adc9e97b192ec1613, NOT merged)
+
+- D1: rows API-USTAAD-LEARN / -JOBS / -SAVED (model-api.ts), fixtures in api-mode/ustaad-member-fixtures.ts, server mock
+  answers /v1/ustaad-access open, hook presses a collection chip, checklist regenerated (6605 items). RED seen (6 of 7
+  failing) then 7/7. The Playwright run is owed to CI (needs the .next-api build; memory). D2: profile header on the Me
+  look (PehchaanTag, 16/800 name, handle, Me stat row), RED 3 failing then 6/6; no new strings, events or colours.
+  Not built: "helped N" on other members' profiles (no field). Spec 23 § 21i-L and the UI upgrade design status updated.
+
 ## 2026-11-28 — V9 site-wide light lift (builder, branch worktree-agent-afc5863071592c039, NOT merged)
 
 Tokens test RED first (5 failing), then tokens.css + globals.css (site-wide block at the end) + nav-links, partner-tabs, product-photo. Light only; dark pinned by test. Not done: partner lane-tabs tinted selection, workshop card image (no picture exists). See docs/decisions.md "V9 applied".

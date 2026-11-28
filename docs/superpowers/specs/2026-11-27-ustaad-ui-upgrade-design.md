@@ -352,6 +352,7 @@ video + one-line caption, 24 h expiry.
   voice note or video the member played moves to the next story when it ends; a visible "Auto next" switch turns that
   off; under reduced motion nothing moves on. `ustaad_story_autonext {on}` replaces `ustaad_story_paused`.
   **Status 2026-11-28:** § 3.5 Continue + file size, § 3.6 job employer line and the saved-by-me flags are built (21i-L).
+  State-audit rows and API-mode fixtures for Learn, Jobs and Saved are built (batch D1); the member profile `/u/[handle]` is restyled to the Me / ID card look (batch D2, § 3.8; the weekly "helped N" note stays Me-only, no field on the profile DTO).
 - **Copy (`ustaad.story.*`):** `new` "new / नई", `prev` "Previous / पिछली", `next` "Next / अगली",
   `pause` "Pause / रोको", `play` "Play / चलाओ", `close` "Close / बंद करो".
 

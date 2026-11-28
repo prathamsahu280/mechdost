@@ -465,3 +465,5 @@ T-VP1 · 2026-11-28 · media player · unplayed waveform bars on the hairline to
 
 - L-WT-V9-1 · 2026-11-28 · ui/tokens · when a token changes in light only, assert the dark counterpart value in the same test (tokens.test.ts V9 block) so a dark regression is RED, and add every new fg/bg alias pair to TEXT_PAIRS (runs in both themes).
 - L-WT-C1 · 2026-11-28 · cls · a source test cannot prove CLS: assert the frame min-h-dvh and the placeholder, and re-measure live with the layout-shift observer after deploy; check every client-loaded portal/account page for the same pattern.
+
+- L-D1 · 2026-11-28 · state-audit/ustaad · pairwise rows cannot say "a collection is pressed": a state that needs a click is a page set-up hook (hooks.ts) plus a unit assertion that the fixture answers the filtered call; assert in a unit test that every row names the states the audit text promises (kinds, empty, long names) so a row cannot silently lose a fixture.

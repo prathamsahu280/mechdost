@@ -2468,8 +2468,27 @@ No migration. All DTO changes are additive.
   sticky network header + thread header and the composer (`html:has([data-ustaad-thread])`, `globals.css`). The thread has
   one polite status region: new messages and "N earlier messages loaded" share it and clear after 5 s, so the next
   arrival is announced again and the line is not read twice.
-- **Not built:** new state-audit rows for Learn, Jobs and Saved (the API-mode fixtures for those screens do not exist yet;
-  only the story-viewer description changed). A real-browser pass of the story viewer and thread is the lead's.
+- **State-audit rows (batch D1, 2026-11-28; was "not built").** Three API-mode rows in `e2e/state-audit/model-api.ts`:
+  `API-USTAAD-LEARN` (lesson list, file sizes, a link without size, Save flag on/off, Continue card yes/no, empty,
+  error), `API-USTAAD-JOBS` (job card with employer and Verified garage / not verified / no employer, Save flag, empty,
+  error) and `API-USTAAD-SAVED` (every kind, empty, a pressed collection, error), each at the audit widths (320, 390,
+  768, 1280 and the others), light and dark, en and hi, with `stress=long-text`; the generic checks (inside card, no
+  overlap, tap target, focus ring, h-scroll, axe, Hindi) apply. Fixtures: `api-mode/ustaad-member-fixtures.ts` (every
+  body is parsed with the shared schema it is served under; the member gate and the Chhotu card strip are answered
+  too). The server mock now answers `/v1/ustaad-access` with `open`, otherwise the page guard 404s these pages;
+  `hooks.ts` presses the first collection chip for `list=collection`. The old `saved` / `saved-empty` values left the
+  tag row (it now names a tag page). Tests: `test/state-audit-ustaad-member.test.ts`. **The Playwright run itself is
+  owed to CI or the lead's machine** (it needs the real-mode web build `.next-api`, more memory than this builder had);
+  rows, fixtures and the regenerated `docs/qa/ui-state-checklist.md` are proven by the model, schema and checklist
+  tests. Still without fixtures (pre-existing): the other member rows (`API-USTAAD-FEED`, `-PROFILE`, `-ME` …).
+- **Profile restyle (batch D2).** `/ustaad/u/[handle]` takes the Me / ID card look in the surface style: the level as
+  the key-tag `PehchaanTag` (metal finish, grade lines, the word always printed), the name at 16 px / 800, the
+  `@handle` line, Verified, area, the counts as one Me-style stat row (word above number, wraps after three so Hindi
+  labels are never clipped), Works-on tags, then Follow / Connect / Message / More and the member's posts, all
+  unchanged. No new string, event, colour or API field. **Not built:** the "you helped N this week" note, because
+  `ProfileView` carries no such count (only the member's own card does) and no new data was allowed; queue it if the
+  founder wants it on other people's profiles. Test: `test/ustaad-profile-restyle.test.ts`.
+- **Not built:** a real-browser pass of the story viewer, thread and the restyled profile is the lead's.
 - **Tests:** `packages/db/test/ustaad-saved.test.ts` (flags for every kind, per member; employer line),
   `apps/web/test/ustaad-learn-continue.test.ts`, `ustaad-story-autonext.test.ts`, `ustaad-thread-a11y.test.ts`,
   `ustaad-save-wiring.test.ts` (updated), `ustaad-u1-shell.test.ts` (story advance table updated).
