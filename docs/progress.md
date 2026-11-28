@@ -1499,3 +1499,7 @@ stock −/+ on Your prices (existing versioned PATCH, event `partner_stock_stepp
 panel heading after a tab click). Not built: master–detail at ≥ 1024 px. Details: spec 07 "Batch P", decisions 2026-11-28.
 Next for the lead: run the state-audit rows API-SHOP-STOCKSTEP / API-WS-CALENDAR (resting states only; the rider rail
 is covered by the existing DLV-AGENT-JOBS rows; no fixtures for the refusal states yet) and a signed-in look at /partner/workshop/calendar with real accepted jobs.
+
+- 10:12 IST: `pnpm check` green (12/12 tasks) on main with batches N + P, worker fix, video rule and live a11y fixes;
+  V9 light lift merged (web tsc 0, vitest 252 files / 2346 tests). Pushed 6da59e47; CI run 46108753048 then Deploy.
+  Daytime cron every 10 min until 21:00 IST (founder 2026-11-28).
