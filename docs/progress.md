@@ -1445,6 +1445,32 @@ Done: launcher hides on phones while a field is focused and on `data-launcher-av
   Bench kit motion and light lift, Saved, YouTube embeds) and the partner portals with data — first thing for the next
   session with the founder's OK for a short bypass window.
 
+## HANDOVER 2026-11-28 21:25 IST (lead) — read this first next session
+
+**Live on mechdost.com** (last code deploy 5dd21eaa + docs after; smoke OK all evening, 0 errors since 16:56):
+partner leftovers (shop Delivered today + stock −/+, rider step rail, workshop Calendar with "N of M places free",
+master–detail ≥1024 px CSS-driven, lane tabs V9), network leftovers (savedByMe on Q/A/job/lesson, job employer +
+Verified garage, Learn sizes + Continue, story auto-next only after played voice/video, Messages a11y, /ustaad/u
+restyle), site-wide light lift V9, live a11y fixes, layout shift fixed live (every measured page CLS ≤ 0.005), video
+location tags accepted (founder), state-audit fixtures for every API-USTAAD row (Playwright run owed to CI).
+
+**Worker:** DC-B11 root cause = sweeps hung on dead pooled connections. Fix: bounded sweeps on their own recyclable
+pools; shared pool never replaced (self-inflicted relay incidents 15:46–16:08 and 16:27–16:36 IST, mitigated by worker
+restarts, fixed by 5dd21eaa; `worker-pool-wiring.test.ts`). Follow-up: why sweeps hang every 20–40 min (Supavisor
+pooler vs postgres.js idle/lifetime) — none seen 16:56–21:20.
+
+**QA bypass:** OFF since 14:06 IST; code kept dormant (founder). Test accounts 02/04/05/06/07/09 have a new shared QA
+password (scratchpad `qa/accounts.local.json`, not in repo) — the founder's old logins for 02/04/05 no longer work.
+
+**My Garage (Q218):** research + interactive demo v2 (night-garage bays, flip odometer, road ahead, wheel date
+picker, spends) at https://claude.ai/artifact/4VjZ7gByBJy6z4QW6d7QHY, copy `docs/design/my-garage-2026-11-28/`,
+notes `docs/superpowers/specs/2026-11-28-my-garage-research.md`. v1 was rejected ("dogshit", no real visual study) —
+v2 built from real screenshots. Waiting on founder feedback + build scope (Q218-B).
+
+**Open for the founder:** Q-DC-B11-RUN (one prepaid test order for the live lapse test), Q-PRF-1 (helped N on
+public profile), Q-NTC-1 (notices in page language), Q-SIM-3 (preview-testers list keep/empty), QA test data
+keep/clean, Q218-B (My Garage scope).
+
 ## HANDOVER 2026-11-28 ~04:20 IST (lead) — read this first next session
 
 **Live on mechdost.com:** deploy 3 = fb65ca94 (live 04:38, smoke-checked 04:48: api/web/worker healthy, 0 errors, all
