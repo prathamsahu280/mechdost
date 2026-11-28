@@ -59,13 +59,21 @@ export function VoiceNote({
   mediaId,
   tone = 'light',
   info,
+  onEnded,
 }: {
   mediaId: string;
   tone?: 'light' | 'dark';
   info?: VoiceNoteInfo;
+  /** Called when a note the member played reaches its end (the story viewer moves on). */
+  onEnded?: () => void;
 }) {
   const t = useTranslations('ustaad.media');
   const locale = useLocale();
+  // The element's handler is set at play time: it calls the latest callback through this ref.
+  const endedRef = useRef(onEnded);
+  useEffect(() => {
+    endedRef.current = onEnded;
+  }, [onEnded]);
   const summaryId = useId();
   const audio = useRef<HTMLAudioElement | null>(null);
   const bar = useRef<HTMLDivElement | null>(null);
@@ -149,6 +157,7 @@ export function VoiceNote({
       setCur(knownDuration(a, fallbackS));
       setState('paused');
       playback.release(handle.current);
+      endedRef.current?.();
     };
     a.onerror = () => {
       // The controls unmount on failure: keep focus on the play button, which stays.

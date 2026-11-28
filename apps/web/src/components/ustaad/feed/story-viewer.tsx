@@ -7,15 +7,12 @@ import type { StoryRing } from '@mechdost/shared/ustaad/dto/feed';
 import { track } from '@/lib/analytics';
 import { localePath } from '@/lib/locale-path';
 import { nextStory, type StoryPos } from '@/lib/ustaad/feed-format';
-import { STORY_PHOTO_MS, storyAdvance } from '@/lib/ustaad/story-advance';
+import { storyAdvance } from '@/lib/ustaad/story-advance';
 import { useTimeAgo } from '../common';
 import { VoiceNote } from '../media/voice-note';
 import { UstaadIcon } from '../shell/icons';
 import { VideoTile } from './post-media';
 import { SignedImage, useMemberName, useSocialAction } from './social-common';
-
-/** A photo story stays this long before the next one (paused while held, or with the Pause button). */
-const PHOTO_MS = STORY_PHOTO_MS;
 
 /** Visible control buttons (U1, design § 3.3): word + icon, 48 px; one constant for the visual-language pass. */
 const STORY_BTN =
@@ -23,9 +20,11 @@ const STORY_BTN =
 
 /**
  * Full-screen story viewer (spec 23 § 4 flow 6): tap the right side for the next story, the left for the previous,
- * press and hold to pause, swipe down or Close to leave. Buttons do the same for keyboards and screen readers, and
- * Pause stops the timer for as long as needed (WCAG 2.2.2). Photo stories move on by themselves; voice and video play
- * only when tapped (no autoplay). "Seen by N" shows on one's own stories only. Each story viewed is reported once.
+ * swipe down or Close to leave. Buttons do the same for keyboards and screen readers. Nothing moves on by itself
+ * except a voice note or video the member played, which moves to the next story when it ends (WCAG 2.2.2, lead ruling
+ * 2026-11-28, spec 23 § 21i-L): a visible "Auto next" switch turns that off, and with reduced motion it never moves.
+ * Photos always wait for Next; voice and video play only when tapped (no autoplay). "Seen by N" shows on one's own
+ * stories only. Each story viewed is reported once.
  */
 export function StoryViewer({
   rings,
@@ -48,19 +47,18 @@ export function StoryViewer({
   const [pos, setPos] = useState<StoryPos>({ ring: start, story: 0 });
   // Reduced motion: stories wait for Next instead of moving on by themselves (WCAG 2.2.2).
   const [reduced] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  const [paused, setPaused] = useState(false);
-  const [held, setHeld] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
+  const [autoNext, setAutoNext] = useState(true);
   const touchY = useRef<number | null>(null);
   const reported = useRef(new Set<string>());
   const ring = rings[pos.ring];
   const story = ring?.stories[pos.story];
   const kind = story?.media[0]?.kind ?? 'image';
-  const timed =
-    storyAdvance(kind === 'image' ? 'photo' : kind === 'audio' ? 'voice' : 'video', reduced) === 'timer';
-  const togglePause = () => {
-    if (!paused) track('ustaad_story_paused', {});
-    setPaused((p) => !p);
+  const onEnd = storyAdvance(kind === 'image' ? 'photo' : kind === 'audio' ? 'voice' : 'video', reduced);
+  // On: a played voice note or video moves on when it ends. Never under reduced motion; never for photos.
+  const auto = autoNext && !reduced;
+  const toggleAuto = () => {
+    track('ustaad_story_autonext', { on: !autoNext });
+    setAutoNext((on) => !on);
   };
 
   useEffect(() => {
@@ -80,12 +78,21 @@ export function StoryViewer({
         pos,
         dir,
       );
-      setElapsed(0);
       if (!next) onClose();
       else setPos(next);
     },
     [rings, pos, onClose],
   );
+  // The players call this through a stable function so the latest `auto` and position are used at the moment it ends.
+  const endedRef = useRef<() => void>(() => undefined);
+  useEffect(() => {
+    endedRef.current = () => {
+      if (auto && onEnd === 'on_end') step(1);
+    };
+  }, [auto, onEnd, step]);
+  const handleEnded = useCallback(() => {
+    endedRef.current();
+  }, []);
 
   useEffect(() => {
     if (!story || ring.mine || reported.current.has(story.id)) return;
@@ -94,19 +101,6 @@ export function StoryViewer({
     onSeen(pos.ring, pos.story);
     void client().then((c) => c.viewStory(story.id));
   }, [story, ring, pos, client, onSeen]);
-
-  useEffect(() => {
-    if (!timed || paused || held) return;
-    const id = window.setInterval(() => {
-      setElapsed((e) => e + 100);
-    }, 100);
-    return () => {
-      window.clearInterval(id);
-    };
-  }, [timed, paused, held, pos]);
-  useEffect(() => {
-    if (timed && elapsed >= PHOTO_MS) step(1);
-  }, [elapsed, timed, step]);
 
   if (!ring || !story) return null;
   const who = name(ring.author);
@@ -137,14 +131,10 @@ export function StoryViewer({
         <div className="flex gap-1 px-3 pt-3" aria-hidden="true">
           {ring.stories.map((s, i) => (
             <span key={s.id} className="h-1 flex-1 overflow-hidden rounded-full bg-white/30">
-              {/* transform only (no layout work per tick); reduced motion shows whole steps. */}
+              {/* Steps, not a countdown: done and current stories are full (transform only). */}
               <span
                 className="block h-full origin-left bg-white motion-safe:transition-transform motion-safe:duration-100 motion-safe:ease-linear"
-                style={{
-                  transform: `scaleX(${String(
-                    i < pos.story ? 1 : i > pos.story ? 0 : timed ? Math.min(1, elapsed / PHOTO_MS) : 1,
-                  )})`,
-                }}
+                style={{ transform: `scaleX(${i <= pos.story ? '1' : '0'})` }}
               />
             </span>
           ))}
@@ -165,21 +155,7 @@ export function StoryViewer({
           </button>
         </header>
 
-        <div
-          className="relative flex min-h-0 flex-1 items-center justify-center"
-          onPointerDown={() => {
-            setHeld(true);
-          }}
-          onPointerUp={() => {
-            setHeld(false);
-          }}
-          onPointerCancel={() => {
-            setHeld(false);
-          }}
-          onPointerLeave={() => {
-            setHeld(false);
-          }}
-        >
+        <div className="relative flex min-h-0 flex-1 items-center justify-center">
           {media?.kind === 'image' ? (
             <div className="w-full">
               <SignedImage
@@ -194,12 +170,12 @@ export function StoryViewer({
           ) : null}
           {media?.kind === 'video' ? (
             <div className="relative z-10 w-full">
-              <VideoTile key={media.mediaId} video={media} poster={poster} />
+              <VideoTile key={media.mediaId} video={media} poster={poster} onEnded={handleEnded} />
             </div>
           ) : null}
           {media?.kind === 'audio' ? (
             <div className="relative z-10 px-6">
-              <VoiceNote key={media.mediaId} mediaId={media.mediaId} tone="dark" />
+              <VoiceNote key={media.mediaId} mediaId={media.mediaId} tone="dark" onEnded={handleEnded} />
             </div>
           ) : null}
           <button
@@ -222,17 +198,7 @@ export function StoryViewer({
           />
         </div>
 
-        {/* The timer waits while a control or the caption has keyboard focus (WCAG 2.2.1). */}
-        <footer
-          onFocus={(e) => {
-            // Keyboard focus only: a tap on Play or Next must not freeze the timer.
-            if (e.target.matches(':focus-visible')) setHeld(true);
-          }}
-          onBlur={() => {
-            setHeld(false);
-          }}
-          className="grid gap-2 bg-navy/90 px-4 pt-2 pb-[calc(16px+env(safe-area-inset-bottom))]"
-        >
+        <footer className="grid gap-2 bg-navy/90 px-4 pt-2 pb-[calc(16px+env(safe-area-inset-bottom))]">
           {story.body ? (
             <p data-user-content className="text-[16px] leading-relaxed">
               {story.body}
@@ -250,15 +216,19 @@ export function StoryViewer({
               <UstaadIcon name="prev" size={20} />
               {st('prev')}
             </button>
-            {/* Always mounted (focus never drops when a voice/video story comes next); the label says the action. */}
+            {/* Always mounted (focus never drops between stories); the words carry the state, not colour alone. */}
             <button
               type="button"
-              onClick={timed ? togglePause : undefined}
-              aria-disabled={timed ? undefined : true}
+              onClick={reduced ? undefined : toggleAuto}
+              aria-pressed={auto}
+              aria-disabled={reduced ? true : undefined}
+              aria-describedby="story-auto-help"
               className={`${STORY_BTN} aria-disabled:opacity-50`}
             >
-              <UstaadIcon name={paused ? 'play' : 'pause'} size={20} />
-              {paused ? st('play') : st('pause')}
+              <UstaadIcon name={auto ? 'pause' : 'play'} size={20} />
+              {st('autoNext')}
+              {/* The state is spoken by aria-pressed; the word is for the eye (not colour alone). */}
+              <span aria-hidden="true">{auto ? st('autoNextOn') : st('autoNextOff')}</span>
             </button>
             <button
               type="button"
@@ -284,6 +254,9 @@ export function StoryViewer({
               {t('storyReply')}
             </Link>
           ) : null}
+          <p id="story-auto-help" className="sr-only">
+            {st('autoNextHelp')}
+          </p>
           <p className="sr-only">{t('storyHint')}</p>
           <p role="status" className="sr-only">
             {`${who}, ${t('storyCount', { n: pos.story + 1, total: ring.stories.length })}`}

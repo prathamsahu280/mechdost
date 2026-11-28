@@ -69,8 +69,8 @@ describe('U1 "See new posts" pill and per-tab scroll memory', () => {
 
 describe('U1 story viewer advance (WCAG 2.2.2: no auto-advance under reduced motion)', () => {
   it.each([
-    ['photo', false, 'timer'],
-    ['text', false, 'timer'],
+    ['photo', false, 'manual'],
+    ['text', false, 'manual'],
     ['voice', false, 'on_end'],
     ['video', false, 'on_end'],
     ['photo', true, 'manual'],

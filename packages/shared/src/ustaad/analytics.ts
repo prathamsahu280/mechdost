@@ -264,6 +264,8 @@ export const USTAAD_CLIENT_EVENT_SCHEMAS = {
   /** SIM-P18: the employer opened the applicants list of their job (how many were shown on the first page). */
   ustaad_job_applicants_viewed: z.object({ count }).strict(),
   ustaad_learn_completed: z.object({ resource: z.uuid() }).strict(),
+  /** Spec 23 § 21i-L (N4): the story viewer's "auto next" switch (a played voice or video moves to the next item). */
+  ustaad_story_autonext: z.object({ on: z.boolean() }).strict(),
   ustaad_join_step: z
     .object({ step: z.number().int().min(1).max(5), via: z.enum(['ustaad', 'partners_apply']) })
     .strict(),
