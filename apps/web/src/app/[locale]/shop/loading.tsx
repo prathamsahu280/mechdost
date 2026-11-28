@@ -5,7 +5,7 @@ import { Container } from '@/components/ui/page-intro';
 export default async function Loading() {
   const t = await getTranslations('common');
   return (
-    <Container className="py-10 tab:py-14">
+    <Container className="min-h-dvh py-10 tab:py-14">
       <p role="status" className="sr-only">
         {t('loading')}
       </p>

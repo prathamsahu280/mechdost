@@ -25,6 +25,13 @@ describe('client-loaded frames keep the footer below the first viewport while lo
     expect(root).toMatch(/\bmin-h-dvh\b/);
   });
 
+  // Live 2026-11-28 (lead): /shop 1280 lab CLS 0.18 — the one-row loading skeleton left the footer at y 738, then
+  // the streamed catalogue pushed it out of view.
+  it('the catalogue loading skeleton reserves at least one viewport of height', () => {
+    const cls = /<Container className="([^"]+)"/.exec(src('app/[locale]/shop/loading.tsx'))?.[1] ?? '';
+    expect(cls).toMatch(/\bmin-h-dvh\b/);
+  });
+
   it('the notification centre page reserves at least one viewport of height', () => {
     const cls = /<Container className="([^"]+)"/.exec(notifications)?.[1] ?? '';
     expect(cls).toMatch(/\bmin-h-dvh\b/);
