@@ -33,6 +33,7 @@ import {
   SHOP_DELIVERY_MODES,
   SHOP_MODE_REJECT_REASONS,
   SHOP_MODE_REQUEST_REASONS,
+  shopModeReasonFits,
   SHOP_MODE_REQUEST_STATES,
   documentNumberProblem,
   type ContactStage,
@@ -157,6 +158,7 @@ export const AgentJobContact = z.object({
   shop: z
     .object({
       name: z.string(),
+      nameHi: z.string().nullable().default(null),
       addressLine: z.string(),
       pincode: z.string(),
       phone: z.string(),
@@ -168,6 +170,7 @@ export const AgentJobContact = z.object({
   customer: z
     .object({
       area: z.string().nullable(),
+      areaHi: z.string().nullable().default(null),
       pincode: z.string(),
       name: z.string().nullable(),
       addressLine: z.string().nullable(),
@@ -189,6 +192,7 @@ export const AgentJobCard = z.object({
   loadClass: z.enum(LOAD_CLASSES),
   weightKg: z.number().nullable(),
   shopArea: z.string().nullable(),
+  shopAreaHi: z.string().nullable().default(null),
   customerPincode: z.string(),
   distanceM: z.number().int().nullable(),
   attempt: z.number().int(),
@@ -204,7 +208,9 @@ export const AgentJobDetail = z.object({
   status: z.enum(DELIVERY_JOB_STATES),
   offerId: Uuid.nullable(),
   offerExpiresAt: Iso.nullable(),
-  items: z.array(z.object({ name: z.string(), quantity: z.number().int() })),
+  items: z.array(
+    z.object({ name: z.string(), nameHi: z.string().nullable().default(null), quantity: z.number().int() }),
+  ),
   loadClass: z.enum(LOAD_CLASSES),
   weightKg: z.number().nullable(),
   contact: AgentJobContact,
@@ -311,6 +317,10 @@ export const ShopModeRequestInput = z
     note: Note.optional(),
   })
   .strict()
+  .refine((v) => shopModeReasonFits(v.requestedMode, v.reasonCode), {
+    path: ['reasonCode'],
+    message: 'REASON_NOT_FOR_DIRECTION',
+  })
   .refine((v) => v.reasonCode !== 'other' || v.note !== undefined, {
     path: ['note'],
     message: 'NOTE_REQUIRED',
@@ -423,7 +433,13 @@ export const AdminDocumentView = z.object({
 
 /** `POST /v1/admin/delivery/invites`: from an application, or someone who never applied. */
 export const AgentInviteInput = z.union([
-  z.object({ applicationCode: z.string().regex(/^PA-[A-Z]{3}-\d{4}-[0-9A-Z]{6}$/) }).strict(),
+  z
+    .object({
+      applicationCode: z.string().regex(/^PA-[A-Z]{3}-\d{4}-[0-9A-Z]{6}$/),
+      // DC-B4: the application form has no email; staff may add one when they invite.
+      email: z.string().trim().toLowerCase().pipe(z.email().max(120)).optional(),
+    })
+    .strict(),
   z
     .object({
       name: Text(2, 80),
@@ -470,6 +486,7 @@ export const AdminJobRow = z.object({
   status: z.enum(DELIVERY_JOB_STATES),
   orderStatus: z.enum(ORDER_STATES),
   shopName: z.string(),
+  shopNameHi: z.string().nullable().default(null),
   customerPincode: z.string(),
   agent: z.object({ id: Uuid, name: z.string(), vehicleType: Vehicle }).nullable(),
   offerExpiresAt: Iso.nullable(),
@@ -480,6 +497,14 @@ export const AdminJobRow = z.object({
   /** Minutes since the job entered its current status (SLA chips). */
   waitingMin: z.number().int(),
   version: Version,
+});
+/** `GET /v1/admin/delivery/job-counts`: open jobs per filter chip. */
+export const AdminJobCounts = z.object({
+  needs_agent: z.number().int(),
+  offered: z.number().int(),
+  active: z.number().int(),
+  failed: z.number().int(),
+  returning: z.number().int(),
 });
 export const AdminJobPage = z.object({ items: z.array(AdminJobRow), nextCursor: z.string().nullable() });
 /** Ranked agent suggestions for a job (Lead's call 1). */
@@ -493,6 +518,10 @@ export const AgentSuggestion = z.object({
   carriesLoad: z.boolean(),
   ratingAvgX10: z.number().int().nullable(),
   ratingCount: z.number().int(),
+  /** Can be offered this job now; false = the screen says why instead of showing "Offer" (DC-B10). */
+  eligible: z.boolean().default(true),
+  /** Declined, timed out or gave this job up before. */
+  declinedBefore: z.boolean().default(false),
 });
 export const AdminJobDetail = AdminJobRow.extend({
   /** The shop's pickup code is locked (5 wrong tries): only the pickup override is left. */
@@ -501,6 +530,8 @@ export const AdminJobDetail = AdminJobRow.extend({
   deliveryLocked: z.boolean(),
   /** A failed job may still be retried (`delivery.max_attempts`); otherwise only return to the shop. */
   retryAllowed: z.boolean(),
+  /** `delivery.max_attempts`: how many failed tries a job may have (DC-B14). */
+  maxAttempts: z.number().int().default(2),
   suggestions: z.array(AgentSuggestion),
   events: z.array(
     z.object({
@@ -568,6 +599,7 @@ export const DeliverySwitchRow = z.object({
 export const AdminShopModeRequestRow = ShopModeRequestRow.extend({
   shopId: Uuid,
   shopName: z.string(),
+  shopNameHi: z.string().nullable().default(null),
   cityCode: z.string(),
   currentMode: z.enum(SHOP_DELIVERY_MODES),
 });

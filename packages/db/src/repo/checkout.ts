@@ -136,7 +136,7 @@ export interface CheckoutQuote {
     allowed: boolean;
     reason: 'over_cap' | 'pincode' | null;
     capPaise: number;
-    eligibility: CodEligibility;
+    eligibility: CodEligibility & { askAgainAt: string | null };
     cartReason: CodCartReason | null;
     minOrderPaise: number;
     minItems: number;
@@ -553,7 +553,7 @@ export async function quoteInternal(
         allowed: reason === null && cartReason === null && codStatus.eligibility.eligible,
         reason,
         capPaise: cap,
-        eligibility: codStatus.eligibility,
+        eligibility: { ...codStatus.eligibility, askAgainAt: codStatus.askAgainAt?.toISOString() ?? null },
         cartReason,
         minOrderPaise: codStatus.rules.minOrderPaise,
         minItems: codStatus.rules.minItems,

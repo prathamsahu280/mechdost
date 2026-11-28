@@ -19,6 +19,8 @@ export const CodEligibilityDto = z.object({
   reason: z.enum(COD_PERSON_REASONS).nullable(),
   canRequest: z.boolean(),
   capPaise: z.number().int().nullable(),
+  /** DC-P6: ISO time from which a turned-down customer may ask again (shown as a date in IST); null when they may. */
+  askAgainAt: z.string().nullable().optional(),
 });
 export type CodEligibilityView = z.infer<typeof CodEligibilityDto>;
 

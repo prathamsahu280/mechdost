@@ -22,7 +22,14 @@ import { OPERATIONAL_SETTINGS, type SettingKey } from '@mechdost/shared/settings
 import { codRequestMachine } from '@mechdost/shared/state';
 import { auditLog, codRequestEvents, codRequests, settings, users, ustaadMembers } from '../schema';
 import { queueEmail } from './email-notifications';
-import { ConflictError, ForbiddenError, NotFoundError, pgCode, ValidationError } from './errors';
+import {
+  ConflictError,
+  DailyCapError,
+  ForbiddenError,
+  NotFoundError,
+  pgCode,
+  ValidationError,
+} from './errors';
 import { recordServerEvent } from './events';
 import type { Tx } from './orders';
 import type { CityScope } from './routing';
@@ -204,6 +211,8 @@ export interface CodPersonStatus {
   eligibility: CodEligibility;
   rules: CodCityRules;
   request: CodRequestView | null;
+  /** DC-P6: after a rejection or revocation, when the customer may ask again (null when they may, or never asked). */
+  askAgainAt: Date | null;
 }
 
 /** A person's COD state in a city (`userId` null = a guest). */
@@ -221,20 +230,22 @@ export async function codStatusInCity(
       ustaad: null,
       now,
     });
-    return { eligibility, rules, request: null };
+    return { eligibility, rules, request: null, askAgainAt: null };
   }
   // The "everyone" route needs no lookups.
   const open = rules.switches.everyone;
   const request = open ? null : await governingRequest(db, input.userId, input.cityId, now);
   const ustaad = open || !rules.switches.ustaad ? null : await ustaadFacts(db, input.userId);
-  const eligibility = codEligibility({
-    switches: rules.switches,
-    signedIn: true,
-    approval: approvalFacts(request, rules.reapplyDays),
-    ustaad,
-    now,
-  });
-  return { eligibility, rules, request: request ? publicView(request) : null };
+  const approval = approvalFacts(request, rules.reapplyDays);
+  const eligibility = codEligibility({ switches: rules.switches, signedIn: true, approval, ustaad, now });
+  const waiting =
+    (eligibility.reason === 'rejected' || eligibility.reason === 'revoked') && !eligibility.canRequest;
+  return {
+    eligibility,
+    rules,
+    request: request ? publicView(request) : null,
+    askAgainAt: waiting ? approval.canRequestAgainAt : null,
+  };
 }
 
 function publicView(r: RequestRow): CodRequestView {
@@ -342,6 +353,9 @@ const cleanNote = (note: string | null | undefined, max: number, code: string): 
   return v === '' ? null : v;
 };
 
+/** Requests one customer may file per rolling 24 hours (spec 03). Only created requests count (DC-F3). */
+export const COD_REQUESTS_PER_DAY = 5;
+
 /** A signed-in customer asks for cash on delivery in the city of `pincode`. */
 export async function requestCod(
   db: Tx,
@@ -365,6 +379,15 @@ export async function requestCod(
       throw new ValidationError('Cash on delivery requests are not taken here', 'COD_REQUESTS_CLOSED');
     if (!eligibility.canRequest)
       throw new ConflictError('You can ask again a little later', 'COD_REQUEST_TOO_SOON');
+    // DC-F3: the daily limit counts requests that were created, never refused attempts. It sits after the refusals
+    // and under the per-customer advisory lock, so two parallel asks cannot both pass at the edge.
+    const [made] = rowsOf<{ n: unknown }>(
+      await tx.execute(
+        sql`select count(*) as n from cod_requests where user_id = ${input.userId}::uuid and created_at > now() - interval '24 hours'`,
+      ),
+    );
+    if (Number(made?.n ?? 0) >= COD_REQUESTS_PER_DAY)
+      throw new DailyCapError('Too many requests today. Please try again tomorrow.', 'RATE_LIMITED');
     let row: { id: string; version: number } | undefined;
     try {
       [row] = await tx.transaction((sp) =>

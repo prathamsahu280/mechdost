@@ -202,9 +202,34 @@ export const SHOP_MODE_REQUEST_REASONS = [
   'faster_local_delivery',
   'customer_relationship',
   'agents_unreliable',
+  'no_riders',
+  'wider_area',
+  'save_time',
   'other',
 ] as const;
 export type ShopModeRequestReason = (typeof SHOP_MODE_REQUEST_REASONS)[number];
+/**
+ * The reasons that make sense for each direction (DC-P7): a shop moving to deliver itself picks from the first list,
+ * a shop asking for MechDost delivery partners from the second. The API refuses a reason of the other direction.
+ */
+export const SHOP_MODE_REASONS_BY_TARGET = {
+  self: ['own_riders', 'faster_local_delivery', 'customer_relationship', 'agents_unreliable', 'other'],
+  agents: ['no_riders', 'wider_area', 'save_time', 'other'],
+} as const satisfies Record<'self' | 'agents', readonly ShopModeRequestReason[]>;
+export const shopModeReasonFits = (target: 'self' | 'agents', reason: ShopModeRequestReason): boolean =>
+  (SHOP_MODE_REASONS_BY_TARGET[target] as readonly ShopModeRequestReason[]).includes(reason);
+/**
+ * Why staff turn a rider application down (DC-B5). Riders upload no documents when they apply, so the partner list
+ * ("documents could not be verified", "not a registered business") does not fit; `other` needs a note.
+ */
+export const DELIVERY_APPLICATION_REJECT_REASONS = [
+  'not_serviceable',
+  'vehicle_not_suitable',
+  'cannot_reach',
+  'duplicate',
+  'other',
+] as const;
+export type DeliveryApplicationRejectReason = (typeof DELIVERY_APPLICATION_REJECT_REASONS)[number];
 export const SHOP_MODE_REJECT_REASONS = [
   'agents_cover_area',
   'service_quality',

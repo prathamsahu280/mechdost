@@ -119,6 +119,8 @@ export const AdminShopRow = z.object({
   hours: ShopHoursDto,
   openNow: z.boolean(),
   version: z.number().int(),
+  /** Who delivers this shop's orders (DC-G1). */
+  deliveryMode: z.enum(['agents', 'self']).default('agents'),
   missingHindi: z.array(z.string()),
 });
 export type AdminShopRowDto = z.infer<typeof AdminShopRow>;

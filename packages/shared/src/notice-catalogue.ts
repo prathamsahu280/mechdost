@@ -635,19 +635,20 @@ export const NOTICE_CATALOGUE = {
     text: ['orderCode'],
     link: at('/partner/delivery'),
   }),
+  // DC-P16: both open the profile (where the document and the status are) and say what changed.
   'delivery.document_decided': def({
     category: T,
     entity: 'account',
     audience: 'partner',
-    text: [],
-    link: at('/partner/delivery'),
+    text: ['document', 'result'],
+    link: at('/partner/delivery/profile'),
   }),
   'delivery.status_changed': def({
     category: T,
     entity: 'account',
     audience: 'partner',
-    text: [],
-    link: at('/partner/delivery'),
+    text: ['status'],
+    link: at('/partner/delivery/profile'),
   }),
   'shop.delivery_agent_assigned': def({
     category: T,
@@ -833,6 +834,23 @@ export function defaultNoticeCopy(kind: NoticeKind, locale: NoticeLocale): Notic
   const copy = tree.notify[noticeLocaleKey(kind)];
   if (!copy) throw new Error(`Missing notice text for ${kind} (${locale})`);
   return { title: copy.title, body: copy.body };
+}
+
+/**
+ * A delivery word for a notice placeholder in the recipient's language (DC-P16): an agent status ("Suspended"), a
+ * document kind or its result. The words are the ones the screens use (`delivery.agentStatus`, `delivery.document`).
+ */
+export function deliveryNoticeWord(
+  locale: NoticeLocale,
+  group: 'agentStatus' | 'document.kind' | 'document.status',
+  key: string,
+): string {
+  const delivery = (locale === 'hi' ? hi : en).delivery as unknown as Record<string, unknown>;
+  const node = group
+    .split('.')
+    .reduce<unknown>((n, part) => (n as Record<string, unknown> | undefined)?.[part], delivery);
+  const word = (node as Record<string, string> | undefined)?.[key];
+  return word ?? key;
 }
 
 /** Plain text only: line breaks and control characters become spaces. */
