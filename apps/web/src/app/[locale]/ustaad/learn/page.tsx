@@ -15,6 +15,7 @@ export default async function UstaadLearnPage() {
         'ustaad.shell',
         'ustaad.standing',
         'ustaad.learn',
+        'ustaad.media',
         'ustaad.labels',
         'ustaad.saveControl',
         'segments',

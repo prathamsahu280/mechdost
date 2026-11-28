@@ -95,6 +95,8 @@ export const QuestionCardDto = z.object({
   answers: z.number().int(),
   asker: AuthorView,
   mine: z.boolean(),
+  /** Whether the signed-in member has saved it (spec 23 § 21i-L); the Save control starts in this state. */
+  savedByMe: z.boolean(),
   createdAt: z.string(),
 });
 export type QuestionCard = z.infer<typeof QuestionCardDto>;
@@ -112,6 +114,7 @@ export const AnswerViewDto = z.object({
   votedByMe: z.boolean(),
   isBest: z.boolean(),
   mine: z.boolean(),
+  savedByMe: z.boolean(),
   author: AuthorView,
   parts: z.array(
     z.object({ productId: z.uuid(), slug: z.string(), name: z.string(), nameHi: z.string().nullable() }),
@@ -164,6 +167,11 @@ export const LearnResourceViewDto = z.object({
   label: z.string(),
   watchedSeconds: z.number().int(),
   completed: z.boolean(),
+  savedByMe: z.boolean(),
+  /** Size of the hosted file in bytes (from the media row); null for links (spec 23 § 21i-L). */
+  sizeBytes: z.number().int().nullable(),
+  /** When the member last moved this lesson along (ISO, UTC); null if never touched. Drives "Continue". */
+  lastWatchedAt: z.string().nullable(),
 });
 export const LearnCourseViewDto = z.object({
   id: z.uuid(),

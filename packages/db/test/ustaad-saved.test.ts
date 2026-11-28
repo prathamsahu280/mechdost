@@ -16,7 +16,12 @@ import {
   deleteUstaadSaveCollection,
   ensureUser,
   joinUstaad,
+  getUstaadJob,
+  listUstaadJobs,
+  listUstaadQuestions,
   listUstaadSavedItems,
+  ustaadLearnView,
+  ustaadQuestionDetail,
   removeFromUstaadSaveCollection,
   renameUstaadSaveCollection,
   saveUstaadItem,
@@ -267,5 +272,62 @@ describe('collections', () => {
     const m = await member();
     for (let i = 0; i < 20; i += 1) await createUstaadSaveCollection(t(), m, `C${i}`);
     await expect(createUstaadSaveCollection(t(), m, 'One more')).rejects.toBeInstanceOf(ValidationError);
+  });
+});
+
+describe('saved-by-me flags on question, answer, job and lesson views (N1) and the employer line (N2)', () => {
+  it('start false, turn true after saving, stay per member', async () => {
+    const reader = await member();
+    const other = await member();
+    const flags = async (m: M) => {
+      const learn = await ustaadLearnView(t(), m);
+      return {
+        listed: (await listUstaadQuestions(t(), m, { filter: 'all', limit: 20 })).items.find(
+          (q) => q.id === questionId,
+        )?.savedByMe,
+        detailQ: (await ustaadQuestionDetail(t(), m, questionCode)).savedByMe,
+        detailA: (await ustaadQuestionDetail(t(), m, questionCode)).answerList.find((a) => a.id === answerId)
+          ?.savedByMe,
+        jobList: (await listUstaadJobs(t(), m.memberId, {})).items.find((j) => j.id === jobId)?.savedByMe,
+        jobOne: (await getUstaadJob(t(), m.memberId, 'UJ-RPR-2026-SAVEJB')).savedByMe,
+        lesson: [...learn.loose, ...learn.courses.flatMap((c) => c.resources)].find((r) => r.id === lessonId)
+          ?.savedByMe,
+      };
+    };
+    const none = {
+      listed: false,
+      detailQ: false,
+      detailA: false,
+      jobList: false,
+      jobOne: false,
+      lesson: false,
+    };
+    expect(await flags(reader)).toEqual(none);
+    for (const [kind, id] of [
+      ['question', questionId],
+      ['answer', answerId],
+      ['job', jobId],
+      ['lesson', lessonId],
+    ] as const)
+      await saveUstaadItem(t(), reader, { kind, id });
+    expect(await flags(reader)).toEqual({
+      listed: true,
+      detailQ: true,
+      detailA: true,
+      jobList: true,
+      jobOne: true,
+      lesson: true,
+    });
+    expect(await flags(other)).toEqual(none);
+    await unsaveUstaadItem(t(), reader, { kind: 'job', id: jobId });
+    expect((await flags(reader)).jobOne).toBe(false);
+  });
+
+  it('the job carries the employer business name and a verified mark, nothing personal', async () => {
+    const job = await getUstaadJob(t(), suresh.memberId, 'UJ-RPR-2026-SAVEJB');
+    expect(job.employer?.name).toMatch(/^Workshop \d+$/);
+    expect(job.employer?.nameHi).toMatch(/^वर्कशॉप \d+$/);
+    expect(job.employer?.verified).toBe(true);
+    expect(Object.keys(job.employer ?? {}).sort()).toEqual(['name', 'nameHi', 'verified']);
   });
 });

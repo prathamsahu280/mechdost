@@ -17,6 +17,8 @@ import { NotFoundError, ValidationError } from '../errors';
 import type { Tx } from '../orders';
 import { recordIzzat } from './izzat';
 import { recomputeUstaadLevel } from './levels';
+import { ustaadMediaTextInfo } from './media';
+import { savedIdSet } from './saved-flags';
 import type { UstaadActor } from './qa';
 import { readUstaadSettingValues } from './settings';
 
@@ -45,7 +47,20 @@ export async function ustaadLearnView(db: Tx, actor: UstaadActor): Promise<Learn
     .where(eq(ustaadLearningResources.active, true))
     .orderBy(asc(ustaadLearningResources.position), asc(ustaadLearningResources.createdAt))
     .limit(500);
+  const saved = await savedIdSet(
+    db,
+    actor.memberId,
+    'lesson',
+    resources.map((r) => r.r.id),
+  );
+  const sizes = await ustaadMediaTextInfo(
+    db,
+    resources.flatMap((r) => (r.r.mediaId ? [r.r.mediaId] : [])),
+  );
   const view = (row: (typeof resources)[number]): LearnResourceView => ({
+    savedByMe: saved.has(row.r.id),
+    sizeBytes: row.r.mediaId ? (sizes.get(row.r.mediaId)?.bytes ?? null) : null,
+    lastWatchedAt: row.p ? row.p.updatedAt.toISOString() : null,
     id: row.r.id,
     kind: row.r.kind,
     titleEn: row.r.titleEn,

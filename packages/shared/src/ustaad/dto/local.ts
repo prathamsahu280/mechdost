@@ -120,6 +120,12 @@ export const JobDto = z.object({
   segmentCodes: z.array(z.string()),
   status: z.string(),
   mine: z.boolean(),
+  savedByMe: z.boolean(),
+  /** The business behind the job: its public name and whether it is a verified garage. No person, no phone. */
+  employer: z
+    .object({ name: z.string(), nameHi: z.string().nullable(), verified: z.boolean() })
+    .strict()
+    .nullable(),
   underReview: z.boolean(),
   expiresAt: z.string(),
   createdAt: z.string(),

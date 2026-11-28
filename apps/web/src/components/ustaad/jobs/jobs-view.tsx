@@ -101,6 +101,27 @@ export function ScamLine() {
   );
 }
 
+/** The business behind a job (spec 23 § 21i-L): its public name and, when verified, a check and the words. */
+function EmployerLine({ job }: { job: Job }) {
+  const t = useTranslations('ustaad.jobs');
+  const locale = useLocale();
+  if (!job.employer) return null;
+  const name = locale === 'hi' && job.employer.nameHi ? job.employer.nameHi : job.employer.name;
+  return (
+    <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-ink">
+      <span data-user-content className="font-bold">
+        {name}
+      </span>
+      {job.employer.verified ? (
+        <span className="inline-flex items-center gap-1 font-bold text-success">
+          <BadgeCheck aria-hidden="true" className="size-4 shrink-0" />
+          {t('verifiedGarage')}
+        </span>
+      ) : null}
+    </p>
+  );
+}
+
 function useJobArea() {
   const locale = useLocale();
   return (j: Job) => (locale === 'hi' && j.areaLabelHi ? j.areaLabelHi : j.areaLabel);
@@ -195,6 +216,7 @@ export function JobsList({ role }: { role: JobRole | null }) {
                     >
                       {j.title}
                     </p>
+                    <EmployerLine job={j} />
                   </div>
                   {j.mine ? (
                     <span className="shrink-0 rounded-full bg-pill px-2.5 py-1 text-xs font-bold text-ink">
@@ -317,6 +339,7 @@ export function JobDetail({ code }: { code: string }) {
           >
             {j.title}
           </h1>
+          <EmployerLine job={j} />
           {j.mine ? (
             <p className="mt-2 inline-flex rounded-full bg-pill px-3 py-1 text-sm font-bold text-ink">
               {t('mine')} · {t(`status_${j.status}` as 'status_open')}
@@ -365,7 +388,7 @@ export function JobDetail({ code }: { code: string }) {
       </article>
 
       <div className="flex">
-        <SaveControl kind="job" id={j.id} saved={false} />
+        <SaveControl kind="job" id={j.id} saved={j.savedByMe} />
       </div>
 
       <p

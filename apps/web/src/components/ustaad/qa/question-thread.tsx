@@ -162,7 +162,7 @@ export function QuestionThread({ code }: { code: string }) {
       </article>
 
       <div className="flex">
-        <SaveControl kind="question" id={q.id} saved={false} />
+        <SaveControl kind="question" id={q.id} saved={q.savedByMe} />
       </div>
 
       {q.safetyTag ? (
@@ -300,7 +300,7 @@ function AnswerBubble({
       ) : null}
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {a.body !== null ? <ListenButton text={a.body} /> : null}
-        <SaveControl kind="answer" id={a.id} saved={false} />
+        <SaveControl kind="answer" id={a.id} saved={a.savedByMe} />
         {a.mine ? null : (
           <button
             type="button"

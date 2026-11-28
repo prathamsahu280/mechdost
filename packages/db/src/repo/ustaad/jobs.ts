@@ -28,6 +28,7 @@ import {
   ustaadJobs,
   ustaadMembers,
   ustaadWordLists,
+  workshops,
 } from '../../schema';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../errors';
 import type { Tx } from '../orders';
@@ -36,6 +37,7 @@ import { recordUstaadEvent } from './events';
 import { ustaadBlockedEitherWay, ustaadMemberCard, ustaadNotBlockedSql } from './graph-common';
 import { notifyUstaad } from './notify';
 import { openUstaadAutoHoldReport, screenUstaadContent } from './moderation';
+import { savedIdSet } from './saved-flags';
 import { readUstaadSettingValues } from './settings';
 
 type JobRole = (typeof JOB_ROLES)[number];
@@ -81,6 +83,10 @@ export interface UstaadJobView {
   status: string;
   /** True for the employer's own job (they see `pending_review` and applicants). */
   mine: boolean;
+  /** Whether the viewer saved this job (spec 23 § 21i-L). */
+  savedByMe: boolean;
+  /** The business behind the job (name and verified mark only); null when its record is gone. */
+  employer: { name: string; nameHi: string | null; verified: boolean } | null;
   /** Only for the poster: the job waits for staff. Never the reason. */
   underReview: boolean;
   expiresAt: string;
@@ -201,9 +207,81 @@ async function extraScamPhrases(tx: Tx): Promise<string[]> {
   return rows.map((r) => r.phrase);
 }
 
-function viewOf(j: JobRow, cityCode: string, viewerMemberId: string): UstaadJobView {
+/** What a job card needs besides the row: my save flag and the business behind it (one lookup per list). */
+async function jobExtras(
+  tx: Tx,
+  viewerMemberId: string,
+  rows: readonly JobRow[],
+): Promise<Map<string, { savedByMe: boolean; employer: UstaadJobView['employer'] }>> {
+  const saved = await savedIdSet(
+    tx,
+    viewerMemberId,
+    'job',
+    rows.map((r) => r.id),
+  );
+  const workshopIds = [...new Set(rows.flatMap((r) => (r.workshopId ? [r.workshopId] : [])))];
+  const tradeIds = [...new Set(rows.flatMap((r) => (r.tradeAccountId ? [r.tradeAccountId] : [])))];
+  const shops =
+    workshopIds.length === 0
+      ? []
+      : await tx
+          .select({
+            id: workshops.id,
+            name: workshops.name,
+            nameHi: workshops.nameHi,
+            status: workshops.status,
+          })
+          .from(workshops)
+          .where(inArray(workshops.id, workshopIds));
+  const trades =
+    tradeIds.length === 0
+      ? []
+      : await tx
+          .select({ id: tradeAccounts.id, name: tradeAccounts.businessName, status: tradeAccounts.status })
+          .from(tradeAccounts)
+          .where(inArray(tradeAccounts.id, tradeIds));
+  const out = new Map<string, { savedByMe: boolean; employer: UstaadJobView['employer'] }>();
+  for (const r of rows) {
+    const w = shops.find((x) => x.id === r.workshopId);
+    const t = trades.find((x) => x.id === r.tradeAccountId);
+    out.set(r.id, {
+      savedByMe: saved.has(r.id),
+      employer: w
+        ? { name: w.name, nameHi: w.nameHi, verified: w.status === 'approved' }
+        : t
+          ? { name: t.name, nameHi: null, verified: t.status === 'verified' }
+          : null,
+    });
+  }
+  return out;
+}
+
+function one(views: UstaadJobView[]): UstaadJobView {
+  const v = views[0];
+  if (!v) throw new NotFoundError();
+  return v;
+}
+
+async function viewsOf(
+  tx: Tx,
+  rows: readonly JobRow[],
+  cityCode: string,
+  viewerMemberId: string,
+): Promise<UstaadJobView[]> {
+  const extras = await jobExtras(tx, viewerMemberId, rows);
+  return rows.map((j) => viewOf(j, cityCode, viewerMemberId, extras.get(j.id)));
+}
+
+function viewOf(
+  j: JobRow,
+  cityCode: string,
+  viewerMemberId: string,
+  extra?: { savedByMe: boolean; employer: UstaadJobView['employer'] },
+): UstaadJobView {
   const mine = j.employerMemberId === viewerMemberId;
   return {
+    savedByMe: extra?.savedByMe ?? false,
+    employer: extra?.employer ?? null,
     id: j.id,
     code: j.code,
     roleCode: j.roleCode as JobRole,
@@ -245,7 +323,7 @@ export async function postUstaadJob(
         .from(ustaadJobs)
         .where(and(eq(ustaadJobs.employerMemberId, actor.memberId), eq(ustaadJobs.idemKey, input.idemKey)))
         .limit(1);
-      if (dup) return viewOf(dup, place.cityCode, actor.memberId);
+      if (dup) return one(await viewsOf(tx, [dup], place.cityCode, actor.memberId));
     }
     const employer = await employerOf(tx, actor.userId, input.employer, place.workshopId);
     // Every member-visible free-text field goes through the filters (title, description, timing, area labels).
@@ -325,7 +403,7 @@ export async function postUstaadJob(
             authorId: actor.memberId,
             kind: 'job',
           });
-        return viewOf(row, place.cityCode, actor.memberId);
+        return one(await viewsOf(tx, [row], place.cityCode, actor.memberId));
       } catch (err) {
         await tx.execute(sql`rollback to savepoint ustaad_job_create`);
         if (attempt === CODE_RETRIES - 1) throw err;
@@ -371,7 +449,7 @@ export async function listUstaadJobs(
   const page = rows.slice(0, limit);
   const last = page.at(-1);
   return {
-    items: page.map((j) => viewOf(j, m.cityCode, viewerMemberId)),
+    items: await viewsOf(db, page, m.cityCode, viewerMemberId),
     next: rows.length > limit && last ? { createdAt: last.createdAt.toISOString(), id: last.id } : null,
   };
 }
@@ -396,7 +474,7 @@ export async function getUstaadJob(db: Tx, viewerMemberId: string, code: string)
   )
     throw new NotFoundError();
   if (!mine && row.job.cityId !== row.viewerCity) throw new NotFoundError();
-  return viewOf(row.job, row.cityCode, viewerMemberId);
+  return one(await viewsOf(db, [row.job], row.cityCode, viewerMemberId));
 }
 
 /** A job the member may see, by id (Saved, spec 23 § 5): the same rule as `getUstaadJob`; `NotFoundError` otherwise. */
