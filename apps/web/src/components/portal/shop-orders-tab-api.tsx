@@ -4,14 +4,13 @@ import type { ShopOrderDto } from '@mechdost/shared/order-views';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
-import { LaneTabs, MasterDetail, MasterRow, useWideLayout } from '@/components/partner';
-import { LocalLink } from '@/components/ui/local-link';
+import { LaneTabs, MasterDetail, MasterRow, isWideNow } from '@/components/partner';
 import { track } from '@/lib/analytics';
 import { formatPrice } from '@/lib/format';
 import { countText, masterRowHref } from '@/lib/partner-kit';
 import { lanesFor, pickShopLane, shopLaneOf, type ShopLane } from '@/lib/shop-portal-view';
 import { ApiListState, LoadMore } from './api-list-state';
-import { portalCard, portalQuiet } from './portal-styles';
+import { portalCard } from './portal-styles';
 import { ActiveOrder, GivenUpWhy, OrderLines, StatusPill } from './shop-portal-api';
 import { FlashNote, useFlash, type Flash } from './shop-flash';
 import { useShopLists } from './use-shop-lists';
@@ -35,41 +34,17 @@ export function ShopOrdersTabApi() {
   const counts = Object.fromEntries(
     lanes.map((l) => [l, all.filter((o) => laneOfOrder(o) === l).length]),
   ) as Record<ShopLane, number>;
-  const wide = useWideLayout();
   const orderCode = params.get('order');
   const openOrder = orderCode ? all.find((o) => o.code === orderCode) : undefined;
-  // Wide: the list stays beside the open order and follows it from lane to lane.
-  const lane =
-    wide && openOrder ? laneOfOrder(openOrder) : pickShopLane(params.get('lane'), counts, agentMode);
+  // The list follows the open order from lane to lane (beside it at ≥ 1024 px, behind its "Back" link on a phone).
+  const lane = openOrder ? laneOfOrder(openOrder) : pickShopLane(params.get('lane'), counts, agentMode);
   const more = (l: ShopLane) => Boolean(l === 'delivered' || l === 'given_up' ? done.next : active.next);
 
-  // Logged once the lists are in, so the "first lane with work" default is the lane actually shown.
+  // Logged once the lists are in, so the "first lane with work" default is the lane actually shown. On a phone an open
+  // order replaces the list, so the lane is not "viewed" then.
   useEffect(() => {
-    if ((wide || !orderCode) && !loading) track('partner_lane_viewed', { portal: 'shop', lane });
-  }, [lane, orderCode, loading, wide]);
-
-  if (orderCode && !wide) {
-    const order = all.find((o) => o.code === orderCode);
-    const back = `/partner/shop/orders?lane=${order ? laneOfOrder(order) : lane}`;
-    return (
-      <section aria-labelledby="order-open" className="grid gap-3">
-        <h2 id="order-open" className="sr-only">
-          {orderCode}
-        </h2>
-        <FlashNote flash={flash} sticky />
-        <LocalLink href={back} className={portalQuiet}>
-          {ps('back_to_orders')}
-        </LocalLink>
-        {order ? (
-          <OrderCard order={order} onChanged={refresh} onFlash={show} />
-        ) : loading ? (
-          <div className="skeleton h-64 rounded-card" aria-hidden="true" />
-        ) : (
-          <p className="text-sm text-muted">{ps('order_missing')}</p>
-        )}
-      </section>
-    );
-  }
+    if ((isWideNow() || !orderCode) && !loading) track('partner_lane_viewed', { portal: 'shop', lane });
+  }, [lane, orderCode, loading]);
 
   const items = all.filter((o) => laneOfOrder(o) === lane);
   const loadMore = (
@@ -78,87 +53,94 @@ export function ShopOrdersTabApi() {
       onClick={() => void (lane === 'delivered' || lane === 'given_up' ? done.loadMore() : active.loadMore())}
     />
   );
+  // With an order open a phone shows that order alone: the title, lanes and list state are for ≥ 1024 px then.
+  const listChrome = orderCode ? 'hidden nav:grid' : 'grid';
   return (
     <section aria-labelledby="orders-title" className="grid gap-3">
-      <h2 id="orders-title" className="font-heading text-xl font-extrabold text-ink">
-        {ps('tab_orders')}
-      </h2>
+      <div className={`${listChrome} gap-3`}>
+        <h2 id="orders-title" className="font-heading text-xl font-extrabold text-ink">
+          {ps('tab_orders')}
+        </h2>
+      </div>
       <FlashNote flash={flash} sticky />
-      <LaneTabs
-        portal="shop"
-        label={ps('lanes_label')}
-        current={lane}
-        hrefFor={(id) => `/partner/shop/orders?lane=${id}`}
-        lanes={lanes.map((l) => {
-          const count = countText(counts[l], more(l));
-          return {
-            id: l,
-            label: ps(`lane_${l}`),
-            count: loading ? null : count,
-            name: ps('lane_count', { lane: ps(`lane_${l}`), count }),
-          };
-        })}
-      />
-      <ApiListState
-        loading={loading}
-        error={lane === 'delivered' || lane === 'given_up' ? done.error : active.error}
-        count={items.length}
-        empty={ps('lane_empty')}
-        onRetry={() => void refresh()}
-      />
-      {wide ? (
-        <MasterDetail
-          selected={orderCode}
-          heading={orderCode ?? ''}
-          closeHref={`/partner/shop/orders?lane=${lane}`}
-          closeLabel={ps('close_order')}
-          emptyText={ps('detail_empty')}
-          list={
-            <>
-              {items.length > 0 ? (
-                <ul className="grid gap-3">
-                  {items.map((o) => (
-                    <li key={o.code}>
-                      <MasterRow
-                        href={masterRowHref('/partner/shop/orders', lane, 'order', o.code)}
-                        code={o.code}
-                        open={o.code === orderCode}
-                        portal="shop"
-                        kind="order"
-                      >
-                        <OrderRowSummary order={o} />
-                      </MasterRow>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-              {loadMore}
-            </>
-          }
-          detail={
-            openOrder ? (
-              <OrderCard order={openOrder} onChanged={refresh} onFlash={show} />
-            ) : loading ? (
-              <div className="skeleton h-64 rounded-card" aria-hidden="true" />
-            ) : (
-              <p className="text-sm text-muted">{ps('order_missing')}</p>
-            )
-          }
+      <div className={`${listChrome} gap-3`}>
+        <LaneTabs
+          portal="shop"
+          label={ps('lanes_label')}
+          current={lane}
+          hrefFor={(id) => `/partner/shop/orders?lane=${id}`}
+          lanes={lanes.map((l) => {
+            const count = countText(counts[l], more(l));
+            return {
+              id: l,
+              label: ps(`lane_${l}`),
+              count: loading ? null : count,
+              name: ps('lane_count', { lane: ps(`lane_${l}`), count }),
+            };
+          })}
         />
-      ) : (
-        <>
-          {items.length > 0 ? (
-            <ul className="grid gap-3 nav:grid-cols-2">
-              {items.map((o) => (
-                <li key={`${o.code}-${o.status}`} className="flex">
-                  <OrderCard order={o} onChanged={refresh} onFlash={show} />
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          {loadMore}
-        </>
-      )}
+        <ApiListState
+          loading={loading}
+          error={lane === 'delivered' || lane === 'given_up' ? done.error : active.error}
+          count={items.length}
+          empty={ps('lane_empty')}
+          onRetry={() => void refresh()}
+        />
+      </div>
+      <MasterDetail
+        selected={orderCode}
+        heading={orderCode ?? ''}
+        closeHref={`/partner/shop/orders?lane=${lane}`}
+        closeLabel={ps('close_order')}
+        backHref={`/partner/shop/orders?lane=${lane}`}
+        backLabel={ps('back_to_orders')}
+        emptyText={ps('detail_empty')}
+        list={
+          <>
+            {items.length > 0 ? (
+              <ul className="grid gap-3">
+                {items.map((o) => (
+                  <li key={o.code}>
+                    <MasterRow
+                      href={masterRowHref('/partner/shop/orders', lane, 'order', o.code)}
+                      code={o.code}
+                      open={o.code === orderCode}
+                      portal="shop"
+                      kind="order"
+                    >
+                      <OrderRowSummary order={o} />
+                    </MasterRow>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {loadMore}
+          </>
+        }
+        fullList={
+          <>
+            {items.length > 0 ? (
+              <ul className="grid gap-3 nav:grid-cols-2">
+                {items.map((o) => (
+                  <li key={`${o.code}-${o.status}`} className="flex">
+                    <OrderCard order={o} onChanged={refresh} onFlash={show} />
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {loadMore}
+          </>
+        }
+        detail={
+          openOrder ? (
+            <OrderCard order={openOrder} onChanged={refresh} onFlash={show} />
+          ) : loading ? (
+            <div className="skeleton h-64 rounded-card" aria-hidden="true" />
+          ) : (
+            <p className="text-sm text-muted">{ps('order_missing')}</p>
+          )
+        }
+      />
     </section>
   );
 }

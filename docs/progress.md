@@ -1528,3 +1528,4 @@ C1 LV-6 layout shift: root cause = client-loaded frames render a short loading b
   files / 2372, shared 96 / 1126 (tooling-hooks passes on main; fails only inside worktrees). Pushing C + D + E.
   Watch on live: desktop CLS of the wide layout (useWideLayout is false on first paint).
 - 11:20 IST: CI 642ea842 cancelled at the 20-min job limit (all unit tests passed; cut off in the build step on a slow runner). Unit job limit 20 → 30 min; pushed 106163d4 with LV-8 shop skeleton fix.
+- 2026-11-28 batch F (agent branch worktree-agent-a4f087cb5c85717df): F1 master–detail layout is CSS only (no flip after hydration; `WideSwitch` picks only the list content, `isWideNow()` only in effects); F2 workshop Calendar shows free places per hour from the existing `/workshop/profile` + `/workshop/slots` routes (spec 07). Blackout dates not built (no data). Owed: live CLS re-measure of /partner/shop/orders at 1280, real browser look at 1440 and 390 px.
