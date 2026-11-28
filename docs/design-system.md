@@ -303,3 +303,7 @@ Light theme only; the dark tokens and dark rendering are unchanged (the tokens t
 - **Partner lane tabs (V9 item 7):** `.lane-seg` (the nav) is the track, `.lane-tab[aria-current=page]` the white thumb, via `--lane-*` tokens. They resolve to today's outlined chips with a navy selected chip in dark (tokens test pins both). 44 px targets, focus ring and the count-in-words names are unchanged.
 - **Layout-shift rule for client-loaded frames (LV-6, 2026-11-28):** a page whose body loads on the client (partner frame, notification centre) reserves one viewport of height (`min-h-dvh`) so the site footer starts below the fold and late data cannot shove it; a late-probed block (push "This device") renders its heading and a fixed `min-h` placeholder, never `null`. Do not hide the footer. Test: `apps/web/test/layout-shift-frames.test.ts`.
 - Not site-wide (unchanged): level metals, stamp, Useful brass, floating-sheet feed.
+
+## Master–detail pattern (partner portals, 2026-11-28)
+
+At ≥ 1024 px a partner list tab (shop Orders, workshop Jobs) is a two-column grid `22rem | minmax(0,1fr)`: compact selectable rows (rounded-card, `border-accent bg-pill` when open) and the open item beside them. Columns are fixed so the list never shifts when an item opens; the empty pane is one dashed card with one sentence. No new colour, font or radius. Kit: `MasterDetail`, `MasterRow`, `useWideLayout` (`components/partner/master-detail.tsx`).

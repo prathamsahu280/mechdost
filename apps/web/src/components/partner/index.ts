@@ -8,6 +8,7 @@ export { PartnerTabs, useCurrentTab, type PartnerTab } from './partner-tabs';
 export { KpiTile, type KpiTone } from './kpi-tile';
 export { OfferTimer } from './offer-timer';
 export { LaneTabs, type Lane } from './lane-tabs';
+export { MasterDetail, MasterRow, useWideLayout } from './master-detail';
 export { StepRail } from './step-rail';
 export { BulletBar } from './bullet-bar';
 export { useNewWorkAlert, type NewWorkAlert } from './new-work-alert';

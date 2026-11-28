@@ -27,8 +27,9 @@ import {
   type WorkshopLane,
 } from '@/lib/workshop-portal-view';
 import { Hourglass, Inbox, Receipt, Wrench } from 'lucide-react';
-import { KpiTile, LaneTabs, StepRail } from '@/components/partner';
+import { KpiTile, LaneTabs, MasterDetail, MasterRow, StepRail, useWideLayout } from '@/components/partner';
 import { track } from '@/lib/analytics';
+import { masterRowHref } from '@/lib/partner-kit';
 import { estimateSummary } from '@/lib/estimate-summary';
 import { formatDate, formatPrice } from '@/lib/format';
 import { homeJobNextAction, validMechanicName } from '@/lib/home-service-views';
@@ -204,16 +205,20 @@ export function WorkshopJobsApi() {
   const counts = Object.fromEntries(
     WORKSHOP_LANES.map((l) => [l, all.filter((r) => laneOf(r.status) === l).length]),
   ) as Record<WorkshopLane, number>;
-  const lane = pickLane(params.get('lane'), counts);
+  const wide = useWideLayout();
   const jobCode = params.get('job');
+  const openJob = jobCode ? all.find((r) => r.code === jobCode) : undefined;
+  // Wide: the list stays beside the open job and follows it from lane to lane.
+  const openLane = openJob ? laneOf(openJob.status) : null;
+  const lane = wide && openLane ? openLane : pickLane(params.get('lane'), counts);
   const loading = active.loading || done.loading;
 
   // Logged once the lists are in, so the "first lane with work" default is the lane actually shown.
   useEffect(() => {
-    if (!jobCode && !loading) track('partner_lane_viewed', { portal: 'workshop', lane });
-  }, [lane, jobCode, loading]);
+    if ((wide || !jobCode) && !loading) track('partner_lane_viewed', { portal: 'workshop', lane });
+  }, [lane, jobCode, loading, wide]);
 
-  if (jobCode) {
+  if (jobCode && !wide) {
     const job = all.find((r) => r.code === jobCode);
     return (
       <section aria-labelledby="job-open" className="grid gap-3">
@@ -239,6 +244,12 @@ export function WorkshopJobsApi() {
 
   const more = (l: WorkshopLane) => Boolean(l === 'done' ? done.next : active.next);
   const items = all.filter((r) => laneOf(r.status) === lane);
+  const loadMore = (
+    <LoadMore
+      show={more(lane)}
+      onClick={() => void (lane === 'done' ? done.loadMore() : active.loadMore())}
+    />
+  );
   return (
     <section aria-labelledby="jobs-title" className="grid gap-3">
       <h2 id="jobs-title" className="font-heading text-xl font-extrabold text-ink">
@@ -266,24 +277,83 @@ export function WorkshopJobsApi() {
         empty={pw('lane_empty')}
         onRetry={() => void refresh()}
       />
-      {items.length > 0 ? (
-        lane === 'done' ? (
-          <DoneList items={items} />
-        ) : (
-          <ul className="grid gap-3 nav:grid-cols-2">
-            {items.map((r) => (
-              <li key={r.code}>
-                <JobCardApi summary={r} onChanged={refresh} />
-              </li>
-            ))}
-          </ul>
-        )
-      ) : null}
-      <LoadMore
-        show={more(lane)}
-        onClick={() => void (lane === 'done' ? done.loadMore() : active.loadMore())}
-      />
+      {wide ? (
+        <MasterDetail
+          selected={jobCode}
+          heading={jobCode ?? ''}
+          closeHref={`/partner/workshop/jobs?lane=${lane}`}
+          closeLabel={pw('close_job')}
+          emptyText={pw('detail_empty')}
+          list={
+            <>
+              {items.length > 0 ? (
+                <ul className="grid gap-3">
+                  {items.map((r) => (
+                    <li key={r.code}>
+                      <MasterRow
+                        href={masterRowHref('/partner/workshop/jobs', lane, 'job', r.code)}
+                        code={r.code}
+                        open={r.code === jobCode}
+                        portal="workshop"
+                        kind="job"
+                      >
+                        <JobRowSummary request={r} />
+                      </MasterRow>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {loadMore}
+            </>
+          }
+          detail={
+            openJob ? (
+              <JobCardApi summary={openJob} onChanged={refresh} />
+            ) : loading ? (
+              <div className="skeleton h-64 rounded-card" aria-hidden="true" />
+            ) : (
+              <p className="text-sm text-muted">{pw('job_missing')}</p>
+            )
+          }
+        />
+      ) : (
+        <>
+          {items.length > 0 ? (
+            lane === 'done' ? (
+              <DoneList items={items} />
+            ) : (
+              <ul className="grid gap-3 nav:grid-cols-2">
+                {items.map((r) => (
+                  <li key={r.code}>
+                    <JobCardApi summary={r} onChanged={refresh} />
+                  </li>
+                ))}
+              </ul>
+            )
+          ) : null}
+          {loadMore}
+        </>
+      )}
     </section>
+  );
+}
+
+/** The compact master row: status in words, code, vehicle and the preferred day. */
+function JobRowSummary({ request: r }: { request: ServiceRequestSummary }) {
+  const t = useTranslations('portal');
+  const s = useTranslations('request');
+  const locale = useLocale();
+  return (
+    <>
+      <span className="block text-xs font-extrabold text-ink">
+        {s(requestStatusKey(r.status) as 'stage_requested')}
+      </span>
+      <span className="mt-1 block font-heading text-base font-extrabold text-ink">{r.code}</span>
+      <span className="mt-1 block text-xs text-muted">
+        {VEHICLE_ICON[r.vehicle.type]} <span data-user-content>{r.vehicle.text}</span> ·{' '}
+        {formatDate(r.preferredDate, locale)}, {t(`slot_${r.preferredSlot}`)}
+      </span>
+    </>
   );
 }
 

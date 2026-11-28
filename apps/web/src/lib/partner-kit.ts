@@ -100,6 +100,23 @@ export function tabFocusPlan(prev: string | null, next: string, userInitiated: b
   return userInitiated && prev !== null && prev !== next;
 }
 
+/** The locale-free href of a master-detail row: keeps the lane and opens the item (`?lane=…&order=CODE`). */
+export function masterRowHref(base: string, lane: string, param: 'order' | 'job', code: string): string {
+  return `${base}?lane=${encodeURIComponent(lane)}&${param}=${encodeURIComponent(code)}`;
+}
+
+/**
+ * Where focus goes when the selected item changes at ≥ 1024 px: a new selection moves it to the detail heading,
+ * closing it returns it to the row that was open; the first render (`prev` undefined) and no change never move it.
+ */
+export function masterDetailFocusPlan(
+  prev: string | null | undefined,
+  next: string | null,
+): 'detail' | 'row' | 'none' {
+  if (prev === undefined || prev === next) return 'none';
+  return next === null ? 'row' : 'detail';
+}
+
 /** The decoded element id a link's hash points at, or null when it has none. */
 export function hashTargetId(href: string): string | null {
   const at = href.indexOf('#');

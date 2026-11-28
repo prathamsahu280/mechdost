@@ -406,7 +406,7 @@ line (the old `bulletScale` helper is gone; the kit's `bulletGeometry` replaces 
   Jobs tab (`legacyWorkshopTarget`, unit-tested in `apps/web/test/workshop-portal-view.test.ts`).
 - **Demo builds:** Today and Jobs show the demo store's requests and jobs; Numbers and My workshop say they open
   with a real sign-in.
-- Not built in this batch: master–detail at ≥ 1024 px, saved estimate line
+- Not built in this batch (master–detail came later, Batch E): saved estimate line
   templates (P1), review replies (P2), state-audit row `WS-FRAME` (existing `API-WS-*` rows were pointed at the
   new tabs). Tiles count exactly the lane they open (decisions 2026-11-27 builder rulings).
 
@@ -431,7 +431,7 @@ line (the old `bulletScale` helper is gone; the kit's `bulletGeometry` replaces 
   `--partner-tabbar-h`, so scroll padding stays right at 320 px; after a user tab click focus goes to the new panel's
   first visible `h2`/`h3` (`tabIndex -1`, visible focus ring; waits up to 3 s for a tab body that loads late, never
   steals focus the partner already moved, falls back to the hidden `h1`).
-- Not built: master–detail at ≥ 1024 px.
+- Master–detail at ≥ 1024 px: built in Batch E (2026-11-28), see "Master–detail" below.
 
 ## Shop portal tabs (2026-11-28, partner portals UI upgrade batch A)
 
@@ -497,3 +497,7 @@ Q-PP-F2 (tabs), F3 (sound on by default), F4 (storefront header stays).
 - **Not built yet (batch A, part 2):** the split of `/partner/shop` into the five tabs (Today, Orders, Stock & prices,
   Numbers, My shop; Q-PP-F2) with the `#warnings` notice-link mapping, `BulletBar` on performance, `DailyBars` on
   staff earnings, price row with the MRP share, availability segmented choice and the weekday strip.
+
+## Master–detail at ≥ 1024 px (Batch E, 2026-11-28)
+
+Shop Orders tab and workshop Jobs tab only. At the `nav:` breakpoint (1024 px, `useWideLayout()` = `matchMedia`, false on the server and first paint) the lane tabs stay on top and below them a fixed grid `22rem | 1fr` (`MasterDetail` in `components/partner/master-detail.tsx`, so the list never changes width when an item opens) shows compact rows on the left (`MasterRow`: code, items/total/PIN and status for orders; status, code, vehicle and day for jobs) and the open item on the right (the existing `ActiveOrder` / history card, the existing `JobCardApi`). The selection is still the page query (`?order=CODE`, `?job=SR-…`; `?lane=` kept), so deep links, reload and Back work as before; a row is a link (`aria-current`). The open item keeps its lane in view: the list follows it when it moves lane. Right pane: visible `h2` with the code (`tabIndex -1`) and a "Close order / Close job" link; with nothing selected one sentence (`partnerShop.detail_empty`, `partnerWorkshop.detail_empty`), no extra action. Focus: a new selection moves focus to the detail heading, closing returns it to that row, first load and no change never move it (`masterDetailFocusPlan`, unit-tested). Under 1024 px nothing changes (stacked cards, `?order=` / `?job=` opens in place with the back link). Event `partner_detail_opened {portal, kind: order|job}` on a row click (spec 12; no code sent). Strings `close_order`, `close_job`, `detail_empty` (en + hi). State-audit rows `API-SHOP-MASTERDETAIL`, `API-WS-MASTERDETAIL`. Test `apps/web/test/partner-master-detail.test.ts`. Not done: live 1440 px browser check against a real sign-in (queued for the lead).
