@@ -147,6 +147,7 @@ const ROUTES: [string, string, unknown?][] = [
   ['GET', '/ustaad/feed'],
   ['GET', '/ustaad/feed?tab=following'],
   ['GET', '/ustaad/feed/fresh?since=2026-11-27T00:00:00.000Z'],
+  ['GET', '/ustaad/feed/limits'],
   ['POST', '/ustaad/posts', { nonsense: true }],
   ['GET', `/ustaad/posts/${randomUUID()}`],
   ['DELETE', `/ustaad/posts/${randomUUID()}`],
@@ -195,6 +196,13 @@ describe('role leak (gate + member guard before validation)', () => {
 });
 
 describe('posts, feed, reactions, comments', () => {
+  it('SIM-P6 / SIM-P29: GET /ustaad/feed/limits answers the live photo limit and the story lock for a member', async () => {
+    const r = await call(ramesh, 'GET', '/ustaad/feed/limits');
+    expect(r.status).toBe(200);
+    expect(r.body).toMatchObject({ maxPhotos: 6, canWrite: true });
+    expect(['open', 'locked', 'off']).toContain(r.body.stories);
+  });
+
   it('strict bodies: status and authorId are refused', async () => {
     const r = await call(ramesh, 'POST', '/ustaad/posts', {
       kind: 'text',

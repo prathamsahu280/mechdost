@@ -2407,6 +2407,28 @@ Founder 2026-11-28: save more than posts and keep it like WhatsApp/Instagram/Fac
 - **Still not built:** "Send to my WhatsApp" for non-post kinds (founder OK, Q234);
   collection limit and suggested names as admin settings (founder OK); an e2e of the page and sheet.
 
+## 21j. QA simulation fixes, batch U (2026-11-29; branch `worktree-agent-a4b911d41b450cd4d`; no migration)
+
+Rows of `docs/qa/backlog-audit-2026-11-28.md` "Open - Mechanic Network (batch U)":
+
+| Row        | Built                                                                                                                                                                                                                                               |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SIM-P12    | Follow reads "Following" (profile) and "Following tag" (tag page) when on, keeping `aria-pressed`. Keys `ustaad.social.following`, `ustaad.feed.tagFollowing`.                                                                                      |
+| SIM-P15    | A phone number or a number plate that blocks an item now answers its own codes `USTAAD_CONTENT_PHONE` / `USTAAD_CONTENT_PLATE` (thrown by `screenUstaadContent`, decided by `fixableBlockReason` in shared), with en + hi words in `ustaad.labels`. |
+| SIM-F7     | The "question waiting" bell words the topic in the reader's language (`ustaadTopicLabel`, params as a function of the locale), never the raw code.                                                                                                  |
+| SIM-P14    | A new message to an accepted connection shows no request-only rules and says "Send message" (keys `connectedNote`, `sendMessage`).                                                                                                                  |
+| SIM-P3     | `POST /ustaad/media/{id}/complete` is idempotent for the owner once the file is verified (same row, 200); the phone retries only this step (`retryTransient`: 3 tries, 0.4 s / 1.2 s) and never re-uploads.                                         |
+| SIM-P6/P29 | `GET /ustaad/feed/limits` (member read) answers `{ maxPhotos, stories: open/locked/off, canWrite }` from the live settings. The composer uses `maxPhotos` (fallback 6, the shipped default) and refuses a known lock before any upload.             |
+| SIM-B4     | Console report detail words an automatic hold's signal codes ("Why it was held", `signal_*`) and names the source "New-member check" for first-post/link holds, instead of "Word list" + raw code (`holdSignalsOf`).                                |
+| SIM-B10    | Verification cards carry a "First verification" / "Level review" tag.                                                                                                                                                                               |
+| SIM-B11    | The sanction confirm names the member, action, reason and length; the member card shows "ban proposed, waiting for a second staff member" (`StaffMemberDetail.pendingBan`, both proposer and approver).                                             |
+| SIM-B12    | Takedown form: no pre-filled legal basis (was "Court order"); a basis must be chosen. The item picker is queued (Q-U-B12).                                                                                                                          |
+
+Not built (queued in `docs/questions-for-user.md`, defaults used): SIM-B9 (grouping), SIM-G14, SIM-G15, SIM-LEAD-1,
+SIM-P25, SIM-P30, SIM-P5, SIM-P7/P9, SIM-LEAD-8, SIM-RT3. Tests: `packages/shared/test/ustaad-batch-u.test.ts`,
+`apps/web/test/ustaad-batch-u.test.ts`, `packages/db/test/ustaad-moderation.test.ts` (P15), `ustaad-console.test.ts`
+(B11), `ustaad-feed.test.ts` (P6/P29), `apps/api/test/ustaad-media-api.test.ts` (P3), `ustaad-feed-api.test.ts` (limits).
+
 ## 22. Not built / later
 
 Speech-to-text and transcripts (ruled out), voice search, auto-translation, server video/audio transcoding and the

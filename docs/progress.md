@@ -2,6 +2,13 @@
 
 This file is the single source of truth for **where the build is right now**. It is updated after every completed step (CLAUDE.md hard rule 13). A new or compacted session must read, in order: `CLAUDE.md` → this file → `docs/decisions.md` (incl. PENDING DECISIONS) → the spec(s) for the current task.
 
+## 2026-11-29 — Mechanic Network batch U: open simulation rows (builder, branch worktree-agent-a4b911d41b450cd4d, NOT merged)
+
+- Built (spec 23 § 21j, no migration): SIM-P12, P15, F7, P14, P3, P6/P29 (`GET /ustaad/feed/limits`), B4, B10, B11, B12
+  (basis part). Queued with defaults: B9, G14, G15, LEAD-1, P25, P30, P5, P7/P9, LEAD-8, RT3, B12 picker
+  (`docs/questions-for-user.md` Q-U-*). Tests per row id in the spec section. Not run: Playwright state-audit
+  (needs the .next-api build), real-browser pass.
+
 ## 2026-11-28 — Mechanic Network batch D: state-audit rows + profile restyle (builder, branch worktree-agent-adc9e97b192ec1613, NOT merged)
 
 - D1: rows API-USTAAD-LEARN / -JOBS / -SAVED (model-api.ts), fixtures in api-mode/ustaad-member-fixtures.ts, server mock

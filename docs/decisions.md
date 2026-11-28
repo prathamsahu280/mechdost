@@ -3092,3 +3092,13 @@ Founder (16:45 IST): "Keep it switched off for future tests". `apps/api/src/auth
 `server.ts` stay in the code, dormant: with the three `QA_TURNSTILE_BYPASS_*` variables unset (as now, removed
 2026-11-28 14:06 IST) it does nothing. Each future use follows docs/runbooks/deploy.md § 7.1 (fresh key, ≤ 12 h window,
 founder OK per run, lines removed afterwards). The 48 h revert in the runbook no longer applies.
+
+## 2026-11-29 - Mechanic Network batch U (builder; no migration)
+
+- The composer's limits come from the server (`GET /ustaad/feed/limits`: live `ustaad.posts.max_photos`, stories
+  open/locked/off, can-write), never a number in the app (rule 8). It is a hint; the create calls still enforce.
+- Media `complete` is idempotent for the owner once verified, so the client may retry that one step.
+- A takedown never pre-selects its legal basis (the old default "Court order" put a legal claim on the record by
+  accident).
+- A phone number or number plate that blocks an item answers `USTAAD_CONTENT_PHONE` / `USTAAD_CONTENT_PLATE` so the
+  author is told what to remove (the word-list reason stays unexplained on purpose; spec 23 § 13).

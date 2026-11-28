@@ -36,6 +36,7 @@ import {
   unlikeUstaadPost,
   unmarkUstaadPostUseful,
   unsaveUstaadPost,
+  ustaadComposeLimits,
   ustaadForYouIds,
   ustaadLinkPreviewNeeded,
   ustaadPostDetail,
@@ -743,6 +744,17 @@ describe('feed', () => {
 });
 
 describe('stories', () => {
+  it('SIM-P6 / SIM-P29: the composer limits say stories are locked for a young account, with the live photo limit', async () => {
+    const young = await member({ joinedAt: new Date() });
+    const old = await member();
+    expect(await ustaadComposeLimits(t(), young)).toMatchObject({
+      stories: 'locked',
+      canWrite: true,
+      maxPhotos: 6,
+    });
+    expect((await ustaadComposeLimits(t(), old)).stories).toBe('open');
+  });
+
   it('accounts younger than stories.min_account_days cannot post stories', async () => {
     const young = await member({ joinedAt: new Date() });
     const m = await media(young.memberId, 'image');

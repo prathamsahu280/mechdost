@@ -11,7 +11,7 @@
  * (paused = the Auto next switch is pressed off).
  */
 import { CorrectResponse } from '@mechdost/shared/ustaad/correction';
-import type { StoryRing } from '@mechdost/shared/ustaad/dto/feed';
+import { ComposeLimitsDto, type StoryRing } from '@mechdost/shared/ustaad/dto/feed';
 import {
   CreatedResponse,
   DeclaredUploadResponse,
@@ -58,6 +58,10 @@ export function ustaadCreateMocks(): Mock[] {
   });
   return [
     meMember(),
+    // The composer asks what it may offer before any upload (SIM-P6, SIM-P29): nothing is locked in these rows.
+    get(/^\/ustaad\/feed\/limits$/, ComposeLimitsDto, () => ({
+      body: { maxPhotos: 10, stories: 'open', canWrite: true } satisfies Out<typeof ComposeLimitsDto>,
+    })),
     get(/^\/ustaad\/tags$/, TagsResponse, (_c, q) => ({
       body: {
         tags: TAGS.filter(

@@ -76,3 +76,22 @@ export function videoLengthProblem(durationMs: number): 'unknown_length' | 'too_
   if (durationMs > VIDEO_HARD_CAP_MS) return 'too_long';
   return null;
 }
+
+/**
+ * SIM-P3: repeat a step that is safe to repeat while it fails for a reason that can pass (no answer, a gateway
+ * error): three tries, 0.4 s then 1.2 s apart. A real refusal (4xx) is returned at once.
+ */
+export async function retryTransient<T extends { ok: boolean }>(
+  run: () => Promise<T>,
+  wait: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms)),
+): Promise<T> {
+  const gaps = [400, 1200];
+  let last = await run();
+  for (const gap of gaps) {
+    const status = last.ok ? 200 : ((last as { status?: number }).status ?? 0);
+    if (last.ok || (status !== 0 && status < 502)) return last;
+    await wait(gap);
+    last = await run();
+  }
+  return last;
+}

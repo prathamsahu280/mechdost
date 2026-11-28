@@ -130,6 +130,17 @@ export const CreateStoryDto = z
   .refine((s) => s.posterMediaId !== s.mediaId, { message: 'Duplicate media', path: ['posterMediaId'] });
 export type CreateStory = z.infer<typeof CreateStoryDto>;
 
+/** `GET /ustaad/feed/limits`: what the composer may offer now (SIM-P6, SIM-P29). A hint; the create calls still check. */
+export const ComposeLimitsDto = z.object({
+  /** `ustaad.posts.max_photos`, the live admin setting. */
+  maxPhotos: z.number().int().min(1).max(10),
+  /** `open`, `locked` (the member's first days) or `off` (switched off by staff). */
+  stories: z.enum(['open', 'locked', 'off']),
+  /** False while the account can only read. */
+  canWrite: z.boolean(),
+});
+export type ComposeLimits = z.infer<typeof ComposeLimitsDto>;
+
 export const CommentDto = z
   .object({
     body: text(1000).optional(),

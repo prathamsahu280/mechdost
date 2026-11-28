@@ -672,3 +672,24 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
   `docs/superpowers/specs/2026-11-28-my-garage-research.md`): which parts to build first? Default proposal: (1) service
   book from real orders/jobs + fits shelf + km update, (2) road-ahead service due with admin rules, (3) papers expiry +
   reminders, (4) spend; plate lookup later.
+
+- **Q-U-B9 (Decision, P2) Reports grouped per post.** Two reporters of one post are two queue items. Proper fix is a
+  data model change (one open item per target with N reporters, a `report_reporters` table, counts and clock from the
+  first report) = a migration and queue rewrite. Default: not built; the queue keeps one item per report and
+  moderators decide the second as "already handled".
+- **Q-U-G15 (Decision, P2) Promotion targeting scope.** City and vehicle-type targeting plus a card preview. Default:
+  not built; promotions stay city-wide. Needs your word on targeting fields and who may set them.
+- **Q-U-G14 (Decision, P2) Members/joins counter.** Console overview card. Default: not built; counts are in
+  Analytics. Say which numbers and period (joins per day, active, by level).
+- **Q-U-B12 (Decision, P2) Takedown item picker.** Today staff paste the 36-character id from the report. A picker
+  needs a console search over posts, comments, questions and answers. Default: paste id, no pre-selected basis (built).
+- **Q-U-P29 (Info)** `ustaad.posts.max_photos` is capped 1-10 in settings; the composer follows the live value (built).
+- **Q-U-LEAD8 (Decision, P3) reCAPTCHA badge.** Google allows hiding the badge only when this text is shown near the
+  form: "This site is protected by reCAPTCHA and the Google Privacy Policy and Terms of Service apply." Default: not
+  built (badge stays). Say yes and it ships as the one-line notice + hidden badge, en + hi. Sign-in forms belong to
+  the sign-in builder, so it was not touched here.
+- **Q-U-P5 (Info)** The `/partners/status` step "पक्का" could not be reproduced: no step label with that word exists in the
+  application stages (`apply.stage_*`). Send the exact URL and state if it still shows.
+- **Not built, no decision needed (time-boxed, still open):** SIM-LEAD-1 (email-verified "check again" on other
+  devices; touches the sign-in builder's area), SIM-P25 (line clamp with "Read more" in feed cards), SIM-P30 (save
+  count in post DTOs), SIM-P7/P9 (coach marks, more than one target), SIM-RT3 (copy strings).
