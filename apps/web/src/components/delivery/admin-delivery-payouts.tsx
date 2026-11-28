@@ -121,8 +121,13 @@ export function PayoutsTab({ client, agents }: { client: AdminDeliveryClient; ag
       return;
     }
     const r = await client.correctPayout(id, note.trim());
-    if (r.ok) track('delivery_admin_action', { action: 'payout_correct' });
-    say(r.ok ? t('payoutCorrected') : t('genericError', { code: r.code }), r.ok ? 'ok' : 'error');
+    if (r.ok && !r.data.alreadyCorrected) track('delivery_admin_action', { action: 'payout_correct' });
+    say(
+      r.ok
+        ? t(r.data.alreadyCorrected ? 'payoutAlreadyCorrected' : 'payoutCorrected')
+        : t('genericError', { code: r.code }),
+      r.ok && !r.data.alreadyCorrected ? 'ok' : 'error',
+    );
     setCorrecting(null);
     setNote('');
     reload();

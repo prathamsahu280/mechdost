@@ -123,13 +123,14 @@ function RatingCard({
       setEditing(false);
       // The form leaves the page: focus the saved summary instead of dropping to the page (2.4.3).
       requestAnimationFrame(() => document.getElementById('rate-summary')?.focus());
-    } else say(t('rateFailed'), 'error');
+    } else say(t(res.code === 'STALE' ? 'rateStale' : 'rateFailed'), 'error');
   }
 
   const until = existing
     ? new Intl.DateTimeFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', {
         dateStyle: 'medium',
         timeStyle: 'short',
+        hour12: locale !== 'hi',
         timeZone: 'Asia/Kolkata',
       }).format(new Date(existing.editableUntil))
     : null;

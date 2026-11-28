@@ -312,13 +312,16 @@ export function AgentOffers() {
 
 function JobFacts({ job }: { job: AgentJobCardView }) {
   const t = useTranslations('deliveryAgent');
+  const locale = useLocale();
   const l = useTranslations('delivery.loadClass');
   return (
     <dl className="grid gap-1 text-[15px] text-ink">
       <div>
         <dt className="sr-only">{t('shopTitle')}</dt>
         <dd className="font-bold">
-          {job.shopArea ? t('pickupIn', { area: job.shopArea }) : t('pickupInUnknown')}
+          {job.shopArea
+            ? t('pickupIn', { area: locale === 'hi' && job.shopAreaHi ? job.shopAreaHi : job.shopArea })
+            : t('pickupInUnknown')}
         </dd>
       </div>
       <div>
@@ -577,6 +580,7 @@ export function AgentHistory() {
                         <span className="block text-sm text-muted">
                           {new Intl.DateTimeFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', {
                             timeStyle: 'short',
+                            hour12: locale !== 'hi',
                             timeZone: 'Asia/Kolkata',
                           }).format(new Date(j.updatedAt))}
                         </span>

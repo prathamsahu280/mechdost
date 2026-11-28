@@ -35,6 +35,7 @@ import type {
   AgentStatus,
   AgentStatusReason,
   AgentVehicleType,
+  DeliveryApplicationRejectReason,
   DeliveryDeclineReason,
   DeliveryFailReason,
   DeliveryFailureDecision,
@@ -48,7 +49,6 @@ import type {
   ShopModeRejectReason,
   ShopModeRequestReason,
 } from '@mechdost/shared/delivery/codes';
-import type { ApplicationRejectReason } from '@mechdost/shared/partner-codes';
 import { AGENT_PAYOUT_METHODS, DELIVERY_RATING_REASONS } from '@mechdost/shared/delivery/codes';
 
 /** The parsed output of a shared schema, without importing Zod. */
@@ -77,6 +77,14 @@ export type AdminAgentRowView = Out<typeof AdminAgentRow>;
 export type AdminAgentDetailView = Out<typeof AdminAgentDetail>;
 export type AdminDocumentViewT = Out<typeof AdminDocumentView>;
 export type AdminShopModeRequestView = Out<typeof AdminShopModeRequestRow>;
+/** One approved shop with who delivers its orders now (staff set it directly, DC-G1). */
+export interface ShopModeRowView {
+  id: string;
+  name: string;
+  nameHi: string | null;
+  mode: 'agents' | 'self';
+  version: number;
+}
 export type AgentInviteRowView = Out<typeof AgentInviteRow>;
 export type AgentInvitePreviewView = Out<typeof AgentInvitePreview>;
 
@@ -94,7 +102,7 @@ export interface AgentApplicationView {
   createdAt: string;
   version: number;
 }
-export type { ApplicationRejectReason };
+export type { DeliveryApplicationRejectReason };
 
 export type Result<T> = { ok: true; data: T } | { ok: false; status: number; code: string };
 export interface Page<T> {
@@ -190,6 +198,8 @@ export interface ShopDeliveryClient extends Live {
 
 export interface AdminDeliveryClient extends Live {
   jobs(view: AdminJobsView, cursor: string | null): Promise<Result<Page<AdminJobRowView>>>;
+  /** Open jobs per filter chip (not `done`). */
+  jobCounts(): Promise<Result<Partial<Record<AdminJobsView, number>>>>;
   job(jobId: string): Promise<Result<AdminJobDetailView>>;
   /** Every job of one sub-order (admin order detail → timeline). */
   jobsForOrder(orderCode: string): Promise<Result<AdminJobDetailView[]>>;
@@ -229,7 +239,7 @@ export interface AdminDeliveryClient extends Live {
   applications(cursor: string | null): Promise<Result<Page<AgentApplicationView>>>;
   rejectApplication(
     code: string,
-    reasonCode: ApplicationRejectReason,
+    reasonCode: DeliveryApplicationRejectReason,
     version: number,
     note?: string,
   ): Promise<Result<null>>;
@@ -237,11 +247,15 @@ export interface AdminDeliveryClient extends Live {
   invites(): Promise<Result<Page<AgentInviteRowView>>>;
   invite(
     input:
-      | { applicationCode: string }
+      | { applicationCode: string; email?: string }
       | { name: string; phone: string; email?: string; cityCode: string; vehicleType: AgentVehicleType },
   ): Promise<Result<{ id: string; token: string; expiresAt: string }>>;
   revokeInvite(id: string): Promise<Result<null>>;
   modeRequests(status: 'pending' | 'all'): Promise<Result<Page<AdminShopModeRequestView>>>;
+  /** Approved shops in the staff member's cities, with their delivery mode (DC-G1). */
+  shopModes(): Promise<Result<{ items: ShopModeRowView[] }>>;
+  /** Staff set a shop's delivery mode directly, with a reason (history kept); `version` is the shop's. */
+  setShopMode(shopId: string, mode: ShopDeliveryMode, note: string, version: number): Promise<Result<null>>;
   decideMode(
     id: string,
     approve: boolean,
@@ -250,7 +264,8 @@ export interface AdminDeliveryClient extends Live {
   ): Promise<Result<null>>;
   payouts(filter: { agentId?: string; from?: string; to?: string }): Promise<Result<AdminPayoutPageView>>;
   recordPayout(input: PayoutInputView): Promise<Result<null>>;
-  correctPayout(id: string, note: string): Promise<Result<null>>;
+  /** `alreadyCorrected`: the payout had been corrected already, nothing was added (DC-B12). */
+  correctPayout(id: string, note: string): Promise<Result<{ alreadyCorrected: boolean }>>;
   /** Per agent: delivered jobs in the period and what was already paid for it. */
   payoutSummary(from: string, to: string): Promise<Result<{ items: PayoutSummaryRow[] }>>;
 }

@@ -29,6 +29,8 @@ export function AgentApplyForm() {
   const [sending, setSending] = useState(false);
   const [challenge, setChallenge] = useState(false);
   const [received, setReceived] = useState<string | null>(null);
+  /** DC-F1: this phone already had an open application; the reference shown is that one. */
+  const [already, setAlready] = useState(false);
   const doneRef = useRef<HTMLHeadingElement>(null);
 
   async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
@@ -106,8 +108,10 @@ export function AgentApplyForm() {
         body !== null &&
         'code' in body &&
         typeof body.code === 'string'
-      )
+      ) {
+        setAlready('alreadyApplied' in body && body.alreadyApplied === true);
         return body.code;
+      }
       setFormError(res.status === 429 ? t('errLimit') : t('errSend'));
     } catch {
       setFormError(t('errSend'));
@@ -120,9 +124,11 @@ export function AgentApplyForm() {
     return (
       <div className="space-y-3">
         <h2 ref={doneRef} tabIndex={-1} className="font-heading text-xl font-extrabold text-ink">
-          {t('receivedTitle')}
+          {t(already ? 'alreadyTitle' : 'receivedTitle')}
         </h2>
-        <p className="text-[15px] text-ink">{t('receivedBody', { code: received })}</p>
+        <p className="text-[15px] text-ink">
+          {t(already ? 'alreadyBody' : 'receivedBody', { code: received })}
+        </p>
         <div className="flex flex-wrap gap-3">
           <LocalLink
             href="/partners/status"

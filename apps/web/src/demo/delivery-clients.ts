@@ -13,7 +13,7 @@ import type {
 import { dailyCounts } from '@/lib/delivery/agent-stats-view';
 import * as d from './delivery-store';
 import { localizeShop } from './i18n/localize';
-import { findShop } from './shops';
+import { DEMO_SHOPS, findShop } from './shops';
 
 const done = <T>(r: d.Res<T>): Result<T> => (r.ok ? r : { ok: false, status: 409, code: r.code });
 const nf = { ok: false as const, status: 404, code: 'NOT_FOUND' };
@@ -126,6 +126,19 @@ export function demoAdminDeliveryClient(locale: string): AdminDeliveryClient {
       d.sweepExpiredOffers();
       return Promise.resolve(page(d.adminJobs(view, locale)));
     },
+    jobCounts: () => {
+      d.sweepExpiredOffers();
+      return Promise.resolve({
+        ok: true,
+        data: {
+          needs_agent: d.adminJobs('needs_agent', locale).length,
+          offered: d.adminJobs('offered', locale).length,
+          active: d.adminJobs('active', locale).length,
+          failed: d.adminJobs('failed', locale).length,
+          returning: d.adminJobs('returning', locale).length,
+        },
+      });
+    },
     job: (id) => {
       d.sweepExpiredOffers();
       return Promise.resolve(job(id));
@@ -187,6 +200,23 @@ export function demoAdminDeliveryClient(locale: string): AdminDeliveryClient {
       ),
     invite: (input) => Promise.resolve(done(d.inviteAgent(input))),
     revokeInvite: (id) => Promise.resolve(done(d.revokeInvite(id))),
+    shopModes: () =>
+      Promise.resolve({
+        ok: true,
+        data: {
+          items: DEMO_SHOPS.map((shop) => {
+            const l = localizeShop(shop, locale);
+            return {
+              id: shop.slug,
+              name: l.name,
+              nameHi: localizeShop(shop, 'hi').name,
+              mode: d.shopDeliveryMode(shop.slug),
+              version: 1,
+            };
+          }),
+        },
+      }),
+    setShopMode: (shopId, mode) => Promise.resolve(done(d.setShopMode(shopId, mode))),
     modeRequests: (status) =>
       Promise.resolve(
         page(
@@ -196,7 +226,13 @@ export function demoAdminDeliveryClient(locale: string): AdminDeliveryClient {
             .map((r) => {
               const shop = findShop(r.shopSlug);
               const shopName = shop ? localizeShop(shop, locale).name : r.shopSlug;
-              return { ...r, shopId: r.shopSlug, shopName, cityCode: 'RPR' };
+              return {
+                ...r,
+                shopId: r.shopSlug,
+                shopName,
+                shopNameHi: shop ? localizeShop(shop, 'hi').name : null,
+                cityCode: 'RPR',
+              };
             }),
         ),
       ),
@@ -209,7 +245,9 @@ export function demoAdminDeliveryClient(locale: string): AdminDeliveryClient {
     },
     correctPayout: (id, note) => {
       const r = d.correctPayout(id, note);
-      return Promise.resolve(r.ok ? { ok: true, data: null } : done(r));
+      if (!r.ok && r.code === 'ALREADY_CORRECTED')
+        return Promise.resolve({ ok: true, data: { alreadyCorrected: true } });
+      return Promise.resolve(r.ok ? { ok: true, data: { alreadyCorrected: false } } : done(r));
     },
     payoutSummary: (from, to) => Promise.resolve({ ok: true, data: { items: d.payoutSummary(from, to) } }),
   };

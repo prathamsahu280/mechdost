@@ -22,7 +22,7 @@ import { useCartPricing } from '@/lib/use-cart-pricing';
 import { freeDeliveryHints } from '@/lib/free-delivery-hint';
 import { checkoutTotals } from '@/lib/checkout-totals';
 import { coinRulesFromApi } from '@/lib/coins-view';
-import { codChoice, codNextAction } from '@/lib/cod-view';
+import { codChoice, codNextAction, isCheckoutBuyer } from '@/lib/cod-view';
 import { demoCodEligibility, useDemoCod } from '@/demo/cod';
 import { CartView } from './cart-view';
 
@@ -81,7 +81,8 @@ export function CheckoutForm() {
   // Demo data mode: coins live in the demo store. Real data mode: the API's balance and rules (`GET /me/coins`,
   // loaded lazily), and the API re-checks the coins inside the order (409 COINS_CHANGED).
   const coinAccount = !realData && session?.role === 'customer' ? session.id : null;
-  const realCustomer = realData && session?.role === 'customer' ? session.id : null;
+  // DC-P14: every signed-in role except a shop may buy (workshop owners, delivery agents, staff with a customer side).
+  const realCustomer = realData && session && isCheckoutBuyer(session.role, true) ? session.id : null;
   const [apiCoins, setApiCoins] = useState<{ balance: number; rules: CoinRules } | null>(null);
   const [coinsReload, setCoinsReload] = useState(0);
   useEffect(() => {
@@ -98,7 +99,7 @@ export function CheckoutForm() {
   }, [realCustomer, locale, coinsReload]);
   // A signed-in customer starts from their name, number and default address (QA 2026-11-14, U6 / crawler F3:
   // everything was empty and the PIN fixed at 492001). Guests keep the Raipur PIN hint.
-  const customer = session?.role === 'customer' ? session : null;
+  const customer = session && isCheckoutBuyer(session.role, realData) ? session : null;
   const home = customer
     ? (customer.addresses.find((a) => a.isDefault) ?? customer.addresses[0] ?? null)
     : null;
@@ -673,6 +674,16 @@ export function CheckoutForm() {
                           })
                         : t(`codNot_${shownReason}`)}
                 </p>
+                {codState?.askAgainAt ? (
+                  <p className="mt-1 text-sm text-muted">
+                    {t('codAskAgain', {
+                      date: new Intl.DateTimeFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', {
+                        dateStyle: 'medium',
+                        timeZone: 'Asia/Kolkata',
+                      }).format(new Date(codState.askAgainAt)),
+                    })}
+                  </p>
+                ) : null}
                 {codAction === 'request' && !codPanel ? (
                   <button
                     type="button"
