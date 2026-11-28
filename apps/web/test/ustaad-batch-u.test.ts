@@ -101,6 +101,62 @@ describe('SIM-P6 / SIM-P29: the composer asks the live limits and refuses before
   });
 });
 
+describe('SIM-P25: long post text is clamped in a card with an accessible Read more', () => {
+  const clamp = read('ustaad/feed/clamped-body.tsx');
+  const card = read('ustaad/feed/post-card.tsx');
+  it('clamps only past a length, only in lists, and keeps the full text in the page', () => {
+    expect(clamp).toContain('CLAMP_FROM_CHARS');
+    expect(clamp).toContain('line-clamp-8');
+    expect(card).toMatch(/clamp=\{linkToDetail\}/);
+  });
+  it('the button names what it does, exposes aria-expanded and moves focus to the text', () => {
+    expect(clamp).toContain('aria-expanded="false"');
+    expect(clamp).toContain('aria-controls={id}');
+    expect(clamp).toContain('box.current?.focus()');
+    bothLocales('ustaad.feed.readMore');
+  });
+});
+
+describe('SIM-P30: the author sees how many members saved the post', () => {
+  it('the card prints savedByN from counts.saves for the author only', () => {
+    const card = read('ustaad/feed/post-card.tsx');
+    expect(card).toMatch(/post\.mine && post\.counts\.saves !== null/);
+    expect(card).toContain("t('savedByN'");
+    bothLocales('ustaad.feed.savedByN');
+  });
+});
+
+describe('SIM-P7 / SIM-P9: more coach-mark targets, and no answerer block for a Chhotu', () => {
+  it('Discover, Jobs and Pin carry their own coach mark and load the tutorial strings', () => {
+    for (const [file, target] of [
+      ['ustaad/discover/discover-view.tsx', 'discover'],
+      ['ustaad/jobs/jobs-view.tsx', 'jobs'],
+      ['ustaad/local/pin-garage.tsx', 'pin'],
+    ] as const)
+      expect(read(file)).toContain(`<CoachMark target="${target}"`);
+    for (const page of [
+      '../app/[locale]/ustaad/discover/page.tsx',
+      '../app/[locale]/ustaad/jobs/page.tsx',
+      '../app/[locale]/ustaad/me/location/page.tsx',
+    ])
+      expect(read(page)).toContain("'ustaad.tutorial'");
+  });
+  it('the Home questions block hides for an apprentice', () => {
+    expect(read('ustaad/common.tsx')).toContain("member?.level === 'apprentice'");
+    expect(read('../app/[locale]/ustaad/page.tsx')).toContain('<AnswererOnly>');
+  });
+});
+
+describe('SIM-RT3: copy', () => {
+  it('(a) the jobs intro includes garages, (b) a comment says Comment posted, (c) a closed chat has its own code', () => {
+    expect(at(en as Tree, 'ustaad.jobs.postIntro')).toMatch(/garages/);
+    expect(read('ustaad/feed/comments-sheet.tsx')).toContain("t('commentPosted')");
+    bothLocales('ustaad.feed.commentPosted');
+    bothLocales('ustaad.messages.err_USTAAD_DM_CLOSED');
+    expect(read('ustaad/messages/view.ts')).toContain("'USTAAD_DM_CLOSED'");
+  });
+});
+
 describe('SIM-P3: the media "complete" step is retried on its own', () => {
   it('retries a lost answer or a gateway error, never a real refusal', async () => {
     const { retryTransient } = await import('../src/lib/ustaad/media-core');

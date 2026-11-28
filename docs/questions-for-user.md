@@ -691,6 +691,3 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
   the sign-in builder, so it was not touched here.
 - **Q-U-P5 (Info)** The `/partners/status` step "पक्का" could not be reproduced: no step label with that word exists in the
   application stages (`apply.stage_*`). Send the exact URL and state if it still shows.
-- **Not built, no decision needed (time-boxed, still open):** SIM-LEAD-1 (email-verified "check again" on other
-  devices; touches the sign-in builder's area), SIM-P25 (line clamp with "Read more" in feed cards), SIM-P30 (save
-  count in post DTOs), SIM-P7/P9 (coach marks, more than one target), SIM-RT3 (copy strings).

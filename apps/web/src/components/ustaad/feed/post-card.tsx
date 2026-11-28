@@ -15,6 +15,7 @@ import { useCodeLabel, useTimeAgo } from '../common';
 import { RulesLink } from '../rules-link';
 import { PehchaanTag } from '../common/pehchaan-tag';
 import { UstaadIcon } from '../shell/icons';
+import { ClampedBody } from './clamped-body';
 import { FixLogBody, TipTag } from './fix-log-body';
 import { PostMedia } from './post-media';
 import { Avatar, useMemberName, useSocialAction, useSocialError } from './social-common';
@@ -206,14 +207,14 @@ export function PostCard({
           // U2 (E8): a tip sits in its own tinted panel with the "Tip" tag.
           <div className="mx-4 grid gap-2 rounded-2xl bg-surface-alt p-4">
             <TipTag />
-            <div data-post-body className="text-[16px] leading-relaxed text-ink">
+            <ClampedBody chars={post.body.length} clamp={linkToDetail} className="">
               <EditedText body={post.body} bodyOriginal={post.bodyOriginal} />
-            </div>
+            </ClampedBody>
           </div>
         ) : post.body ? (
-          <div data-post-body className="px-4 text-[16px] leading-relaxed text-ink">
+          <ClampedBody chars={post.body.length} clamp={linkToDetail} className="px-4">
             <EditedText body={post.body} bodyOriginal={post.bodyOriginal} />
-          </div>
+          </ClampedBody>
         ) : null}
         {post.fix ? <FixLogBody fix={post.fix} /> : null}
         <PostMedia
@@ -240,6 +241,10 @@ export function PostCard({
               </li>
             ))}
           </ul>
+        ) : null}
+        {/* SIM-P30: the author sees how many members saved the post (the API sends the count to the author only). */}
+        {post.mine && post.counts.saves !== null && post.counts.saves > 0 ? (
+          <p className="mx-4 text-sm font-bold text-muted">{t('savedByN', { count: post.counts.saves })}</p>
         ) : null}
         {linkToDetail && post.counts.comments > 0 ? (
           <Link
@@ -317,7 +322,6 @@ export function PostCard({
         <button
           type="button"
           onClick={() => void save()}
-          aria-pressed={post.savedByMe}
           data-track="ustaad_post_save"
           className={`${actionBtn} ${post.savedByMe ? 'text-accent-soft-text' : 'text-ink hover:bg-pill'}`}
         >

@@ -78,7 +78,7 @@ test.describe('Ustaad feed and social (workstream D web)', () => {
     await expect(like).toContainText('129');
     const save = card.getByRole('button', { name: 'Save' });
     await save.click();
-    await expect(save).toHaveAttribute('aria-pressed', 'true');
+    await expect(card.getByRole('button', { name: 'Saved' })).toBeVisible();
     // A poll: vote once, then the results show with the vote counted.
     const poll = page.locator('article[data-post-kind="poll"]').first();
     await poll.getByRole('button', { name: /Vote: Leak test pehle/ }).click();
@@ -200,20 +200,17 @@ test.describe('Ustaad feed and social (workstream D web)', () => {
 
     await page.goto('/ustaad/tags/splendor');
     await expect(page.getByRole('heading', { level: 1, name: '#Splendor' })).toBeVisible();
-    const followTag = page.getByRole('button', { name: 'Follow tag' });
-    await expect(followTag).toHaveAttribute('aria-pressed', 'true');
-    await followTag.click();
-    await expect(followTag).toHaveAttribute('aria-pressed', 'false');
+    // SIM-P12: the state is in the words (no aria-pressed on a button whose name changes).
+    await page.getByRole('button', { name: 'Following tag' }).click();
+    await expect(page.getByRole('button', { name: 'Follow tag', exact: true })).toBeVisible();
     await axe(page);
     await shots(page, 'tag', '/ustaad/tags/splendor', 'main h1');
 
     await page.goto('/ustaad/u/imran_ev');
     await expect(page.getByRole('heading', { level: 1, name: 'Imran Khan' })).toBeVisible();
     await expect(page.getByText('Helpful answers')).toBeVisible();
-    const follow = page.getByRole('button', { name: 'Follow', exact: true });
-    await expect(follow).toHaveAttribute('aria-pressed', 'false');
-    await follow.click();
-    await expect(follow).toHaveAttribute('aria-pressed', 'true');
+    await page.getByRole('button', { name: 'Follow', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Following', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Message', exact: true })).toHaveAttribute(
       'href',
       /\/ustaad\/messages/,

@@ -246,7 +246,6 @@ export function ProfileScreen({ handle }: { handle: string }) {
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                aria-pressed={rel.following}
                 onClick={() => void follow()}
                 className={`${rel.following ? btnQuiet : btnPrimary} flex-1`}
               >

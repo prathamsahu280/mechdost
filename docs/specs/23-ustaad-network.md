@@ -2424,8 +2424,16 @@ Rows of `docs/qa/backlog-audit-2026-11-28.md` "Open - Mechanic Network (batch U)
 | SIM-B11    | The sanction confirm names the member, action, reason and length; the member card shows "ban proposed, waiting for a second staff member" (`StaffMemberDetail.pendingBan`, both proposer and approver).                                             |
 | SIM-B12    | Takedown form: no pre-filled legal basis (was "Court order"); a basis must be chosen. The item picker is queued (Q-U-B12).                                                                                                                          |
 
-Not built (queued in `docs/questions-for-user.md`, defaults used): SIM-B9 (grouping), SIM-G14, SIM-G15, SIM-LEAD-1,
-SIM-P25, SIM-P30, SIM-P5, SIM-P7/P9, SIM-LEAD-8, SIM-RT3. Tests: `packages/shared/test/ustaad-batch-u.test.ts`,
+Second pass (2026-11-29, lead review): SIM-P25 (`ClampedBody`: eight lines past 320 characters in feed cards, "Read more"
+with `aria-expanded`/`aria-controls`, text stays in the page, focus moves to the text; the post's own page is never
+clamped), SIM-P30 (the author sees "Saved by N members"; `counts.saves` was already in the DTO for the author only),
+SIM-P7 (the Home "questions waiting" block hides for a Chhotu), SIM-P9 (coach marks for `discover`, `jobs` and `pin` on
+their pages, one shows at a time), SIM-RT3 (a: jobs intro names garages; b: "Comment posted."; c: a closed
+conversation answers `USTAAD_DM_CLOSED`, not "does not take messages"). Accessibility review: a button whose words
+change must not also carry `aria-pressed`, so Follow, Follow tag and Save now say their state in words only.
+
+Not built (queued in `docs/questions-for-user.md`, defaults used): SIM-B9 (grouping), SIM-G14, SIM-G15, SIM-P5,
+SIM-LEAD-8 (SIM-LEAD-1 is the lead's). Tests: `packages/shared/test/ustaad-batch-u.test.ts`,
 `apps/web/test/ustaad-batch-u.test.ts`, `packages/db/test/ustaad-moderation.test.ts` (P15), `ustaad-console.test.ts`
 (B11), `ustaad-feed.test.ts` (P6/P29), `apps/api/test/ustaad-media-api.test.ts` (P3), `ustaad-feed-api.test.ts` (limits).
 

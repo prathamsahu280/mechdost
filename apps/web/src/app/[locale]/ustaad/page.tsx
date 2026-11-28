@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { ClientMessages } from '@/components/ui/client-messages';
-import { BannedGate, MemberGate } from '@/components/ustaad/common';
+import { AnswererOnly, BannedGate, MemberGate } from '@/components/ustaad/common';
 import { HomeFeed } from '@/components/ustaad/feed/feed-list';
 import { HOME_TILE, HOME_TILE_ICON, HomeMore } from '@/components/ustaad/feed/home-more';
 import { StoryRow } from '@/components/ustaad/feed/story-row';
@@ -153,15 +153,17 @@ export default async function UstaadHome({ params, searchParams }: Props) {
             </ul>
           </section>
 
-          <section
-            aria-labelledby="ustaad-questions"
-            className="rounded-2xl border border-line-card bg-surface p-5 shadow-card"
-          >
-            <h2 id="ustaad-questions" className="font-heading text-lg font-extrabold text-ink">
-              {t('questionsUstaad')}
-            </h2>
-            <p className="mt-2 text-[15px] leading-relaxed text-muted">{t('questionsEmpty')}</p>
-          </section>
+          <AnswererOnly>
+            <section
+              aria-labelledby="ustaad-questions"
+              className="rounded-2xl border border-line-card bg-surface p-5 shadow-card"
+            >
+              <h2 id="ustaad-questions" className="font-heading text-lg font-extrabold text-ink">
+                {t('questionsUstaad')}
+              </h2>
+              <p className="mt-2 text-[15px] leading-relaxed text-muted">{t('questionsEmpty')}</p>
+            </section>
+          </AnswererOnly>
 
           <section aria-labelledby="ustaad-feed">
             <h2 id="ustaad-feed" className="font-heading text-lg font-extrabold text-ink">

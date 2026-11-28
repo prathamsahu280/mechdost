@@ -83,6 +83,7 @@ export function parseDiscoverFilters(sp: { q?: string; work?: string; level?: st
 export const DM_ERROR_CODES = [
   'USTAAD_DM_TOO_NEW',
   'USTAAD_DM_NOT_ALLOWED',
+  'USTAAD_DM_CLOSED',
   'USTAAD_DM_PENDING',
   'USTAAD_DM_LINK',
   'USTAAD_CONTENT_BLOCKED',

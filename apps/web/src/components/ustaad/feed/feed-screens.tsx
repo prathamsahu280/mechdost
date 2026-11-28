@@ -120,12 +120,7 @@ export function TagScreen({ slug }: { slug: string }) {
             <p className="text-sm text-muted">{t(`tagGroup_${tag.group}` as 'tagGroup_part')}</p>
           ) : null}
         </div>
-        <button
-          type="button"
-          aria-pressed={tag.followed}
-          onClick={() => void follow()}
-          className={tag.followed ? btnQuiet : btnPrimary}
-        >
+        <button type="button" onClick={() => void follow()} className={tag.followed ? btnQuiet : btnPrimary}>
           <UstaadIcon name={tag.followed ? 'check' : 'plus'} />
           {tag.followed ? t('tagFollowing') : t('tagFollow')}
         </button>

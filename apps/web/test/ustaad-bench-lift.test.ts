@@ -110,7 +110,8 @@ describe('type and spacing (network only)', () => {
   const list = read('../src/components/ustaad/feed/feed-list.tsx');
   it('names 16/800; post body 16 (Hindi 17) at 1.6 line-height via data-post-body', () => {
     expect(card).toMatch(/text-base font-extrabold/);
-    expect(card).toContain('data-post-body');
+    expect(card).toContain('ClampedBody');
+    expect(read('../src/components/ustaad/feed/clamped-body.tsx')).toContain('data-post-body');
     expect(section).toMatch(/\[data-post-body\]\s*\{[^}]*font-size:\s*16px[^}]*line-height:\s*1\.6/);
     expect(section).toMatch(/:lang\(hi\) \[data-post-body\]\s*\{[^}]*font-size:\s*17px/);
   });
