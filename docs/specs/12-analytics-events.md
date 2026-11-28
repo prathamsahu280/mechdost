@@ -401,6 +401,7 @@ Browser events, `packages/shared/src/partner-client-events.ts` (merged into `CLI
 | `partner_offer_alert_played`  | `portal`, `count` (1–50)                                          | The new-work alert fired for fresh work (visible page)                                                    |
 | `partner_chart_table_toggled` | `portal`, `chart`, `table`                                        | A partner chart switched to its table view or back                                                        |
 | `partner_stock_stepped`       | `portal`, `direction` (`up`/`down`), `result` (`saved`/`refused`) | A shop tapped − or + on a stock row (Batch P); the server write is the existing `inventory_updated` event |
+| `partner_calendar_day_viewed` | `portal`, `offset` (0–6)                                          | A day of the workshop Calendar strip was shown (Batch P); the date itself is never sent                   |
 
 Shop values (2026-11-28, tab split): `tab` = `today | orders | stock | numbers | profile`; `tile` = `new | packing |
 ready | out | delivered`; `lane` = `packing | ready | out | delivered | given_up`. No new events.

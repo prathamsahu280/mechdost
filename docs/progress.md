@@ -1459,3 +1459,13 @@ Learn file sizes + continue; job card employer name; profile /u restyle; worksho
 "Delivered today" + per-row stock ±; rider job step rail; story auto-advance on media end; e2e + state-audit rows +
 Hindi crawl for every new screen; partner kit a11y follow-ups (Hindi bar label wrap vs 65 px padding, visible focus
 after tab change); Messages a11y follow-ups (scroll-padding under stacked sticky bars, repeated status text).
+
+## 2026-11-28 — Partner portals leftovers, Batch P (builder; branch worktree-agent-a15d314f0e11038e3, NOT merged, not pushed; no migration)
+
+Built (each slice its own commit): P1 shop "Delivered today" tile (`deliveredAt` on shop orders, IST day); P2 per-row
+stock −/+ on Your prices (existing versioned PATCH, event `partner_stock_stepped`); P3 rider job step rail (shared
+`StepRail`); P4 workshop Calendar tab (`visitDate` / `visitHour` on service request summaries, event
+`partner_calendar_day_viewed`); P5 kit a11y follow-ups (Hindi bar label wrap + measured bar height; focus to the visible
+panel heading after a tab click). Not built: master–detail at ≥ 1024 px. Details: spec 07 "Batch P", decisions 2026-11-28.
+Next for the lead: run the state-audit rows API-SHOP-STOCKSTEP / API-WS-CALENDAR (resting states only; the rider rail
+is covered by the existing DLV-AGENT-JOBS rows; no fixtures for the refusal states yet) and a signed-in look at /partner/workshop/calendar with real accepted jobs.

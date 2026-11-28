@@ -32,4 +32,6 @@ export const PARTNER_CLIENT_EVENT_SCHEMAS = {
   partner_stock_stepped: z
     .object({ portal, direction: z.enum(['up', 'down']), result: z.enum(['saved', 'refused']) })
     .strict(),
+  /** A day of the workshop Calendar strip was shown (0 = today … 6); the day itself is never sent. */
+  partner_calendar_day_viewed: z.object({ portal, offset: z.number().int().min(0).max(6) }).strict(),
 } as const;

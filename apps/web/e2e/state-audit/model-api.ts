@@ -638,6 +638,35 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     realApi: true,
   },
 
+  // ─────────────── Partner portals leftovers, Batch P (2026-11-28; spec 07) ───────────────
+  {
+    code: 'API-SHOP-STOCKSTEP',
+    page: 'Shop portal (/partner/shop/stock), real sign-in',
+    component:
+      'Your prices rows with the stock − / + (44 px buttons named with the product, stock number, units held for open orders), English and Hindi, long product names',
+    path: '/partner/shop/stock',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [...env, { name: 'auth', values: ['shop'] }, stress],
+    checks: [...BASE_CHECKS, 'aligned'],
+    align: [{ items: 'main ul > li' }],
+    sweep: 4,
+    note: `${API_NOTE} Only the resting state: the stale and below-reserved refusals have no fixtures yet (unit-tested in shop-stock-step.test.ts).`,
+    realApi: true,
+  },
+  {
+    code: 'API-WS-CALENDAR',
+    page: 'Workshop portal (/partner/workshop/calendar), real sign-in',
+    component:
+      "Calendar tab: seven date chips with visit counts, the chosen day's visits by hour, and the empty day with its one next action",
+    path: '/partner/workshop/calendar',
+    scope: 'main',
+    strategy: 'pairwise',
+    params: [...env, { name: 'auth', values: ['workshop'] }, stress],
+    sweep: 4,
+    note: `${API_NOTE} Resting state with the mocked job list; days with visits need a fixture with accepted proposals (not added yet).`,
+    realApi: true,
+  },
   // ─────────────── Shop offers to accept (coupons funded by the shop; spec 07; design 2026-11-15) ───────────────
   {
     code: 'API-SHOP-OFFERS',

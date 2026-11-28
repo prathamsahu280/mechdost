@@ -3036,3 +3036,19 @@ look"); V9 (the same lift site-wide) is NOT approved, so everything below is sco
   `bulletScale` helper are deleted (the kit's `bulletGeometry` is tested in `partner-kit.test.ts`). Workshop bullet tiles
   show the city middle through the kit's own line; the empty "not enough workshops" line is the section note.
 - Not built: shop switcher / shop name per order card, per-row stock −/+, "Delivered today" (API gaps listed in spec 07).
+
+## 2026-11-28 — Partner portals leftovers, Batch P (builder rulings)
+
+- **Additive DTO fields, no migration:** shop order rows carry `deliveredAt` (from `orders.delivered_at`, `done` view
+  only); service request summaries carry `visitDate` / `visitHour` (accepted proposal). Both are optional in the shared
+  DTOs so older answers still parse. The "Delivered today" tile counts by IST day on the first `done` page ("N+" when
+  another page exists); the old "Delivered" tile string is replaced by `kpi_delivered_today`.
+- **Stock −/+ is the existing versioned write:** one tap sends the next absolute `onHand` with the row's `version` to
+  `PATCH /v1/shops/{shopId}/inventory/{sku}` (`saveShopOffer`); nothing is shown before the server answers and the list
+  is re-read; a stale version or a value below the reserved units (409) shows a plain message and reloads the row. No new
+  write path, no optimistic update.
+- **Workshop Calendar is a fifth tab** (after Jobs). It lists the accepted visit's day by IST date; free capacity per
+  hour is not shown in v1 (the hour picker already shows it when proposing). Past-dated open jobs stay on Jobs.
+- **Focus after a tab click** goes to the first visible heading of the new tab (the screen-reader-only `h1` is the
+  fallback): sighted keyboard users get a visible focus ring; the Hindi bottom bar's real height is measured.
+- Not built: master–detail at ≥ 1024 px.

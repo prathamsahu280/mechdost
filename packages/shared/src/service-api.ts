@@ -82,6 +82,9 @@ export const ServiceRequestSummaryDto = z.object({
   pincode: z.string(),
   waitingForCustomer: z.boolean(),
   serviceMode: z.enum(SERVICE_MODES),
+  /** Accepted visit (IST date, start hour; Batch P calendar); optional so older API answers still parse. */
+  visitDate: z.string().nullable().optional(),
+  visitHour: z.number().int().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

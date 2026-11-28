@@ -33,6 +33,10 @@ const WorkshopJobsApi = dynamic(() => import('./workshop-portal-api').then((m) =
   ssr: false,
   loading,
 });
+const WorkshopCalendarApi = dynamic(
+  () => import('./workshop-calendar-api').then((m) => m.WorkshopCalendarApi),
+  { ssr: false, loading },
+);
 const WorkshopProfileApi = dynamic(() => import('./workshop-portal-api').then((m) => m.WorkshopProfileApi), {
   ssr: false,
   loading,
@@ -52,6 +56,7 @@ export function WorkshopPortal({ tab }: { tab: WorkshopTab }) {
   if (!account) return null;
   if (account.api) {
     if (tab === 'jobs') return <WorkshopJobsApi />;
+    if (tab === 'calendar') return <WorkshopCalendarApi />;
     if (tab === 'numbers') return <WorkshopNumbersApi />;
     if (tab === 'profile') return <WorkshopProfileApi />;
     return (
@@ -61,7 +66,7 @@ export function WorkshopPortal({ tab }: { tab: WorkshopTab }) {
       </>
     );
   }
-  if (tab === 'numbers' || tab === 'profile') return <ApiOnly />;
+  if (tab === 'numbers' || tab === 'profile' || tab === 'calendar') return <ApiOnly />;
   return (
     <>
       <WorkshopRequests workshopSlug={account.slug} tab={tab} />

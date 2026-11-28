@@ -95,6 +95,9 @@ export const RequestSummary = z
     pincode: z.string(),
     waitingForCustomer: z.boolean(),
     serviceMode: z.enum(SERVICE_MODES),
+    /** The accepted proposal's visit (IST date and start hour); null until a proposal is accepted. */
+    visitDate: z.string().nullable(),
+    visitHour: z.number().int().min(0).max(23).nullable(),
     createdAt: z.string(),
     updatedAt: z.string(),
   })

@@ -1,6 +1,6 @@
 'use client';
 
-import { BriefcaseBusiness, ChartColumn, House, Wrench } from 'lucide-react';
+import { BriefcaseBusiness, CalendarDays, ChartColumn, House, Wrench } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { createContext, useContext, useEffect, type ReactNode } from 'react';
@@ -23,12 +23,14 @@ export const useWorkshopAccount = (): WorkshopAccount | null => useContext(Accou
 const TAB_LABEL = {
   today: 'tab_today',
   jobs: 'tab_jobs',
+  calendar: 'tab_calendar',
   numbers: 'tab_numbers',
   profile: 'tab_workshop',
 } as const;
 const TAB_ICON: Record<WorkshopTab, ReactNode> = {
   today: <House />,
   jobs: <BriefcaseBusiness />,
+  calendar: <CalendarDays />,
   numbers: <ChartColumn />,
   profile: <Wrench />,
 };
