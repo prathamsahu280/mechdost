@@ -112,3 +112,20 @@ Every bug from the live simulations, follow-ups and retests, with priority and s
 | Ustaad       | SIM-LEAD-3 | P2  | Admin sidebar: "Community and settings" clipped to "Community and settin"                                                                              | fixed - verified live                                                               |
 | Ustaad       | SIM-LEAD-6 | P2  | Footer "For partners" card: the new "Apply as a delivery agent" link ran 15 px                                                                         | fixed - verified live                                                               |
 | Ustaad       | SIM-RT2    | P2  | bell rows stored before the deploy still link to /ustaad/notifications (404)                                                                           | fixed - verified live (DRT 22:53)                                                   |
+
+## Live signed-in check 2026-11-28 morning (lead; bypass window 09:00–13:59 IST)
+
+61 page renders, accounts 09 (member), 06 (rider, hi), 04 (workshop), 02 (shop owner; banned in the network), cells
+390 hi dark · 390 en light · 1280 en light; results `D:\mechdost-qa\ustaad-sim-2026-11-27\logs\_r\results.jsonl` tags
+`d28*`. All 200, no 404, no horizontal overflow, Hindi clean except user names and business names (allowed).
+
+| ID     | Area    | Finding                                                                                                                                     | Status                                                                                     |
+| ------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| LV-1   | network | Voice note meta "0:09 · 23 KB" 4.2:1 on accent-soft (opacity-90)                                                                            | fixed (opacity removed)                                                                    |
+| LV-2   | network | "Useful" button aria-label did not start with the visible words (WCAG 2.5.3), every post                                                    | fixed (visible name + sr-only meaning)                                                     |
+| LV-3   | rider   | "Call MechDost support" aria-label vs visible "Help" (2.5.3)                                                                                | fixed (visible name, title for the long form)                                              |
+| LV-4   | network | "1 comment" link 20 px tall (2.5.8)                                                                                                         | fixed (min-h-6)                                                                            |
+| LV-5   | notices | /hi/notifications shows an English title for an account whose language is English (texts are rendered in the account language when written) | by design; queued as a question (render per page locale?)                                  |
+| LV-6   | perf    | Lab CLS high on /partner/delivery (0.27–0.50), /notifications 1280 (0.51), /partner/workshop/profile (0.23)                                 | OPEN — trace next batch (budget 0.05)                                                      |
+| LV-7   | all     | Hidden 1×1 switch inputs counted as small targets (agent-online, saved toggles): visual switch is the target                                | not a bug (checker counts the hidden input)                                                |
+| DC-B11 | worker  | Root cause: delivery offer sweep hung on a dead pooled connection 00:04 UTC → ~4 h no runs                                                  | fixed f13c2ba3 (bounded sweeps + pool recycle); retest after deploy with one prepaid order |

@@ -300,7 +300,7 @@ export function VoiceNote({
             )}
           </span>
           {playing ? t('pauseVoice') : state === 'loading' ? t('voiceLoading') : t('playVoice')}
-          {meta ? <span className="font-semibold tabular-nums opacity-90">{meta}</span> : null}
+          {meta ? <span className="font-semibold tabular-nums">{meta}</span> : null}
         </button>
         <p role="status" className={state === 'failed' ? 'text-sm font-bold text-error' : 'sr-only'}>
           {state === 'failed' ? t('voiceFailed') : announce}

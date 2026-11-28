@@ -131,7 +131,7 @@ function StatusStrip() {
         </div>
         <a
           href={`tel:${telNumber(site.supportPhone)}`}
-          aria-label={t('helpLabel')}
+          title={t('helpLabel')}
           onClick={() => {
             track('delivery_contact_tapped', { target: 'support', action: 'call' });
           }}

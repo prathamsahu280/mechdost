@@ -244,7 +244,7 @@ export function PostCard({
         {linkToDetail && post.counts.comments > 0 ? (
           <Link
             href={href(`/ustaad/p/${post.id}`)}
-            className="mx-4 w-fit rounded text-sm font-bold text-muted hover:text-ink hover:underline focus-visible:outline-3 focus-visible:outline-focus"
+            className="mx-4 inline-flex min-h-6 w-fit items-center rounded text-sm font-bold text-muted hover:text-ink hover:underline focus-visible:outline-3 focus-visible:outline-focus"
           >
             {t('commentsN', { count: post.counts.comments })}
           </Link>
@@ -278,7 +278,6 @@ export function PostCard({
           type="button"
           onClick={() => void useful()}
           aria-pressed={post.usefulByMe}
-          aria-label={`${String(post.counts.useful)} ${t('usefulAria')}`}
           data-track="ustaad_post_useful"
           data-ticked={taps.useful > 0 ? '' : undefined}
           className={`${actionBtn} ${post.usefulByMe ? 'bg-brass/20 text-brass-text' : 'text-ink hover:bg-pill'}`}
@@ -295,6 +294,8 @@ export function PostCard({
               </span>
             </span>
             <span>{t('useful')}</span>
+            {/* WCAG 2.5.3 (live axe 2026-11-28): the name starts with the visible words; the meaning follows. */}
+            <span className="sr-only">, {t('usefulAria')}</span>
           </span>
         </button>
         <button
