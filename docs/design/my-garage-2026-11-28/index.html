@@ -40,9 +40,14 @@
     background: var(--night);
   }
   body {
+    margin: 0;
     color: var(--text);
     font: 15px/1.5 var(--f-body);
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  .wrap > * {
+    min-width: 0;
   }
   body::before {
     content: '';
@@ -347,7 +352,7 @@
   /* vitals */
   .vitals {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
   }
   .vital {
@@ -698,20 +703,21 @@
   }
   .bars {
     display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    gap: 6px;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 2px;
     align-items: end;
     height: 110px;
     margin-top: 14px;
   }
   .bars button {
     border: 0;
-    padding: 0;
+    padding: 0 2px;
     background: none;
     display: grid;
     gap: 4px;
     align-items: end;
     height: 100%;
+    min-width: 24px;
   }
   .bars i {
     display: block;
