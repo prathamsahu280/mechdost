@@ -4,6 +4,7 @@ import {
   AdminAgentPage,
   AdminDocumentView,
   AdminJobDetail,
+  AdminJobCounts,
   AdminJobPage,
   AdminShopModeRequestPage,
   AgentEarnings,
@@ -19,6 +20,7 @@ import {
   DeliverySwitchRow,
   ShopDeliveryModeView,
 } from '@mechdost/shared/delivery/api';
+import { AdminShopList } from '@mechdost/shared/shop-api';
 import { adminApi, type ResponseSchema } from '../admin-api';
 import { foldAttemptsLeft } from './view';
 import type {
@@ -27,6 +29,7 @@ import type {
   AgentClient,
   Page,
   Result,
+  ShopModeRowView,
   ShopDeliveryClient,
 } from './types';
 
@@ -36,6 +39,35 @@ import type {
  * the shared schema before use (hard rule 4); errors come back as the API's code for the screen to translate.
  */
 
+/** `POST …/correct` answer: only whether the correction had already been made (DC-B12). */
+const PayoutCorrected: ResponseSchema<{ alreadyCorrected: boolean }> = {
+  safeParse: (v) => ({
+    success: true,
+    data: {
+      alreadyCorrected:
+        typeof v === 'object' && v !== null && 'alreadyCorrected' in v && v.alreadyCorrected === true,
+    },
+  }),
+};
+/** Approved shops with their delivery mode, from the admin shop list (DC-G1). */
+const ShopModes: ResponseSchema<{ items: ShopModeRowView[] }> = {
+  safeParse: (v) => {
+    const r = AdminShopList.safeParse(v);
+    if (!r.success) return { success: false };
+    return {
+      success: true,
+      data: {
+        items: r.data.items.map((s) => ({
+          id: s.id,
+          name: s.name,
+          nameHi: s.nameHi,
+          mode: s.deliveryMode,
+          version: s.version,
+        })),
+      },
+    };
+  },
+};
 /** 204 answers carry no body: anything parses to null. */
 const Empty: ResponseSchema<null> = { safeParse: () => ({ success: true, data: null }) };
 const qs = (o: Record<string, string | null>) => {
@@ -211,6 +243,7 @@ export function apiAdminDeliveryClient(locale: string): AdminDeliveryClient {
   return {
     sample: false,
     jobs: (view, cursor) => get(`/admin/delivery/jobs${qs({ view, cursor })}`, AdminJobPage),
+    jobCounts: () => get('/admin/delivery/job-counts', AdminJobCounts),
     job: (jobId) => get(`/admin/delivery/jobs/${enc(jobId)}`, AdminJobDetail),
     // G4: `view=all&orderCode=` lists the jobs of one sub-order; each detail is read for the timeline.
     jobsForOrder: async (orderCode) => {
@@ -271,6 +304,12 @@ export function apiAdminDeliveryClient(locale: string): AdminDeliveryClient {
     invites: () => get('/admin/delivery/invites', AgentInvitePage),
     invite: (input) => post('/admin/delivery/invites', AgentInviteCreated, input),
     revokeInvite: (id) => post(`/admin/delivery/invites/${enc(id)}/revoke`, Empty),
+    shopModes: () => adminApi(locale, '/admin/shops?status=approved&limit=100', ShopModes),
+    setShopMode: (shopId, mode, note, version) =>
+      adminApi(locale, `/admin/shops/${enc(shopId)}/delivery-mode`, Empty, {
+        method: 'PUT',
+        body: { mode, note, version },
+      }),
     modeRequests: (status) =>
       get(
         `/admin/delivery/shop-mode-requests${qs({ status: status === 'all' ? null : status })}`,
@@ -287,7 +326,8 @@ export function apiAdminDeliveryClient(locale: string): AdminDeliveryClient {
         AgentPayoutPage,
       ),
     recordPayout: (input) => post('/admin/delivery/payouts', Empty, input),
-    correctPayout: (id, note) => post(`/admin/delivery/payouts/${enc(id)}/correct`, Empty, { note }),
+    correctPayout: (id, note) =>
+      post(`/admin/delivery/payouts/${enc(id)}/correct`, PayoutCorrected, { note }),
     payoutSummary: (from, to) =>
       get(`/admin/delivery/payouts/summary${qs({ from, to })}`, AgentPayoutSummary),
   };

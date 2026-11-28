@@ -7,7 +7,7 @@ import {
   type DeliveryGiveUpReason,
 } from '@mechdost/shared/delivery/codes';
 import { MapPin, Phone } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDisclosureFocus } from '@/lib/use-disclosure-focus';
 import { StepRail } from '@/components/partner';
@@ -256,6 +256,7 @@ function JobStepRail({ step }: { step: 1 | 2 | 3 | 4 }) {
 
 function ShopCard({ job }: { job: AgentJobDetailView }) {
   const t = useTranslations('deliveryAgent');
+  const locale = useLocale();
   const shop = job.contact.shop;
   if (!shop) return null;
   return (
@@ -263,7 +264,9 @@ function ShopCard({ job }: { job: AgentJobDetailView }) {
       <h3 id="job-shop-title" className="text-sm font-bold text-muted">
         {t('shopTitle')}
       </h3>
-      <p className="mt-1 font-heading text-lg font-extrabold text-ink">{shop.name}</p>
+      <p className="mt-1 font-heading text-lg font-extrabold text-ink">
+        {locale === 'hi' && shop.nameHi ? shop.nameHi : shop.name}
+      </p>
       <p className="text-[15px] text-ink">{t('areaPin', { area: shop.addressLine, pin: shop.pincode })}</p>
       <div className="mt-3 grid grid-cols-2 gap-2">
         <a
@@ -299,6 +302,7 @@ function ShopCard({ job }: { job: AgentJobDetailView }) {
 
 function ItemsCard({ job }: { job: AgentJobDetailView }) {
   const t = useTranslations('deliveryAgent');
+  const locale = useLocale();
   return (
     <section aria-labelledby="job-items-title" className={card}>
       <h3 id="job-items-title" className="text-sm font-bold text-muted">
@@ -307,7 +311,7 @@ function ItemsCard({ job }: { job: AgentJobDetailView }) {
       <ul className="mt-1 divide-y divide-line text-[15px]">
         {job.items.map((i) => (
           <li key={i.name} className="flex justify-between gap-3 py-2">
-            <span className="min-w-0 text-ink">{i.name}</span>
+            <span className="min-w-0 text-ink">{locale === 'hi' && i.nameHi ? i.nameHi : i.name}</span>
             <span className="shrink-0 font-bold text-ink tabular-nums">× {i.quantity}</span>
           </li>
         ))}
@@ -318,6 +322,7 @@ function ItemsCard({ job }: { job: AgentJobDetailView }) {
 
 function CustomerCard({ job }: { job: AgentJobDetailView }) {
   const t = useTranslations('deliveryAgent');
+  const locale = useLocale();
   const c = job.contact.customer;
   if (!c) return null;
   const full = c.name !== null && c.addressLine !== null;
@@ -370,7 +375,9 @@ function CustomerCard({ job }: { job: AgentJobDetailView }) {
       ) : (
         <>
           <p className="mt-1 text-[15px] text-ink">
-            {c.area ? t('areaPin', { area: c.area, pin: c.pincode }) : t('pinOnly', { pin: c.pincode })}
+            {c.area
+              ? t('areaPin', { area: locale === 'hi' && c.areaHi ? c.areaHi : c.area, pin: c.pincode })
+              : t('pinOnly', { pin: c.pincode })}
           </p>
           <p className="text-sm text-muted">{t('customerLater')}</p>
         </>

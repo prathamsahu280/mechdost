@@ -1316,7 +1316,7 @@ export function rejectAgentApplication(code: string, reason: string, version: nu
 const INVITE_HOURS = 72;
 export function inviteAgent(
   input:
-    | { applicationCode: string }
+    | { applicationCode: string; email?: string }
     | { name: string; phone: string; email?: string; cityCode: string; vehicleType: AgentVehicleType },
 ): Res<{ id: string; token: string; expiresAt: string }> {
   return change((s, now) => {
@@ -1331,7 +1331,7 @@ export function inviteAgent(
       token: token(),
       name: base.name,
       phone: base.phone,
-      email: 'email' in base ? (base.email ?? null) : null,
+      email: input.email ?? ('email' in base ? (base.email ?? null) : null),
       cityCode: base.cityCode,
       vehicleType: base.vehicleType,
       status: 'sent',
@@ -1514,6 +1514,7 @@ function card(s: DeliveryState, j: DemoJob, agentId: string | null, locale = 'en
     loadClass: o ? loadOf(o) : ('light' as LoadClass),
     weightKg: null,
     shopArea: shop ? localizeArea(shop.area, locale) : null,
+    shopAreaHi: shop ? localizeArea(shop.area, 'hi') : null,
     customerPincode: o?.customer.pincode ?? '',
     distanceM: agent && shop ? distanceM(agent, shop) : null,
     attempt: j.attempt,
@@ -1548,6 +1549,7 @@ export function agentJobDetail(agentId: string, jobId: string, locale: string) {
     shop && stage !== 'none'
       ? {
           name: shop.name,
+          nameHi: found ? localizeShop(found, 'hi').name : null,
           addressLine: shop.area,
           pincode: shop.pincode,
           phone: shopPhone(j.shopSlug),
@@ -1556,13 +1558,23 @@ export function agentJobDetail(agentId: string, jobId: string, locale: string) {
         }
       : null;
   const area = o ? areaOfPin(o.customer.pincode, locale) : null;
+  const areaHi = o ? areaOfPin(o.customer.pincode, 'hi') : null;
   const customer =
     !o || stage === 'none' || stage === 'return'
       ? null
       : stage === 'pickup'
-        ? { area, pincode: o.customer.pincode, name: null, addressLine: null, landmark: null, phone: null }
+        ? {
+            area,
+            areaHi,
+            pincode: o.customer.pincode,
+            name: null,
+            addressLine: null,
+            landmark: null,
+            phone: null,
+          }
         : {
             area,
+            areaHi,
             pincode: o.customer.pincode,
             name: o.customer.name,
             addressLine: o.customer.address,
@@ -1573,6 +1585,7 @@ export function agentJobDetail(agentId: string, jobId: string, locale: string) {
     ...card(s, j, agentId, locale),
     items: (o?.lines ?? []).map((l) => ({
       name: `${l.brand} ${productNameFor(l.slug, l.name, locale)}`,
+      nameHi: `${l.brand} ${productNameFor(l.slug, l.name, 'hi')}`,
       quantity: l.qty,
     })),
     contact: { stage, shop: shopBlock, customer },
@@ -1684,6 +1697,7 @@ function adminRow(s: DeliveryState, j: DemoJob, locale = 'en') {
     status: j.status,
     orderStatus: orderStatusOf(o, j),
     shopName: shop ? localizeShop(shop, locale).name : j.shopSlug,
+    shopNameHi: shop ? localizeShop(shop, 'hi').name : null,
     customerPincode: o?.customer.pincode ?? '',
     agent: agent ? { id: agent.id, name: agent.name, vehicleType: agent.vehicleType } : null,
     offerExpiresAt: openOffer(j)?.expiresAt ?? null,
@@ -1733,6 +1747,7 @@ export function adminJob(jobId: string, locale = 'en') {
         s.settings.maxLoadKg,
       ),
     }))
+    .map((a) => ({ ...a, eligible: a.carriesLoad, declinedBefore: false }))
     .toSorted(
       (a, b) =>
         Number(b.carriesLoad) - Number(a.carriesLoad) ||
@@ -1755,6 +1770,7 @@ export function adminJob(jobId: string, locale = 'en') {
     pickupLocked: j.pickupAttempts >= HANDOVER_CODE_MAX_ATTEMPTS,
     deliveryLocked: (o?.delivery?.attempts ?? 0) >= HANDOVER_CODE_MAX_ATTEMPTS,
     retryAllowed: retryAllowed({ failedAttempts: j.attempt, maxAttempts: s.settings.maxAttempts }),
+    maxAttempts: s.settings.maxAttempts,
   };
 }
 /** Every job of one order, oldest first (admin order detail → job timeline). */

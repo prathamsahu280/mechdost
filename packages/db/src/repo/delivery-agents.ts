@@ -12,6 +12,7 @@ import {
   type AgentVehicleType,
 } from '@mechdost/shared/delivery/codes';
 import { publicCode } from '@mechdost/shared/ids';
+import { deliveryNoticeWord } from '@mechdost/shared/notice-catalogue';
 import { agentStatusMachine, type AgentStatus } from '@mechdost/shared/state';
 import { blindIndex, decryptField, encryptField, type Keyring } from '../crypto';
 import {
@@ -95,10 +96,17 @@ async function agentEvent(
 
 // ── public application ───────────────────────────────────────────────────────────────────────────────────────────
 
+/**
+ * The public application. Every answer is the same `{ status: 'received' }`, whether the row is new or the phone already
+ * had an open application: the form is public and the phone is only typed in, so neither a reference nor a status nor a
+ * different answer may tell anyone whether a number applied (security review 2026-11-29; DC-F1/DC-P2). One-per-phone
+ * is the partial unique index `partner_applications_agent_open_phone`: the insert is `on conflict do nothing`, so two
+ * simultaneous submissions still make one row. `created` is for tests and logs only; the route never sends it.
+ */
 export async function submitAgentApplication(
   db: Tx,
   input: { name: string; phone: string; cityCode: string; vehicleType: AgentVehicleType },
-): Promise<{ code: string; status: string }> {
+): Promise<{ status: 'received'; created: boolean }> {
   return db.transaction(async (tx) => {
     const city = await cityByCode(tx, input.cityCode);
     const code = publicCode('PA', city.code);
@@ -115,8 +123,15 @@ export async function submitAgentApplication(
         source: 'public',
         consentAt: new Date(),
       })
+      .onConflictDoNothing({
+        target: partnerApplications.phone,
+        where: sql`${partnerApplications.kind} = 'delivery_agent' and ${partnerApplications.status} in ('new','in_review')`,
+      })
       .returning({ id: partnerApplications.id });
-    if (!row) throw new Error('application insert returned no row');
+    // The form is public and the phone is only typed in, so an existing application is never described: no reference,
+    // no status (that would tell anyone whether a number applied). The owner finds theirs through the call and the
+    // status page with their own reference.
+    if (!row) return { status: 'received', created: false };
     await auditDelivery(tx, {
       actorUserId: null,
       actorRole: 'system',
@@ -135,14 +150,14 @@ export async function submitAgentApplication(
       entityId: row.id,
       version: 1,
     });
-    return { code, status: 'new' };
+    return { status: 'received', created: true };
   });
 }
 
 // ── invites ──────────────────────────────────────────────────────────────────────────────────────────────────────
 
 export type AgentInviteSource =
-  | { applicationCode: string }
+  | { applicationCode: string; email?: string | undefined }
   | {
       name: string;
       phone: string;
@@ -190,7 +205,7 @@ export async function createAgentInvite(
         .returning({ id: partnerApplications.id });
       if (updated.length === 0) throw new ConflictError('The application changed meanwhile', 'STALE');
       ({ name, phone } = app);
-      email = app.email ?? null;
+      email = input.from.email ?? app.email ?? null;
       cityId = app.cityId;
       vehicleType = app.vehicleType as AgentVehicleType;
       applicationId = app.id;
@@ -916,7 +931,8 @@ export async function setAgentStatus(
       userId: a.userId,
       entityId: a.id,
       version: row.version,
-      params: {},
+      // DC-P16: the notice says the new status, in the agent's language.
+      params: (locale) => ({ status: deliveryNoticeWord(locale, 'agentStatus', input.to) }),
     });
     return { version: row.version };
   });
@@ -1024,7 +1040,10 @@ export async function decideAgentDocument(
       userId: a.userId,
       entityId: done[0]?.id ?? a.id,
       version: done[0]?.version ?? 0,
-      params: {},
+      params: (locale) => ({
+        document: deliveryNoticeWord(locale, 'document.kind', input.kind),
+        result: deliveryNoticeWord(locale, 'document.status', input.decision),
+      }),
     });
   });
 }

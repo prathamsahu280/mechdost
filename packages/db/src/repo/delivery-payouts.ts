@@ -132,7 +132,7 @@ export async function reverseAgentPayout(
      */
     idempotencyKey?: string | undefined;
   },
-): Promise<PayoutRow> {
+): Promise<PayoutRow & { replayed: boolean }> {
   return db.transaction(async (tx) => {
     // Scoped load of the target first, then the replay lookup (security review 2026-11-27).
     const [p] = await tx
@@ -147,7 +147,8 @@ export async function reverseAgentPayout(
       .from(deliveryAgentPayouts)
       .where(eq(deliveryAgentPayouts.reversesId, p.id))
       .limit(1);
-    if (done) return done;
+    // DC-B12: a repeat says so (`replayed`), so a stale tab never shows "a reversing entry was added".
+    if (done) return { ...done, replayed: true };
     const key = `${RESERVED_PAYOUT_KEY_PREFIX}${p.id}`;
     const [row] = await tx
       .insert(deliveryAgentPayouts)
@@ -187,7 +188,7 @@ export async function reverseAgentPayout(
         method: row.method,
       },
     });
-    return row;
+    return { ...row, replayed: false };
   });
 }
 

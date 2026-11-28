@@ -716,6 +716,7 @@ function adminShopRow(c: AuditCase, n: number, over: Partial<AdminShopRowDto> = 
     hours: { open: '09:00', close: '21:00', days: [1, 2, 3, 4, 5, 6] },
     openNow: true,
     version: 4,
+    deliveryMode: 'agents',
     missingHindi: n % 3 === 0 ? ['name'] : [],
     ...over,
   };

@@ -90,6 +90,9 @@ export function AdminCodRequests({ actor }: { actor: string }) {
   const [error, setError] = useState<ErrKey | null>(null);
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState<'done_approved' | 'done_rejected' | 'done_revoked' | null>(null);
+  // DC-B8: a request that changed meanwhile leaves the list on refresh, taking an in-card error with it. The words
+  // live here, in the persistent result region outside the card.
+  const [stale, setStale] = useState(false);
   const demo = useDemoCod();
 
   useEffect(() => {
@@ -132,6 +135,7 @@ export function AdminCodRequests({ actor }: { actor: string }) {
     setReason('');
     setError(null);
     setDone(null);
+    setStale(false);
     // The pressed button is replaced by the form: focus its first field (a11y review 2026-11-26).
     const field = `${uid}-${id}-${kind === 'approve' ? 'cap' : 'reason'}`;
     window.requestAnimationFrame(() => document.getElementById(field)?.focus());
@@ -199,10 +203,17 @@ export function AdminCodRequests({ actor }: { actor: string }) {
     }
     setSaving(false);
     if (!result.ok) {
+      if (result.code === 'STALE_COD_REQUEST') {
+        setForm(null);
+        setStale(true);
+        refresh();
+        window.requestAnimationFrame(() => document.getElementById(`${uid}-result`)?.focus());
+        return;
+      }
       setError(errKey(result.code));
-      if (result.code === 'STALE_COD_REQUEST') refresh();
       return;
     }
+    setStale(false);
     setDone(
       form.kind === 'approve' ? 'done_approved' : form.kind === 'reject' ? 'done_rejected' : 'done_revoked',
     );
@@ -252,6 +263,7 @@ export function AdminCodRequests({ actor }: { actor: string }) {
                   setStatus(f);
                   setForm(null);
                   setDone(null);
+                  setStale(false);
                   if (REAL) setReal({ state: 'loading' });
                 }}
                 className="sr-only"
@@ -266,7 +278,13 @@ export function AdminCodRequests({ actor }: { actor: string }) {
 
       {/* One persistent live region: decision results, else how many requests the filter shows. */}
       <div id={`${uid}-result`} tabIndex={-1} role="status" className="mt-3 text-sm font-bold text-ink">
-        {done ? t(done) : load.state === 'ready' ? t('results', { count: load.items.length }) : ''}
+        {stale
+          ? t('err_STALE_COD_REQUEST')
+          : done
+            ? t(done)
+            : load.state === 'ready'
+              ? t('results', { count: load.items.length })
+              : ''}
       </div>
 
       {load.state === 'loading' ? (

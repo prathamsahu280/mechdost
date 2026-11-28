@@ -28,6 +28,7 @@ export function AgentApplyForm() {
   const [formError, setFormError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [challenge, setChallenge] = useState(false);
+  // The reference ('' when the API gave none: an application for this number was already open, DC-F1).
   const [received, setReceived] = useState<string | null>(null);
   const doneRef = useRef<HTMLHeadingElement>(null);
 
@@ -60,7 +61,7 @@ export function AgentApplyForm() {
     const input = { name: get('name'), phone, cityCode, vehicleType: vehicle };
     const code = REAL ? await sendToApi(input) : await sendToDemo(input);
     setSending(false);
-    if (!code) return;
+    if (code === null) return;
     track('delivery_apply_submitted', { vehicleType: input.vehicleType });
     setReceived(code);
     requestAnimationFrame(() => doneRef.current?.focus());
@@ -73,7 +74,8 @@ export function AgentApplyForm() {
     vehicleType: AgentVehicleType;
   }) {
     const { applyAsAgent } = await import('@/demo/delivery-store');
-    return applyAsAgent(input).code;
+    applyAsAgent(input);
+    return '';
   }
 
   async function sendToApi(input: {
@@ -104,10 +106,11 @@ export function AgentApplyForm() {
         res.ok &&
         typeof body === 'object' &&
         body !== null &&
-        'code' in body &&
-        typeof body.code === 'string'
+        'status' in body &&
+        body.status === 'received'
       )
-        return body.code;
+        // One answer for everyone, no reference (no enumeration): MechDost calls the number.
+        return '';
       setFormError(res.status === 429 ? t('errLimit') : t('errSend'));
     } catch {
       setFormError(t('errSend'));
@@ -122,17 +125,11 @@ export function AgentApplyForm() {
         <h2 ref={doneRef} tabIndex={-1} className="font-heading text-xl font-extrabold text-ink">
           {t('receivedTitle')}
         </h2>
-        <p className="text-[15px] text-ink">{t('receivedBody', { code: received })}</p>
+        <p className="text-[15px] text-ink">{t('receivedBodyNoCode')}</p>
         <div className="flex flex-wrap gap-3">
           <LocalLink
-            href="/partners/status"
-            className="press inline-flex min-h-11 items-center rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover"
-          >
-            {t('statusLink')}
-          </LocalLink>
-          <LocalLink
             href="/"
-            className="press inline-flex min-h-11 items-center rounded-button border border-input-border px-4 text-sm font-bold text-ink hover:bg-pill"
+            className="press inline-flex min-h-11 items-center rounded-button bg-accent-button px-5 text-sm font-bold text-white hover:bg-accent-button-hover"
           >
             {t('backHome')}
           </LocalLink>

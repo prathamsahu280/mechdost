@@ -57,6 +57,8 @@ export interface AdminShopRow {
   hours: ShopHours;
   openNow: boolean;
   version: number;
+  /** Who delivers this shop's orders: MechDost agents or the shop itself (DC-G1). */
+  deliveryMode: 'agents' | 'self';
   /** Shop texts without their Hindi version (hard rule 10): `name`, `addressLine`. */
   missingHindi: string[];
 }
@@ -108,6 +110,7 @@ interface ShopSqlRow {
   free_delivery_min_paise: unknown;
   hours: unknown;
   version: unknown;
+  delivery_mode: string;
 }
 
 /** The end of an active busy toggle as UTC ISO text; null when not busy (or busy with no end). */
@@ -121,7 +124,7 @@ const ROW_COLUMNS = sql`s.id, s.city_id, s.name, s.name_hi, s.address_line, s.ad
     where sp.shop_id = s.id and sp.active)::int as coverage,
   (select count(*) from shop_inventory si where si.shop_id = s.id and si.active and not si.admin_blocked)::int
     as on_sale,
-  s.free_delivery_min_paise, s.hours, s.version`;
+  s.free_delivery_min_paise, s.hours, s.version, s.delivery_mode`;
 
 const inCities = (scope: CityScope) =>
   scope.all
@@ -162,6 +165,7 @@ function toRow(r: ShopSqlRow): AdminShopRow {
     hours,
     openNow: shopOpenState(hours, new Date()).open,
     version: num(r.version),
+    deliveryMode: r.delivery_mode === 'self' ? 'self' : 'agents',
     missingHindi,
   };
 }

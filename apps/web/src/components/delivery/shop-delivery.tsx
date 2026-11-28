@@ -2,7 +2,7 @@
 
 import {
   DELIVERY_SWITCH_DECLINE_REASONS,
-  SHOP_MODE_REQUEST_REASONS,
+  SHOP_MODE_REASONS_BY_TARGET,
   type DeliverySwitchDeclineReason,
   type ShopModeRequestReason,
 } from '@mechdost/shared/delivery/codes';
@@ -389,7 +389,7 @@ export function ShopDeliveryModeCard({ shopId, isOwner }: { shopId: string; isOw
             <ReasonFields
               id={id}
               legend={t('requestWhy')}
-              codes={SHOP_MODE_REQUEST_REASONS}
+              codes={SHOP_MODE_REASONS_BY_TARGET[target]}
               label={(x) => rr(x)}
               value={reason}
               onChange={(x) => {

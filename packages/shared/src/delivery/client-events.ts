@@ -51,6 +51,7 @@ export const DELIVERY_CLIENT_EVENT_SCHEMAS = {
         'offer',
         'withdraw',
         'retry_same',
+        'shop_mode_set',
         'retry_other',
         'return',
         'override_pickup',

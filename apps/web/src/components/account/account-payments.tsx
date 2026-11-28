@@ -31,7 +31,7 @@ interface RequestRow {
 type Load =
   | { state: 'loading' }
   | { state: 'error' }
-  | { state: 'ready'; eligibility: CodEligibility; requests: RequestRow[] };
+  | { state: 'ready'; eligibility: CodEligibility; requests: RequestRow[]; askAgainAt?: string | null };
 
 const WHY = new Set([
   'insufficient_history',
@@ -181,6 +181,9 @@ export default function AccountPayments({ account }: { account: DemoAccount }) {
               <p id="payments-cod-reason" className="text-sm text-ink">
                 {c(`codNot_${load.eligibility.reason ?? 'disabled'}`)}
               </p>
+              {load.askAgainAt ? (
+                <p className="mt-1 text-sm text-muted">{c('codAskAgain', { date: date(load.askAgainAt) })}</p>
+              ) : null}
               <p className="mt-1 text-xs text-muted">{t('pincodeHint', { pincode })}</p>
               {action === 'request' && !panel ? (
                 <button
@@ -265,9 +268,14 @@ export default function AccountPayments({ account }: { account: DemoAccount }) {
   );
 }
 
-function toLoad(d: MyCod): { eligibility: CodEligibility; requests: RequestRow[] } {
+function toLoad(d: MyCod): {
+  eligibility: CodEligibility;
+  requests: RequestRow[];
+  askAgainAt: string | null;
+} {
   return {
     eligibility: d.eligibility,
+    askAgainAt: d.eligibility.askAgainAt ?? null,
     requests: d.requests.map((r) => ({
       id: r.id,
       status: r.status,

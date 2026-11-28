@@ -675,6 +675,14 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
   book from real orders/jobs + fits shelf + km update, (2) road-ahead service due with admin rules, (3) papers expiry +
   reminders, (4) spend; plate lookup later.
 
+- **Q-DCP19 (Decision, P3) Seed shop phones.** The demo seed shops use +919000000001..4 (Firebase test range); on live
+  the "Call the shop" number of Sharma Auto Parts equals a customer test account. Give the seed shops distinct numbers
+  (changes demo logins in `docs/runbooks/demo.md` and tests), or remove the demo shops from live before real riders
+  onboard? Default: no change; real shops carry their own numbers (edit in Admin → Partners).
+- **Q-DC-1 (Heads-up, P3) 0118 closes duplicate rider applications.** The migration marks older open delivery
+  applications of the same phone as rejected (note "Duplicate application") so the unique index can be built; the
+  earliest stays open. Default: apply as is.
+
 - **Q-U-B9 (Decision, P2) Reports grouped per post.** Two reporters of one post are two queue items. Proper fix is a
   data model change (one open item per target with N reporters, a `report_reporters` table, counts and clock from the
   first report) = a migration and queue rewrite. Default: not built; the queue keeps one item per report and
@@ -692,3 +700,11 @@ storefront keeps its 180 KB budget. Recommended: (c) now; (a) only if field data
   the sign-in builder, so it was not touched here.
 - **Q-U-P5 (Info)** The `/partners/status` step "पक्का" could not be reproduced: no step label with that word exists in the
   application stages (`apply.stage_*`). Send the exact URL and state if it still shows.
+
+- **Q-DC-2 (Decision, P3) Rider application reference.** To stop "did this phone apply?" being answerable from the public
+  form, the answer carries no `PA-…` reference. Send the reference to the typed phone by WhatsApp when the channel is
+  switched on (needs a new event + template) so riders can follow their application on the status page? Default: no;
+  MechDost calls the applicant.
+
+- **Q-DC-3 (Decision, P3) COD request limit editable?** The 5 requests per customer per day is a constant
+  (`COD_REQUESTS_PER_DAY`, spec 03). Make it an admin setting (`checkout.cod_request_daily_limit`)? Default: constant.

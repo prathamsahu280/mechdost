@@ -457,7 +457,7 @@ const DELIVERY_COMPONENTS: readonly ComponentDef[] = [
     code: 'DLV-ADMIN',
     page: 'Admin → Delivery (/admin/delivery)',
     component:
-      'Delivery section tabs (jobs, applications, agents, payouts, shop requests, settings) and the jobs queue table with waiting chips',
+      'Delivery section tabs (jobs, applications, agents, payouts, shop requests, settings), the job filter chips with open-job counts (outlined, quieter than the tabs) and the jobs queue table with waiting chips (a finished job shows no waiting clock)',
     path: '/admin/delivery',
     scope: 'main',
     checks: [...BASE_CHECKS, 'dismiss'],
@@ -467,6 +467,20 @@ const DELIVERY_COMPONENTS: readonly ComponentDef[] = [
     align: TABLE_ALIGN,
     mustShow: 'MD-RPR-2026-HND006',
     note: 'Tabs other than Jobs are client state of one route: opened by hand in the screenshots and the e2e.',
+  },
+  {
+    code: 'DLV-ADMIN-PANELS',
+    page: 'Admin → Delivery inline panels (/admin/delivery)',
+    component:
+      'Inline confirm panels (invite from an application with an optional email, revoke an invite, retry or send back a failed job, change a shop delivery mode directly) and the Verify button that stays disabled until the document was opened; one panel open at a time, never a dialog',
+    path: '/admin/delivery',
+    scope: 'main',
+    checks: [...BASE_CHECKS, 'dismiss'],
+    strategy: 'pairwise',
+    params: [...env, { name: 'auth', values: ['admin'] }, deliveryWorldParam],
+    sweep: 8,
+    align: TABLE_ALIGN,
+    note: 'The panels open from the Applications, Agents, Requests and job-detail tabs (client state of one route): opened by hand in the screenshots and the e2e; the row checks the route frame, boxes and focus at every width and language.',
   },
 ];
 

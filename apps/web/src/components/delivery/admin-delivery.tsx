@@ -15,8 +15,9 @@ import {
   type DeliverySwitchReason,
   type DeliveryWithdrawReason,
   type ShopModeRejectReason,
+  DELIVERY_APPLICATION_REJECT_REASONS,
+  type DeliveryApplicationRejectReason,
 } from '@mechdost/shared/delivery/codes';
-import { APPLICATION_REJECT_REASONS } from '@mechdost/shared/partner-codes';
 import { agentStatusMachine, AGENT_STATUSES } from '@mechdost/shared/state';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState, type ReactNode, type SyntheticEvent } from 'react';
@@ -43,6 +44,7 @@ import type {
   AdminJobRowView,
   AdminJobsView,
   AdminShopModeRequestView,
+  ShopModeRowView,
   AgentApplicationView,
   AgentInviteRowView,
   DeliveryAdminAction,
@@ -200,11 +202,20 @@ function JobsTab({ client }: { client: AdminDeliveryClient }) {
   const t = useTranslations('deliveryAdmin');
   const s = useTranslations('delivery.jobStatus');
   const l = useTranslations('delivery.loadClass');
+  const locale = useLocale();
   const [view, setView] = useState<AdminJobsView>('needs_agent');
   const [open, setOpen] = useState<string | null>(null);
   const now = useNow(1000);
   const load = useCallback(() => client.jobs(view, null), [client, view]);
   const { items, failed, reload } = useList<AdminJobRowView>(client, load);
+  // SIM-LEAD-7: the filter chips carry the number of open jobs (not for Done, which only grows).
+  const [counts, setCounts] = useState<Partial<Record<AdminJobsView, number>>>({});
+  const loadCounts = useCallback(() => {
+    void client.jobCounts().then((r) => {
+      if (r.ok) setCounts(r.data);
+    });
+  }, [client]);
+  useLiveReload(client, loadCounts, POLL_MS);
   // A job that arrives in the open queue (poll or demo push) is announced once, politely (4.1.3).
   const { say, line } = useStatusLine();
   const seen = useRef<{ view: AdminJobsView; ids: Set<string> } | null>(null);
@@ -220,19 +231,22 @@ function JobsTab({ client }: { client: AdminDeliveryClient }) {
   return (
     <div className="space-y-3">
       {line}
+      {/* Quieter than the section tabs above (one filled button per screen): outlined chips with counts. */}
       <div role="group" aria-label={t('viewsLabel')} className="flex flex-wrap gap-2">
         {VIEWS.map((v) => (
           <button
             key={v}
             type="button"
             aria-pressed={view === v}
-            className={view === v ? portalPrimary : portalQuiet}
+            className={`press inline-flex min-h-11 items-center gap-1 rounded-pill border px-3 text-sm text-ink ${view === v ? 'border-ink bg-pill font-extrabold' : 'border-input-border font-bold hover:bg-pill'}`}
             onClick={() => {
               setView(v);
               setOpen(null);
             }}
           >
+            {view === v ? <span aria-hidden="true">✓</span> : null}
             {t(`view_${v}`)}
+            {counts[v] !== undefined ? <span className="tabular-nums text-muted"> · {counts[v]}</span> : null}
           </button>
         ))}
       </div>
@@ -289,7 +303,7 @@ function JobsTab({ client }: { client: AdminDeliveryClient }) {
                         <StatusBadge code={j.status}>{s(j.status)}</StatusBadge>
                       </div>
                     </th>
-                    <td className={adminTd}>{j.shopName}</td>
+                    <td className={adminTd}>{locale === 'hi' && j.shopNameHi ? j.shopNameHi : j.shopName}</td>
                     <td className={`${adminTd} tabular-nums`}>{j.customerPincode}</td>
                     <td className={adminTd}>
                       {j.agent ? <span data-user-content>{j.agent.name}</span> : t('noAgent')}
@@ -301,7 +315,10 @@ function JobsTab({ client }: { client: AdminDeliveryClient }) {
                     </td>
                     <td className={adminTd}>{l(j.loadClass)}</td>
                     <td className={`${adminTd} tabular-nums`}>
-                      {t('waiting', { min: j.waitingMin })}{' '}
+                      {/* DC-B13: a finished job has no waiting clock. */}
+                      {view === 'done' || j.waitingMin === 0
+                        ? t('waitingNone')
+                        : t('waiting', { min: j.waitingMin })}{' '}
                       {j.waitingMin >= LATE_MIN && view !== 'done' ? (
                         <StatusBadge tone="warning">{t('late')}</StatusBadge>
                       ) : null}
@@ -327,7 +344,17 @@ function JobsTab({ client }: { client: AdminDeliveryClient }) {
           </table>
         </AdminTable>
       ) : null}
-      {open ? <JobDetail key={open} client={client} jobId={open} onChanged={reload} /> : null}
+      {open ? (
+        <JobDetail
+          key={open}
+          client={client}
+          jobId={open}
+          onChanged={() => {
+            reload();
+            loadCounts();
+          }}
+        />
+      ) : null}
     </div>
   );
 }
@@ -349,6 +376,9 @@ function JobDetail({
   const err = useErr();
   const [job, setJob] = useState<AdminJobDetailView | null>(null);
   const [busy, setBusy] = useState(false);
+  // DC-B14: retry and send-back confirm inline with a summary before they act.
+  const [decision, setDecision] = useState<'retry_same' | 'retry_other' | 'return' | null>(null);
+  useDisclosureFocus(decision ? `decide-${jobId}` : null);
   const { say, line } = useStatusLine();
   const reload = useCallback(() => {
     void client.job(jobId).then((r) => {
@@ -386,7 +416,10 @@ function JobDetail({
       >
         {t('jobTitle', { code: job.orderCode })}
       </h3>
-      <p className="text-sm text-muted">{t('attempt', { n: job.attempt })}</p>
+      {/* DC-B14: "Attempt 3" read as the next try; say how many tries failed out of the allowed. */}
+      <p className="text-sm text-muted">
+        {job.attempt > 1 ? t('triesFailed', { n: job.attempt - 1, max: job.maxAttempts }) : t('firstTry')}
+      </p>
       <div className="mt-2">{line}</div>
 
       {job.status === 'needs_agent' ? (
@@ -416,11 +449,17 @@ function JobDetail({
                         ? ` · ${t('acceptance', { pct: Math.round(a.acceptanceRateBp / 100) })}`
                         : ''}
                     </span>
-                    {a.carriesLoad ? null : (
-                      <span className="block text-sm font-bold text-warning">{t('cannotCarry')}</span>
+                    {a.eligible ? null : (
+                      <span className="block text-sm font-bold text-warning">
+                        {a.declinedBefore
+                          ? t('suggestionDeclined')
+                          : a.carriesLoad
+                            ? t('suggestionBusy')
+                            : t('cannotCarry')}
+                      </span>
                     )}
                   </span>
-                  {a.carriesLoad ? (
+                  {a.eligible ? (
                     <button
                       type="button"
                       onClick={() =>
@@ -466,51 +505,82 @@ function JobDetail({
           </p>
           <h4 className="mt-2 text-sm font-bold text-ink">{t('decideTitle')}</h4>
           {!job.retryAllowed ? <p className="text-sm text-ink">{t('retryLimitNote')}</p> : null}
-          <div className="mt-2 flex flex-wrap gap-2">
-            {!job.retryAllowed ? null : (
-              <>
-                <button
-                  type="button"
-                  className={portalQuiet}
-                  onClick={() =>
-                    void act(
-                      'retry_same',
-                      () => client.failureDecision(jobId, 'retry', 'same', v2),
-                      t('decisionSaved'),
-                    )
-                  }
-                >
-                  {t('retrySame')}
-                </button>
-                <button
-                  type="button"
-                  className={portalQuiet}
-                  onClick={() =>
-                    void act(
-                      'retry_other',
-                      () => client.failureDecision(jobId, 'retry', 'other', v2),
-                      t('decisionSaved'),
-                    )
-                  }
-                >
-                  {t('retryOther')}
-                </button>
-              </>
-            )}
-            <button
-              type="button"
-              className={portalPrimary}
-              onClick={() =>
-                void act(
-                  'return',
-                  () => client.failureDecision(jobId, 'return_to_shop', undefined, v2),
-                  t('decisionSaved'),
-                )
-              }
+          {decision === null ? (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {!job.retryAllowed ? null : (
+                <>
+                  <button
+                    type="button"
+                    data-disclosure-trigger={`decide-${jobId}`}
+                    className={portalQuiet}
+                    onClick={() => {
+                      setDecision('retry_same');
+                    }}
+                  >
+                    {t('retrySame')}
+                  </button>
+                  <button
+                    type="button"
+                    data-disclosure-trigger={`decide-${jobId}`}
+                    className={portalQuiet}
+                    onClick={() => {
+                      setDecision('retry_other');
+                    }}
+                  >
+                    {t('retryOther')}
+                  </button>
+                </>
+              )}
+              <button
+                type="button"
+                data-disclosure-trigger={`decide-${jobId}`}
+                className={portalPrimary}
+                onClick={() => {
+                  setDecision('return');
+                }}
+              >
+                {t('returnToShop')}
+              </button>
+            </div>
+          ) : (
+            <div
+              id={`decide-${jobId}`}
+              className="mt-2 grid gap-2 rounded-button border border-line bg-surface p-3"
             >
-              {t('returnToShop')}
-            </button>
-          </div>
+              <p className="text-sm text-ink">{t(`decideConfirm_${decision}`)}</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  data-disclosure-field={`decide-${jobId}`}
+                  className={portalPrimary}
+                  onClick={() => {
+                    const d = decision;
+                    setDecision(null);
+                    void act(
+                      d === 'return' ? 'return' : d,
+                      () =>
+                        d === 'return'
+                          ? client.failureDecision(jobId, 'return_to_shop', undefined, v2)
+                          : client.failureDecision(jobId, 'retry', d === 'retry_same' ? 'same' : 'other', v2),
+                      t('decisionSaved'),
+                    );
+                  }}
+                >
+                  {t('decideConfirmYes')}
+                </button>
+                <button
+                  type="button"
+                  data-panel-cancel={`decide-${jobId}`}
+                  className={portalQuiet}
+                  onClick={() => {
+                    setDecision(null);
+                  }}
+                >
+                  {t('cancel')}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       ) : null}
 
@@ -794,6 +864,7 @@ export function JobTimeline({ job }: { job: AdminJobDetailView }) {
     new Intl.DateTimeFormat(locale === 'hi' ? 'hi-IN' : 'en-IN', {
       dateStyle: 'medium',
       timeStyle: 'short',
+      hour12: locale !== 'hi',
       timeZone: 'Asia/Kolkata',
     }).format(new Date(iso));
   return (
@@ -893,8 +964,23 @@ function ApplicationsTab({ client }: { client: AdminDeliveryClient }) {
   const { say, line } = useStatusLine();
   const [link, setLink] = useState<{ url: string; until: string } | null>(null);
   const [rejecting, setRejecting] = useState<string | null>(null);
-  const [reason, setReason] = useState<(typeof APPLICATION_REJECT_REASONS)[number] | ''>('');
-  useDisclosureFocus(rejecting ? `reject-${rejecting}` : null);
+  const [reason, setReason] = useState<DeliveryApplicationRejectReason | ''>('');
+  const [rejectNote, setRejectNote] = useState('');
+  // DC-B4: inviting and revoking confirm inline, with a summary of what will happen (one panel open at a time).
+  const [inviting, setInviting] = useState<string | null>(null);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [emailProblem, setEmailProblem] = useState(false);
+  const [revoking, setRevoking] = useState<string | null>(null);
+  useDisclosureFocus(
+    rejecting
+      ? `reject-${rejecting}`
+      : inviting
+        ? `invite-${inviting}`
+        : revoking
+          ? `revoke-${revoking}`
+          : null,
+    'invite-link',
+  );
   const loadApps = useCallback(() => client.applications(null), [client]);
   const loadInvites = useCallback(() => client.invites(), [client]);
   const apps = useList<AgentApplicationView>(client, loadApps);
@@ -910,11 +996,27 @@ function ApplicationsTab({ client }: { client: AdminDeliveryClient }) {
   }
 
   async function invite(code: string) {
-    const res = await client.invite({ applicationCode: code });
+    const email = inviteEmail.trim();
+    if (email !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailProblem(true);
+      document.getElementById(`invite-${code}-email`)?.focus();
+      return;
+    }
+    setEmailProblem(false);
+    const res = await client.invite({ applicationCode: code, ...(email ? { email } : {}) });
     if (res.ok) track('delivery_admin_action', { action: 'invite' });
-    if (res.ok) showLink(res.data.token, res.data.expiresAt);
-    else say(err(res.code), 'error');
+    if (res.ok) {
+      showLink(res.data.token, res.data.expiresAt);
+      setInviting(null);
+    } else say(err(res.code), 'error');
     apps.reload();
+    invites.reload();
+  }
+  async function revoke(id: string) {
+    const r = await client.revokeInvite(id);
+    track('click', { id: 'admin_delivery_invite_revoked', path: window.location.pathname });
+    say(r.ok ? t('revoked') : err(r.code), r.ok ? 'ok' : 'error');
+    setRevoking(null);
     invites.reload();
   }
   async function reject(code: string) {
@@ -922,9 +1024,14 @@ function ApplicationsTab({ client }: { client: AdminDeliveryClient }) {
       say(t('reasonRequired'), 'error');
       return;
     }
+    if (reason === 'other' && rejectNote.trim() === '') {
+      say(t('noteRequired'), 'error');
+      document.getElementById(`reject-${code}-note`)?.focus();
+      return;
+    }
     const row = apps.items?.find((a) => a.code === code);
     if (!row) return;
-    const res = await client.rejectApplication(code, reason, row.version);
+    const res = await client.rejectApplication(code, reason, row.version, rejectNote.trim() || undefined);
     track('click', { id: 'admin_delivery_application_rejected', path: window.location.pathname });
     if (res.ok) {
       say(t('rejected'));
@@ -938,7 +1045,7 @@ function ApplicationsTab({ client }: { client: AdminDeliveryClient }) {
     <div className="space-y-4">
       {line}
       {link ? (
-        <div className={`${adminCard} border-success`}>
+        <div tabIndex={-1} data-disclosure-trigger="invite-link" className={`${adminCard} border-success`}>
           <p className="text-sm text-ink">{t('inviteSent', { date: link.until })}</p>
           <p className="mt-1 break-all text-sm font-bold text-ink" lang="en">
             {link.url}
@@ -980,7 +1087,17 @@ function ApplicationsTab({ client }: { client: AdminDeliveryClient }) {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <button type="button" className={portalPrimary} onClick={() => void invite(a.code)}>
+                  <button
+                    type="button"
+                    data-disclosure-trigger={`invite-${a.code}`}
+                    className={portalPrimary}
+                    onClick={() => {
+                      setInviting(a.code);
+                      setInviteEmail('');
+                      setEmailProblem(false);
+                      setRejecting(null);
+                    }}
+                  >
                     {t('invite')}
                   </button>
                   <button
@@ -990,22 +1107,83 @@ function ApplicationsTab({ client }: { client: AdminDeliveryClient }) {
                     onClick={() => {
                       setRejecting(a.code);
                       setReason('');
+                      setRejectNote('');
+                      setInviting(null);
                     }}
                   >
                     {t('reject')}
                   </button>
                 </div>
               </div>
+              {inviting === a.code ? (
+                <div
+                  id={`invite-${a.code}`}
+                  className="mt-3 grid gap-2 rounded-button border border-line p-3"
+                >
+                  <p className="text-sm text-ink">
+                    {t('inviteConfirm', {
+                      name: a.name,
+                      vehicle: a.vehicleType ? v(a.vehicleType) : '',
+                    })}
+                  </p>
+                  <div>
+                    <label htmlFor={`invite-${a.code}-email`} className="text-sm font-bold text-ink">
+                      {t('fieldEmail')}
+                    </label>
+                    <input
+                      id={`invite-${a.code}-email`}
+                      data-disclosure-field={`invite-${a.code}`}
+                      type="email"
+                      inputMode="email"
+                      autoComplete="off"
+                      spellCheck={false}
+                      value={inviteEmail}
+                      maxLength={120}
+                      aria-invalid={emailProblem || undefined}
+                      aria-describedby={emailProblem ? `invite-${a.code}-email-err` : undefined}
+                      onChange={(e) => {
+                        setInviteEmail(e.target.value);
+                      }}
+                      className={portalField}
+                    />
+                    {emailProblem ? (
+                      <p
+                        id={`invite-${a.code}-email-err`}
+                        role="alert"
+                        className="text-sm font-bold text-error"
+                      >
+                        {t('emailInvalid')}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="flex gap-2">
+                    <button type="button" className={portalPrimary} onClick={() => void invite(a.code)}>
+                      {t('sendInvite')}
+                    </button>
+                    <button
+                      type="button"
+                      data-panel-cancel={`invite-${a.code}`}
+                      className={portalQuiet}
+                      onClick={() => {
+                        setInviting(null);
+                      }}
+                    >
+                      {t('cancel')}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
               {rejecting === a.code ? (
                 <div className="mt-3 grid gap-2">
                   <ReasonSelect
                     id={`reject-${a.code}`}
                     label={t('rejectWhy')}
-                    codes={APPLICATION_REJECT_REASONS}
+                    codes={DELIVERY_APPLICATION_REJECT_REASONS}
                     text={(c) => p(`appReject_${c}`)}
                     value={reason}
                     onChange={setReason}
                   />
+                  <NoteField id={`reject-${a.code}-note`} value={rejectNote} onChange={setRejectNote} />
                   <div className="flex gap-2">
                     <button type="button" className={portalPrimary} onClick={() => void reject(a.code)}>
                       {t('reject')}
@@ -1058,22 +1236,45 @@ function ApplicationsTab({ client }: { client: AdminDeliveryClient }) {
                 {i.status === 'sent' ? (
                   <button
                     type="button"
+                    data-disclosure-trigger={`revoke-${i.id}`}
+                    aria-expanded={revoking === i.id}
                     className={portalQuiet}
-                    onClick={() =>
-                      void client.revokeInvite(i.id).then((r) => {
-                        track('click', {
-                          id: 'admin_delivery_invite_revoked',
-                          path: window.location.pathname,
-                        });
-                        say(r.ok ? t('revoked') : err(r.code), r.ok ? 'ok' : 'error');
-                        invites.reload();
-                      })
-                    }
+                    onClick={() => {
+                      setRevoking(i.id);
+                    }}
                   >
                     {t('revoke')}
+                    <span className="sr-only"> {i.name}</span>
                   </button>
                 ) : null}
               </span>
+              {revoking === i.id ? (
+                <div className="grid w-full gap-2 rounded-button border border-line p-3">
+                  <p className="text-sm text-ink">
+                    {t('revokeConfirm', { name: i.name, last4: i.phoneLast4 })}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      data-disclosure-field={`revoke-${i.id}`}
+                      className={portalPrimary}
+                      onClick={() => void revoke(i.id)}
+                    >
+                      {t('revoke')}
+                    </button>
+                    <button
+                      type="button"
+                      data-panel-cancel={`revoke-${i.id}`}
+                      className={portalQuiet}
+                      onClick={() => {
+                        setRevoking(null);
+                      }}
+                    >
+                      {t('cancel')}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
             </li>
           ))}
         </ul>
@@ -1197,7 +1398,7 @@ function InviteNew({
       </Field>
       <Field id="inv-vehicle" label={t('fieldVehicle')}>
         <select id="inv-vehicle" name="vehicle" className={`${portalField} block`} defaultValue="">
-          <option value="">{t('reasonChoose')}</option>
+          <option value="">{t('vehicleChoose')}</option>
           {AGENT_VEHICLE_TYPES.map((x) => (
             <option key={x} value={x}>
               {v(x)}
@@ -1635,9 +1836,27 @@ function DocumentReview({
               {t('docView')}
             </button>
             {doc.status !== 'verified' ? (
-              <button type="button" className={portalPrimary} onClick={() => void decide(true)}>
-                {t('docVerify')}
-              </button>
+              // DC-F2: Verify opens only after this session opened the document (the open is audited), so no
+              // verification is blind. aria-disabled keeps the button focusable; pressing it says why.
+              <>
+                <button
+                  type="button"
+                  aria-disabled={view === null}
+                  aria-describedby={view === null ? `docview-hint-${agentId}-${kind}` : undefined}
+                  className={`${portalPrimary} aria-disabled:opacity-60`}
+                  onClick={() => {
+                    if (view === null) say(t('docViewFirst'), 'error');
+                    else void decide(true);
+                  }}
+                >
+                  {t('docVerify')}
+                </button>
+                {view === null ? (
+                  <span id={`docview-hint-${agentId}-${kind}`} className="sr-only">
+                    {t('docViewFirst')}
+                  </span>
+                ) : null}
+              </>
             ) : null}
             {doc.status !== 'rejected' ? (
               <button
@@ -1746,13 +1965,16 @@ function RequestsTab({ client }: { client: AdminDeliveryClient }) {
       <h3 id="da-requests" className="font-heading text-lg font-extrabold text-ink">
         {t('requestsTitle')}
       </h3>
+      <ShopModeSet client={client} />
       {line}
       <ListState failed={failed && !items} loading={!items && !failed} onRetry={reload} />
       {items?.length === 0 ? <EmptyState title={t('requestsEmpty')} /> : null}
       <ul className="grid gap-2">
         {(items ?? []).map((r) => (
           <li key={r.id} className={adminCard}>
-            <p className="font-bold text-ink">{r.shopName}</p>
+            <p className="font-bold text-ink">
+              {locale === 'hi' && r.shopNameHi ? r.shopNameHi : r.shopName}
+            </p>
             <p className="text-sm text-ink">
               {t('requestMeta', { current: m(r.currentMode), requested: m(r.requestedMode) })}
             </p>
@@ -1811,6 +2033,179 @@ function RequestsTab({ client }: { client: AdminDeliveryClient }) {
         ))}
       </ul>
     </section>
+  );
+}
+
+/**
+ * Staff set who delivers a shop's orders without waiting for a request (DC-G1; spec 24 "Shop mode"). Pick the shop, say
+ * what changes, give a reason (kept in the history), confirm: one inline panel, no dialog.
+ */
+function ShopModeSet({ client }: { client: AdminDeliveryClient }) {
+  const t = useTranslations('deliveryAdmin');
+  const m = useTranslations('delivery.shopMode');
+  const locale = useLocale();
+  const err = useErr();
+  const { say, line } = useStatusLine();
+  const load = useCallback(() => client.shopModes(), [client]);
+  const { items, reload } = useList<ShopModeRowView>(client, load);
+  const [open, setOpen] = useState(false);
+  const [shopId, setShopId] = useState('');
+  const [note, setNote] = useState('');
+  const [confirming, setConfirming] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  useDisclosureFocus(confirming ? 'shop-mode-confirm' : open ? 'shop-mode-set' : null, 'shop-mode-set');
+  const shop = (items ?? []).find((s) => s.id === shopId) ?? null;
+  const target = shop ? (shop.mode === 'agents' ? 'self' : 'agents') : null;
+  const shown = (s: ShopModeRowView) => (locale === 'hi' && s.nameHi ? s.nameHi : s.name);
+
+  function review() {
+    if (!shop) {
+      setProblem(t('shopModeChooseShop'));
+      document.getElementById('shop-mode-set-shop')?.focus();
+      return;
+    }
+    if (note.trim().length < 5) {
+      setProblem(t('overrideReasonError'));
+      document.getElementById('shop-mode-set-note')?.focus();
+      return;
+    }
+    setProblem(null);
+    setConfirming(true);
+  }
+  async function apply() {
+    if (!shop || !target) return;
+    const res = await client.setShopMode(shop.id, target, note.trim(), shop.version);
+    if (res.ok) track('delivery_admin_action', { action: 'shop_mode_set' });
+    say(
+      res.ok ? t('shopModeSetDone', { shop: shown(shop), mode: m(target) }) : err(res.code),
+      res.ok ? 'ok' : 'error',
+    );
+    if (res.ok) {
+      setOpen(false);
+      setShopId('');
+      setNote('');
+    }
+    setConfirming(false);
+    reload();
+  }
+
+  if (!open)
+    return (
+      <div className="mb-3">
+        {line}
+        <button
+          type="button"
+          data-disclosure-trigger="shop-mode-set"
+          className={portalQuiet}
+          onClick={() => {
+            setOpen(true);
+          }}
+        >
+          {t('shopModeSetOpen')}
+        </button>
+      </div>
+    );
+  return (
+    <div className={`${adminCard} mb-3 grid gap-3`}>
+      <h4 className="font-heading text-base font-extrabold text-ink">{t('shopModeSetTitle')}</h4>
+      <div>
+        <label htmlFor="shop-mode-set-shop" className="text-sm font-bold text-ink">
+          {t('shopModeShop')}
+        </label>
+        <select
+          id="shop-mode-set-shop"
+          aria-invalid={problem !== null && shop === null ? true : undefined}
+          aria-describedby={problem !== null && shop === null ? 'shop-mode-set-err' : undefined}
+          data-disclosure-field="shop-mode-set"
+          value={shopId}
+          onChange={(e) => {
+            setShopId(e.target.value);
+            setConfirming(false);
+          }}
+          className={`${portalField} block`}
+        >
+          <option value="">{t('shopModeChooseShop')}</option>
+          {(items ?? []).map((s) => (
+            <option key={s.id} value={s.id}>
+              {`${shown(s)} · ${m(s.mode)}`}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label htmlFor="shop-mode-set-note" className="text-sm font-bold text-ink">
+          {t('overrideReason')}
+        </label>
+        <input
+          id="shop-mode-set-note"
+          aria-required="true"
+          aria-invalid={problem !== null && shop !== null ? true : undefined}
+          aria-describedby={problem !== null && shop !== null ? 'shop-mode-set-err' : undefined}
+          value={note}
+          maxLength={300}
+          onChange={(e) => {
+            setNote(e.target.value);
+            setConfirming(false);
+          }}
+          className={portalField}
+        />
+      </div>
+      {problem ? (
+        <p id="shop-mode-set-err" role="alert" className="text-sm font-bold text-error">
+          {problem}
+        </p>
+      ) : null}
+      {confirming && shop && target ? (
+        <div className="grid gap-2 rounded-button border border-line p-3">
+          <p className="text-sm text-ink">
+            {t('shopModeSetConfirm', { shop: shown(shop), from: m(shop.mode), to: m(target) })}
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              data-disclosure-field="shop-mode-confirm"
+              className={portalPrimary}
+              onClick={() => void apply()}
+            >
+              {t('shopModeSetYes')}
+            </button>
+            <button
+              type="button"
+              data-panel-cancel="shop-mode-confirm"
+              className={portalQuiet}
+              onClick={() => {
+                setConfirming(false);
+              }}
+            >
+              {t('cancel')}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <button
+            type="button"
+            data-disclosure-trigger="shop-mode-confirm"
+            className={portalPrimary}
+            onClick={review}
+          >
+            {t('shopModeReview')}
+          </button>
+          <button
+            type="button"
+            data-panel-cancel="shop-mode-set"
+            className={portalQuiet}
+            onClick={() => {
+              setOpen(false);
+              setConfirming(false);
+              setProblem(null);
+            }}
+          >
+            {t('cancel')}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 

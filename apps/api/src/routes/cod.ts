@@ -44,7 +44,6 @@ import { errorResponses, ErrorSchema } from './schemas';
  * to the cities of their grant (another city's request is a 404). The checkout quote and `POST /orders` apply the
  * same rule; nothing here trusts the client.
  */
-export const COD_REQUEST_RATE: RateRule = { name: 'cod_request_user', limit: 5, windowSeconds: 86_400 };
 export const COD_DECIDE_RATE: RateRule = { name: 'cod_decide_staff', limit: 120, windowSeconds: 3_600 };
 
 const Pincode = z.string().regex(/^[1-9][0-9]{5}$/);
@@ -201,11 +200,7 @@ export function codRoutes(deps: AppDeps, cache: SessionCache) {
     app.use(path, forbidSellers);
   }
   app.on('POST', '/me/cod/requests', requireCustomerVerified(deps));
-  app.on(
-    'POST',
-    '/me/cod/requests',
-    rateLimit(deps.rateLimiter, COD_REQUEST_RATE, (c) => c.get('auth').user.id),
-  );
+  // The 5-a-day request limit is counted in `requestCod` on created requests only (DC-F3), not here.
   // Staff.
   app.use('/admin/cod-requests', authenticate(deps, cache));
   app.use('/admin/cod-requests/*', authenticate(deps, cache));
@@ -235,7 +230,7 @@ export function codRoutes(deps: AppDeps, cache: SessionCache) {
       return c.json(
         {
           cityCode: status.cityCode,
-          eligibility: status.eligibility,
+          eligibility: { ...status.eligibility, askAgainAt: status.askAgainAt?.toISOString() ?? null },
           minOrderPaise: status.rules.minOrderPaise,
           minItems: status.rules.minItems,
           requests: requests.map(requestDto),

@@ -53,6 +53,7 @@ import {
   setAgentStatus,
   setShopDeliveryMode,
   shopIdsFrom,
+  countAdminJobs,
   submitAgentApplication,
   submitAgentDocument,
   viewAgentDocument,
@@ -92,9 +93,12 @@ import {
   SwitchDeclineInput,
 } from '@mechdost/shared/delivery/api';
 import { AgentStatsQuery } from '@mechdost/shared/delivery/agent-stats';
-import { AGENT_DOCUMENT_KINDS, AGENT_STATUSES } from '@mechdost/shared/delivery/codes';
+import {
+  AGENT_DOCUMENT_KINDS,
+  AGENT_STATUSES,
+  DELIVERY_APPLICATION_REJECT_REASONS,
+} from '@mechdost/shared/delivery/codes';
 import { CSV_BOM, csvLine, paiseToRupees } from '@mechdost/shared/exports';
-import { APPLICATION_REJECT_REASONS } from '@mechdost/shared/partners';
 import type { Permission } from '@mechdost/shared/rbac';
 import { PHOTO_MAX_BYTES } from '@mechdost/shared/service-photos';
 import type { SessionCache } from '../auth/session-cache';
@@ -195,7 +199,9 @@ export function deliveryPublicRoutes(deps: AppDeps) {
         const b = c.req.valid('json');
         await human(deps, c, b.turnstileToken);
         await enforceRate(c, deps.rateLimiter, AGENT_APPLY_PER_PHONE, phoneKey(b.application.phone), 1);
-        return c.json(await submitAgentApplication(deps.db, b.application), 201);
+        await submitAgentApplication(deps.db, b.application);
+        // The same body and status for a new and a repeated application (no enumeration): no reference, no flag.
+        return c.json({ status: 'received' as const }, 201);
       },
     )
     .openapi(
@@ -752,6 +758,7 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
   app.use('/admin/delivery/jobs/*', requirePermission(assign));
   app.use('/admin/delivery/jobs', requirePermission(assign));
   app.use('/admin/delivery/kpis', requirePermission(assign));
+  app.use('/admin/delivery/job-counts', requirePermission(assign));
   const payouts: Permission = 'delivery_payouts:manage';
   app.use('/admin/delivery/payouts', requirePermission(payouts));
   app.use('/admin/delivery/payouts/*', requirePermission(payouts));
@@ -905,11 +912,15 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
           body: body(
             z
               .object({
-                reasonCode: z.enum(APPLICATION_REJECT_REASONS),
+                reasonCode: z.enum(DELIVERY_APPLICATION_REJECT_REASONS),
                 note: z.string().trim().min(1).max(300).optional(),
                 version: z.number().int().min(0),
               })
               .strict()
+              .refine((v) => v.reasonCode !== 'other' || v.note !== undefined, {
+                path: ['note'],
+                message: 'NOTE_REQUIRED',
+              })
               .openapi('AgentApplicationReject'),
           ),
         },
@@ -1093,6 +1104,13 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
           reasonCode: c.req.valid('json').reasonCode,
         });
         return c.json({ ok: true }, 200);
+      },
+    )
+    .openapi(
+      r('get', '/admin/delivery/job-counts', 'Open jobs per queue view (filter chips)', 'admin-delivery', {}),
+      async (c) => {
+        c.header('Cache-Control', 'no-store');
+        return c.json(await countAdminJobs(deps.db, { scope: scope(c, assign) }), 200);
       },
     )
     .openapi(
@@ -1379,7 +1397,8 @@ export function deliveryAdminRoutes(deps: AppDeps, cache: SessionCache) {
           note: b.note,
           idempotencyKey: b.idempotencyKey,
         });
-        return c.json({ ...row, createdAt: row.createdAt.toISOString() }, 200);
+        const { replayed, ...rest } = row;
+        return c.json({ ...rest, createdAt: rest.createdAt.toISOString(), alreadyCorrected: replayed }, 200);
       },
     )
     .openapi(

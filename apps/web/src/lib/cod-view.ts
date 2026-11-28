@@ -13,7 +13,14 @@ export interface QuoteCodLike {
     allowed: boolean;
     reason: 'over_cap' | 'pincode' | null;
     capPaise: number;
-    eligibility?: { eligible: boolean; reason: CodPersonReason | null; canRequest: boolean } | undefined;
+    eligibility?:
+      | {
+          eligible: boolean;
+          reason: CodPersonReason | null;
+          canRequest: boolean;
+          askAgainAt?: string | null | undefined;
+        }
+      | undefined;
     minOrderPaise?: number | undefined;
     minItems?: number | undefined;
   };
@@ -23,6 +30,8 @@ export interface CodChoice {
   available: boolean;
   reason: CodShownReason | null;
   canRequest: boolean;
+  /** DC-P6: present only while a turned-down customer has to wait; the screen says "You can ask again on {date}". */
+  askAgainAt?: string;
 }
 
 /**
@@ -31,7 +40,13 @@ export interface CodChoice {
  */
 export function codChoice(quote: QuoteCodLike, cart: { discountPaise: number; pieces: number }): CodChoice {
   const e = quote.cod.eligibility;
-  if (e && !e.eligible) return { available: false, reason: e.reason ?? 'disabled', canRequest: e.canRequest };
+  if (e && !e.eligible)
+    return {
+      available: false,
+      reason: e.reason ?? 'disabled',
+      canRequest: e.canRequest,
+      ...(e.askAgainAt ? { askAgainAt: e.askAgainAt } : {}),
+    };
   if (quote.cod.reason === 'pincode') return { available: false, reason: 'pincode', canRequest: false };
   const payable = quote.totalPaise - cart.discountPaise;
   if (payable > quote.cod.capPaise) return { available: false, reason: 'over_cap', canRequest: false };
@@ -55,4 +70,14 @@ export function codNextAction(reason: CodShownReason | null, canRequest: boolean
   if (reason === 'ustaad_not_verified') return 'ustaad_verify';
   if (reason === 'ustaad_not_member') return 'ustaad_join';
   return null;
+}
+
+/**
+ * Who checkout treats as a buyer (DC-P14 / DC-B9). In real data the API is the judge and refuses only shop accounts
+ * (`SELLER_CANNOT_ORDER`), so every other signed-in role (workshop owner, delivery agent, staff with a customer side)
+ * uses the person's real name, addresses, Coins and cash-on-delivery answer. The browser demo has demo customers only.
+ */
+export function isCheckoutBuyer(role: string | undefined, realData: boolean): boolean {
+  if (role === undefined || role === 'shop') return false;
+  return realData || role === 'customer';
 }

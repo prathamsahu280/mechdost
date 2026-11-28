@@ -475,3 +475,20 @@ From `D:\mechdost-qa\delivery-cod-sim-2026-11-27\logs\bugs.md`; one commit each,
 - **DC-P10 (P2):** the rider status strip uses `bg-surface` under `text-ink` (dark theme contrast).
 
 - 2026-11-27 (founder): the rider "Take new jobs" card is a state card: green tint + outline when online, white outline on the hero when offline, power icon, 18 px label; the shared switch off-track uses `input-border` (≥ 3:1, WCAG 1.4.11) instead of `line`. Guard: `apps/web/test/delivery-online-card.test.ts`.
+
+## 21. QA batch DC (2026-11-29)
+
+One open application per phone (a repeat answers `code: null` and no status: the endpoint is public, so the existing application is never described, security review 2026-11-29); invite from an application may add an email and confirms inline; revoke,
+retry and send-back confirm inline; "n of max tries failed"; reject reasons for riders with a note; Verify only after an
+audited view; suggestions carry `eligible` / `declinedBefore`; `GET /v1/admin/delivery/job-counts` feeds the filter chips;
+staff set a shop's mode in Requests → "Change a shop's delivery directly" (`PUT /v1/admin/shops/{id}/delivery-mode`,
+shop row has `deliveryMode`); shop-mode reasons by direction; Hindi fields on rider and queue DTOs; a repeat payout
+correction answers `alreadyCorrected`; notices say the new status / document result and open the profile.
+
+**Rider application answers (security review 2026-11-29, DC-F1).** `POST /v1/delivery-agent-applications` answers
+`201 {"status":"received"}` for a new application and for a repeat of the same phone: same body, same status, no
+reference, no flag (test: byte-identical bodies, `apps/api/test/delivery.test.ts`). Dedupe stays the partial unique index
+(`on conflict do nothing`, one statement). The applicant is not given the `PA-…` reference: MechDost calls the typed
+number, and staff see the reference in Admin → Delivery → Applications. Delivering the reference to that phone by the
+notification path (WhatsApp, needs its own event and template) is queued as Q-DC-2; until then the status page cannot be
+used by riders.

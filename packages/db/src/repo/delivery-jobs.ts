@@ -16,7 +16,12 @@ import {
   type DeliveryWithdrawReason,
   type LoadClass,
 } from '@mechdost/shared/delivery/codes';
-import { deliveryOfferMachine, type DeliveryJobStatus, type OrderStatus } from '@mechdost/shared/state';
+import {
+  deliveryJobMachine,
+  deliveryOfferMachine,
+  type DeliveryJobStatus,
+  type OrderStatus,
+} from '@mechdost/shared/state';
 import type { Keyring } from '../crypto';
 import {
   deliveryAgents,
@@ -261,6 +266,8 @@ export interface AgentSuggestionRow {
   ratingAvgX10: number | null;
   ratingCount: number;
   eligible: boolean;
+  /** Declined, let the offer run out or gave this job up already (DC-B10). */
+  declinedBefore: boolean;
 }
 
 /**
@@ -326,6 +333,7 @@ export async function suggestAgents(tx: Tx, job: JobRow): Promise<AgentSuggestio
       ratingAvgX10: ratingAverageX10(num(r.rating_sum), num(r.rating_count)),
       ratingCount: num(r.rating_count),
       eligible: carries && !r.tried && activeJobs < settings.maxActiveJobs,
+      declinedBefore: r.tried,
     };
   });
   const w = settings.rankRatingWeightPct / 100;
@@ -1604,6 +1612,7 @@ export async function listAgentJobs(
     load_weight_g: unknown;
     unknown_weight: boolean;
     locality: string | null;
+    locality_hi: string | null;
     pincode: string;
     distance_m: unknown;
     failed_attempts: unknown;
@@ -1612,7 +1621,7 @@ export async function listAgentJobs(
     await db.execute(sql`
       select j.id as job_id, o.code, j.status, f.id as offer_id, f.expires_at as offer_expires_at,
         (select coalesce(sum(oi.qty), 0) from order_items oi where oi.order_id = o.id) as items,
-        j.load_class, j.load_weight_g, j.unknown_weight, sp.locality, o.pincode, f.distance_m, j.failed_attempts,
+        j.load_class, j.load_weight_g, j.unknown_weight, sp.locality, sp.locality_hi, o.pincode, f.distance_m, j.failed_attempts,
         j.updated_at
       from delivery_jobs j
       join orders o on o.id = j.order_id
@@ -1640,6 +1649,8 @@ export async function listAgentJobs(
     loadClass: r.load_class as LoadClass,
     weightKg: r.unknown_weight ? null : Math.round(num(r.load_weight_g) / 100) / 10,
     shopArea: r.locality,
+    // Rule 10 (DC-P15): the Hindi area name, picked by the screen on /hi.
+    shopAreaHi: r.locality_hi,
     customerPincode: r.pincode,
     distanceM: numOrNull(r.distance_m) === null ? null : Math.round(num(r.distance_m)),
     attempt: num(r.failed_attempts) + 1,
@@ -1684,19 +1695,21 @@ export async function getAgentJob(db: Tx, input: { userId: string; jobId: string
     const [o] = await tx.select().from(orders).where(eq(orders.id, j.orderId)).limit(1);
     const [s] = rowsOf<{
       name: string;
+      name_hi: string | null;
       address_line: string;
       pincode: string;
       phone: string;
       lat: unknown;
       lng: unknown;
       locality: string | null;
+      locality_hi: string | null;
     }>(
-      await tx.execute(sql`select s.name, s.address_line, s.pincode, s.phone,
-          st_y(s.location::geometry) as lat, st_x(s.location::geometry) as lng, p.locality
+      await tx.execute(sql`select s.name, s.name_hi, s.address_line, s.pincode, s.phone,
+          st_y(s.location::geometry) as lat, st_x(s.location::geometry) as lng, p.locality, p.locality_hi
         from shops s left join pincodes p on p.pincode = ${o?.pincode ?? ''} where s.id = ${j.shopId}::uuid`),
     );
     const items = await tx
-      .select({ name: orderItems.title, quantity: orderItems.qty })
+      .select({ name: orderItems.title, nameHi: orderItems.titleHi, quantity: orderItems.qty })
       .from(orderItems)
       .where(eq(orderItems.orderId, j.orderId));
     const addr = (o?.shippingAddress ?? {}) as Snapshot;
@@ -1755,6 +1768,7 @@ export async function getAgentJob(db: Tx, input: { userId: string; jobId: string
           showShop && s
             ? {
                 name: s.name,
+                nameHi: s.name_hi,
                 addressLine: s.address_line,
                 pincode: s.pincode,
                 phone: s.phone,
@@ -1766,6 +1780,7 @@ export async function getAgentJob(db: Tx, input: { userId: string; jobId: string
           stage === 'pickup'
             ? {
                 area: s?.locality ?? null,
+                areaHi: s?.locality_hi ?? null,
                 pincode: o?.pincode ?? '',
                 name: null,
                 addressLine: null,
@@ -1775,6 +1790,7 @@ export async function getAgentJob(db: Tx, input: { userId: string; jobId: string
             : stage === 'drop'
               ? {
                   area: s?.locality ?? null,
+                  areaHi: s?.locality_hi ?? null,
                   pincode: o?.pincode ?? '',
                   name: addr.contactName ?? null,
                   addressLine: [addr.line1, addr.line2].filter(Boolean).join(', ') || null,
@@ -1843,6 +1859,7 @@ export async function listAdminJobs(
     status: string;
     order_status: string;
     shop_name: string;
+    shop_name_hi: string | null;
     pincode: string;
     agent_id: string | null;
     agent_name: string | null;
@@ -1857,7 +1874,7 @@ export async function listAdminJobs(
     version: number;
   }>(
     await db.execute(sql`
-      select j.id as job_id, o.code, c.code as city_code, j.status, o.status as order_status, s.name as shop_name, o.pincode,
+      select j.id as job_id, o.code, c.code as city_code, j.status, o.status as order_status, s.name as shop_name, s.name_hi as shop_name_hi, o.pincode,
         coalesce(a.id, oa.id) as agent_id, coalesce(a.name, oa.name) as agent_name, coalesce(a.vehicle_type, oa.vehicle_type) as vehicle_type,
         f.expires_at as offer_expires_at, j.load_class, j.load_weight_g, j.unknown_weight, j.failed_attempts, j.fail_reason,
         j.updated_at, j.version
@@ -1889,6 +1906,8 @@ export async function listAdminJobs(
     status: r.status as DeliveryJobStatus,
     orderStatus: r.order_status as OrderStatus,
     shopName: r.shop_name,
+    // Rule 10 (DC-B13): every seed and real shop carries a Hindi name; the screen picks it on /hi.
+    shopNameHi: r.shop_name_hi,
     customerPincode: r.pincode,
     agent:
       r.agent_id && r.agent_name && r.vehicle_type
@@ -1899,11 +1918,45 @@ export async function listAdminJobs(
     weightKg: r.unknown_weight ? null : Math.round(num(r.load_weight_g) / 100) / 10,
     attempt: num(r.failed_attempts) + 1,
     failReason: (r.fail_reason as DeliveryFailReason | null) ?? null,
-    waitingMin: Math.max(0, Math.round((now - new Date(r.updated_at).getTime()) / 60_000)),
+    // DC-B13: the waiting clock stops at a finished job (delivered, returned, cancelled).
+    waitingMin: deliveryJobMachine.isTerminal(r.status as DeliveryJobStatus)
+      ? 0
+      : Math.max(0, Math.round((now - new Date(r.updated_at).getTime()) / 60_000)),
     updatedAt: new Date(r.updated_at),
     version: r.version,
   }));
   return { items, more: rows.length > input.limit };
+}
+
+/**
+ * Open jobs per queue view for the filter chips (SIM-LEAD-7). `done` and `all` are not counted: they only grow. One
+ * grouped read over the city scope, index `delivery_jobs(city_id, status)`.
+ */
+export async function countAdminJobs(
+  db: Tx,
+  input: { scope: CityScope },
+): Promise<Record<'needs_agent' | 'offered' | 'active' | 'failed' | 'returning', number>> {
+  const scopeSql = input.scope.all
+    ? sql`true`
+    : input.scope.cityIds.length === 0
+      ? sql`false`
+      : sql`j.city_id in (${sql.join(
+          input.scope.cityIds.map((id) => sql`${id}::uuid`),
+          sql`, `,
+        )})`;
+  const rows = rowsOf<{ status: string; n: unknown }>(
+    await db.execute(sql`select j.status, count(*) as n from delivery_jobs j
+      where ${scopeSql} and j.status in ('needs_agent','offered','accepted','picked_up','failed','returning')
+      group by j.status`),
+  );
+  const by = (status: string) => num(rows.find((r) => r.status === status)?.n ?? 0);
+  return {
+    needs_agent: by('needs_agent'),
+    offered: by('offered'),
+    active: by('accepted') + by('picked_up'),
+    failed: by('failed'),
+    returning: by('returning'),
+  };
 }
 
 export async function getAdminJob(db: Tx, input: { scope: CityScope; jobId: string }) {
@@ -1952,6 +2005,7 @@ export async function getAdminJob(db: Tx, input: { scope: CityScope; jobId: stri
     pickupLocked: pickup?.locked ?? false,
     deliveryLocked: (ship?.attempts ?? 0) >= 5,
     retryAllowed: retryAllowed({ failedAttempts: j.failedAttempts, maxAttempts: settings.maxAttempts }),
+    maxAttempts: settings.maxAttempts,
     events: events.map((e) => ({
       at: e.createdAt.toISOString(),
       kind: e.kind,
@@ -1965,7 +2019,7 @@ export async function getAdminJob(db: Tx, input: { scope: CityScope; jobId: stri
       createdAt: f.createdAt.toISOString(),
       decidedAt: f.decidedAt?.toISOString() ?? null,
     })),
-    suggestions: suggestions.map(({ eligible: _e, ...s }) => s),
+    suggestions,
     photos,
   };
 }

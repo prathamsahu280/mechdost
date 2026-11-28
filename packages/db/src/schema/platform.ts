@@ -706,6 +706,11 @@ export const partnerApplications = pgTable(
     index().on(t.inviteId),
     index().on(t.phone),
     index().on(t.ownerUserId),
+    // DC-F1/DC-P2: one open delivery application per phone (the database guarantees it; the repo answers with the
+    // existing reference). A decided application (approved or rejected) frees the number.
+    uniqueIndex('partner_applications_agent_open_phone')
+      .on(t.phone)
+      .where(sql`${t.kind} = 'delivery_agent' and ${t.status} in ('new','in_review')`),
   ],
 );
 

@@ -32,6 +32,10 @@ const SAMPLE = {
   count: '12',
   metric: 'Cloudflare R2 (Ustaad media): Storage',
   percent: '72',
+  // Delivery notices (DC-P16)
+  status: 'Paused',
+  document: 'PAN card',
+  result: 'Verified',
 };
 
 describe('notice catalogue', () => {

@@ -108,6 +108,25 @@ describe('public apply', () => {
       (await post('/delivery-agent-applications', { application, turnstileToken: 'human-ok' })).status,
     ).toBe(201);
   });
+  it('DC-F1: a new and a repeated application answer with identical bytes and status (no enumeration)', async () => {
+    const fresh = await buildApp({ keyring, turnstile: new FakeTurnstile(['human-ok']) });
+    const send = (phone: string) =>
+      fresh.app.request('/v1/delivery-agent-applications', {
+        method: 'POST',
+        body: JSON.stringify({ application: { ...application, phone }, turnstileToken: 'human-ok' }),
+        headers: { 'Content-Type': 'application/json' },
+      });
+    const first = await send('9876500010');
+    const again = await send('9876500010');
+    const other = await send('9876500011');
+    expect(first.status).toBe(201);
+    expect(again.status).toBe(first.status);
+    expect(other.status).toBe(first.status);
+    const body = await first.text();
+    expect(await again.text()).toBe(body);
+    expect(await other.text()).toBe(body);
+    expect(body).not.toMatch(/PA-|code|created|already/i);
+  });
   it('limits applications per phone', async () => {
     const app2 = { ...application, phone: '9876500002' };
     // A fresh limiter, so the per-IP limit (5 an hour) used by the test above does not answer first.

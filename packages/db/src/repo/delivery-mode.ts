@@ -1,10 +1,11 @@
 import { and, desc, eq, sql } from 'drizzle-orm';
-import type {
-  DeliverySwitchDeclineReason,
-  DeliverySwitchReason,
-  ShopDeliveryMode,
-  ShopModeRejectReason,
-  ShopModeRequestReason,
+import {
+  shopModeReasonFits,
+  type DeliverySwitchDeclineReason,
+  type DeliverySwitchReason,
+  type ShopDeliveryMode,
+  type ShopModeRejectReason,
+  type ShopModeRequestReason,
 } from '@mechdost/shared/delivery/codes';
 import { cities, orderDeliverySwitches, orders, shopDeliveryModeRequests, shops } from '../schema';
 import { auditDelivery, deliverySettings } from './delivery-common';
@@ -78,6 +79,9 @@ export async function requestShopDeliveryMode(
   },
 ): Promise<{ id: string }> {
   if (!input.shopIds.includes(input.shopId)) throw new NotFoundError('Shop not found');
+  // DC-P7: the reason must belong to the direction asked for (the API schema says it too).
+  if (!shopModeReasonFits(input.requestedMode, input.reasonCode))
+    throw new ValidationError('That reason does not fit this request', 'REASON_NOT_FOR_DIRECTION');
   return db.transaction(async (tx) => {
     const [shop] = await tx
       .select({ mode: shops.deliveryMode, cityId: shops.cityId })
@@ -165,6 +169,7 @@ export async function listShopModeRequests(
     .select({
       r: shopDeliveryModeRequests,
       shopName: shops.name,
+      shopNameHi: shops.nameHi,
       cityId: shops.cityId,
       cityCode: cities.code,
       currentMode: shops.deliveryMode,
@@ -182,6 +187,7 @@ export async function listShopModeRequests(
       id: x.r.id,
       shopId: x.r.shopId,
       shopName: x.shopName,
+      shopNameHi: x.shopNameHi,
       cityCode: x.cityCode,
       currentMode: x.currentMode as ShopDeliveryMode,
       requestedMode: x.r.requestedMode as ShopDeliveryMode,
