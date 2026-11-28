@@ -67,6 +67,13 @@ import {
   ustaadThreadMocks,
 } from './ustaad-network-fixtures.ts';
 import { ustaadFeedMocks, ustaadMeMocks, ustaadProfileMocks } from './ustaad-social-fixtures.ts';
+import { ustaadPostSheetsMocks, ustaadTagSavedMocks, ustaadTeaserMocks } from './ustaad-post-fixtures.ts';
+import {
+  ustaadAttestMocks,
+  ustaadJoinMocks,
+  ustaadPartnersStatusMocks,
+  ustaadWelcomeMocks,
+} from './ustaad-identity-fixtures.ts';
 import { ustaadJobsMocks, ustaadLearnMocks, ustaadSavedMocks } from './ustaad-member-fixtures.ts';
 import { photoQueueMocks, wishlistMocks } from './storefront-fixtures.ts';
 import { roadsideTrackMocks } from './roadside-fixtures.ts';
@@ -1860,6 +1867,20 @@ export function mocksFor(c: AuditCase): Mock[] {
       return ustaadJobsMocks();
     case 'API-USTAAD-SAVED':
       return ustaadSavedMocks();
+    case 'API-USTAAD-JOIN':
+      return ustaadJoinMocks();
+    case 'API-USTAAD-WELCOME':
+      return ustaadWelcomeMocks();
+    case 'API-USTAAD-ATTEST':
+      return ustaadAttestMocks();
+    case 'API-USTAAD-PARTNERS-STATUS':
+      return ustaadPartnersStatusMocks();
+    case 'API-USTAAD-TEASER':
+      return ustaadTeaserMocks();
+    case 'API-USTAAD-POST-SHEETS':
+      return ustaadPostSheetsMocks();
+    case 'API-USTAAD-TAG-SAVED':
+      return ustaadTagSavedMocks();
     case 'API-SVC-HOMEFIND':
       return homeFinderMocks(c);
     case 'API-SVC-HOMEREQ':

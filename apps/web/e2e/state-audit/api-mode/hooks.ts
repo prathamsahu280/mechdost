@@ -10,6 +10,7 @@ import { auditMocksFor } from './baseline-fixtures.ts';
 import { clickIfPresent } from './hook-click.ts';
 import { installApi } from './mock-api.ts';
 import { mockFirebase, persistedUser } from './session.ts';
+import { prepareAttest, prepareJoin, preparePostSheet, prepareWelcome } from './ustaad-identity-hooks.ts';
 import { PIXEL } from './ustaad-social-fixtures.ts';
 
 const UID: Readonly<Record<string, string>> = {
@@ -503,6 +504,10 @@ async function prepareApi(page: Page, c: AuditCase): Promise<string[]> {
   }
 
   if (c.code === 'API-USTAAD-CREATE') await prepareCreate(page, c, notes);
+  if (c.code === 'API-USTAAD-JOIN') await prepareJoin(page, c, notes);
+  if (c.code === 'API-USTAAD-WELCOME') await prepareWelcome(page, c, notes);
+  if (c.code === 'API-USTAAD-ATTEST') await prepareAttest(page, c, notes);
+  if (c.code === 'API-USTAAD-POST-SHEETS') await preparePostSheet(page, c, notes);
 
   // Story viewer: open the first ring; "paused" presses the Auto next switch off.
   if (c.code === 'API-USTAAD-STORY-VIEWER') {

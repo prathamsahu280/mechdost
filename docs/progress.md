@@ -1556,3 +1556,4 @@ viewer, tag, teaser, messages, thread, network, discover). No product code chang
 - 14:10 IST: deploy 5 (75586c11) live + smoke OK. QA Turnstile bypass OFF (three lines removed from /opt/mechdost/.env,
   api restarted, log `qa_turnstile_bypass_off`). Live lab CLS now all under budget: workshop jobs 0.001, shop orders
   0.001, rider 0.005, notifications 0.001, workshop profile 0.001, calendar 0.001, /shop 0. LV-6/8/9/10 closed.
+- 14:30 IST: batch I (branch worktree-agent-a73667ec9e86bbce6): API-mode state-audit fixtures + page set-up for the last seven Mechanic Network rows (JOIN, WELCOME, ATTEST, PARTNERS-STATUS, TEASER, POST-SHEETS, TAG-SAVED); guard `state-audit-ustaad-identity.test.ts`. Test-only. Playwright run owed to CI. No API-USTAAD row is left without fixtures.

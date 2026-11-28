@@ -55,8 +55,8 @@ export const mediaMocks = (): Mock[] => [
   },
 ];
 
-const name = (c: AuditCase, en: string) => (long(c) ? `${en} ${LONG_EN}` : en);
-const nameHi = (c: AuditCase, hi: string) => (long(c) ? `${hi} ${LONG_HI}` : hi);
+export const name = (c: AuditCase, en: string) => (long(c) ? `${en} ${LONG_EN}` : en);
+export const nameHi = (c: AuditCase, hi: string) => (long(c) ? `${hi} ${LONG_HI}` : hi);
 
 type Author = PostView['author'];
 export const author = (c: AuditCase, n: number, en: string, hi: string, level = 'pakka'): Author => ({
@@ -78,7 +78,7 @@ const stat = (c: AuditCase, likes: number) => ({
 });
 
 let seq = 0;
-function post(c: AuditCase, a: Author, over: Partial<PostView>): PostView {
+export function post(c: AuditCase, a: Author, over: Partial<PostView>): PostView {
   seq += 1;
   return {
     id: uuid(400 + seq),

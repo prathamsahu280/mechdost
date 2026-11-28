@@ -2524,5 +2524,24 @@ No migration. All DTO changes are additive.
   Playwright retry starts again); the guard now asks one set of mocks twice. Guard:
   `apps/web/test/state-audit-ustaad-network.test.ts` (RED 9 of 10 failing first). **The Playwright run is owed to CI**
   (no real-mode build here); the hooks' selectors (tile order, `data-track` names, `story-auto-help`) are unrun.
-  Still without fixtures: `API-USTAAD-POST-SHEETS`, `-TEASER`, `-TAG-SAVED`, `-JOIN`, `-WELCOME`, `-ATTEST`,
-  `-PARTNERS-STATUS`.
+  Still without fixtures at that time: `API-USTAAD-POST-SHEETS`, `-TEASER`, `-TAG-SAVED`, `-JOIN`, `-WELCOME`,
+  `-ATTEST`, `-PARTNERS-STATUS` (done in batch I, below).
+- **State-audit fixtures, batch I (2026-11-28; the last seven rows).** Test-only, no product change.
+  `api-mode/ustaad-identity-fixtures.ts` (join, guide, garage-owner page, partner status),
+  `ustaad-post-fixtures.ts` (share teaser, post page with its sheets, tag page) and the page set-up
+  `ustaad-identity-hooks.ts`; every body is typed with the shared schema it is served under, nothing is kept between
+  calls (the answer is built from the case and the request; the attest POST is checked with `AttestSubmitDto`).
+  Join: signed out (sign-in card) and signed in at steps 1 to 5, clean and with the step's error (the set-up fills the
+  earlier steps and presses Next; step 4 has no required answer). Guide: six cards in en and hi, with and without a
+  recording, first, middle, last and a failed list. Attest: held answer (15 s), unknown / used / expired link (one
+  message, 404), the question, confirm with errors, location denied, decline, done (the set-up stubs the security
+  check; needs the Turnstile site key in the build). Partner status: nothing, asked, proof in, in review, verified,
+  rejected with its reason. Teaser: live card, "not working", and a signed-in member sent to the post (that case also
+  answers the post page). Post sheets: own, other, held (with a held comment note) and gone post; comments with a
+  reply, a voice comment and own comment; the menu, report, report with no reason, block and delete confirms (a sheet
+  that does not exist for the post, such as Block on one's own post, is noted by the set-up). Tag page: followed, not
+  followed, empty, unknown. Not covered because the model has no such state: "already a member" on join (the API's
+  `USTAAD_ALREADY_MEMBER`; add a `form` value if wanted). Guard:
+  `apps/web/test/state-audit-ustaad-identity.test.ts` (RED 7 of 9 failing first). **The Playwright run is owed to CI**
+  (no real-mode build here); the set-up selectors (`label:has(input[name=...])`, `data-disclosure-trigger`, `dialog[open]
+ul li button` row order) are unrun. No row of the Mechanic Network is left without fixtures.
