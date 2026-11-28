@@ -464,3 +464,5 @@ T-VP1 · 2026-11-28 · media player · unplayed waveform bars on the hairline to
 - L-WT-BP1 · 2026-11-28 · partner/tests · A day-bucketed count (Delivered today, calendar strip) must be tested around IST midnight (18:30Z), not just "today": the pair 18:29Z / 18:31Z catches UTC-day and device-zone bugs. Stock −/+ and other versioned writes: test the pure target rule (below reserved, above max) plus a source guard that the write goes through the versioned PATCH and never optimistic; the 409 refusal states have no audit fixtures yet.
 
 - L-WT-V9-1 · 2026-11-28 · ui/tokens · when a token changes in light only, assert the dark counterpart value in the same test (tokens.test.ts V9 block) so a dark regression is RED, and add every new fg/bg alias pair to TEXT_PAIRS (runs in both themes).
+
+- L-D1 · 2026-11-28 · state-audit/ustaad · pairwise rows cannot say "a collection is pressed": a state that needs a click is a page set-up hook (hooks.ts) plus a unit assertion that the fixture answers the filtered call; assert in a unit test that every row names the states the audit text promises (kinds, empty, long names) so a row cannot silently lose a fixture.
