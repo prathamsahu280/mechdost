@@ -88,7 +88,11 @@ server, no lock waits, and postgres.js has no client-side query timeout. Live, t
 - The delivery offer sweep has its own one-connection pool and a 60 s deadline per run; the short 30 s sweeps (shop
   accept timer, service requests, roadside offers, pauses, stock holds, ticket auto-close, unpaid orders, network
   jobs and stories) run through `boundedShared` with a 120 s deadline (`apps/api/src/sweep-pool.ts`).
-- On a timeout the worker logs **`sweep_pool_recycled {sweep, afterMs}`**, drops that pool and opens a fresh one. One
+- On a timeout the worker logs **`sweep_pool_recycled {sweep, afterMs}`**, drops that pool and opens a fresh one.
+  The swapped pool is only the sweeps' own (`sweepPool`, and the delivery sweep's `deliveryPool`); the shared pool that
+  the live relay and other long-lived parts hold is never replaced (incident 2026-11-28 15:46 IST: swapping it left the
+  relay on an ended pool, `live_relay_failed: CONNECTION_ENDED` every second for 20 min until a worker restart).
+- `live_relay_failed` repeating every second = the relay lost its pool: restart the worker, then find what ended it. One
   now and then is fine; several an hour means the pooler is dropping connections: check Supabase status.
 - `sweep_heartbeat` (every 10 min, delivery) must keep appearing; a `sweep_stuck` without a following
   `sweep_pool_recycled` means the deadline did not fire: restart the worker (`docker compose restart worker`).

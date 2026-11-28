@@ -86,25 +86,31 @@ try {
 // Error reports (decision 2026-11-14): no-op without SENTRY_DSN.
 const sentry = await startSentry(config.sentry, 'worker');
 
-// `let`: the short 30 s sweeps below run through `boundedShared`, which swaps in a fresh pool when a run hangs on a dead
-// connection (DC-B11 root cause, live 2026-11-28). Closures read the current binding at call time.
-let { db, sql } = createDb(config.databaseUrl, { max: 2, transactionPooler: true });
-let recyclingShared: Promise<void> | null = null;
+// The shared pool is NEVER replaced: the live relay and other long-lived parts are built once with it (live 2026-11-28
+// 15:46 IST: swapping it left the relay on an ended pool, `live_relay_failed` every second). The short 30 s sweeps run
+// on their own small pool through `boundedShared`, which recycles only that pool when a run hangs on a dead connection
+// (DC-B11 root cause, `sweep-pool.ts`).
+const { db, sql } = createDb(config.databaseUrl, { max: 2, transactionPooler: true });
+const sweepPool = recyclingPool(() => {
+  const c = createDb(config.databaseUrl, { max: 2, transactionPooler: true });
+  return { db: c.db, close: () => c.sql.end({ timeout: 0 }) };
+});
+let recyclingSweeps: Promise<void> | null = null;
 const SHARED_SWEEP_DEADLINE_MS = 120_000;
-const boundedShared = <T>(phase: string, work: () => Promise<T>): Promise<T> =>
-  runBounded(SHARED_SWEEP_DEADLINE_MS, phase, work, () => {
-    if (recyclingShared) return recyclingShared;
-    log('warn', 'sweep_pool_recycled', { sweep: phase, afterMs: SHARED_SWEEP_DEADLINE_MS });
-    const old = sql;
-    ({ db, sql } = createDb(config.databaseUrl, { max: 2, transactionPooler: true }));
-    recyclingShared = old
-      .end({ timeout: 0 })
-      .catch(() => undefined)
-      .finally(() => {
-        recyclingShared = null;
+const boundedShared = <T>(phase: string, work: (pool: Tx) => Promise<T>): Promise<T> =>
+  runBounded(
+    SHARED_SWEEP_DEADLINE_MS,
+    phase,
+    () => work(sweepPool.db),
+    () => {
+      if (recyclingSweeps) return recyclingSweeps;
+      log('warn', 'sweep_pool_recycled', { sweep: phase, afterMs: SHARED_SWEEP_DEADLINE_MS });
+      recyclingSweeps = sweepPool.recycle().finally(() => {
+        recyclingSweeps = null;
       });
-    return recyclingShared;
-  });
+      return recyclingSweeps;
+    },
+  );
 /**
  * Send-time lookups of the email adapter (template override, company, trust line, bill source): a local
  * statement_timeout plus an app deadline, so a slow or locked query falls back to the safe default text instead of
@@ -207,7 +213,7 @@ let expiring = false;
 const expiryTimer = setInterval(() => {
   if (expiring) return;
   expiring = true;
-  void boundedShared('assignments', () => expireDueAssignments(db))
+  void boundedShared('assignments', (pool) => expireDueAssignments(pool))
     .then(({ expired, failed }) => {
       if (expired > 0) log('info', 'assignments_expired', { count: expired });
       for (const f of failed)
@@ -229,7 +235,7 @@ let expiringRequests = false;
 const requestTimer = setInterval(() => {
   if (expiringRequests) return;
   expiringRequests = true;
-  void boundedShared('service_requests', () => expireDueServiceRequests(db))
+  void boundedShared('service_requests', (pool) => expireDueServiceRequests(pool))
     .then(({ expired, failed }) => {
       if (expired > 0) log('info', 'service_requests_expired', { count: expired });
       for (const f of failed)
@@ -302,7 +308,7 @@ let expiringRsa = false;
 const rsaTimer = setInterval(() => {
   if (expiringRsa) return;
   expiringRsa = true;
-  void boundedShared('rsa_offers', () => expireDueRsaOffers(db))
+  void boundedShared('rsa_offers', (pool) => expireDueRsaOffers(pool))
     .then(async ({ expired, failed }) => {
       if (expired > 0) log('info', 'rsa_offers_expired', { count: expired });
       for (const f of failed)
@@ -328,7 +334,7 @@ let resuming = false;
 const pauseTimer = setInterval(() => {
   if (resuming) return;
   resuming = true;
-  void boundedShared('pauses', () => resumeEndedPauses(db))
+  void boundedShared('pauses', (pool) => resumeEndedPauses(pool))
     .then((count) => {
       if (count > 0) log('info', 'pauses_ended', { count });
     })
@@ -347,7 +353,7 @@ let releasing = false;
 const holdTimer = setInterval(() => {
   if (releasing) return;
   releasing = true;
-  void boundedShared('reservations', () => releaseExpiredReservations(db))
+  void boundedShared('reservations', (pool) => releaseExpiredReservations(pool))
     .then(({ released, failed }) => {
       if (released > 0) log('info', 'reservations_expired', { count: released });
       for (const f of failed)
@@ -368,7 +374,7 @@ let closingTickets = false;
 const ticketCloseTimer = setInterval(() => {
   if (closingTickets) return;
   closingTickets = true;
-  void boundedShared('tickets', () => autoCloseResolvedTickets(db, new Date()))
+  void boundedShared('tickets', (pool) => autoCloseResolvedTickets(pool, new Date()))
     .then(({ closed, skipped }) => {
       if (closed > 0 || skipped > 0) log('info', 'support_auto_closed', { closed, skipped });
     })
@@ -387,7 +393,7 @@ let expiringPayments = false;
 const paymentTimer = setInterval(() => {
   if (expiringPayments) return;
   expiringPayments = true;
-  void boundedShared('unpaid_orders', () => expireUnpaidOnlineOrders(db))
+  void boundedShared('unpaid_orders', (pool) => expireUnpaidOnlineOrders(pool))
     .then(({ closed, failed }) => {
       if (closed > 0) log('info', 'unpaid_orders_expired', { count: closed });
       if (failed > 0) log('error', 'unpaid_orders_expiry_failed', { failedGroups: failed });
@@ -648,7 +654,7 @@ let expiringJobs = false;
 const ustaadJobsTimer = setInterval(() => {
   if (expiringJobs) return;
   expiringJobs = true;
-  void boundedShared('ustaad_jobs', () => expireUstaadJobs(db))
+  void boundedShared('ustaad_jobs', (pool) => expireUstaadJobs(pool))
     .then((n) => {
       if (n > 0) log('info', 'ustaad_jobs_expired', { count: n });
     })
@@ -713,7 +719,7 @@ let expiringStories = false;
 const ustaadStoriesTimer = setInterval(() => {
   if (expiringStories) return;
   expiringStories = true;
-  void boundedShared('ustaad_stories', () => expireUstaadStories(db, { limit: 500 }))
+  void boundedShared('ustaad_stories', (pool) => expireUstaadStories(pool, { limit: 500 }))
     .then((n) => {
       if (n > 0) log('info', 'ustaad_stories_expired', { count: n });
     })
@@ -872,6 +878,7 @@ function shutdown(signal: string) {
         notifyConn.sql.end({ timeout: 5 }),
         mailLookups.sql.end({ timeout: 5 }),
         deliveryPool.close(),
+        sweepPool.close(),
         listener?.end(),
         sentry.flush(),
       ]),

@@ -1557,3 +1557,8 @@ viewer, tag, teaser, messages, thread, network, discover). No product code chang
   api restarted, log `qa_turnstile_bypass_off`). Live lab CLS now all under budget: workshop jobs 0.001, shop orders
   0.001, rider 0.005, notifications 0.001, workshop profile 0.001, calendar 0.001, /shop 0. LV-6/8/9/10 closed.
 - 14:30 IST: batch I (branch worktree-agent-a73667ec9e86bbce6): API-mode state-audit fixtures + page set-up for the last seven Mechanic Network rows (JOIN, WELCOME, ATTEST, PARTNERS-STATUS, TEASER, POST-SHEETS, TAG-SAVED); guard `state-audit-ustaad-identity.test.ts`. Test-only. Playwright run owed to CI. No API-USTAAD row is left without fixtures.
+- 16:10 IST: INCIDENT (self-inflicted): at 15:46 IST a stuck `assignments` sweep made `boundedShared` replace the
+  shared pool; the live relay kept the ended pool and logged `live_relay_failed: CONNECTION_ENDED` 1,189× (live updates
+  fell back to slow polling ~20 min). Mitigated 16:08 by `docker compose restart worker` (0 failures after). Fix:
+  shared pool is `const`; the nine bounded sweeps run on their own recyclable `sweepPool` passed as an argument
+  (`worker-pool-wiring.test.ts` RED → GREEN; api 119 files / 1001 tests). Runbook monitoring updated.
