@@ -284,7 +284,7 @@ export const API_COMPONENTS: readonly ComponentDef[] = [
     code: 'API-ACC-SECURITY',
     page: 'Account → Profile → Security, real sign-in (user 2026-11-22)',
     component:
-      'Security card under the profile form: change password (current, new with hint, confirm, show/hide, field errors, general status) and the delete-my-account request link (danger outline); Sign out beside Save',
+      'Security card under the profile form: change password (current, new with hint, confirm, show/hide, field errors, general status) a "Sign out of all devices" block (help line, quiet button, inline confirm with Keep me signed in / confirm, busy, error live region) and the delete-my-account request link (danger outline); Sign out beside Save',
     path: '/account/profile',
     scope: 'main',
     strategy: 'pairwise',

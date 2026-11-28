@@ -42,6 +42,7 @@ import type { CodeFail, PhoneFail } from '@/lib/auth/auth-errors';
 import { AUTH_MODE } from '@/lib/auth/mode';
 import { useAutoSubmitCode } from '@/lib/auth/use-auto-submit-code';
 import { PasswordField, authInput } from './password-field';
+import { SessionEndedNotice } from './session-ended-notice';
 
 type Step =
   | 'signin'
@@ -1032,6 +1033,7 @@ export function LoginFlow() {
     case 'signin':
       body = (
         <form noValidate onSubmit={(e) => void onSignIn(e)}>
+          <SessionEndedNotice />
           {current && !notice ? (
             <p className="mb-4 rounded-lg bg-pill p-3 text-sm text-ink">
               {current.name ? t('alreadySignedIn', { name: current.name }) : t('alreadySignedInNoName')}{' '}

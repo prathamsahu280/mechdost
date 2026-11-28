@@ -1647,6 +1647,13 @@ Brand and range switches never change product status (lossless); one SQL rule `p
 - **User:** "add a change password in the profile and make the sign out button more prominent and also move the delete my account button inside the profile section and ... the sign out button on the top bar at the top right and add some colour".
 - **Decided:** Account -> Profile gets a Security card (change password by Firebase re-authentication + `updatePassword`, no new API endpoint: Firebase revokes the other sessions on a password change). "Delete my account" moves from Privacy into that card (same request flow). Sign out is a coloured accent-soft button in the header, loaded lazily on click (JS budget). No new colours, fonts or radii (tokens only).
 - **Not done:** no "sign out everywhere" button; demo mode has no change password (no Firebase account).
+  - **Superseded 2026-11-28:** the "sign out everywhere" button is now built (entry below). Demo mode still has no change password.
+
+## 2026-11-28 - Stale "Signed in as" fix and "Sign out of all devices" (founder: "ok go ahead, build them in parallel", 23:05 IST)
+
+- **Founder:** the admin page said "Signed in as QA Admin" while every panel said "Sign in again to continue"; asked for "sign out of all devices" (and a device list, built separately). Q-SES-1 and Q-SES-2 answered (includes this device).
+- **Bug root cause:** the site's own saved session was independent of the Firebase browser session; Firebase ending its session elsewhere left the site session standing. **Fix (real mode):** the site session is cleared (once, no reload) when `currentIdToken()` finds no Firebase user after `authStateReady()` while the site says signed in, or when the API answers 401 `TOKEN_REVOKED`; a one-shot note ("You were signed out on this device. Sign in again to continue.", en + hi) shows on the sign-in card. Only `TOKEN_REVOKED` counts as session-invalid: `TOKEN_EXPIRED` refreshes itself, `TOKEN_INVALID` can be a clock problem, `USER_DISABLED` already has its own blocked flow.
+- **Decided:** `POST /v1/me/sessions/revoke-all` (own account only, 5/hour/user, 503 `UNAVAILABLE` without a password authority, audit `auth.sessions_revoked`, event `account_signed_out_all`) behind a Security-card section with an inline confirm; it ends every session including this device (Firebase revocation is per user, never per device); other devices follow within about 60 s. Replaces the 2026-11-22 "Not done: no sign out everywhere button". No new colour, font or radius (existing quiet and error-outline button styles).
 
 ## 2026-11-22 - Shop accounts cannot order (user request)
 
