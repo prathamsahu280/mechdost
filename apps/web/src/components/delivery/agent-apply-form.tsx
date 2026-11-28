@@ -28,9 +28,8 @@ export function AgentApplyForm() {
   const [formError, setFormError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [challenge, setChallenge] = useState(false);
+  // The reference ('' when the API gave none: an application for this number was already open, DC-F1).
   const [received, setReceived] = useState<string | null>(null);
-  /** DC-F1: this phone already had an open application; the reference shown is that one. */
-  const [already, setAlready] = useState(false);
   const doneRef = useRef<HTMLHeadingElement>(null);
 
   async function onSubmit(e: SyntheticEvent<HTMLFormElement>) {
@@ -62,7 +61,7 @@ export function AgentApplyForm() {
     const input = { name: get('name'), phone, cityCode, vehicleType: vehicle };
     const code = REAL ? await sendToApi(input) : await sendToDemo(input);
     setSending(false);
-    if (!code) return;
+    if (code === null) return;
     track('delivery_apply_submitted', { vehicleType: input.vehicleType });
     setReceived(code);
     requestAnimationFrame(() => doneRef.current?.focus());
@@ -107,11 +106,10 @@ export function AgentApplyForm() {
         typeof body === 'object' &&
         body !== null &&
         'code' in body &&
-        typeof body.code === 'string'
-      ) {
-        setAlready('alreadyApplied' in body && body.alreadyApplied === true);
-        return body.code;
-      }
+        (typeof body.code === 'string' || body.code === null)
+      )
+        // No reference when the number already had an open application: the same "received" screen without it.
+        return body.code ?? '';
       setFormError(res.status === 429 ? t('errLimit') : t('errSend'));
     } catch {
       setFormError(t('errSend'));
@@ -124,10 +122,10 @@ export function AgentApplyForm() {
     return (
       <div className="space-y-3">
         <h2 ref={doneRef} tabIndex={-1} className="font-heading text-xl font-extrabold text-ink">
-          {t(already ? 'alreadyTitle' : 'receivedTitle')}
+          {t('receivedTitle')}
         </h2>
         <p className="text-[15px] text-ink">
-          {t(already ? 'alreadyBody' : 'receivedBody', { code: received })}
+          {received === '' ? t('receivedBodyNoCode') : t('receivedBody', { code: received })}
         </p>
         <div className="flex flex-wrap gap-3">
           <LocalLink

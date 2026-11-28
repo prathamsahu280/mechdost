@@ -97,14 +97,14 @@ async function agentEvent(
 // ── public application ───────────────────────────────────────────────────────────────────────────────────────────
 
 /**
- * A second open application for the same phone answers the first one's reference (`alreadyApplied`) instead of making a
- * duplicate row (DC-F1/DC-P2). The guarantee is the partial unique index `partner_applications_agent_open_phone`: the
+ * A second open application for the same phone makes no duplicate row and answers without a reference
+ * (`code: null`, security review 2026-11-29: the endpoint is public, so it must not reveal the first one) (DC-F1/DC-P2). The guarantee is the partial unique index `partner_applications_agent_open_phone`: the
  * insert is `on conflict do nothing`, so two simultaneous submissions still make one row.
  */
 export async function submitAgentApplication(
   db: Tx,
   input: { name: string; phone: string; cityCode: string; vehicleType: AgentVehicleType },
-): Promise<{ code: string; status: string; alreadyApplied: boolean }> {
+): Promise<{ code: string | null; status: string; alreadyApplied: boolean }> {
   return db.transaction(async (tx) => {
     const city = await cityByCode(tx, input.cityCode);
     const code = publicCode('PA', city.code);
@@ -126,21 +126,10 @@ export async function submitAgentApplication(
         where: sql`${partnerApplications.kind} = 'delivery_agent' and ${partnerApplications.status} in ('new','in_review')`,
       })
       .returning({ id: partnerApplications.id });
-    if (!row) {
-      const [open] = await tx
-        .select({ code: partnerApplications.code, status: partnerApplications.status })
-        .from(partnerApplications)
-        .where(
-          and(
-            eq(partnerApplications.phone, input.phone),
-            eq(partnerApplications.kind, 'delivery_agent'),
-            inArray(partnerApplications.status, ['new', 'in_review']),
-          ),
-        )
-        .limit(1);
-      if (!open) throw new ConflictError('The application could not be stored', 'APPLICATION_NOT_STORED');
-      return { code: open.code, status: open.status, alreadyApplied: true };
-    }
+    // The form is public and the phone is only typed in, so an existing application is never described: no reference,
+    // no status (that would tell anyone whether a number applied). The owner finds theirs through the call and the
+    // status page with their own reference.
+    if (!row) return { code: null, status: 'new', alreadyApplied: true };
     await auditDelivery(tx, {
       actorUserId: null,
       actorRole: 'system',

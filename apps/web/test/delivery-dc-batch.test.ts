@@ -174,9 +174,11 @@ describe('DC-B12 payout correction', () => {
   });
 });
 
-describe('DC-F1 already applied', () => {
-  it('the apply form shows the existing reference', () => {
-    expect(src('src/components/delivery/agent-apply-form.tsx')).toContain('alreadyBody');
-    for (const m of both) expect(m.deliveryApply?.alreadyBody).toContain('{code}');
+describe('DC-F1 already applied (no enumeration)', () => {
+  it('the apply form shows the same received screen without a reference, never the existing one', () => {
+    const f = src('src/components/delivery/agent-apply-form.tsx');
+    expect(f).toContain('receivedBodyNoCode');
+    expect(f).not.toContain('alreadyApplied');
+    for (const m of both) expect(m.deliveryApply?.receivedBodyNoCode).toBeTruthy();
   });
 });

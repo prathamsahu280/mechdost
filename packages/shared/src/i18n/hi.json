@@ -10038,8 +10038,7 @@
     "challenge": "छोटी सी जाँच",
     "receivedTitle": "आवेदन भेज दिया",
     "receivedBody": "आपका संदर्भ नंबर {code} है। MechDost आपके मोबाइल नंबर पर कॉल करेगा।",
-    "alreadyTitle": "आप पहले ही आवेदन कर चुके हैं",
-    "alreadyBody": "इस नंबर पर एक आवेदन खुला है: {code}। दोबारा आवेदन करने की ज़रूरत नहीं। MechDost आपके मोबाइल नंबर पर कॉल करेगा।",
+    "receivedBodyNoCode": "MechDost आपके मोबाइल नंबर पर कॉल करेगा।",
     "statusLink": "आवेदन की स्थिति देखें",
     "backHome": "होम पर लौटें",
     "allRequired": "सभी जानकारी ज़रूरी है।"

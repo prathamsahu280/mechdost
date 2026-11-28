@@ -3096,7 +3096,7 @@ founder OK per run, lines removed afterwards). The 48 h revert in the runbook no
 ## 2026-11-29 — Delivery / COD QA batch DC (rules that changed)
 
 - **One open rider application per phone** (partial unique index `partner_applications_agent_open_phone`, migration 0118):
-  a second submission answers the first reference ("You already applied"). A decided application frees the number.
+  a second submission makes no row and answers the same "received" screen without a reference (the form is public: never reveal an existing application, security review). A decided application frees the number.
 - **COD request limit counts created requests only** (5 per rolling 24 h, in `requestCod` under the customer lock);
   refused attempts (pending, too soon) are not counted. The API-level hit counter was removed for this route.
 - **Checkout buyer** = every signed-in role except a shop (workshop owners, delivery agents, staff with a customer side);

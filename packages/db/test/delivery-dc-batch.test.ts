@@ -66,11 +66,12 @@ describe('DC-F1 / DC-P2 one open delivery application per phone', () => {
     const first = await apply(phone);
     expect(first.alreadyApplied).toBe(false);
     const again = await apply(phone);
-    expect(again).toMatchObject({ code: first.code, alreadyApplied: true });
+    // Security review: a repeat never reveals the first application (no reference, no status).
+    expect(again).toEqual({ code: null, status: 'new', alreadyApplied: true });
+    expect(JSON.stringify(again)).not.toContain(first.code ?? 'x');
     const other = '+919822220002';
     const both = await Promise.all([apply(other), apply(other)]);
     expect(both.filter((r) => !r.alreadyApplied)).toHaveLength(1);
-    expect(new Set(both.map((r) => r.code)).size).toBe(1);
     const rows = await w.db
       .select({ id: s.partnerApplications.id })
       .from(s.partnerApplications)
@@ -95,10 +96,30 @@ describe('DC-F1 / DC-P2 one open delivery application per phone', () => {
     await w.db
       .update(s.partnerApplications)
       .set({ status: 'rejected' })
-      .where(eq(s.partnerApplications.code, first.code));
+      .where(eq(s.partnerApplications.code, first.code ?? ''));
     const next = await apply(phone);
     expect(next.alreadyApplied).toBe(false);
     expect(next.code).not.toBe(first.code);
+  });
+
+  it('role leak: another person typing someone else’s number gets nothing about that application', async () => {
+    const victim = '+919822220005';
+    const mine = await apply(victim);
+    const prober = await submitAgentApplication(w.t(), {
+      name: 'Someone Else',
+      phone: victim,
+      cityCode: 'RPR',
+      vehicleType: 'bike',
+    });
+    expect(prober.code).toBeNull();
+    expect(prober.status).toBe('new');
+    expect(Object.values(prober).join('|')).not.toContain(mine.code ?? 'x');
+    const rows = await w.db
+      .select({ name: s.partnerApplications.name })
+      .from(s.partnerApplications)
+      .where(eq(s.partnerApplications.phone, victim));
+    // The probe changed nothing: still the one original row, not overwritten by the second name.
+    expect(rows).toEqual([{ name: 'Raju QA' }]);
   });
 });
 

@@ -28,6 +28,7 @@ const shop: AdminShopDetailDto = {
   freeDeliveryMinPaise: null,
   hours: { open: '09:00', close: '21:00', days: [1, 2, 3, 4, 5, 6] },
   openNow: true,
+  deliveryMode: 'agents',
   version: 4,
   missingHindi: ['name'],
   legalName: null,

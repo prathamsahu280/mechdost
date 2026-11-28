@@ -29,6 +29,7 @@ import type {
   AgentClient,
   Page,
   Result,
+  ShopModeRowView,
   ShopDeliveryClient,
 } from './types';
 
@@ -47,6 +48,25 @@ const PayoutCorrected: ResponseSchema<{ alreadyCorrected: boolean }> = {
         typeof v === 'object' && v !== null && 'alreadyCorrected' in v && v.alreadyCorrected === true,
     },
   }),
+};
+/** Approved shops with their delivery mode, from the admin shop list (DC-G1). */
+const ShopModes: ResponseSchema<{ items: ShopModeRowView[] }> = {
+  safeParse: (v) => {
+    const r = AdminShopList.safeParse(v);
+    if (!r.success) return { success: false };
+    return {
+      success: true,
+      data: {
+        items: r.data.items.map((s) => ({
+          id: s.id,
+          name: s.name,
+          nameHi: s.nameHi,
+          mode: s.deliveryMode,
+          version: s.version,
+        })),
+      },
+    };
+  },
 };
 /** 204 answers carry no body: anything parses to null. */
 const Empty: ResponseSchema<null> = { safeParse: () => ({ success: true, data: null }) };
@@ -284,26 +304,7 @@ export function apiAdminDeliveryClient(locale: string): AdminDeliveryClient {
     invites: () => get('/admin/delivery/invites', AgentInvitePage),
     invite: (input) => post('/admin/delivery/invites', AgentInviteCreated, input),
     revokeInvite: (id) => post(`/admin/delivery/invites/${enc(id)}/revoke`, Empty),
-    shopModes: () =>
-      adminApi(locale, '/admin/shops?status=approved&limit=100', {
-        safeParse: (v) => {
-          const r = AdminShopList.safeParse(v);
-          return r.success
-            ? {
-                success: true as const,
-                data: {
-                  items: r.data.items.map((s) => ({
-                    id: s.id,
-                    name: s.name,
-                    nameHi: s.nameHi,
-                    mode: s.deliveryMode,
-                    version: s.version,
-                  })),
-                },
-              }
-            : { success: false as const };
-        },
-      }),
+    shopModes: () => adminApi(locale, '/admin/shops?status=approved&limit=100', ShopModes),
     setShopMode: (shopId, mode, note, version) =>
       adminApi(locale, `/admin/shops/${enc(shopId)}/delivery-mode`, Empty, {
         method: 'PUT',

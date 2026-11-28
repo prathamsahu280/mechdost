@@ -119,7 +119,7 @@ describe('onboarding', () => {
     const [app] = await w.db
       .select()
       .from(s.partnerApplications)
-      .where(eq(s.partnerApplications.code, r.code));
+      .where(eq(s.partnerApplications.code, r.code ?? ''));
     expect(app).toMatchObject({
       kind: 'delivery_agent',
       vehicleType: 'scooter',

@@ -478,7 +478,7 @@ From `D:\mechdost-qa\delivery-cod-sim-2026-11-27\logs\bugs.md`; one commit each,
 
 ## 21. QA batch DC (2026-11-29)
 
-One open application per phone (`alreadyApplied`); invite from an application may add an email and confirms inline; revoke,
+One open application per phone (a repeat answers `code: null` and no status: the endpoint is public, so the existing application is never described, security review 2026-11-29); invite from an application may add an email and confirms inline; revoke,
 retry and send-back confirm inline; "n of max tries failed"; reject reasons for riders with a note; Verify only after an
 audited view; suggestions carry `eligible` / `declinedBefore`; `GET /v1/admin/delivery/job-counts` feeds the filter chips;
 staff set a shop's mode in Requests → "Change a shop's delivery directly" (`PUT /v1/admin/shops/{id}/delivery-mode`,

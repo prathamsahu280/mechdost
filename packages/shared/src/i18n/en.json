@@ -10038,8 +10038,7 @@
     "challenge": "Quick check",
     "receivedTitle": "Application sent",
     "receivedBody": "Your reference is {code}. MechDost will call you on your mobile number.",
-    "alreadyTitle": "You already applied",
-    "alreadyBody": "This number has an open application: {code}. You do not need to apply again. MechDost will call you on your mobile number.",
+    "receivedBodyNoCode": "MechDost will call you on your mobile number.",
     "statusLink": "Check application status",
     "backHome": "Back to home",
     "allRequired": "All fields are needed."

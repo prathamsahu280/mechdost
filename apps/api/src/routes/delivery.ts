@@ -199,7 +199,9 @@ export function deliveryPublicRoutes(deps: AppDeps) {
         const b = c.req.valid('json');
         await human(deps, c, b.turnstileToken);
         await enforceRate(c, deps.rateLimiter, AGENT_APPLY_PER_PHONE, phoneKey(b.application.phone), 1);
-        return c.json(await submitAgentApplication(deps.db, b.application), 201);
+        const { code, status } = await submitAgentApplication(deps.db, b.application);
+        // `code` is null when the number already has an open application: the same "received" answer, no details.
+        return c.json({ code, status }, 201);
       },
     )
     .openapi(
