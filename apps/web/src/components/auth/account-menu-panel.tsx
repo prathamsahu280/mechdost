@@ -15,7 +15,7 @@ import {
   UserRound,
   type LucideIcon,
 } from 'lucide-react';
-import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useRef, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 import { homeFor, type DemoRole } from '@/demo/session-state';
 import { switchLocalePath, type SiteLocale } from '@/lib/locale-path';
 import { ACCOUNT_SECTIONS } from '@/lib/sections';
@@ -59,6 +59,7 @@ export default function AccountMenuPanel({
   initial,
   prefix,
   copy,
+  trigger,
   onClose,
   onSignOut,
 }: {
@@ -68,6 +69,8 @@ export default function AccountMenuPanel({
   initial: string | null;
   prefix: string;
   copy: AccountMenuCopy;
+  /** The avatar button that opens the menu: a press on it is not "outside" (its own click closes the menu). */
+  trigger: RefObject<HTMLElement | null>;
   /** `refocus`: give focus back to the avatar (Escape, a choice), not when the person moved on by Tab or a tap. */
   onClose: (refocus: boolean) => void;
   onSignOut: () => void;
@@ -90,14 +93,16 @@ export default function AccountMenuPanel({
   }, []);
   useEffect(() => {
     items()[0]?.focus();
+    // Bug 2026-11-28: a second press on the avatar re-opened the menu (this closed it, then the click toggled it open).
     const onPointer = (e: PointerEvent) => {
-      if (root.current && e.target instanceof Node && !root.current.contains(e.target)) onClose(false);
+      if (!(e.target instanceof Node) || trigger.current?.contains(e.target)) return;
+      if (root.current && !root.current.contains(e.target)) onClose(false);
     };
     document.addEventListener('pointerdown', onPointer);
     return () => {
       document.removeEventListener('pointerdown', onPointer);
     };
-  }, [onClose]);
+  }, [onClose, trigger]);
 
   function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
     const list = items();

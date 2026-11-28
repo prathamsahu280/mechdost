@@ -1,7 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ComponentType,
+  type ReactNode,
+  type RefObject,
+} from 'react';
 import { avatarMark, useSession, type DemoRole } from '@/demo/session-state';
 
 /** Strings of the account menu, translated on the server (no i18n runtime in the browser). */
@@ -29,6 +37,7 @@ interface PanelProps {
   initial: string | null;
   prefix: string;
   copy: AccountMenuCopy;
+  trigger: RefObject<HTMLElement | null>;
   onClose: (refocus: boolean) => void;
   onSignOut: () => void;
 }
@@ -146,6 +155,7 @@ export function AccountMenu({
           initial={initial}
           prefix={prefix}
           copy={copy}
+          trigger={button}
           onClose={close}
           onSignOut={() => {
             setOpen(false);

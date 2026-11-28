@@ -1,5 +1,6 @@
 'use client';
 
+import { SessionEndedNotice } from '../auth/session-ended-notice';
 import { BadgeCheck, ChevronRight, MessagesSquare, Package, Pencil, Trash2, Wrench } from 'lucide-react';
 import { useSelectedLayoutSegment } from 'next/navigation';
 import { PortalNavLink } from '@/components/portal/portal-nav-link';
@@ -153,6 +154,7 @@ export function AccountFrame({ children }: { children: ReactNode }) {
       <div className="space-y-8">
         <div className={`${card} flex flex-wrap items-center justify-between gap-4`}>
           <div className="max-w-xl">
+            <SessionEndedNotice />
             <h2 className="font-heading text-xl font-extrabold text-ink">{t('signedOutTitle')}</h2>
             {blocked ? (
               <p role="alert" className="mt-1 text-sm font-bold text-warning">

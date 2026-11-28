@@ -7,6 +7,7 @@ import { createContext, useContext, type ReactNode } from 'react';
 import { useSession, type DemoAccount, type DemoRole } from '@/demo/session';
 import { signOutEverywhere } from '@/lib/auth/sign-out';
 import { useHydrated } from '@/demo/store';
+import { SessionEndedNotice } from '../auth/session-ended-notice';
 
 const PortalAccountContext = createContext<DemoAccount | null>(null);
 
@@ -44,6 +45,7 @@ export function PortalGuard({
   if (session?.role !== role) {
     return (
       <div className="rounded-card border border-line-card bg-surface p-6 shadow-card tab:p-8">
+        <SessionEndedNotice />
         <h2 className="font-heading text-xl font-extrabold text-ink">{t('guardTitle')}</h2>
         <p className="mt-1 text-sm text-muted">{t('guardBody', { role: auth(`role_${role}`) })}</p>
         <div className="mt-5 flex flex-wrap gap-3">

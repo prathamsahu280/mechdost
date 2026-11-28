@@ -2,6 +2,7 @@ import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import {
   addPincode,
   cityCodeOfPincode,
+  findNearestPincodes,
   listActivePincodes,
   listCityPincodes,
   NotFoundError,
@@ -12,6 +13,9 @@ import {
   FREE_DELIVERY_MAX_PAISE,
   INDIA_BOUNDS,
   PINCODE_AREA_MAX,
+  PINCODE_NEAR_DEFAULT,
+  PINCODE_NEAR_LIMIT_MAX,
+  PINCODE_NEAR_MAX_KM,
   PINCODE_AREA_MIN,
   PINCODE_INACTIVE_REASONS,
   PINCODE_NOTE_MAX,
@@ -224,19 +228,67 @@ const status = createRoute({
   responses: { 200: json(Saved, 'Saved'), ...writeErrors, ...errorResponses },
 });
 
+const nearList = createRoute({
+  method: 'get',
+  path: '/geo/pincode-near',
+  tags: ['geo'],
+  summary: 'The nearest active MechDost PIN codes to a position (a shortlist, never an answer)',
+  description:
+    'For "use my location": the nearest active PIN centroids of live cities within the served distance, nearest first, ' +
+    'area names in the requested language. PIN areas are irregular, so the nearest post office is not always the ' +
+    "person's PIN: the caller shows these as choices. `served: false` means the position is outside every live " +
+    "city's PINs. Coordinates are not stored.",
+  request: {
+    query: z.object({
+      lat: z.coerce.number().min(INDIA_BOUNDS.minLat).max(INDIA_BOUNDS.maxLat),
+      lng: z.coerce.number().min(INDIA_BOUNDS.minLng).max(INDIA_BOUNDS.maxLng),
+      locale: z.enum(['en', 'hi']).default('en'),
+      limit: z.coerce.number().int().min(1).max(PINCODE_NEAR_LIMIT_MAX).default(PINCODE_NEAR_DEFAULT),
+    }),
+  },
+  responses: {
+    200: json(
+      z
+        .object({
+          served: z.boolean(),
+          nearest: z.array(
+            z.object({ pincode: z.string(), area: z.string().nullable(), distanceM: z.number().int() }),
+          ),
+        })
+        .openapi('NearestPincodes'),
+      'Nearest PIN codes',
+    ),
+    ...errorResponses,
+  },
+});
+
 /** Public read: per-IP limit on top of the global one. */
 export function pincodePublicRoutes(deps: AppDeps) {
   const app = new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
-  app.use(
-    '/cities/*',
-    rateLimit(deps.rateLimiter, PINCODES_RATE, (c) => c.get('clientIp')),
-  );
-  return app.openapi(publicList, async (c) => {
-    const city = c.req.valid('param').city;
-    const pincodes = await listActivePincodes(deps.db, city, c.req.valid('query').locale);
-    c.header('Cache-Control', CACHE);
-    return c.json({ city, pincodes }, 200);
-  });
+  for (const prefix of ['/cities/*', '/geo/*'])
+    app.use(
+      prefix,
+      rateLimit(deps.rateLimiter, PINCODES_RATE, (c) => c.get('clientIp')),
+    );
+  return app
+    .openapi(publicList, async (c) => {
+      const city = c.req.valid('param').city;
+      const pincodes = await listActivePincodes(deps.db, city, c.req.valid('query').locale);
+      c.header('Cache-Control', CACHE);
+      return c.json({ city, pincodes }, 200);
+    })
+    .openapi(nearList, async (c) => {
+      const q = c.req.valid('query');
+      const nearest = await findNearestPincodes(deps.db, {
+        lat: q.lat,
+        lng: q.lng,
+        locale: q.locale,
+        limit: q.limit,
+        maxM: PINCODE_NEAR_MAX_KM * 1000,
+      });
+      c.header('Cache-Control', 'private, max-age=3600');
+      return c.json({ served: nearest.length > 0, nearest }, 200);
+    });
 }
 
 /** Staff PIN code management (verified staff, city-scoped). */
